@@ -305,7 +305,8 @@ public class JournalStorageManager implements StorageManager {
    public void startReplication(ReplicationManager replicationManager,
                                 PagingManager pagingManager,
                                 String nodeID,
-                                final boolean autoFailBack) throws Exception {
+                                final boolean autoFailBack,
+                                long initialReplicationSyncTimeout) throws Exception {
       if (!started) {
          throw new IllegalStateException("JournalStorageManager must be started...");
       }
@@ -376,7 +377,7 @@ public class JournalStorageManager implements StorageManager {
          storageManagerLock.writeLock().lock();
          try {
             if (replicator != null) {
-               replicator.sendSynchronizationDone(nodeID);
+               replicator.sendSynchronizationDone(nodeID, initialReplicationSyncTimeout);
                performCachedLargeMessageDeletes();
             }
          }
@@ -1812,7 +1813,12 @@ public class JournalStorageManager implements StorageManager {
 
       cleanupIncompleteFiles();
 
-      singleThreadExecutor = Executors.newSingleThreadExecutor(new ActiveMQThreadFactory("ActiveMQ-IO-SingleThread", true, getThisClassLoader()));
+      singleThreadExecutor = Executors.newSingleThreadExecutor(AccessController.doPrivileged(new PrivilegedAction<ActiveMQThreadFactory>() {
+         @Override
+         public ActiveMQThreadFactory run() {
+            return new ActiveMQThreadFactory("ActiveMQ-IO-SingleThread", true, JournalStorageManager.class.getClassLoader());
+         }
+      }));
 
       bindingsJournal.start();
 
@@ -2284,14 +2290,6 @@ public class JournalStorageManager implements StorageManager {
       else {
          return DummyOperationContext.getInstance();
       }
-   }
-
-   private static ClassLoader getThisClassLoader() {
-      return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-         public ClassLoader run() {
-            return JournalStorageManager.class.getClassLoader();
-         }
-      });
    }
 
    // Inner Classes
