@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.tests.integration.client;
 
+import java.lang.ref.WeakReference;
+
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
@@ -25,8 +27,6 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.lang.ref.WeakReference;
 
 public class SessionCloseOnGCTest extends ActiveMQTestBase {
 
@@ -181,15 +181,15 @@ public class SessionCloseOnGCTest extends ActiveMQTestBase {
    public void testCloseOneSessionOnGC() throws Exception {
       ClientSessionFactoryImpl sf = (ClientSessionFactoryImpl) locator.createSessionFactory();
 
-      ClientSession session = sf.createSession(false, true, true);
+      {
+         ClientSession session = sf.createSession(false, true, true);
 
-      WeakReference<ClientSession> wses = new WeakReference<ClientSession>(session);
+         Assert.assertEquals(1, server.getRemotingService().getConnections().size());
+      }
 
-      Assert.assertEquals(1, server.getRemotingService().getConnections().size());
-
-      session = null;
-
-      ActiveMQTestBase.checkWeakReferences(wses);
+      for (int i = 0; i < 1000 && sf.numSessions() != 0; i++) {
+         forceGC();
+      }
 
       Assert.assertEquals(0, sf.numSessions());
       Assert.assertEquals(1, sf.numConnections());
@@ -216,20 +216,8 @@ public class SessionCloseOnGCTest extends ActiveMQTestBase {
 
       ActiveMQTestBase.checkWeakReferences(ref1, ref2, ref3);
 
-      int count = 0;
-      final int TOTAL_SLEEP_TIME = 400;
-      final int MAX_COUNT = 20;
-      while (count++ < MAX_COUNT) {
-         /*
-          * The assertion is vulnerable to races, both in the session closing as well as the return
-          * value of the sessions.size() (i.e. HashSet.size()).
-          */
-         synchronized (this) {
-            // synchronized block will (as a side effect) force sync all field values
-            if (sf.numSessions() == 0)
-               break;
-            Thread.sleep(TOTAL_SLEEP_TIME / MAX_COUNT);
-         }
+      for (int i = 0; i < 1000 && sf.numSessions() != 0; i++) {
+         forceGC();
       }
       Assert.assertEquals("# sessions", 0, sf.numSessions());
       Assert.assertEquals("# connections", 1, sf.numConnections());
