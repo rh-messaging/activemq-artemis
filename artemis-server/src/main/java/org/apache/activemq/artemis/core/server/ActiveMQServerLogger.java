@@ -1445,4 +1445,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224066, value = "Duplicated Acceptor {0} with parameters {1} classFactory={2} duplicated on the configuration", format = Message.Format.MESSAGE_FORMAT)
    void duplicatedAcceptor(String name, String parameters, String classFactory);
 
+   @LogMessage(level = Logger.Level.ERROR)
+   @Message(id = 224068, value = "Unable to stop component: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void errorStoppingComponent(@Cause Throwable t, String componentClassName);
+
+   @LogMessage(level = Logger.Level.DEBUG)
+   @Message(id = 224070, value = "Received Interrupt Exception whilst waiting for component to shutdown: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void interruptWhilstStoppingComponent(String componentClassName);
 }

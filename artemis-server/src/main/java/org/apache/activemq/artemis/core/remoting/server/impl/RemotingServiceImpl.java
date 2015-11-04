@@ -347,7 +347,14 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
             ActiveMQServerLogger.LOGGER.debug("Pausing acceptor " + acceptor);
          }
-         acceptor.pause();
+
+         try {
+            acceptor.pause();
+         }
+         catch (Throwable t) {
+            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor();
+         }
+
       }
 
       if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
@@ -369,7 +376,12 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       for (Acceptor acceptor : acceptors.values()) {
-         acceptor.stop();
+         try {
+            acceptor.stop();
+         }
+         catch (Throwable t) {
+            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor();
+         }
       }
 
       acceptors.clear();
@@ -392,7 +404,6 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       started = false;
-
    }
 
    @Override
