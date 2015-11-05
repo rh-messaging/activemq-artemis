@@ -796,20 +796,28 @@ public abstract class ActiveMQTestBase extends Assert {
    }
 
    protected final void clearDataRecreateServerDirs() {
-      clearDataRecreateServerDirs(getTestDir());
+      clearDataRecreateServerDirs(0, false);
    }
 
-   protected void clearDataRecreateServerDirs(final String testDir1) {
+   protected final void clearDataRecreateServerDirs(int index, boolean backup) {
+      clearDataRecreateServerDirs(getTestDir(), index, backup);
+   }
+
+   protected void clearDataRecreateServerDirs(final String testDir1, int index, boolean backup) {
       // Need to delete the root
 
       File file = new File(testDir1);
       deleteDirectory(file);
       file.mkdirs();
 
-      recreateDirectory(getJournalDir(testDir1));
-      recreateDirectory(getBindingsDir(testDir1));
-      recreateDirectory(getPageDir(testDir1));
-      recreateDirectory(getLargeMessagesDir(testDir1));
+      recreateDataDirectories(testDir1, index, backup);
+   }
+
+   protected void recreateDataDirectories(String testDir1, int index, boolean backup) {
+      recreateDirectory(getJournalDir(testDir1, index, backup));
+      recreateDirectory(getBindingsDir(testDir1, index, backup));
+      recreateDirectory(getPageDir(testDir1, index, backup));
+      recreateDirectory(getLargeMessagesDir(testDir1, index, backup));
       recreateDirectory(getClientLargeMessagesDir(testDir1));
       recreateDirectory(getTemporaryDir(testDir1));
    }

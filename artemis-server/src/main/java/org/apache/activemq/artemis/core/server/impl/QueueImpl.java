@@ -790,7 +790,7 @@ public class QueueImpl implements Queue {
    }
 
    public synchronized Set<Consumer> getConsumers() {
-      return consumerSet;
+      return new HashSet<Consumer>(consumerSet);
    }
 
    public boolean hasMatchingConsumer(final ServerMessage message) {
