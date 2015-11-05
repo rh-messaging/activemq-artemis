@@ -305,7 +305,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             acceptor.pause();
          }
          catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor();
+            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor(acceptor.getName());
          }
       }
    }
@@ -352,7 +352,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             acceptor.pause();
          }
          catch (Throwable t) {
-            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor();
+            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor(acceptor.getName());
          }
 
       }
@@ -380,7 +380,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             acceptor.stop();
          }
          catch (Throwable t) {
-            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor();
+            ActiveMQServerLogger.LOGGER.errorStoppingAcceptor(acceptor.getName());
          }
       }
 
