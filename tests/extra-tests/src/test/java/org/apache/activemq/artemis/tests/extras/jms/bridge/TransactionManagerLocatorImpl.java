@@ -23,14 +23,14 @@ import org.apache.activemq.artemis.service.extensions.transactions.TransactionMa
 
 public class TransactionManagerLocatorImpl implements TransactionManagerLocator {
 
-   public static TransactionManager tm = null;
+   private static TransactionManager tm = null;
 
    @Override
    public TransactionManager getTransactionManager() {
       return tm;
    }
 
-   public void setTransactionManager(TransactionManager transactionManager) {
+   public static void setTransactionManager(TransactionManager transactionManager) {
       tm = transactionManager;
    }
 }
