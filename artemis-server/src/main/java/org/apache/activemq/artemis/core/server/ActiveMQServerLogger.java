@@ -1283,8 +1283,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void errorWritingToInvmConnector(@Cause Exception e, Runnable runnable);
 
    @LogMessage(level = Logger.Level.ERROR)
-   @Message(id = 224028, value = "Failed to stop acceptor", format = Message.Format.MESSAGE_FORMAT)
-   void errorStoppingAcceptor();
+   @Message(id = 224028, value = "Failed to stop accepto {0}r", format = Message.Format.MESSAGE_FORMAT)
+   void errorStoppingAcceptor(String name);
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224029, value = "large message sync: largeMessage instance is incompatible with it, ignoring data", format = Message.Format.MESSAGE_FORMAT)
@@ -1445,4 +1445,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224066, value = "Duplicated Acceptor {0} with parameters {1} classFactory={2} duplicated on the configuration", format = Message.Format.MESSAGE_FORMAT)
    void duplicatedAcceptor(String name, String parameters, String classFactory);
 
+   @LogMessage(level = Logger.Level.ERROR)
+   @Message(id = 224068, value = "Unable to stop component: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void errorStoppingComponent(@Cause Throwable t, String componentClassName);
+
+   @LogMessage(level = Logger.Level.DEBUG)
+   @Message(id = 224070, value = "Received Interrupt Exception whilst waiting for component to shutdown: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void interruptWhilstStoppingComponent(String componentClassName);
 }
