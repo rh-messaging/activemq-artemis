@@ -77,9 +77,10 @@ public class AIOSequentialFile extends AbstractSequentialFile {
    }
 
    public int getAlignment() {
-      checkOpened();
-
-      return aioFile.getBlockSize();
+      // TODO: get the alignment from the file system, but we have to cache this, we can't call it every time
+      /* checkOpened();
+      return aioFile.getBlockSize(); */
+      return 512;
    }
 
    public int calculateBlockStart(final int position) {

@@ -150,6 +150,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    protected int journalFileSize = ActiveMQDefaultConfiguration.getDefaultJournalFileSize();
 
+   protected int journalPoolFiles = ActiveMQDefaultConfiguration.getDefaultJournalPoolFiles();
+
    protected int journalMinFiles = ActiveMQDefaultConfiguration.getDefaultJournalMinFiles();
 
    // AIO and NIO need different values for these attributes
@@ -593,6 +595,18 @@ public class ConfigurationImpl implements Configuration, Serializable {
       journalFileSize = size;
       return this;
    }
+
+   @Override
+   public int getJournalPoolFiles() {
+      return journalPoolFiles;
+   }
+
+   @Override
+   public Configuration setJournalPoolFiles(int poolSize) {
+      this.journalPoolFiles = poolSize;
+      return this;
+   }
+
 
    public int getJournalMinFiles() {
       return journalMinFiles;
