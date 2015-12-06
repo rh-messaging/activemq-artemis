@@ -79,13 +79,13 @@ import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.io.SequentialFileFactory;
+import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
-import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
 import org.apache.activemq.artemis.core.journal.impl.JournalReaderCallback;
-import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.postoffice.Binding;
@@ -826,7 +826,7 @@ public abstract class ActiveMQTestBase extends Assert {
     * @return the journalDir
     */
    public String getJournalDir() {
-      return getJournalDir(getTestDir());
+      return getJournalDir(0, false);
    }
 
    protected static String getJournalDir(final String testDir1) {
@@ -845,7 +845,7 @@ public abstract class ActiveMQTestBase extends Assert {
     * @return the bindingsDir
     */
    protected String getBindingsDir() {
-      return getBindingsDir(getTestDir());
+      return getBindingsDir(0, false);
    }
 
    /**
@@ -870,7 +870,7 @@ public abstract class ActiveMQTestBase extends Assert {
     * @return the pageDir
     */
    protected String getPageDir() {
-      return getPageDir(getTestDir());
+      return getPageDir(0, false);
    }
 
    protected File getPageDirFile() {
@@ -897,7 +897,7 @@ public abstract class ActiveMQTestBase extends Assert {
     * @return the largeMessagesDir
     */
    protected String getLargeMessagesDir() {
-      return getLargeMessagesDir(getTestDir());
+      return getLargeMessagesDir(0, false);
    }
 
    /**
@@ -1275,7 +1275,7 @@ public abstract class ActiveMQTestBase extends Assert {
 
       if (server.isStarted()) {
          log.info(threadDump("Server didn't start"));
-         fail("server didnt start: " + server);
+         fail("Server didn't start: " + server);
       }
    }
 
