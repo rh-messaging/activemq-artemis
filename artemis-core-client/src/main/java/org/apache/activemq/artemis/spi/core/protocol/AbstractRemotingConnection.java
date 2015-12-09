@@ -29,6 +29,7 @@ import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
+import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 
 public abstract class AbstractRemotingConnection implements RemotingConnection {
 
@@ -47,6 +48,11 @@ public abstract class AbstractRemotingConnection implements RemotingConnection {
 
    public List<FailureListener> getFailureListeners() {
       return new ArrayList<FailureListener>(failureListeners);
+   }
+
+   @Override
+   public boolean isWritable(ReadyListener callback) {
+      return transportConnection.isWritable(callback);
    }
 
    protected void callFailureListeners(final ActiveMQException me, String scaleDownTargetNodeID) {
