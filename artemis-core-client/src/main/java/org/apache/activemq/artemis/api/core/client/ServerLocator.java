@@ -16,9 +16,12 @@
  */
 package org.apache.activemq.artemis.api.core.client;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+
+import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.Interceptor;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
-import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.core.client.impl.Topology;
 import org.apache.activemq.artemis.spi.core.remoting.ClientProtocolManagerFactory;
 
@@ -783,6 +786,5 @@ public interface ServerLocator extends AutoCloseable {
 
    String getOutgoingInterceptorList();
 
-
-
+   boolean setThreadPools(ExecutorService threadPool, ScheduledExecutorService scheduledThreadPoolExecutor);
 }
