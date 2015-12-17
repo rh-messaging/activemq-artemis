@@ -136,7 +136,7 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
       factory = new FakeSequentialFileFactory(512, true);
 
       try {
-         journalImpl = new JournalImpl(2000, 2, 0, 0, factory, "tt", "tt", 1000);
+         journalImpl = new JournalImpl(2000, 2, 2, 0, 0, factory, "tt", "tt", 1000);
          Assert.fail("Expected IllegalArgumentException");
       }
       catch (IllegalArgumentException ignored) {
@@ -1196,7 +1196,7 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
    public void testAlignmentOverReload() throws Exception {
 
       factory = new FakeSequentialFileFactory(512, false);
-      journalImpl = new JournalImpl(512 + 512 * 3, 20, 0, 0, factory, "amq", "amq", 1000);
+      journalImpl = new JournalImpl(512 + 512 * 3, 20, 20, 0, 0, factory, "amq", "amq", 1000);
 
       journalImpl.start();
 
@@ -1209,7 +1209,7 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
 
       journalImpl.stop();
 
-      journalImpl = new JournalImpl(512 + 1024 + 512, 20, 0, 0, factory, "amq", "amq", 1000);
+      journalImpl = new JournalImpl(512 + 1024 + 512, 20, 20, 0, 0, factory, "amq", "amq", 1000);
       addActiveMQComponent(journalImpl);
       journalImpl.start();
       journalImpl.load(AlignedJournalImplTest.dummyLoader);
@@ -1225,7 +1225,7 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
 
       journalImpl.stop();
 
-      journalImpl = new JournalImpl(512 + 1024 + 512, 20, 0, 0, factory, "amq", "amq", 1000);
+      journalImpl = new JournalImpl(512 + 1024 + 512, 20, 20, 0, 0, factory, "amq", "amq", 1000);
       addActiveMQComponent(journalImpl);
       journalImpl.start();
 
@@ -1296,7 +1296,7 @@ public class AlignedJournalImplTest extends ActiveMQTestBase {
          journalImpl.stop();
       }
 
-      journalImpl = new JournalImpl(journalSize, numberOfMinimalFiles, 0, 0, factory, "tt", "tt", 1000);
+      journalImpl = new JournalImpl(journalSize, numberOfMinimalFiles, numberOfMinimalFiles, 0, 0, factory, "tt", "tt", 1000);
       addActiveMQComponent(journalImpl);
       journalImpl.start();
 

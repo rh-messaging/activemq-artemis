@@ -44,11 +44,12 @@ import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
-import org.apache.activemq.artemis.spi.core.remoting.ConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.ConsumerContext;
+import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
 import org.apache.activemq.artemis.utils.ConfirmationWindowWarning;
 import org.apache.activemq.artemis.utils.TokenBucketLimiterImpl;
+import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.XidCodecSupport;
 
 public final class ClientSessionImpl implements ClientSessionInternal, FailureListener {
@@ -57,7 +58,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
    private final ClientSessionFactoryInternal sessionFactory;
 
-   private final String name;
+   private String name;
 
    private final String username;
 
@@ -383,6 +384,13 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       return createConsumer(SimpleString.toSimpleString(queueName), null, browseOnly);
    }
 
+
+   @Override
+   public boolean isWritable(ReadyListener callback) {
+      return sessionContext.isWritable(callback);
+   }
+
+
    /**
     * Note, we DO NOT currently support direct consumers (i.e. consumers where delivery occurs on
     * the remoting thread).
@@ -497,7 +505,13 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       rollback(false);
    }
 
-   public void rollback(final boolean isLastMessageAsDelivered) throws ActiveMQException {
+   public void rollback(final boolean isLastMessageAsDelivered) throws ActiveMQException
+   {
+      rollback(isLastMessageAsDelivered, true);
+   }
+
+   public void rollback(final boolean isLastMessageAsDelivered, final boolean waitConsumers) throws ActiveMQException
+   {
       if (ActiveMQClientLogger.LOGGER.isTraceEnabled()) {
          ActiveMQClientLogger.LOGGER.trace("calling rollback(isLastMessageAsDelivered=" + isLastMessageAsDelivered + ")");
       }
@@ -516,7 +530,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
       // We need to make sure we don't get any inflight messages
       for (ClientConsumerInternal consumer : cloneConsumers()) {
-         consumer.clear(true);
+         consumer.clear(waitConsumers);
       }
 
       // Acks must be flushed here *after connection is stopped and all onmessages finished executing
@@ -529,6 +543,10 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       }
 
       rollbackOnly = false;
+   }
+
+   public void markRollbackOnly() {
+      rollbackOnly = true;
    }
 
    public ClientMessage createMessage(final byte type,
@@ -635,11 +653,6 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    @Override
    public String getNodeId() {
       return sessionFactory.getLiveNodeId();
-   }
-
-   @Override
-   public void addLifeCycleListener(ConnectionLifeCycleListener lifeCycleListener) {
-      sessionFactory.addLifeCycleListener(lifeCycleListener);
    }
 
    // ClientSessionInternal implementation
@@ -857,6 +870,15 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
             boolean reattached = sessionContext.reattachOnNewConnection(backupConnection);
 
             if (!reattached) {
+
+               // We change the name of the Session, otherwise the server could close it while we are still sending the recreate
+               // in certain failure scenarios
+               // For instance the fact we didn't change the name of the session after failover or reconnect
+               // was the reason allowing multiple Sessions to be closed simultaneously breaking concurrency
+               this.name = UUIDGenerator.getInstance().generateStringUUID();
+
+               sessionContext.resetName(name);
+
                for (ClientConsumerInternal consumer : cloneConsumers()) {
                   consumer.clearAtFailover();
                }
@@ -1026,7 +1048,12 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
       // we should never throw rollback if we have already prepared
       if (rollbackOnly) {
-         ActiveMQClientLogger.LOGGER.commitAfterFailover();
+         if (onePhase) {
+            throw new XAException(XAException.XAER_RMFAIL);
+         }
+         else {
+            ActiveMQClientLogger.LOGGER.commitAfterFailover();
+         }
       }
 
       // Note - don't need to flush acks since the previous end would have
@@ -1064,7 +1091,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       try {
          if (rollbackOnly) {
             try {
-               rollback();
+               rollback(false, false);
             }
             catch (Throwable ignored) {
                ActiveMQClientLogger.LOGGER.debug("Error on rollback during end call!", ignored);
@@ -1140,6 +1167,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
          return sessionContext.configureTransactionTimeout(seconds);
       }
       catch (Throwable t) {
+         markRollbackOnly(); // The TM will ignore any errors from here, if things are this screwed up we mark rollbackonly
          // This could occur if the TM interrupts the thread
          XAException xaException = new XAException(XAException.XAER_RMFAIL);
          xaException.initCause(t);

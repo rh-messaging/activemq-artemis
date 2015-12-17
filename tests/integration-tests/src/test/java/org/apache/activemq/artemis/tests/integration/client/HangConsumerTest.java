@@ -425,7 +425,7 @@ public class HangConsumerTest extends ActiveMQTestBase {
 
             SequentialFileFactory messagesFF = new NIOSequentialFileFactory(server.getConfiguration().getBindingsLocation(), null, 1);
 
-            JournalImpl messagesJournal = new JournalImpl(1024 * 1024, 2, 0, 0, messagesFF, "activemq-bindings", "bindings", 1);
+            JournalImpl messagesJournal = new JournalImpl(1024 * 1024, 2, 2, 0, 0, messagesFF, "activemq-bindings", "bindings", 1);
 
             messagesJournal.start();
 
@@ -481,6 +481,11 @@ public class HangConsumerTest extends ActiveMQTestBase {
          targetCallback.sendProducerCreditsMessage(credits, address);
       }
 
+      public boolean isWritable(ReadyListener callback) {
+         return true;
+      }
+
+      @Override
       public void sendProducerCreditsFailMessage(int credits, SimpleString address) {
          targetCallback.sendProducerCreditsFailMessage(credits, address);
       }
@@ -533,22 +538,6 @@ public class HangConsumerTest extends ActiveMQTestBase {
       @Override
       public void closed() {
          targetCallback.closed();
-      }
-
-      /* (non-Javadoc)
-       * @see SessionCallback#addReadyListener(ReadyListener)
-       */
-      @Override
-      public void addReadyListener(ReadyListener listener) {
-         targetCallback.addReadyListener(listener);
-      }
-
-      /* (non-Javadoc)
-       * @see SessionCallback#removeReadyListener(ReadyListener)
-       */
-      @Override
-      public void removeReadyListener(ReadyListener listener) {
-         targetCallback.removeReadyListener(listener);
       }
 
       @Override

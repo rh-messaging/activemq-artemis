@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -40,9 +39,9 @@ import org.apache.activemq.artemis.core.message.BodyEncoder;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
+import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.HandleStatus;
-import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -128,12 +127,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private boolean transferring = false;
 
-   /* As well as consumer credit based flow control, we also tap into TCP flow control (assuming transport is using TCP)
-    * This is useful in the case where consumer-window-size = -1, but we don't want to OOM by sending messages ad infinitum to the Netty
-    * write queue when the TCP buffer is full, e.g. the client is slow or has died.
-    */
-   private final AtomicBoolean writeReady = new AtomicBoolean(true);
-
    private final long creationTime;
 
    private AtomicLong consumerRateCheckTime = new AtomicLong(System.currentTimeMillis());
@@ -197,8 +190,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       this.strictUpdateDeliveryCount = strictUpdateDeliveryCount;
 
-      this.callback.addReadyListener(this);
-
       this.creationTime = System.currentTimeMillis();
 
       if (browseOnly) {
@@ -217,6 +208,11 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
             availableCredits.set(credits);
          }
       }
+   }
+
+   @Override
+   public void readyForWriting() {
+      promptDelivery();
    }
 
    // ServerConsumer implementation
@@ -279,7 +275,8 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          // If the consumer is stopped then we don't accept the message, it
          // should go back into the
          // queue for delivery later.
-         if (!started || transferring) {
+         // TCP-flow control has to be done first than everything else otherwise we may lose notifications
+         if (!callback.isWritable(this) || !started || transferring ) {
             return HandleStatus.BUSY;
          }
 
@@ -304,7 +301,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          }
 
          if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
-            ActiveMQServerLogger.LOGGER.trace("Handling reference " + ref);
+            ActiveMQServerLogger.LOGGER.trace("ServerConsumerImpl::" + this + " Handling reference " + ref);
          }
          if (!browseOnly) {
             if (!preAcknowledge) {
@@ -379,7 +376,9 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    @Override
    public void close(final boolean failed) throws Exception {
-      callback.removeReadyListener(this);
+      if (isTrace) {
+         ActiveMQServerLogger.LOGGER.trace("ServerConsumerImpl::" + this + " being closed with failed=" + failed, new Exception("trace"));
+      }
 
       setStarted(false);
 
@@ -399,6 +398,10 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       while (iter.hasNext()) {
          MessageReference ref = iter.next();
+
+         if (isTrace) {
+            ActiveMQServerLogger.LOGGER.trace("ServerConsumerImpl::" + this + " cancelling reference " + ref);
+         }
 
          ref.getQueue().cancel(tx, ref, true);
       }
@@ -507,29 +510,31 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       LinkedList<MessageReference> refs = new LinkedList<MessageReference>();
 
-      if (!deliveringRefs.isEmpty()) {
-         for (MessageReference ref : deliveringRefs) {
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("Cancelling reference for messageID = " + ref.getMessage().getMessageID() + ", ref = " + ref);
-            }
-            if (performACK) {
-               acknowledge(tx, ref.getMessage().getMessageID());
+      synchronized (lock) {
+         if (!deliveringRefs.isEmpty()) {
+            for (MessageReference ref : deliveringRefs) {
+               if (performACK) {
+                  ackReference(tx, ref);
 
-               performACK = false;
-            }
-            else {
-               if (!failed) {
-                  // We don't decrement delivery count if the client failed, since there's a possibility that refs
-                  // were actually delivered but we just didn't get any acks for them
-                  // before failure
-                  ref.decrementDeliveryCount();
+                  performACK = false;
+               }
+               else {
+                  refs.add(ref);
+                  if (!failed) {
+                     // We don't decrement delivery count if the client failed, since there's a possibility that refs
+                     // were actually delivered but we just didn't get any acks for them
+                     // before failure
+                     ref.decrementDeliveryCount();
+                  }
                }
 
-               refs.add(ref);
+               if (isTrace) {
+                  ActiveMQServerLogger.LOGGER.trace("ServerConsumerImpl::" + this + " Preparing Cancelling list for messageID = " + ref.getMessage().getMessageID() + ", ref = " + ref);
+               }
             }
-         }
 
-         deliveringRefs.clear();
+            deliveringRefs.clear();
+         }
       }
 
       return refs;
@@ -652,17 +657,23 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
          MessageReference ref;
          do {
-            ref = deliveringRefs.poll();
+            synchronized (lock) {
+               ref = deliveringRefs.poll();
+            }
 
             if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
                ActiveMQServerLogger.LOGGER.trace("ACKing ref " + ref + " on tx= " + tx + ", consumer=" + this);
             }
 
             if (ref == null) {
-               throw ActiveMQMessageBundle.BUNDLE.consumerNoReference(id, messageID, messageQueue.getName());
+               ActiveMQIllegalStateException ils = ActiveMQMessageBundle.BUNDLE.consumerNoReference(id, messageID, messageQueue.getName());
+               if (tx != null) {
+                  tx.markAsRollbackOnly(ils);
+               }
+               throw ils;
             }
 
-            ref.getQueue().acknowledge(tx, ref);
+            ackReference(tx, ref);
             acks++;
          } while (ref.getMessage().getMessageID() != messageID);
 
@@ -692,6 +703,15 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       }
    }
 
+   private void ackReference(Transaction tx, MessageReference ref) throws Exception {
+      if (tx == null) {
+         ref.getQueue().acknowledge(ref);
+      }
+      else {
+         ref.getQueue().acknowledge(tx, ref);
+      }
+   }
+
    public void individualAcknowledge(final Transaction tx, final long messageID) throws Exception {
       if (browseOnly) {
          return;
@@ -700,15 +720,15 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       MessageReference ref = removeReferenceByID(messageID);
 
       if (ref == null) {
-         throw new IllegalStateException("Cannot find ref to ack " + messageID);
+         ActiveMQIllegalStateException ils = ActiveMQMessageBundle.BUNDLE.consumerNoReference(id, messageID, messageQueue.getName());
+         if (tx != null) {
+            tx.markAsRollbackOnly(ils);
+         }
+         throw ils;
       }
 
-      if (tx == null) {
-         ref.getQueue().acknowledge(ref);
-      }
-      else {
-         ref.getQueue().acknowledge(tx, ref);
-      }
+      ackReference(tx, ref);
+
       acks++;
    }
 
@@ -737,33 +757,28 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
       // Expiries can come in out of sequence with respect to delivery order
 
-      Iterator<MessageReference> iter = deliveringRefs.iterator();
-
-      MessageReference ref = null;
-
-      while (iter.hasNext()) {
-         MessageReference theRef = iter.next();
-
-         if (theRef.getMessage().getMessageID() == messageID) {
-            iter.remove();
-
-            ref = theRef;
-
-            break;
+      synchronized (lock) {
+         // This is an optimization, if the reference is the first one, we just poll it.
+         if (deliveringRefs.peek().getMessage().getMessageID() == messageID) {
+            return deliveringRefs.poll();
          }
-      }
 
-      return ref;
-   }
+         Iterator<MessageReference> iter = deliveringRefs.iterator();
 
-   public void readyForWriting(final boolean ready) {
-      if (ready) {
-         writeReady.set(true);
+         MessageReference ref = null;
 
-         promptDelivery();
-      }
-      else {
-         writeReady.set(false);
+         while (iter.hasNext()) {
+            MessageReference theRef = iter.next();
+
+            if (theRef.getMessage().getMessageID() == messageID) {
+               iter.remove();
+
+               ref = theRef;
+
+               break;
+            }
+         }
+         return ref;
       }
    }
 

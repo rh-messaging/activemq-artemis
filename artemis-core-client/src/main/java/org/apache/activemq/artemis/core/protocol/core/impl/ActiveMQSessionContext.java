@@ -97,6 +97,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SessionXAS
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SessionXAStartMessage;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
+import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
 import org.apache.activemq.artemis.utils.TokenBucketLimiterImpl;
 import org.apache.activemq.artemis.utils.VersionLoader;
@@ -112,7 +113,7 @@ public class ActiveMQSessionContext extends SessionContext {
    private final Channel sessionChannel;
    private final int serverVersion;
    private int confirmationWindow;
-   private final String name;
+   private String name;
 
    protected Channel getSessionChannel() {
       return sessionChannel;
@@ -121,6 +122,11 @@ public class ActiveMQSessionContext extends SessionContext {
    protected String getName() {
       return name;
    }
+
+   public void resetName(String name) {
+      this.name = name;
+   }
+
 
    protected int getConfirmationWindow() {
       return confirmationWindow;
@@ -224,6 +230,11 @@ public class ActiveMQSessionContext extends SessionContext {
       SessionQueueQueryResponseMessage_V2 response = (SessionQueueQueryResponseMessage_V2) sessionChannel.sendBlocking(request, PacketImpl.SESS_QUEUEQUERY_RESP_V2);
 
       return response.toQueueQuery();
+   }
+
+   @Override
+   public boolean isWritable(ReadyListener callback) {
+      return remotingConnection.isWritable(callback);
    }
 
    public ClientConsumerInternal createConsumer(SimpleString queueName,

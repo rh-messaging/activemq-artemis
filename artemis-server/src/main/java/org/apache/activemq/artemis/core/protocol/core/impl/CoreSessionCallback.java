@@ -29,6 +29,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
+import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 
@@ -38,12 +39,20 @@ public final class CoreSessionCallback implements SessionCallback {
 
    private ProtocolManager protocolManager;
 
+   private final RemotingConnection connection;
+
    private String name;
 
-   public CoreSessionCallback(String name, ProtocolManager protocolManager, Channel channel) {
+   public CoreSessionCallback(String name, ProtocolManager protocolManager, Channel channel, RemotingConnection connection) {
       this.name = name;
       this.protocolManager = protocolManager;
       this.channel = channel;
+      this.connection = connection;
+   }
+
+   @Override
+   public boolean isWritable(ReadyListener callback) {
+      return connection.isWritable(callback);
    }
 
    public int sendLargeMessage(ServerMessage message, ServerConsumer consumer, long bodySize, int deliveryCount) {
@@ -94,14 +103,6 @@ public final class CoreSessionCallback implements SessionCallback {
 
    public void closed() {
       protocolManager.removeHandler(name);
-   }
-
-   public void addReadyListener(final ReadyListener listener) {
-      channel.getConnection().getTransportConnection().addReadyListener(listener);
-   }
-
-   public void removeReadyListener(final ReadyListener listener) {
-      channel.getConnection().getTransportConnection().removeReadyListener(listener);
    }
 
    @Override

@@ -59,6 +59,8 @@ public abstract class SessionContext {
       this.session = session;
    }
 
+   public abstract void resetName(String name);
+
    /**
     * it will eather reattach or reconnect, preferably reattaching it.
     *
@@ -267,4 +269,6 @@ public abstract class SessionContext {
    public abstract void cleanup();
 
    public abstract void linkFlowControl(SimpleString address, ClientProducerCreditsImpl clientProducerCredits);
+
+   public abstract boolean isWritable(ReadyListener callback);
 }

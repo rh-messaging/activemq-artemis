@@ -40,21 +40,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.io.SequentialFile;
+import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.journal.IOCompletion;
 import org.apache.activemq.artemis.core.journal.JournalLoadInformation;
 import org.apache.activemq.artemis.core.journal.LoaderCallback;
 import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
-import org.apache.activemq.artemis.core.io.SequentialFile;
-import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.TestableJournal;
 import org.apache.activemq.artemis.core.journal.TransactionFailureCallback;
 import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncoding;
@@ -193,7 +192,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    // Lock used during the append of records
    // This lock doesn't represent a global lock.
    // After a record is appended, the usedFile can't be changed until the positives and negatives are updated
-   private final ReentrantLock lockAppend = new ReentrantLock();
+   private final Object lockAppend = new Object();
 
    /**
     * We don't lock the journal during the whole compacting operation. During compacting we only
@@ -209,23 +208,27 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
    private volatile JournalState state = JournalState.STOPPED;
 
+   private volatile int compactCount = 0;
+
    private final Reclaimer reclaimer = new Reclaimer();
 
    // Constructors --------------------------------------------------
 
    public JournalImpl(final int fileSize,
                       final int minFiles,
+                      final int poolSize,
                       final int compactMinFiles,
                       final int compactPercentage,
                       final SequentialFileFactory fileFactory,
                       final String filePrefix,
                       final String fileExtension,
                       final int maxAIO) {
-      this(fileSize, minFiles, compactMinFiles, compactPercentage, fileFactory, filePrefix, fileExtension, maxAIO, 0);
+      this(fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, fileFactory, filePrefix, fileExtension, maxAIO, 0);
    }
 
    public JournalImpl(final int fileSize,
                       final int minFiles,
+                      final int poolSize,
                       final int compactMinFiles,
                       final int compactPercentage,
                       final SequentialFileFactory fileFactory,
@@ -234,6 +237,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                       final int maxAIO,
                       final int userVersion) {
       super(fileFactory.isSupportsCallbacks(), fileSize);
+
       if (fileSize % fileFactory.getAlignment() != 0) {
          throw new IllegalArgumentException("Invalid journal-file-size " + fileSize + ", It should be multiple of " +
                                                fileFactory.getAlignment());
@@ -257,7 +261,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       this.fileFactory = fileFactory;
 
-      filesRepository = new JournalFilesRepository(fileFactory, this, filePrefix, fileExtension, userVersion, maxAIO, fileSize, minFiles);
+      filesRepository = new JournalFilesRepository(fileFactory, this, filePrefix, fileExtension, userVersion, maxAIO, fileSize, minFiles, poolSize);
 
       this.userVersion = userVersion;
    }
@@ -705,8 +709,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(addRecord, false, sync, null, callback);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -718,9 +721,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             records.put(id, new JournalRecord(usedFile, addRecord.getEncodeSize()));
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -753,8 +753,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(updateRecord, false, sync, null, callback);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -773,9 +772,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             else {
                jrnRecord.addUpdateFile(usedFile, updateRecord.getEncodeSize());
             }
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -811,8 +807,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(deleteRecord, false, sync, null, callback);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -828,9 +823,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                record.delete(usedFile);
             }
 
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -852,8 +844,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
          JournalTransaction tx = getTransactionInfo(txID);
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(addRecord, false, false, tx, null);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -867,9 +858,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             tx.addPositive(usedFile, id, addRecord.getEncodeSize());
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -901,8 +889,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
          JournalTransaction tx = getTransactionInfo(txID);
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(updateRecordTX, false, false, tx, null);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -916,9 +903,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             tx.addPositive(usedFile, id, updateRecordTX.getEncodeSize());
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -939,8 +923,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
          JournalTransaction tx = getTransactionInfo(txID);
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(deleteRecordTX, false, false, tx, null);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -952,9 +935,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             tx.addNegative(usedFile, id);
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -993,8 +973,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(prepareRecord, true, sync, tx, callback);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -1002,9 +981,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             tx.prepare(usedFile);
-         }
-         finally {
-            lockAppend.unlock();
          }
 
       }
@@ -1043,8 +1019,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(commitRecord, true, sync, tx, callback);
 
             if (JournalImpl.TRACE_RECORDS) {
@@ -1052,9 +1027,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             }
 
             tx.commit(usedFile);
-         }
-         finally {
-            lockAppend.unlock();
          }
 
       }
@@ -1084,14 +1056,10 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             callback.storeLineUp();
          }
 
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(rollbackRecord, false, sync, tx, callback);
 
             tx.rollback(usedFile);
-         }
-         finally {
-            lockAppend.unlock();
          }
 
       }
@@ -1263,9 +1231,15 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
     * Note: only synchronized methods on journal are methods responsible for the life-cycle such as
     * stop, start records will still come as this is being executed
     */
+
    public synchronized void compact() throws Exception {
+
       if (compactor != null) {
          throw new IllegalStateException("There is pending compacting operation");
+      }
+
+      if (ActiveMQJournalLogger.LOGGER.isDebugEnabled()) {
+         ActiveMQJournalLogger.LOGGER.debug("JournalImpl::compact compacting journal " + (++compactCount));
       }
 
       compactorLock.writeLock().lock();
@@ -2013,13 +1987,9 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    public void forceMoveNextFile() throws Exception {
       journalLock.readLock().lock();
       try {
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
             moveNextFile(false);
             debugWait();
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -2071,9 +2041,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       journalLock.writeLock().lock();
       try {
-         lockAppend.lock();
-
-         try {
+         synchronized (lockAppend) {
 
             setJournalState(JournalState.STOPPED);
 
@@ -2111,9 +2079,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             fileFactory.stop();
 
             currentFile = null;
-         }
-         finally {
-            lockAppend.unlock();
          }
       }
       finally {
@@ -2602,32 +2567,30 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       @Override
       public void run() {
-         lockAppend.lock();
-         try {
+         synchronized (lockAppend) {
+            try {
 
-            final ByteArrayEncoding byteEncoder = new ByteArrayEncoding(new byte[128 * 1024]);
+               final ByteArrayEncoding byteEncoder = new ByteArrayEncoding(new byte[128 * 1024]);
 
-            JournalInternalRecord blastRecord = new JournalInternalRecord() {
+               JournalInternalRecord blastRecord = new JournalInternalRecord() {
 
-               @Override
-               public int getEncodeSize() {
-                  return byteEncoder.getEncodeSize();
+                  @Override
+                  public int getEncodeSize() {
+                     return byteEncoder.getEncodeSize();
+                  }
+
+                  public void encode(final ActiveMQBuffer buffer) {
+                     byteEncoder.encode(buffer);
+                  }
+               };
+
+               for (int i = 0; i < pages; i++) {
+                  appendRecord(blastRecord, false, false, null, null);
                }
-
-               public void encode(final ActiveMQBuffer buffer) {
-                  byteEncoder.encode(buffer);
-               }
-            };
-
-            for (int i = 0; i < pages; i++) {
-               appendRecord(blastRecord, false, false, null, null);
             }
-         }
-         catch (Exception e) {
-            ActiveMQJournalLogger.LOGGER.failedToPerfBlast(e);
-         }
-         finally {
-            lockAppend.unlock();
+            catch (Exception e) {
+               ActiveMQJournalLogger.LOGGER.failedToPerfBlast(e);
+            }
          }
       }
    }
@@ -2796,4 +2759,12 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          throw new RuntimeException(e);
       }
    }
+
+   /**
+    * For tests only
+    */
+   public int getCompactCount() {
+      return compactCount;
+   }
+
 }

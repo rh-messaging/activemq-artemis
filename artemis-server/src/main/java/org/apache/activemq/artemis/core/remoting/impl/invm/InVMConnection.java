@@ -100,6 +100,14 @@ public class InVMConnection implements Connection {
       // no op
    }
 
+   public boolean isWritable(ReadyListener listener) {
+      return true;
+   }
+
+   @Override
+   public void fireReady(boolean ready) {
+   }
+
    public RemotingConnection getProtocolConnection() {
       return this.protocolConnection;
    }
@@ -214,12 +222,6 @@ public class InVMConnection implements Connection {
 
    public int getBatchingBufferSize() {
       return -1;
-   }
-
-   public void addReadyListener(ReadyListener listener) {
-   }
-
-   public void removeReadyListener(ReadyListener listener) {
    }
 
    @Override
