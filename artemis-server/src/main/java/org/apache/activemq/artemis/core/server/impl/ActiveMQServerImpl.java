@@ -498,18 +498,19 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * Stops the server in a different thread.
     */
    public final void stopTheServer(final boolean criticalIOError) {
-      ExecutorService executor = Executors.newSingleThreadExecutor();
-      executor.submit(new Runnable() {
+      Thread thread = new Thread() {
          @Override
          public void run() {
             try {
-               stop(false, criticalIOError, false);
+               ActiveMQServerImpl.this.stop(false, criticalIOError, false);
             }
             catch (Exception e) {
                ActiveMQServerLogger.LOGGER.errorStoppingServer(e);
             }
          }
-      });
+      };
+
+      thread.start();
    }
 
    public final void stop() throws Exception {
@@ -707,7 +708,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             ActiveMQServerLogger.LOGGER.errorStoppingComponent(t, managementService.getClass().getName());
          }
       }
-
 
       pagingManager = null;
       securityStore = null;
@@ -1363,7 +1363,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          throw ActiveMQMessageBundle.BUNDLE.bindingNotDivert(name);
       }
 
-      postOffice.removeBinding(name, null);
+      postOffice.removeBinding(name, null, true);
    }
 
    public void deployBridge(BridgeConfiguration config) throws Exception {
@@ -1867,11 +1867,16 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       boolean failedAlready = false;
 
-      public synchronized void onIOException(Exception cause, String message, SequentialFile file) {
+      public synchronized void onIOException(Throwable cause, String message, SequentialFile file) {
          if (!failedAlready) {
             failedAlready = true;
 
-            ActiveMQServerLogger.LOGGER.ioCriticalIOError(message, file.toString(), cause);
+            if (file == null) {
+               ActiveMQServerLogger.LOGGER.ioCriticalIOError(message, "NULL", cause);
+            }
+            else {
+               ActiveMQServerLogger.LOGGER.ioCriticalIOError(message, file.toString(), cause);
+            }
 
             stopTheServer(true);
          }
@@ -1932,10 +1937,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * move any older data away and log a warning about it.
     */
    void moveServerData() {
-      File[] dataDirs = new File[]{configuration.getBindingsLocation(),
-                                   configuration.getJournalLocation(),
-                                   configuration.getPagingLocation(),
-                                   configuration.getLargeMessagesLocation()};
+      File[] dataDirs = new File[]{configuration.getBindingsLocation(), configuration.getJournalLocation(), configuration.getPagingLocation(), configuration.getLargeMessagesLocation()};
 
       boolean allEmpty = true;
       int lowestSuffixForMovedData = 1;
