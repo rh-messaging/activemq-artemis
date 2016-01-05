@@ -193,7 +193,7 @@ public class MessageReferenceImpl implements MessageReference {
       }
 
       if (other instanceof MessageReferenceImpl) {
-         MessageReference reference = (MessageReferenceImpl) other;
+         MessageReferenceImpl reference = (MessageReferenceImpl) other;
 
          if (this.getMessage().equals(reference.getMessage()))
             return true;

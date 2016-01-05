@@ -99,6 +99,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private volatile LargeMessageDeliverer largeMessageDeliverer = null;
 
+   @Override
    public String debug() {
       return toString() + "::Delivering " + this.deliveringRefs.size();
    }
@@ -115,7 +116,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private final StorageManager storageManager;
 
-   protected final java.util.Queue<MessageReference> deliveringRefs = new ConcurrentLinkedQueue<MessageReference>();
+   protected final java.util.Queue<MessageReference> deliveringRefs = new ConcurrentLinkedQueue<>();
 
    private final SessionCallback callback;
 
@@ -247,7 +248,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
    }
 
    public List<MessageReference> getDeliveringMessages() {
-      List<MessageReference> refs = new LinkedList<MessageReference>();
+      List<MessageReference> refs = new LinkedList<>();
       synchronized (lock) {
          List<MessageReference> refsOnConsumer = session.getInTXMessagesForConsumer(this.id);
          if (refsOnConsumer != null) {
@@ -276,7 +277,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          // should go back into the
          // queue for delivery later.
          // TCP-flow control has to be done first than everything else otherwise we may lose notifications
-         if (!callback.isWritable(this) || !started || transferring ) {
+         if (!callback.isWritable(this) || !started || transferring) {
             return HandleStatus.BUSY;
          }
 
@@ -508,7 +509,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          largeMessageDeliverer = null;
       }
 
-      LinkedList<MessageReference> refs = new LinkedList<MessageReference>();
+      LinkedList<MessageReference> refs = new LinkedList<>();
 
       synchronized (lock) {
          if (!deliveringRefs.isEmpty()) {
@@ -712,24 +713,63 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       }
    }
 
-   public void individualAcknowledge(final Transaction tx, final long messageID) throws Exception {
+   public void individualAcknowledge(Transaction tx,
+                                     final long messageID) throws Exception {
       if (browseOnly) {
          return;
       }
 
-      MessageReference ref = removeReferenceByID(messageID);
+      boolean startedTransaction = false;
 
-      if (ref == null) {
-         ActiveMQIllegalStateException ils = ActiveMQMessageBundle.BUNDLE.consumerNoReference(id, messageID, messageQueue.getName());
-         if (tx != null) {
-            tx.markAsRollbackOnly(ils);
-         }
-         throw ils;
+      if (tx == null) {
+         startedTransaction = true;
+         tx = new TransactionImpl(storageManager);
       }
 
-      ackReference(tx, ref);
+      try {
 
-      acks++;
+         MessageReference ref;
+         ref = removeReferenceByID(messageID);
+
+         if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
+            ActiveMQServerLogger.LOGGER.trace("ACKing ref " + ref + " on tx= " + tx + ", consumer=" + this);
+         }
+
+         if (ref == null) {
+            ActiveMQIllegalStateException ils = new ActiveMQIllegalStateException("Cannot find ref to ack " + messageID);
+            if (tx != null) {
+               tx.markAsRollbackOnly(ils);
+            }
+            throw ils;
+         }
+
+         ackReference(tx, ref);
+
+         if (startedTransaction) {
+            tx.commit();
+         }
+      }
+      catch (ActiveMQException e) {
+         if (startedTransaction) {
+            tx.rollback();
+         }
+         else {
+            tx.markAsRollbackOnly(e);
+         }
+         throw e;
+      }
+      catch (Throwable e) {
+         ActiveMQServerLogger.LOGGER.errorAckingMessage((Exception) e);
+         ActiveMQIllegalStateException hqex = new ActiveMQIllegalStateException(e.getMessage());
+         if (startedTransaction) {
+            tx.rollback();
+         }
+         else {
+            tx.markAsRollbackOnly(hqex);
+         }
+         throw hqex;
+      }
+
    }
 
    public void individualCancel(final long messageID, boolean failed) throws Exception {

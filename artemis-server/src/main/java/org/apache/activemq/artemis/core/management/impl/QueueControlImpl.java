@@ -322,7 +322,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
     * @param refs
     * @return
     */
-   private Map<String, Object>[] convertMessagesToMaps(List<MessageReference> refs) {
+   private Map<String, Object>[] convertMessagesToMaps(List<MessageReference> refs) throws ActiveMQException {
       Map<String, Object>[] messages = new Map[refs.size()];
       int i = 0;
       for (MessageReference ref : refs) {
@@ -332,7 +332,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
       return messages;
    }
 
-   public Map<String, Map<String, Object>[]> listDeliveringMessages() {
+   public Map<String, Map<String, Object>[]> listDeliveringMessages() throws ActiveMQException {
       checkStarted();
 
       clearIO();

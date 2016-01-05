@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.activemq.artemis.api.core.ActiveMQDuplicateIdException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
@@ -29,6 +30,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
+import org.apache.activemq.artemis.utils.ByteUtil;
 
 /**
  * A DuplicateIDCacheImpl
@@ -36,6 +38,8 @@ import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract
  * A fixed size rotating cache of last X duplicate ids.
  */
 public class DuplicateIDCacheImpl implements DuplicateIDCache {
+
+   private final boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
 
    // ByteHolder, position
    private final Map<ByteArrayHolder, Integer> cache = new ConcurrentHashMap<ByteArrayHolder, Integer>();
@@ -70,12 +74,27 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
    }
 
    public void load(final List<Pair<byte[], Long>> theIds) throws Exception {
-      int count = 0;
-
       long txID = -1;
 
+      // If we have more IDs than cache size, we shrink the first ones
+      int deleteCount = theIds.size() - cacheSize;
+      if (deleteCount < 0) {
+         deleteCount = 0;
+      }
+
       for (Pair<byte[], Long> id : theIds) {
-         if (count < cacheSize) {
+         if (deleteCount > 0) {
+            if (txID == -1) {
+               txID = storageManager.generateID();
+            }
+            if (isTrace) {
+               ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl::load deleting id=" + describeID(id.getA(), id.getB()));
+            }
+
+            storageManager.deleteDuplicateIDTransactional(txID, id.getB());
+            deleteCount--;
+         }
+         else {
             ByteArrayHolder bah = new ByteArrayHolder(id.getA());
 
             Pair<ByteArrayHolder, Long> pair = new Pair<ByteArrayHolder, Long>(bah, id.getB());
@@ -83,17 +102,11 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
             cache.put(bah, ids.size());
 
             ids.add(pair);
-         }
-         else {
-            // cache size has been reduced in config - delete the extra records
-            if (txID == -1) {
-               txID = storageManager.generateID();
+            if (isTrace) {
+               ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl::load loading id=" + describeID(id.getA(), id.getB()));
             }
-
-            storageManager.deleteDuplicateIDTransactional(txID, id.getB());
          }
 
-         count++;
       }
 
       if (txID != -1) {
@@ -109,6 +122,10 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
    }
 
    public void deleteFromCache(byte[] duplicateID) throws Exception {
+      if (isTrace) {
+         ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl::deleteFromCache deleting id=" + describeID(duplicateID, 0));
+      }
+
       ByteArrayHolder bah = new ByteArrayHolder(duplicateID);
 
       Integer posUsed = cache.remove(bah);
@@ -122,6 +139,9 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
             if (id.getA().equals(bah)) {
                id.setA(null);
                storageManager.deleteDuplicateID(id.getB());
+               if (isTrace) {
+                  ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::deleteFromCache deleting id=" + describeID(duplicateID, id.getB()));
+               }
                id.setB(null);
             }
          }
@@ -129,11 +149,50 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
 
    }
 
-   public boolean contains(final byte[] duplID) {
-      return cache.get(new ByteArrayHolder(duplID)) != null;
+   private String describeID(byte[] duplicateID, long id) {
+      if (id != 0) {
+         return ByteUtil.bytesToHex(duplicateID, 4) + ", simpleString=" + ByteUtil.toSimpleString(duplicateID);
+      }
+      else {
+         return ByteUtil.bytesToHex(duplicateID, 4) + ", simpleString=" + ByteUtil.toSimpleString(duplicateID) + ", id=" + id;
+      }
    }
 
-   public synchronized void addToCache(final byte[] duplID, final Transaction tx) throws Exception {
+   public boolean contains(final byte[] duplID) {
+      boolean contains = cache.get(new ByteArrayHolder(duplID)) != null;
+
+      if (contains) {
+         ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::constains found a duplicate " + describeID(duplID, 0));
+      }
+      return contains;
+   }
+
+   public void addToCache(final byte[] duplID) throws Exception {
+      addToCache(duplID, null, false);
+   }
+
+   @Override
+   public void addToCache(final byte[] duplID, final Transaction tx) throws Exception {
+      addToCache(duplID, tx, false);
+   }
+
+   @Override
+   public synchronized boolean atomicVerify(final byte[] duplID, final Transaction tx) throws Exception {
+
+      if (contains(duplID)) {
+         if (tx != null) {
+            tx.markAsRollbackOnly(new ActiveMQDuplicateIdException());
+         }
+         return false;
+      }
+      else {
+         addToCache(duplID, tx, true);
+         return true;
+      }
+
+   }
+
+   public synchronized void addToCache(final byte[] duplID, final Transaction tx, boolean instantAdd) throws Exception {
       long recordID = -1;
 
       if (tx == null) {
@@ -152,9 +211,17 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
             tx.setContainsPersistent();
          }
 
-         // For a tx, it's important that the entry is not added to the cache until commit
-         // since if the client fails then resends them tx we don't want it to get rejected
-         tx.addOperation(new AddDuplicateIDOperation(duplID, recordID));
+         if (instantAdd) {
+            addToCacheInMemory(duplID, recordID);
+         }
+         else {
+            if (isTrace) {
+               ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCache Adding duplicateID TX operation for " + describeID(duplID, recordID));
+            }
+            // For a tx, it's important that the entry is not added to the cache until commit
+            // since if the client fails then resends them tx we don't want it to get rejected
+            tx.addOperation(new AddDuplicateIDOperation(duplID, recordID));
+         }
       }
    }
 
@@ -163,6 +230,10 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
    }
 
    private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID) {
+      if (isTrace) {
+         ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCacheInMemory Adding " + describeID(duplID, recordID));
+      }
+
       ByteArrayHolder holder = new ByteArrayHolder(duplID);
 
       cache.put(holder, pos);
@@ -175,6 +246,10 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
 
          // The id here might be null if it was explicit deleted
          if (id.getA() != null) {
+            if (isTrace) {
+               ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCacheInMemory removing excess duplicateDetection " + describeID(id.getA().bytes, id.getB()));
+            }
+
             cache.remove(id.getA());
 
             // Record already exists - we delete the old one and add the new one
@@ -197,10 +272,18 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
          // -1 would mean null on this case
          id.setB(recordID >= 0 ? recordID : null);
 
+         if (isTrace) {
+            ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCacheInMemory replacing old duplicateID by " + describeID(id.getA().bytes, id.getB()));
+         }
+
          holder.pos = pos;
       }
       else {
          id = new Pair<ByteArrayHolder, Long>(holder, recordID >= 0 ? recordID : null);
+
+         if (isTrace) {
+            ActiveMQServerLogger.LOGGER.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCacheInMemory Adding new duplicateID " + describeID(id.getA().bytes, id.getB()));
+         }
 
          ids.add(id);
 
@@ -213,6 +296,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
    }
 
    public void clear() throws Exception {
+      ActiveMQServerLogger.LOGGER.debug("DuplicateIDCacheImpl(" + this.address + ")::clear removing duplicate ID data");
       synchronized (this) {
          if (ids.size() > 0) {
             long tx = storageManager.generateID();

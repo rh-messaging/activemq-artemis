@@ -41,8 +41,8 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.NotificationType;
-import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.filter.Filter;
+import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.message.impl.MessageImpl;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
@@ -446,7 +446,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       managementService.sendNotification(new Notification(uid, CoreNotificationType.BINDING_ADDED, props));
    }
 
-   public synchronized Binding removeBinding(final SimpleString uniqueName, Transaction tx) throws Exception {
+   public synchronized Binding removeBinding(final SimpleString uniqueName,
+                                             Transaction tx,
+                                             boolean deleteData) throws Exception {
 
       addressSettingsRepository.clearCache();
 
@@ -456,7 +458,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          throw new ActiveMQNonExistentQueueException();
       }
 
-      if (addressManager.getBindingsForRoutingAddress(binding.getAddress()) == null) {
+      if (deleteData && addressManager.getBindingsForRoutingAddress(binding.getAddress()) == null) {
          pagingManager.deletePageStore(binding.getAddress());
 
          managementService.unregisterAddress(binding.getAddress());
@@ -1121,28 +1123,19 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          DuplicateIDCache cacheBridge = getDuplicateIDCache(BRIDGE_CACHE_STR.concat(message.getAddress()));
 
-         if (cacheBridge.contains(bridgeDupBytes)) {
-            ActiveMQServerLogger.LOGGER.duplicateMessageDetectedThruBridge(message);
+         if (context.getTransaction() == null) {
+            context.setTransaction(new TransactionImpl(storageManager));
+            startedTX.set(true);
+         }
 
-            if (context.getTransaction() != null) {
-               context.getTransaction().markAsRollbackOnly(new ActiveMQDuplicateIdException());
-            }
-
+         if (!cacheBridge.atomicVerify(bridgeDupBytes, context.getTransaction())) {
+            context.getTransaction().rollback();
+            startedTX.set(false);
             message.decrementRefCount();
-
             return false;
          }
-         else {
-            if (context.getTransaction() == null) {
-               context.setTransaction(new TransactionImpl(storageManager));
-               startedTX.set(true);
-            }
-         }
-
-         cacheBridge.addToCache(bridgeDupBytes, context.getTransaction());
 
          message.removeProperty(MessageImpl.HDR_BRIDGE_DUPLICATE_ID);
-
       }
       else {
          // if used BridgeDuplicate, it's not going to use the regular duplicate
@@ -1181,7 +1174,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                startedTX.set(true);
             }
 
-            cache.addToCache(duplicateIDBytes, context.getTransaction());
+            cache.addToCache(duplicateIDBytes, context.getTransaction(), false);
          }
       }
 
