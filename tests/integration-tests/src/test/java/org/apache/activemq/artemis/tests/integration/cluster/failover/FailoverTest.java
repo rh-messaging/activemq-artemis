@@ -1390,7 +1390,6 @@ public class FailoverTest extends FailoverTestBase {
 
    @Test
    public void testCreateNewFactoryAfterFailover() throws Exception {
-      this.disableCheckThread();
       locator.setBlockOnNonDurableSend(true).setBlockOnDurableSend(true).setFailoverOnInitialConnection(true);
       sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
