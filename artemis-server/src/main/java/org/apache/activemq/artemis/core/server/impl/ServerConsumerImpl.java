@@ -944,7 +944,8 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       public boolean deliver() throws Exception {
          lockDelivery.readLock().lock();
          try {
-            if (largeMessage == null) {
+            LargeServerMessage currentLargeMessage = largeMessage;
+            if (currentLargeMessage == null) {
                return true;
             }
 
@@ -958,7 +959,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
             }
 
             if (!sentInitialPacket) {
-               context = largeMessage.getBodyEncoder();
+               context = currentLargeMessage.getBodyEncoder();
 
                sizePendingLargeMessage = context.getLargeBodySize();
 
@@ -966,7 +967,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
                sentInitialPacket = true;
 
-               int packetSize = callback.sendLargeMessage(largeMessage, ServerConsumerImpl.this, context.getLargeBodySize(), ref.getDeliveryCount());
+               int packetSize = callback.sendLargeMessage(currentLargeMessage, ServerConsumerImpl.this, context.getLargeBodySize(), ref.getDeliveryCount());
 
                if (availableCredits != null) {
                   availableCredits.addAndGet(-packetSize);
