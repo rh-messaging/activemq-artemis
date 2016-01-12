@@ -21,10 +21,8 @@ import java.lang.ref.WeakReference;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
-import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -176,52 +174,4 @@ public class SessionCloseOnGCTest extends ActiveMQTestBase {
       locator = null;
       ActiveMQTestBase.checkWeakReferences(fref);
    }
-
-   @Test
-   public void testCloseOneSessionOnGC() throws Exception {
-      ClientSessionFactoryImpl sf = (ClientSessionFactoryImpl) locator.createSessionFactory();
-
-      {
-         ClientSession session = sf.createSession(false, true, true);
-
-         Assert.assertEquals(1, server.getRemotingService().getConnections().size());
-      }
-
-      for (int i = 0; i < 1000 && sf.numSessions() != 0; i++) {
-         forceGC();
-      }
-
-      Assert.assertEquals(0, sf.numSessions());
-      Assert.assertEquals(1, sf.numConnections());
-      Assert.assertEquals(1, server.getRemotingService().getConnections().size());
-   }
-
-   @Test
-   public void testCloseSeveralSessionOnGC() throws Exception {
-      ClientSessionFactoryImpl sf = (ClientSessionFactoryImpl) locator.createSessionFactory();
-
-      ClientSession session1 = sf.createSession(false, true, true);
-      ClientSession session2 = sf.createSession(false, true, true);
-      ClientSession session3 = sf.createSession(false, true, true);
-
-      Assert.assertEquals(1, server.getRemotingService().getConnections().size());
-
-      WeakReference<ClientSession> ref1 = new WeakReference<ClientSession>(session1);
-      WeakReference<ClientSession> ref2 = new WeakReference<ClientSession>(session2);
-      WeakReference<ClientSession> ref3 = new WeakReference<ClientSession>(session3);
-
-      session1 = null;
-      session2 = null;
-      session3 = null;
-
-      ActiveMQTestBase.checkWeakReferences(ref1, ref2, ref3);
-
-      for (int i = 0; i < 1000 && sf.numSessions() != 0; i++) {
-         forceGC();
-      }
-      Assert.assertEquals("# sessions", 0, sf.numSessions());
-      Assert.assertEquals("# connections", 1, sf.numConnections());
-      Assert.assertEquals("# connections in remoting service", 1, server.getRemotingService().getConnections().size());
-   }
-
 }
