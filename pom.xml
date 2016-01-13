@@ -118,8 +118,8 @@
       -->
 
       <activemq-surefire-argline>-Djava.util.logging.manager=org.jboss.logmanager.LogManager
-         -Dlogging.configuration='file:${activemq.basedir}/tests/config/logging.properties'
-         -Djava.library.path='${activemq.basedir}/artemis-native/bin/' -Djgroups.bind_addr=localhost -Dorg.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory.localBindAddress=localhost
+         -Dlogging.configuration="file:${activemq.basedir}/tests/config/logging.properties"
+         -Djava.library.path="${activemq.basedir}/artemis-native/bin" -Djgroups.bind_addr=localhost -Dorg.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory.localBindAddress=localhost
          -Djava.net.preferIPv4Stack=true
       </activemq-surefire-argline>
       <activemq.basedir>${project.basedir}</activemq.basedir>
@@ -136,7 +136,7 @@
       <connection>scm:git:http://git-wip-us.apache.org/repos/asf/activemq-artemis.git</connection>
       <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/activemq-artemis.git</developerConnection>
       <url>https://fisheye6.atlassian.com/browse/~br=master/activemq-artemis-git</url>
-      <tag>1.2.0</tag>
+      <tag>1.0.0-SNAPSHOT</tag>
    </scm>
 
    <distributionManagement>
@@ -1096,6 +1096,14 @@
                   <exclude>**/node/**</exclude>
                   <exclude>**/node_modules/**</exclude>
                   <exclude>**/package.json</exclude>
+
+                  <!-- things from cmake on the native build -->
+                  <exclude>**/CMakeCache.txt</exclude>
+                  <exclude>**/CMakeFiles/</exclude>
+                  <exclude>**/Makefile</exclude>
+                  <exclude>**/cmake_install.cmake</exclude>
+                  <exclude>artemis-native/src/main/c/org_apache_activemq_artemis_jlibaio_LibaioContext.h</exclude>
+
                </excludes>
             </configuration>
             <executions>

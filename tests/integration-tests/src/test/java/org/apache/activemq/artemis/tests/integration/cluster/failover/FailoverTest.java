@@ -466,7 +466,7 @@ public class FailoverTest extends FailoverTestBase {
 
       crash(session);
 
-      Assert.assertTrue(latch.await(1, TimeUnit.SECONDS));
+      Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
 
    }
 
@@ -1393,7 +1393,6 @@ public class FailoverTest extends FailoverTestBase {
 
    @Test
    public void testCreateNewFactoryAfterFailover() throws Exception {
-      this.disableCheckThread();
       locator.setBlockOnNonDurableSend(true).setBlockOnDurableSend(true).setFailoverOnInitialConnection(true);
       sf = createSessionFactoryAndWaitForTopology(locator, 2);
 

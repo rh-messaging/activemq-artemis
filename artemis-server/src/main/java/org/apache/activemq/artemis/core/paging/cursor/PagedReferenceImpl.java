@@ -107,7 +107,12 @@ public class PagedReferenceImpl implements PagedReference {
    @Override
    public int getMessageMemoryEstimate() {
       if (messageEstimate < 0) {
-         messageEstimate = getMessage().getMemoryEstimate();
+         try {
+            messageEstimate = getMessage().getMemoryEstimate();
+         }
+         catch (Throwable e) {
+            ActiveMQServerLogger.LOGGER.warn(e.getMessage(), e);
+         }
       }
       return messageEstimate;
    }
@@ -120,12 +125,18 @@ public class PagedReferenceImpl implements PagedReference {
    @Override
    public long getScheduledDeliveryTime() {
       if (deliveryTime == null) {
-         ServerMessage msg = getMessage();
-         if (msg.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME)) {
-            deliveryTime = getMessage().getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
+         try {
+            ServerMessage msg = getMessage();
+            if (msg.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME)) {
+               deliveryTime = getMessage().getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
+            }
+            else {
+               deliveryTime = 0L;
+            }
          }
-         else {
-            deliveryTime = 0L;
+         catch (Throwable e) {
+            ActiveMQServerLogger.LOGGER.warn(e.getMessage(), e);
+            return 0L;
          }
       }
       return deliveryTime;

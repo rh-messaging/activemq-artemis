@@ -286,7 +286,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          // should go back into the
          // queue for delivery later.
          // TCP-flow control has to be done first than everything else otherwise we may lose notifications
-         if (!callback.isWritable(this) || !started || transferring ) {
+         if (!callback.isWritable(this) || !started || transferring) {
             return HandleStatus.BUSY;
          }
 
@@ -559,15 +559,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
    @Override
    public void setStarted(final boolean started) {
       synchronized (lock) {
-         // This is to make sure that the delivery process has finished any pending delivery
-         // otherwise a message may sneak in on the client while we are trying to stop the consumer
-         lockDelivery.writeLock().lock();
-         try {
-            this.started = browseOnly || started;
-         }
-         finally {
-            lockDelivery.writeLock().unlock();
-         }
+         this.started = browseOnly || started;
       }
 
       // Outside the lock
@@ -579,16 +571,18 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
    @Override
    public void setTransferring(final boolean transferring) {
       synchronized (lock) {
-         // This is to make sure that the delivery process has finished any pending delivery
-         // otherwise a message may sneak in on the client while we are trying to stop the consumer
-         lockDelivery.writeLock().lock();
-         try {
-            this.transferring = transferring;
-         }
-         finally {
-            lockDelivery.writeLock().unlock();
-         }
+         this.transferring = transferring;
       }
+
+      // This is to make sure that the delivery process has finished any pending delivery
+      // otherwise a message may sneak in on the client while we are trying to stop the consumer
+      try {
+         lockDelivery.writeLock().lock();
+      }
+      finally {
+         lockDelivery.writeLock().unlock();
+      }
+
 
       // Outside the lock
       if (transferring) {
@@ -734,24 +728,63 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
    }
 
    @Override
-   public void individualAcknowledge(final Transaction tx, final long messageID) throws Exception {
+   public void individualAcknowledge(Transaction tx,
+                                     final long messageID) throws Exception {
       if (browseOnly) {
          return;
       }
 
-      MessageReference ref = removeReferenceByID(messageID);
+      boolean startedTransaction = false;
 
-      if (ref == null) {
-         ActiveMQIllegalStateException ils = ActiveMQMessageBundle.BUNDLE.consumerNoReference(id, messageID, messageQueue.getName());
-         if (tx != null) {
-            tx.markAsRollbackOnly(ils);
-         }
-         throw ils;
+      if (tx == null) {
+         startedTransaction = true;
+         tx = new TransactionImpl(storageManager);
       }
 
-      ackReference(tx, ref);
+      try {
 
-      acks++;
+         MessageReference ref;
+         ref = removeReferenceByID(messageID);
+
+         if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
+            ActiveMQServerLogger.LOGGER.trace("ACKing ref " + ref + " on tx= " + tx + ", consumer=" + this);
+         }
+
+         if (ref == null) {
+            ActiveMQIllegalStateException ils = new ActiveMQIllegalStateException("Cannot find ref to ack " + messageID);
+            if (tx != null) {
+               tx.markAsRollbackOnly(ils);
+            }
+            throw ils;
+         }
+
+         ackReference(tx, ref);
+
+         if (startedTransaction) {
+            tx.commit();
+         }
+      }
+      catch (ActiveMQException e) {
+         if (startedTransaction) {
+            tx.rollback();
+         }
+         else {
+            tx.markAsRollbackOnly(e);
+         }
+         throw e;
+      }
+      catch (Throwable e) {
+         ActiveMQServerLogger.LOGGER.errorAckingMessage((Exception) e);
+         ActiveMQIllegalStateException hqex = new ActiveMQIllegalStateException(e.getMessage());
+         if (startedTransaction) {
+            tx.rollback();
+         }
+         else {
+            tx.markAsRollbackOnly(hqex);
+         }
+         throw hqex;
+      }
+
    }
 
    @Override
@@ -937,7 +970,8 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       public boolean deliver() throws Exception {
          lockDelivery.readLock().lock();
          try {
-            if (largeMessage == null) {
+            LargeServerMessage currentLargeMessage = largeMessage;
+            if (currentLargeMessage == null) {
                return true;
             }
 
@@ -951,7 +985,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
             }
 
             if (!sentInitialPacket) {
-               context = largeMessage.getBodyEncoder();
+               context = currentLargeMessage.getBodyEncoder();
 
                sizePendingLargeMessage = context.getLargeBodySize();
 
@@ -959,7 +993,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
                sentInitialPacket = true;
 
-               int packetSize = callback.sendLargeMessage(largeMessage, ServerConsumerImpl.this, context.getLargeBodySize(), ref.getDeliveryCount());
+               int packetSize = callback.sendLargeMessage(currentLargeMessage, ServerConsumerImpl.this, context.getLargeBodySize(), ref.getDeliveryCount());
 
                if (availableCredits != null) {
                   availableCredits.addAndGet(-packetSize);
@@ -998,7 +1032,14 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
                context.encode(bodyBuffer, localChunkLen);
 
-               byte[] body = bodyBuffer.toByteBuffer().array();
+               byte[] body;
+
+               if (bodyBuffer.toByteBuffer().hasArray()) {
+                  body = bodyBuffer.toByteBuffer().array();
+               }
+               else {
+                  body = new byte[0];
+               }
 
                int packetSize = callback.sendLargeMessageContinuation(ServerConsumerImpl.this, body, positionPendingLargeMessage + localChunkLen < sizePendingLargeMessage, false);
 

@@ -316,6 +316,21 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    @Override
+   public void markTXFailed(Throwable e) {
+      Transaction currentTX = this.tx;
+      if (currentTX != null) {
+         if (e instanceof ActiveMQException) {
+            currentTX.markAsRollbackOnly((ActiveMQException) e);
+         }
+         else {
+            ActiveMQException exception = new ActiveMQException(e.getMessage());
+            exception.initCause(e);
+            currentTX.markAsRollbackOnly(exception);
+         }
+      }
+   }
+
+   @Override
    public boolean removeConsumer(final long consumerID) throws Exception {
       return consumers.remove(consumerID) != null;
    }
@@ -608,11 +623,11 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public QueueQueryResult executeQueueQuery(final SimpleString name) throws Exception {
-      boolean autoCreateJmsQueues = name.toString().startsWith(ResourceNames.JMS_QUEUE) && server.getAddressSettingsRepository().getMatch(name.toString()).isAutoCreateJmsQueues();
-
       if (name == null) {
          throw ActiveMQMessageBundle.BUNDLE.queueNameIsNull();
       }
+
+      boolean autoCreateJmsQueues = name.toString().startsWith(ResourceNames.JMS_QUEUE) && server.getAddressSettingsRepository().getMatch(name.toString()).isAutoCreateJmsQueues();
 
       QueueQueryResult response;
 
@@ -643,11 +658,11 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public BindingQueryResult executeBindingQuery(final SimpleString address) throws Exception {
-      boolean autoCreateJmsQueues = address.toString().startsWith(ResourceNames.JMS_QUEUE) && server.getAddressSettingsRepository().getMatch(address.toString()).isAutoCreateJmsQueues();
-
       if (address == null) {
          throw ActiveMQMessageBundle.BUNDLE.addressIsNull();
       }
+
+      boolean autoCreateJmsQueues = address.toString().startsWith(ResourceNames.JMS_QUEUE) && server.getAddressSettingsRepository().getMatch(address.toString()).isAutoCreateJmsQueues();
 
       List<SimpleString> names = new ArrayList<>();
 
