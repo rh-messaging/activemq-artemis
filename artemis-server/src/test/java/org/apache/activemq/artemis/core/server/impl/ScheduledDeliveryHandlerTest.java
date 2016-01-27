@@ -569,7 +569,7 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public ActiveMQBuffer getBodyBufferCopy() {
+      public ActiveMQBuffer getBodyBufferDuplicate() {
          return null;
       }
 
