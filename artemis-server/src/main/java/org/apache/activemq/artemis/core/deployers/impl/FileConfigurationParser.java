@@ -54,6 +54,8 @@ import org.apache.activemq.artemis.core.config.ha.SharedStoreMasterPolicyConfigu
 import org.apache.activemq.artemis.core.config.ha.SharedStoreSlavePolicyConfiguration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.impl.Validators;
+import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
+import org.apache.activemq.artemis.core.config.storage.FileStorageConfiguration;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
@@ -212,6 +214,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       //if we aren already set then set to default
       if (config.getHAPolicyConfiguration() == null) {
          config.setHAPolicyConfiguration(new LiveOnlyPolicyConfiguration());
+      }
+
+      NodeList storeTypeNodes = e.getElementsByTagName("store");
+
+      if (storeTypeNodes.getLength() > 0) {
+         parseStoreConfiguration((Element) storeTypeNodes.item(0), config);
       }
 
       config.setResolveProtocols(getBoolean(e, "resolve-protocols", config.isResolveProtocols()));
@@ -401,6 +409,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          parseClusterConnectionConfiguration(ccNode, config);
       }
 
+      NodeList ccNodesURI = e.getElementsByTagName("cluster-connection-uri");
+
+      for (int i = 0; i < ccNodesURI.getLength(); i++) {
+         Element ccNode = (Element) ccNodesURI.item(i);
+
+         parseClusterConnectionConfigurationURI(ccNode, config);
+      }
+
       NodeList dvNodes = e.getElementsByTagName("divert");
 
       for (int i = 0; i < dvNodes.getLength(); i++) {
@@ -533,12 +549,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          NodeList list = node.getElementsByTagName(SECURITY_ELEMENT_NAME);
          for (int i = 0; i < list.getLength(); i++) {
             Pair<String, Set<Role>> securityItem = parseSecurityRoles(list.item(i));
-            config.getSecurityRoles().put(securityItem.getA(), securityItem.getB());
+            config.putSecurityRoles(securityItem.getA(), securityItem.getB());
          }
          list = node.getElementsByTagName(SECURITY_PLUGIN_ELEMENT_NAME);
          for (int i = 0; i < list.getLength(); i++) {
             Pair<SecuritySettingPlugin, Map<String, String>> securityItem = parseSecuritySettingPlugins(list.item(i));
-            config.addSecuritySettingPlugin(securityItem.getA().init(securityItem.getB()).populateSecurityRoles());
+            config.addSecuritySettingPlugin(securityItem.getA().init(securityItem.getB()));
          }
       }
    }
@@ -666,7 +682,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       return securityMatch;
    }
 
-   private Pair<SecuritySettingPlugin,Map<String,String>> parseSecuritySettingPlugins(Node item) {
+   private Pair<SecuritySettingPlugin, Map<String, String>> parseSecuritySettingPlugins(Node item) {
       final String clazz = item.getAttributes().getNamedItem("class-name").getNodeValue();
       final Map<String, String> settings = new HashMap<>();
       NodeList children = item.getChildNodes();
@@ -905,6 +921,28 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       HA_LIST.add("replication");
    }
 
+   private static final ArrayList<String> STORE_TYPE_LIST = new ArrayList<>();
+
+   static {
+      STORE_TYPE_LIST.add("database-store");
+      STORE_TYPE_LIST.add("file-store");
+   }
+
+   private void parseStoreConfiguration(final Element e, final Configuration mainConfig) {
+      for (String storeType : STORE_TYPE_LIST) {
+         NodeList storeNodeList = e.getElementsByTagName(storeType);
+         if (storeNodeList.getLength() > 0) {
+            Element storeNode = (Element) storeNodeList.item(0);
+            if (storeNode.getTagName().equals("database-store")) {
+               mainConfig.setStoreConfiguration(createDatabaseStoreConfig(storeNode));
+            }
+            else if (storeNode.getTagName().equals("file-store")) {
+               mainConfig.setStoreConfiguration(createFileStoreConfig(storeNode));
+            }
+         }
+      }
+   }
+
    private void parseHAPolicyConfiguration(final Element e, final Configuration mainConfig) {
       for (String haType : HA_LIST) {
          NodeList haNodeList = e.getElementsByTagName(haType);
@@ -1105,6 +1143,20 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       return null;
    }
 
+   private DatabaseStorageConfiguration createDatabaseStoreConfig(Element storeNode) {
+      NodeList databaseStoreNode = storeNode.getElementsByTagName("database-store");
+
+      DatabaseStorageConfiguration conf = new DatabaseStorageConfiguration();
+      conf.setBindingsTableName(getString(storeNode, "bindings-table-name", conf.getBindingsTableName(), Validators.NO_CHECK));
+      conf.setMessageTableName(getString(storeNode, "message-table-name", conf.getMessageTableName(), Validators.NO_CHECK));
+      conf.setJdbcConnectionUrl(getString(storeNode, "jdbc-connection-url", conf.getJdbcConnectionUrl(), Validators.NO_CHECK));
+      return conf;
+   }
+
+   private FileStorageConfiguration createFileStoreConfig(Element storeNode) {
+      return new FileStorageConfiguration();
+   }
+
    private void parseBroadcastGroupConfiguration(final Element e, final Configuration mainConfig) {
       String name = e.getAttribute("name");
 
@@ -1192,7 +1244,18 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       }
    }
 
-   private void parseClusterConnectionConfiguration(final Element e, final Configuration mainConfig) {
+   private void parseClusterConnectionConfigurationURI(final Element e, final Configuration mainConfig) throws Exception {
+      String name = e.getAttribute("name");
+
+
+      String uri = e.getAttribute("address");
+
+      ClusterConnectionConfiguration config = mainConfig.addClusterConfiguration(name, uri);
+
+      System.out.println("Adding cluster connection :: " + config);
+   }
+
+   private void parseClusterConnectionConfiguration(final Element e, final Configuration mainConfig) throws Exception {
       String name = e.getAttribute("name");
 
       String address = getString(e, "address", null, Validators.NOT_NULL_OR_EMPTY);

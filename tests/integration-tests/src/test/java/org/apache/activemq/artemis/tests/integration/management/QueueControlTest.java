@@ -17,6 +17,8 @@
 package org.apache.activemq.artemis.tests.integration.management;
 
 import javax.management.Notification;
+import javax.management.openmbean.CompositeData;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -45,6 +47,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.integration.jms.server.management.JMSUtil;
+import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.json.JSONArray;
 import org.apache.activemq.artemis.utils.json.JSONObject;
@@ -2016,6 +2019,57 @@ public class QueueControlTest extends ManagementTestBase {
       System.out.println("got notif: " + notif);
       assertEquals(CoreNotificationType.BINDING_REMOVED.toString(), notif.getType());
    }
+
+   @Test
+   public void testSendMessage() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, queue, null, false);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+
+      queueControl.sendMessage(new HashMap<String, String>(), Message.TEXT_TYPE, Base64.encodeBytes("theBody".getBytes()), "myID", true, "myUser", "myPassword");
+
+      Assert.assertEquals(1, getMessageCount(queueControl));
+
+      // the message IDs are set on the server
+      CompositeData[] browse = queueControl.browse(null);
+
+      Assert.assertEquals(1, browse.length);
+
+      byte[] body = (byte[]) browse[0].get("body");
+
+      Assert.assertNotNull(body);
+
+      Assert.assertEquals(new String(body), "theBody");
+   }
+
+   @Test
+   public void testSendNullMessage() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, queue, null, false);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+
+      queueControl.sendMessage(new HashMap<String, String>(), Message.TEXT_TYPE, null, "myID", true, "myUser", "myPassword");
+
+      Assert.assertEquals(1, getMessageCount(queueControl));
+
+      // the message IDs are set on the server
+      CompositeData[] browse = queueControl.browse(null);
+
+      Assert.assertEquals(1, browse.length);
+
+      byte[] body = (byte[]) browse[0].get("body");
+
+      Assert.assertNotNull(body);
+
+      Assert.assertEquals(new String(body), "");
+   }
+
 
    // Package protected ---------------------------------------------
 

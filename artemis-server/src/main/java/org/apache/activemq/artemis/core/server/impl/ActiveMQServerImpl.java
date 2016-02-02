@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.ConfigurationUtils;
 import org.apache.activemq.artemis.core.config.CoreQueueConfiguration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
+import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.filter.impl.FilterImpl;
@@ -70,6 +71,7 @@ import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSetting;
 import org.apache.activemq.artemis.core.persistence.config.PersistedRoles;
 import org.apache.activemq.artemis.core.persistence.impl.PageCountPending;
+import org.apache.activemq.artemis.core.persistence.impl.journal.JDBCJournalStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
@@ -102,6 +104,7 @@ import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.QueueFactory;
+import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.ServerSessionFactory;
 import org.apache.activemq.artemis.core.server.ServiceRegistry;
@@ -693,6 +696,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
 
       stopComponent(memoryManager);
+
+      for (SecuritySettingPlugin securitySettingPlugin : configuration.getSecuritySettingPlugins()) {
+         securitySettingPlugin.stop();
+      }
 
       if (threadPool != null && !threadPoolSupplied) {
          threadPool.shutdown();
@@ -1479,7 +1486,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     */
    private StorageManager createStorageManager() {
       if (configuration.isPersistenceEnabled()) {
-         return new JournalStorageManager(configuration, executorFactory, shutdownOnCriticalIO);
+         if (configuration.getStoreConfiguration() != null && configuration.getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.DATABASE) {
+            return new JDBCJournalStorageManager(configuration, executorFactory, shutdownOnCriticalIO);
+         }
+         // Default to File Based Storage Manager, (Legacy default configuration).
+         else {
+            return new JournalStorageManager(configuration, executorFactory, shutdownOnCriticalIO);
+         }
       }
       return new NullStorageManager();
    }
@@ -1624,7 +1637,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       remotingService = new RemotingServiceImpl(clusterManager, configuration, this, managementService, scheduledPool, protocolManagerFactories, executorFactory.getExecutor(), serviceRegistry);
 
-      messagingServerControl = managementService.registerServer(postOffice, storageManager, configuration, addressSettingsRepository, securityRepository, resourceManager, remotingService, this, queueFactory, scheduledPool, pagingManager, haPolicy.isBackup());
+      messagingServerControl = managementService.registerServer(postOffice, securityStore, storageManager, configuration, addressSettingsRepository, securityRepository, resourceManager, remotingService, this, queueFactory, scheduledPool, pagingManager, haPolicy.isBackup());
 
       // Address settings need to deployed initially, since they're require on paging manager.start()
 
@@ -1730,6 +1743,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private void deploySecurityFromConfiguration() {
       for (Map.Entry<String, Set<Role>> entry : configuration.getSecurityRoles().entrySet()) {
          securityRepository.addMatch(entry.getKey(), entry.getValue(), true);
+      }
+
+      for (SecuritySettingPlugin securitySettingPlugin : configuration.getSecuritySettingPlugins()) {
+         securitySettingPlugin.setSecurityRepository(securityRepository);
       }
    }
 

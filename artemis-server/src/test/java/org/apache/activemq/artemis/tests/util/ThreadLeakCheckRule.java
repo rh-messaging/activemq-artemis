@@ -40,6 +40,7 @@ public class ThreadLeakCheckRule extends ExternalResource {
     *
     * @throws if setup fails (which will disable {@code after}
     */
+   @Override
    protected void before() throws Throwable {
       // do nothing
 
@@ -50,6 +51,7 @@ public class ThreadLeakCheckRule extends ExternalResource {
    /**
     * Override to tear down your specific external resource.
     */
+   @Override
    protected void after() {
       try {
          if (enabled) {
@@ -167,6 +169,18 @@ public class ThreadLeakCheckRule extends ExternalResource {
       }
       else if (threadName.contains("threadDeathWatcher")) {
          //another netty thread
+         return true;
+      }
+      else if (threadName.contains("derby")) {
+         // The derby engine is initialized once, and lasts the lifetime of the VM
+         return true;
+      }
+      else if (threadName.contains("Timer")) {
+         // The timer threads in Derby and JDBC use daemon and shutdown once user threads exit.
+         return true;
+      }
+      else if (threadName.contains("hawtdispatch")) {
+         // Static workers used by MQTT client.
          return true;
       }
       else {

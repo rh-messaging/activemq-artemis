@@ -430,17 +430,7 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public void checkCopy() {
-
-      }
-
-      @Override
       public void bodyChanged() {
-
-      }
-
-      @Override
-      public void resetCopied() {
 
       }
 
@@ -580,7 +570,7 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public ActiveMQBuffer getBodyBufferCopy() {
+      public ActiveMQBuffer getBodyBufferDuplicate() {
          return null;
       }
 
@@ -949,12 +939,12 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public void addHead(MessageReference ref) {
+      public void addHead(MessageReference ref, boolean scheduling) {
 
       }
 
       @Override
-      public void addHead(List<MessageReference> refs) {
+      public void addHead(List<MessageReference> refs, boolean scheduling) {
          for (MessageReference ref : refs) {
             addFirst(ref);
          }

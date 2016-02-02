@@ -17,13 +17,13 @@
 
 package org.apache.activemq.artemis.utils;
 
+import java.net.URI;
+import java.util.Map;
+
 import org.apache.activemq.artemis.utils.uri.URIFactory;
 import org.apache.activemq.artemis.utils.uri.URISchema;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.URI;
-import java.util.Map;
 
 public class URIParserTest {
 
@@ -43,6 +43,29 @@ public class URIParserTest {
       Assert.assertEquals("some:guy", fruit.getUserInfo());
       Assert.assertEquals("green", fruit.getColor());
       Assert.assertEquals("something", fruit.getFluentName());
+
+   }
+
+   /**
+    * this is just a simple test to validate the model
+    *
+    * @throws Throwable
+    */
+   @Test
+   public void testGenerateWithEncoding() throws Throwable {
+      FruitParser parser = new FruitParser();
+      Fruit myFruit = new Fruit("tomato&fruit");
+      myFruit.setHost("somehost&uui");
+      // I'm trying to break things as you can see here with some weird encoding
+      myFruit.setFluentName("apples&bananas with &host=3344");
+      URI uri = parser.createSchema("fruit", myFruit);
+
+      Fruit newFruit = (Fruit)parser.newObject(uri, "something");
+
+      Assert.assertEquals(myFruit.getHost(), newFruit.getHost());
+      Assert.assertEquals(myFruit.getFluentName(), newFruit.getFluentName());
+
+
 
    }
 
@@ -96,10 +119,6 @@ public class URIParserTest {
          return setData(uri, new Fruit(getSchemaName()), query);
       }
 
-      @Override
-      protected URI internalNewURI(FruitBase bean) {
-         return null;
-      }
    }
 
    class FruitBaseSchema extends URISchema<FruitBase, String> {
@@ -112,11 +131,6 @@ public class URIParserTest {
       @Override
       public FruitBase internalNewObject(URI uri, Map<String, String> query, String fruitName) throws Exception {
          return setData(uri, new FruitBase(getSchemaName()), query);
-      }
-
-      @Override
-      protected URI internalNewURI(FruitBase bean) {
-         return null;
       }
    }
 

@@ -80,6 +80,7 @@ import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
+import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
@@ -387,6 +388,19 @@ public abstract class ActiveMQTestBase extends Assert {
       return createDefaultConfig(0, netty);
    }
 
+   protected Configuration createDefaultJDBCConfig() throws Exception {
+      Configuration configuration = createDefaultConfig(true);
+
+      DatabaseStorageConfiguration dbStorageConfiguration = new DatabaseStorageConfiguration();
+      dbStorageConfiguration.setJdbcConnectionUrl(getTestJDBCConnectionUrl());
+      dbStorageConfiguration.setBindingsTableName("BINDINGS");
+      dbStorageConfiguration.setMessageTableName("MESSAGES");
+
+      configuration.setStoreConfiguration(dbStorageConfiguration);
+
+      return configuration;
+   }
+
    protected Configuration createDefaultConfig(final int serverID, final boolean netty) throws Exception {
       ConfigurationImpl configuration = createBasicConfig(serverID).setJMXManagementEnabled(false).addAcceptorConfiguration(new TransportConfiguration(INVM_ACCEPTOR_FACTORY, generateInVMParams(serverID)));
 
@@ -485,13 +499,22 @@ public abstract class ActiveMQTestBase extends Assert {
       }
    }
 
+   private static int failedGCCalls = 0;
+
    public static void forceGC() {
+
+      if (failedGCCalls >= 10) {
+         log.info("ignoring forceGC call since it seems System.gc is not working anyways");
+         return;
+      }
       log.info("#test forceGC");
       CountDownLatch finalized = new CountDownLatch(1);
       WeakReference<DumbReference> dumbReference = new WeakReference<>(new DumbReference(finalized));
 
+      long timeout = System.currentTimeMillis() + 1000;
+
       // A loop that will wait GC, using the minimal time as possible
-      while (!(dumbReference.get() == null && finalized.getCount() == 0)) {
+      while (!(dumbReference.get() == null && finalized.getCount() == 0) && System.currentTimeMillis() < timeout) {
          System.gc();
          System.runFinalization();
          try {
@@ -500,7 +523,16 @@ public abstract class ActiveMQTestBase extends Assert {
          catch (InterruptedException e) {
          }
       }
-      log.info("#test forceGC Done");
+
+      if (dumbReference.get() != null) {
+         failedGCCalls++;
+         log.info("It seems that GC is disabled at your VM");
+      }
+      else {
+         // a success would reset the count
+         failedGCCalls = 0;
+      }
+      log.info("#test forceGC Done ");
    }
 
    public static void forceGC(final Reference<?> ref, final long timeout) {
@@ -747,6 +779,10 @@ public abstract class ActiveMQTestBase extends Assert {
     */
    protected final String getTestDir() {
       return testDir;
+   }
+
+   protected final String getTestJDBCConnectionUrl() {
+      return "jdbc:derby:" + getTestDir() + File.separator + "derby;create=true";
    }
 
    protected final File getTestDirfile() {
@@ -1033,7 +1069,7 @@ public abstract class ActiveMQTestBase extends Assert {
    }
 
    protected void waitForNotPaging(PagingStore store) throws InterruptedException {
-      long timeout = System.currentTimeMillis() + 10000;
+      long timeout = System.currentTimeMillis() + 20000;
       while (timeout > System.currentTimeMillis() && store.isPaging()) {
          Thread.sleep(100);
       }

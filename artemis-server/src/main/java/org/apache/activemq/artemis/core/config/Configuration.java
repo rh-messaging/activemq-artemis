@@ -271,8 +271,9 @@ public interface Configuration {
 
    /**
     * Add an acceptor to the config
+    *
     * @param name the name of the acceptor
-    * @param uri the URI of the acceptor
+    * @param uri  the URI of the acceptor
     * @return this
     * @throws Exception in case of Parsing errors on the URI
     */
@@ -367,6 +368,8 @@ public interface Configuration {
    Configuration setClusterConfigurations(final List<ClusterConnectionConfiguration> configs);
 
    Configuration addClusterConfiguration(final ClusterConnectionConfiguration config);
+
+   ClusterConnectionConfiguration addClusterConfiguration(String name, String uri) throws Exception;
 
    Configuration clearClusterConfigurations();
 
@@ -867,6 +870,8 @@ public interface Configuration {
     */
    Map<String, Set<Role>> getSecurityRoles();
 
+   Configuration putSecurityRoles(String match, Set<Role> roles);
+
    Configuration setConnectorServiceConfigurations(List<ConnectorServiceConfiguration> configs);
 
    Configuration addConnectorServiceConfiguration(ConnectorServiceConfiguration config);
@@ -908,6 +913,10 @@ public interface Configuration {
    * */
    Configuration setResolveProtocols(boolean resolveProtocols);
 
+   TransportConfiguration[] getTransportConfigurations(String ...connectorNames);
+
+   TransportConfiguration[] getTransportConfigurations(List<String> connectorNames);
+
    /*
    * @see #setResolveProtocols()
    * @return whether ActiveMQ Artemis should resolve and use any Protocols available on the classpath
@@ -935,4 +944,7 @@ public interface Configuration {
     */
    File getBrokerInstance();
 
+   StoreConfiguration getStoreConfiguration();
+
+   Configuration setStoreConfiguration(StoreConfiguration storeConfiguration);
 }

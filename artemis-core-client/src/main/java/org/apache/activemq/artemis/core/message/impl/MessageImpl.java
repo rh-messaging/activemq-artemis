@@ -21,12 +21,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import io.netty.buffer.ByteBuf;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQPropertyConversionException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.buffers.impl.ResetLimitWrappedActiveMQBuffer;
 import org.apache.activemq.artemis.core.message.BodyEncoder;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
@@ -83,10 +85,6 @@ public abstract class MessageImpl implements MessageInternal {
    private int endOfBodyPosition = -1;
 
    private int endOfMessagePosition;
-
-   private boolean copied = true;
-
-   private boolean bufferUsed;
 
    private UUID userID;
 
@@ -151,19 +149,20 @@ public abstract class MessageImpl implements MessageInternal {
       // with getEncodedBuffer(), otherwise can introduce race condition when delivering concurrently to
       // many subscriptions and bridging to other nodes in a cluster
       synchronized (other) {
-         bufferValid = other.bufferValid;
-         endOfBodyPosition = other.endOfBodyPosition;
+         bufferValid = false;
+         endOfBodyPosition = -1;
          endOfMessagePosition = other.endOfMessagePosition;
-         copied = other.copied;
 
          if (other.buffer != null) {
-            other.bufferUsed = true;
-
             // We need to copy the underlying buffer too, since the different messsages thereafter might have different
             // properties set on them, making their encoding different
-            buffer = other.buffer.copy(0, other.buffer.writerIndex());
+            buffer = other.buffer.copy(0, other.buffer.capacity());
 
             buffer.setIndex(other.buffer.readerIndex(), buffer.capacity());
+
+            bodyBuffer = new ResetLimitWrappedActiveMQBuffer(BODY_OFFSET, buffer, this);
+            bodyBuffer.readerIndex(BODY_OFFSET);
+            bodyBuffer.writerIndex(other.getBodyBuffer().writerIndex());
          }
       }
    }
@@ -274,14 +273,16 @@ public abstract class MessageImpl implements MessageInternal {
    }
 
    @Override
-   public synchronized ActiveMQBuffer getBodyBufferCopy() {
+   public synchronized ActiveMQBuffer getBodyBufferDuplicate() {
+
       // Must copy buffer before sending it
 
-      ActiveMQBuffer newBuffer = buffer.copy(0, buffer.capacity());
+      ByteBuf byteBuf = ChannelBufferWrapper.unwrap(getBodyBuffer().byteBuf());
+      byteBuf = byteBuf.duplicate();
+      byteBuf.readerIndex(getBodyBuffer().readerIndex());
+      byteBuf.writerIndex(getBodyBuffer().writerIndex());
 
-      newBuffer.setIndex(0, getEndOfBodyPosition());
-
-      return new ResetLimitWrappedActiveMQBuffer(BODY_OFFSET, newBuffer, null);
+      return new ResetLimitWrappedActiveMQBuffer(BODY_OFFSET, byteBuf, null);
    }
 
    @Override
@@ -438,31 +439,24 @@ public abstract class MessageImpl implements MessageInternal {
       this.buffer = buffer;
 
       decode();
+
+      // Setting up the BodyBuffer based on endOfBodyPosition set from decode
+      ResetLimitWrappedActiveMQBuffer tmpbodyBuffer = new ResetLimitWrappedActiveMQBuffer(BODY_OFFSET, buffer, null);
+      tmpbodyBuffer.readerIndex(BODY_OFFSET);
+      tmpbodyBuffer.writerIndex(endOfBodyPosition);
+      // only set this after the writer and reader is set,
+      // otherwise the buffer would be reset through the listener
+      tmpbodyBuffer.setMessage(this);
+      this.bodyBuffer = tmpbodyBuffer;
+
+
    }
 
    @Override
    public void bodyChanged() {
-      // If the body is changed we must copy the buffer otherwise can affect the previously sent message
-      // which might be in the Netty write queue
-      checkCopy();
-
       bufferValid = false;
 
       endOfBodyPosition = -1;
-   }
-
-   @Override
-   public synchronized void checkCopy() {
-      if (!copied) {
-         forceCopy();
-
-         copied = true;
-      }
-   }
-
-   @Override
-   public synchronized void resetCopied() {
-      copied = false;
    }
 
    @Override
@@ -473,7 +467,7 @@ public abstract class MessageImpl implements MessageInternal {
    @Override
    public int getEndOfBodyPosition() {
       if (endOfBodyPosition < 0) {
-         endOfBodyPosition = buffer.writerIndex();
+         endOfBodyPosition = getBodyBuffer().writerIndex();
       }
       return endOfBodyPosition;
    }
@@ -507,21 +501,7 @@ public abstract class MessageImpl implements MessageInternal {
    @Override
    public synchronized ActiveMQBuffer getEncodedBuffer() {
       ActiveMQBuffer buff = encodeToBuffer();
-
-      if (bufferUsed) {
-         ActiveMQBuffer copied = buff.copy(0, buff.capacity());
-
-         copied.setIndex(0, endOfMessagePosition);
-
-         return copied;
-      }
-      else {
-         buffer.setIndex(0, endOfMessagePosition);
-
-         bufferUsed = true;
-
-         return buffer;
-      }
+      return buff.duplicate();
    }
 
    @Override
@@ -935,9 +915,12 @@ public abstract class MessageImpl implements MessageInternal {
          buffer2 = new byte[bodyBuffer.writerIndex() - bodyBuffer.readerIndex()];
          bodyBuffer.readBytes(buffer2);
          bodyBuffer.readerIndex(readerIndex2);
+         return "ServerMessage@" + Integer.toHexString(System.identityHashCode(this)) + "[writerIndex=" + buffer.writerIndex() + ",capacity=" + buffer.capacity() + ",bodyStart=" + getEndOfBodyPosition() + " buffer=" + ByteUtil.bytesToHex(buffer1, 1) + ", bodyBuffer=" + ByteUtil.bytesToHex(buffer2, 1);
+      }
+      else {
+         return "ServerMessage@" + Integer.toHexString(System.identityHashCode(this)) + "[writerIndex=" + buffer.writerIndex() + ",capacity=" + buffer.capacity() + ",bodyStart=" + getEndOfBodyPosition() + " buffer=" + ByteUtil.bytesToHex(buffer1, 1);
       }
 
-      return "ServerMessage@" + Integer.toHexString(System.identityHashCode(this)) + "[" + ",bodyStart=" + getEndOfBodyPosition() + " buffer=" + ByteUtil.bytesToHex(buffer1, 1) + ", bodyBuffer=" + ByteUtil.bytesToHex(buffer2, 1);
    }
 
    @Override
@@ -962,17 +945,7 @@ public abstract class MessageImpl implements MessageInternal {
    // many queues - the first caller in this case will actually encode it
    private synchronized ActiveMQBuffer encodeToBuffer() {
       if (!bufferValid) {
-         if (bufferUsed) {
-            // Cannot use same buffer - must copy
-
-            forceCopy();
-         }
-
          int bodySize = getEndOfBodyPosition();
-
-         // Clebert: I've started sending this on encoding due to conversions between protocols
-         //          and making sure we are not losing the buffer start position between protocols
-         this.endOfBodyPosition = bodySize;
 
          // write it
          buffer.setInt(BUFFER_HEADER_SPACE, bodySize);
@@ -1032,8 +1005,6 @@ public abstract class MessageImpl implements MessageInternal {
       if (bodyBuffer != null) {
          bodyBuffer.setBuffer(buffer);
       }
-
-      bufferUsed = false;
    }
 
    // Inner classes -------------------------------------------------

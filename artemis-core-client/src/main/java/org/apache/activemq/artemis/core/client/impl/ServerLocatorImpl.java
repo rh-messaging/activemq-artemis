@@ -66,6 +66,7 @@ import org.apache.activemq.artemis.uri.ServerLocatorParser;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.apache.activemq.artemis.utils.uri.FluentPropertyBeanIntrospectorWithIgnores;
 
 /**
  * This is the implementation of {@link org.apache.activemq.artemis.api.core.client.ServerLocator} and all
@@ -75,6 +76,11 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    private enum STATE {
       INITIALIZED, CLOSED, CLOSING
+   }
+
+   static {
+      // this is not really a property, needs to be ignored
+      FluentPropertyBeanIntrospectorWithIgnores.addIgnore(ServerLocatorImpl.class.getName(), "setThreadPools");
    }
 
    private static final long serialVersionUID = -1615857864410205260L;
@@ -1622,6 +1628,14 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    @Override
    public void removeClusterTopologyListener(final ClusterTopologyListener listener) {
       topology.removeClusterTopologyListener(listener);
+   }
+
+   /**
+    * for tests only and not part of the public interface. Do not use it.
+    * @return
+    */
+   public TransportConfiguration[] getInitialConnectors() {
+      return initialConnectors;
    }
 
    private void addFactory(ClientSessionFactoryInternal factory) {

@@ -160,6 +160,9 @@ public final class ActiveMQDefaultConfiguration {
    // the name of the address that consumers bind to receive management notifications
    private static SimpleString DEFAULT_MANAGEMENT_NOTIFICATION_ADDRESS = new SimpleString("activemq.notifications");
 
+   // The default address used for clustering
+   private static String DEFAULT_CLUSTER_ADDRESS = "jms";
+
    // Cluster username. It applies to all cluster configurations.
    private static String DEFAULT_CLUSTER_USER = "ACTIVEMQ.CLUSTER.ADMIN.USER";
 
@@ -396,6 +399,18 @@ public final class ActiveMQDefaultConfiguration {
    // How often the reaper will be run to check for timed out group bindings. Only valid for LOCAL handlers
    private static long DEFAULT_GROUPING_HANDLER_REAPER_PERIOD = 30000;
 
+   // Which store type to use, options are FILE or DATABASE, FILE is default.
+   private static String DEFAULT_STORE_TYPE = "FILE";
+
+   // Default database url.  Derby database is used by default.
+   private static String DEFAULT_DATABASE_URL = "jdbc:derby:data/derby;create=true";
+
+   // Default message table name, used with Database storage type
+   private static String DEFAULT_MESSAGE_TABLE_NAME = "MESSAGES";
+
+   // Default bindings table name, used with Database storage type
+   private static String DEFAULT_BINDINGS_TABLE_NAME = "BINDINGS";
+
    /**
     * If true then the ActiveMQ Artemis Server will make use of any Protocol Managers that are in available on the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can inject their own Protocol Managers.
     */
@@ -485,6 +500,11 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static SimpleString getDefaultManagementNotificationAddress() {
       return DEFAULT_MANAGEMENT_NOTIFICATION_ADDRESS;
+   }
+
+   /** The default Cluster address for the Cluster connection*/
+   public static String getDefaultClusterAddress() {
+      return DEFAULT_CLUSTER_ADDRESS;
    }
 
    /**
@@ -1052,4 +1072,28 @@ public final class ActiveMQDefaultConfiguration {
       return DEFAULT_GROUPING_HANDLER_REAPER_PERIOD;
    }
 
+   /**
+    * The default storage type.  Options are FILE and DATABASE.
+    */
+   public static String getDefaultStoreType() {
+      return DEFAULT_STORE_TYPE;
+   }
+
+   /**
+    * The default database URL, used with DATABASE store type.
+    */
+   public static String getDefaultDatabaseUrl() {
+      return DEFAULT_DATABASE_URL;
+   }
+
+   /**
+    * The default Message Journal table name, used with DATABASE store.
+    */
+   public static String getDefaultMessageTableName() {
+      return DEFAULT_MESSAGE_TABLE_NAME;
+   }
+
+   public static String getDefaultBindingsTableName() {
+      return DEFAULT_BINDINGS_TABLE_NAME;
+   }
 }

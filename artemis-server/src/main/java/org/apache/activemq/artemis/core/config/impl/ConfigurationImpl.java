@@ -22,9 +22,12 @@ import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -44,9 +47,11 @@ import org.apache.activemq.artemis.core.config.ConnectorServiceConfiguration;
 import org.apache.activemq.artemis.core.config.CoreQueueConfiguration;
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicaPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicatedPolicyConfiguration;
 import org.apache.activemq.artemis.core.security.Role;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
 import org.apache.activemq.artemis.core.server.group.impl.GroupingHandlerConfiguration;
@@ -89,7 +94,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    protected String jmxDomain = ActiveMQDefaultConfiguration.getDefaultJmxDomain();
 
-   protected boolean jmxUseBrokerName =  ActiveMQDefaultConfiguration.isDefaultJMXUseBrokerName();
+   protected boolean jmxUseBrokerName = ActiveMQDefaultConfiguration.isDefaultJMXUseBrokerName();
 
    protected long connectionTTLOverride = ActiveMQDefaultConfiguration.getDefaultConnectionTtlOverride();
 
@@ -227,6 +232,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private long journalLockAcquisitionTimeout = ActiveMQDefaultConfiguration.getDefaultJournalLockAcquisitionTimeout();
 
    private HAPolicyConfiguration haPolicyConfiguration;
+
+   private StoreConfiguration storeConfiguration;
 
    /**
     * Parent folder for all data folders.
@@ -407,7 +414,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
       return this;
    }
 
-
    @Override
    public ConfigurationImpl addConnectorConfiguration(final String name, final String uri) throws Exception {
 
@@ -421,7 +427,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
       return this;
    }
-
 
    @Override
    public ConfigurationImpl clearConnectorConfigurations() {
@@ -488,6 +493,13 @@ public class ConfigurationImpl implements Configuration, Serializable {
    public ConfigurationImpl addClusterConfiguration(final ClusterConnectionConfiguration config) {
       clusterConfigurations.add(config);
       return this;
+   }
+
+   @Override
+   public ClusterConnectionConfiguration addClusterConfiguration(String name, String uri) throws Exception {
+      ClusterConnectionConfiguration newConfig = new ClusterConnectionConfiguration(new URI(uri)).setName(name);
+      clusterConfigurations.add(newConfig);
+      return newConfig;
    }
 
    @Override
@@ -683,7 +695,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
       this.journalPoolFiles = poolSize;
       return this;
    }
-
 
    @Override
    public int getJournalMinFiles() {
@@ -1144,6 +1155,12 @@ public class ConfigurationImpl implements Configuration, Serializable {
    }
 
    @Override
+   public ConfigurationImpl putSecurityRoles(String match, Set<Role> roles) {
+      securitySettings.put(match, roles);
+      return this;
+   }
+
+   @Override
    public ConfigurationImpl setSecurityRoles(final Map<String, Set<Role>> securitySettings) {
       this.securitySettings = securitySettings;
       return this;
@@ -1274,8 +1291,43 @@ public class ConfigurationImpl implements Configuration, Serializable {
    }
 
    @Override
+   public TransportConfiguration[] getTransportConfigurations(String... connectorNames) {
+      return getTransportConfigurations(Arrays.asList(connectorNames));
+   }
+
+   @Override
+   public TransportConfiguration[] getTransportConfigurations(final List<String> connectorNames) {
+      TransportConfiguration[] tcConfigs = (TransportConfiguration[]) Array.newInstance(TransportConfiguration.class, connectorNames.size());
+      int count = 0;
+      for (String connectorName : connectorNames) {
+         TransportConfiguration connector = getConnectorConfigurations().get(connectorName);
+
+         if (connector == null) {
+            ActiveMQServerLogger.LOGGER.warn("bridgeNoConnector(connectorName)");
+
+            return null;
+         }
+
+         tcConfigs[count++] = connector;
+      }
+
+      return tcConfigs;
+   }
+
+   @Override
    public boolean isResolveProtocols() {
       return resolveProtocols;
+   }
+
+   @Override
+   public StoreConfiguration getStoreConfiguration() {
+      return storeConfiguration;
+   }
+
+   @Override
+   public ConfigurationImpl setStoreConfiguration(StoreConfiguration storeConfiguration) {
+      this.storeConfiguration = storeConfiguration;
+      return this;
    }
 
    @Override
