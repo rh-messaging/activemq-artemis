@@ -453,11 +453,9 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    }
 
    public void resetToInitialConnectors() {
-      synchronized (topologyArrayGuard) {
-         receivedTopology = false;
-         topologyArray = null;
-         topology.clear();
-      }
+      receivedTopology = false;
+      topologyArray = null;
+      topology.clear();
    }
 
    /*
@@ -786,32 +784,11 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
          } while (retry);
       }
 
-      synchronized (topologyArrayGuard) {
-         // We always wait for the topology, as the server
-         // will send a single element if not cluster
-         // so clients can know the id of the server they are connected to
-         final long timeout = System.currentTimeMillis() + callTimeout;
-         while (!isClosed() && !receivedTopology && timeout > System.currentTimeMillis()) {
-            // Now wait for the topology
-            try {
-               topologyArrayGuard.wait(1000);
-            }
-            catch (InterruptedException e) {
-               throw new ActiveMQInterruptedException(e);
-            }
-         }
-
-         // We are waiting for the topology here,
-         // however to avoid a race where the connection is closed (and receivedtopology set to true)
-         // between the wait and this timeout here, we redo the check for timeout.
-         // if this becomes false there's no big deal and we will just ignore the issue
-         // notice that we can't add more locks here otherwise there wouldn't be able to avoid a deadlock
-         final boolean hasTimedOut = timeout > System.currentTimeMillis();
-         if (!hasTimedOut && !receivedTopology) {
-            if (factory != null)
-               factory.cleanup();
-            throw ActiveMQClientMessageBundle.BUNDLE.connectionTimedOutOnReceiveTopology(discoveryGroup);
-         }
+      // ATM topology is never != null. Checking here just to be consistent with
+      // how the sendSubscription happens.
+      // in case this ever changes.
+      if (topology != null && !factory.waitForTopology(callTimeout, TimeUnit.MILLISECONDS)) {
+         throw ActiveMQClientMessageBundle.BUNDLE.connectionTimedOutOnReceiveTopology(discoveryGroup);
       }
 
       addFactory(factory);
@@ -1361,19 +1338,17 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
          updateArraysAndPairs();
       }
       else {
-         synchronized (topologyArrayGuard) {
-            if (topology.isEmpty()) {
+         if (topology.isEmpty()) {
+            // Resetting the topology to its original condition as it was brand new
+            receivedTopology = false;
+            topologyArray = null;
+         }
+         else {
+            updateArraysAndPairs();
+
+            if (topology.nodes() == 1 && topology.getMember(this.nodeID) != null) {
                // Resetting the topology to its original condition as it was brand new
                receivedTopology = false;
-               topologyArray = null;
-            }
-            else {
-               updateArraysAndPairs();
-
-               if (topology.nodes() == 1 && topology.getMember(this.nodeID) != null) {
-                  // Resetting the topology to its original condition as it was brand new
-                  receivedTopology = false;
-               }
             }
          }
       }
@@ -1410,11 +1385,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       updateArraysAndPairs();
 
       if (last) {
-         synchronized (topologyArrayGuard) {
-            receivedTopology = true;
-            // Notify if waiting on getting topology
-            topologyArrayGuard.notifyAll();
-         }
+         receivedTopology = true;
       }
    }
 
@@ -1500,12 +1471,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       }
 
       if (!clusterConnection && isEmpty) {
-         // Go back to using the broadcast or static list
-         synchronized (topologyArrayGuard) {
-            receivedTopology = false;
-
-            topologyArray = null;
-         }
+         receivedTopology = false;
+         topologyArray = null;
       }
    }
 
@@ -1529,6 +1496,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    /**
     * for tests only and not part of the public interface. Do not use it.
+    *
     * @return
     */
    public TransportConfiguration[] getInitialConnectors() {
@@ -1788,7 +1756,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       return buffer.toString();
    }
 
-   private void feedInterceptors(final List<Interceptor> interceptors,  final String interceptorList) {
+   private void feedInterceptors(final List<Interceptor> interceptors, final String interceptorList) {
       interceptors.clear();
 
       if (interceptorList == null || interceptorList.trim().equals("")) {
