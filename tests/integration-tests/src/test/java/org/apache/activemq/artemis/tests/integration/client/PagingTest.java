@@ -790,10 +790,10 @@ public class PagingTest extends ActiveMQTestBase {
       producer.close();
       session.start();
 
-      long timeout = System.currentTimeMillis() + 10000;
+      long timeout = System.currentTimeMillis() + 30000;
 
       // I want the buffer full to make sure there are pending messages on the server's side
-      while (System.currentTimeMillis() < timeout && cons.getBufferSize() < 1000 && cons2.getBufferSize() < 1000) {
+      while (System.currentTimeMillis() < timeout && (cons.getBufferSize() < 1000 || cons2.getBufferSize() < 1000)) {
          System.out.println("cons1 buffer = " + cons.getBufferSize() + ", cons2 buffer = " + cons2.getBufferSize());
          Thread.sleep(100);
       }
@@ -3551,7 +3551,7 @@ public class PagingTest extends ActiveMQTestBase {
 
       for (int i = 0; i < NUMBER_MESSAGES_BEFORE_PAGING; i++) {
          ClientMessage msg = session.createMessage(true);
-         msg.getBodyBuffer().writeBytes(new byte[512]);
+         msg.getBodyBuffer().writeBytes(new byte[896]);
 
          producerA.send(msg);
          producerB.send(msg);
@@ -3564,7 +3564,7 @@ public class PagingTest extends ActiveMQTestBase {
 
       for (int i = 0; i < NUMBER_MESSAGES_BEFORE_PAGING; i++) {
          ClientMessage msg = session.createMessage(true);
-         msg.getBodyBuffer().writeBytes(new byte[512]);
+         msg.getBodyBuffer().writeBytes(new byte[896]);
 
          producerA.send(msg);
          producerB.send(msg);
@@ -3577,7 +3577,7 @@ public class PagingTest extends ActiveMQTestBase {
 
       for (int i = NUMBER_MESSAGES_BEFORE_PAGING * 2; i < NUMBER_OF_MESSAGES; i++) {
          ClientMessage msg = session.createMessage(true);
-         msg.getBodyBuffer().writeBytes(new byte[512]);
+         msg.getBodyBuffer().writeBytes(new byte[896]);
 
          producerA.send(msg);
          producerB.send(msg);
