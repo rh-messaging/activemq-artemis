@@ -517,7 +517,12 @@ public class JournalStorageManager implements StorageManager {
          SequentialFile seqFile = largeMessagesFactory.createSequentialFile(fileName);
          if (!seqFile.exists())
             continue;
-         replicator.syncLargeMessageFile(seqFile, size, id);
+         if (replicator != null) {
+            replicator.syncLargeMessageFile(seqFile, size, id);
+         }
+         else {
+            throw ActiveMQMessageBundle.BUNDLE.replicatorIsNull();
+         }
       }
    }
 
