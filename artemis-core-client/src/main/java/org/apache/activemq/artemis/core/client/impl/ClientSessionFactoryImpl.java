@@ -487,6 +487,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          // this is just a debug, since an interrupt is an expected event (in case of a shutdown)
          ActiveMQClientLogger.LOGGER.debug(e1.getMessage(), e1);
       }
+      catch (Throwable t) {
+         //for anything else just close so clients are un blocked
+         close();
+         throw t;
+      }
    }
 
    /**
@@ -869,18 +874,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             //we check if we can actually connect.
             // we do it here as to receive the reply connection has to be not null
+            //make sure to reset this.connection == null
             if (connection != null && liveNodeID != null) {
                try {
                   if (!clientProtocolManager.checkForFailover(liveNodeID)) {
                      connection.destroy();
-                     connection = null;
+                     this.connection = null;
+                     return null;
                   }
                }
                catch (ActiveMQException e) {
-                  if (connection != null) {
-                     connection.destroy();
-                     connection = null;
-                  }
+                  connection.destroy();
+                  this.connection = null;
+                  return null;
                }
             }
 

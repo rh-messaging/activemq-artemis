@@ -114,6 +114,8 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private ServiceRegistry serviceRegistry;
 
+   private boolean paused = false;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -188,6 +190,8 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       if (started) {
          return;
       }
+
+      paused = false;
 
       // The remoting service maintains it's own thread pool for handling remoting traffic
       // If OIO each connection will have it's own thread
@@ -300,6 +304,8 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       if (!started)
          return;
 
+      paused = true;
+
       for (Acceptor acceptor : acceptors.values()) {
          try {
             acceptor.pause();
@@ -308,6 +314,11 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             ActiveMQServerLogger.LOGGER.errorStoppingAcceptor(acceptor.getName());
          }
       }
+   }
+
+   @Override
+   public synchronized boolean isPaused() {
+      return paused;
    }
 
    public synchronized void freeze(final String scaleDownNodeID, final CoreRemotingConnection connectionToKeepOpen) {
