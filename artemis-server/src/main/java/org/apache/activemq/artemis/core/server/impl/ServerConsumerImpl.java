@@ -335,10 +335,10 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
                ref.getQueue().acknowledge(ref);
             }
 
-         }
+            if (message.isLargeMessage() && this.supportLargeMessage) {
+               largeMessageDeliverer = new LargeMessageDeliverer((LargeServerMessage) message, ref);
+            }
 
-         if (message.isLargeMessage() && this.supportLargeMessage) {
-            largeMessageDeliverer = new LargeMessageDeliverer((LargeServerMessage) message, ref);
          }
 
          lockDelivery.readLock().lock();
@@ -543,7 +543,13 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    public void setStarted(final boolean started) {
       synchronized (lock) {
-         this.started = browseOnly || started;
+         lockDelivery.writeLock().lock();
+         try {
+            this.started = browseOnly || started;
+         }
+         finally {
+            lockDelivery.writeLock().unlock();
+         }
       }
 
       // Outside the lock
@@ -944,6 +950,10 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       public boolean deliver() throws Exception {
          lockDelivery.readLock().lock();
          try {
+            if (!started) {
+               return false;
+            }
+
             LargeServerMessage currentLargeMessage = largeMessage;
             if (currentLargeMessage == null) {
                return true;

@@ -610,6 +610,10 @@ public class ActiveMQConnection extends ActiveMQConnectionForContextImpl impleme
       }
    }
 
+   public ClientSessionFactory getSessionFactory() {
+      return sessionFactory;
+   }
+
    // Private --------------------------------------------------------------------------------------
 
    /**
