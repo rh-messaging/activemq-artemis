@@ -334,7 +334,7 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
    // Private -------------------------------------------------------
 
-   private synchronized void validateFile() throws ActiveMQException {
+   public synchronized void validateFile() throws ActiveMQException {
       try {
          if (file == null) {
             if (messageID <= 0) {
