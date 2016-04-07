@@ -330,7 +330,7 @@ public class PagingStoreImpl implements PagingStore {
          flushExecutors();
 
          if (currentPage != null) {
-            currentPage.close();
+            currentPage.close(false);
             currentPage = null;
          }
       }
@@ -371,7 +371,7 @@ public class PagingStoreImpl implements PagingStore {
 
                currentPageId = 0;
                if (currentPage != null) {
-                  currentPage.close();
+                  currentPage.close(false);
                }
                currentPage = null;
 
@@ -563,7 +563,7 @@ public class PagingStoreImpl implements PagingStore {
                }
 
                returnPage = currentPage;
-               returnPage.close();
+               returnPage.close(false);
                currentPage = null;
 
                // The current page is empty... which means we reached the end of the pages
@@ -983,7 +983,7 @@ public class PagingStoreImpl implements PagingStore {
          int tmpCurrentPageId = currentPageId + 1;
 
          if (currentPage != null) {
-            currentPage.close();
+            currentPage.close(true);
          }
 
          currentPage = createPage(tmpCurrentPageId);
