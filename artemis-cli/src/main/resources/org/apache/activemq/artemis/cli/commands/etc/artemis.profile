@@ -23,12 +23,12 @@ ARTEMIS_INSTANCE='${artemis.instance}'
 
 
 # Java Opts
-JAVA_ARGS="-XX:+UseParallelGC -XX:+AggressiveOpts -XX:+UseFastAccessorMethods -Xms512M -Xmx1024M -Xbootclasspath/a:$ARTEMIS_HOME/lib/${logmanager} -Djava.security.auth.login.config=$ARTEMIS_INSTANCE/etc/login.config ${java-opts} -Dartemis.instance=$ARTEMIS_INSTANCE"
+JAVA_ARGS="-XX:+UseParallelGC -XX:+AggressiveOpts -XX:+UseFastAccessorMethods -Xms512M -Xmx1024M"
 
 #
 # There might be options that you only want to enable on specifc commands, like setting a JMX port
 # See https://issues.apache.org/jira/browse/ARTEMIS-318
-#if [ "$1" == "run" ]; then
+#if [ "$1" = "run" ]; then
 #  JAVA_ARGS="$JAVA_ARGS -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=1099 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
 #fi
 

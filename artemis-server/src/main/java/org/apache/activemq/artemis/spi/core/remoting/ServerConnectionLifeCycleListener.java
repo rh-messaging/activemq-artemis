@@ -16,15 +16,7 @@
  */
 package org.apache.activemq.artemis.spi.core.remoting;
 
-public interface ServerConnectionLifeCycleListener extends ConnectionLifeCycleListener {
+import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 
-   /**
-    * This method is used both by client connector creation and server connection creation through acceptors.
-    * the acceptor will be set to null on client operations
-    *
-    * @param acceptor   The acceptor here will be always null on a client connection created event.
-    * @param connection the connection that has been created
-    * @param protocol   the protocol to use
-    */
-   void connectionCreated(Acceptor acceptor, Connection connection, String protocol);
+public interface ServerConnectionLifeCycleListener extends BaseConnectionLifeCycleListener<ProtocolManager> {
 }

@@ -82,7 +82,7 @@ public class LDAPLoginModule implements LoginModule {
    private Set<RolePrincipal> groups = new HashSet<>();
 
    @Override
-   public void initialize(Subject subject, CallbackHandler callbackHandler, Map sharedState, Map options) {
+   public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
       this.subject = subject;
       this.handler = callbackHandler;
 
@@ -246,9 +246,7 @@ public class LDAPLoginModule implements LoginModule {
                }
             }
             catch (URISyntaxException e) {
-               if (context != null) {
-                  close(context);
-               }
+               close(context);
                FailedLoginException ex = new FailedLoginException("Error parsing absolute name as URI.");
                ex.initCause(e);
                throw ex;
@@ -289,9 +287,7 @@ public class LDAPLoginModule implements LoginModule {
          throw ex;
       }
       catch (NamingException e) {
-         if (context != null) {
-            close(context);
-         }
+         close(context);
          FailedLoginException ex = new FailedLoginException("Error contacting LDAP");
          ex.initCause(e);
          throw ex;

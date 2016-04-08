@@ -81,7 +81,7 @@ public class SSLSupport {
    private static TrustManager[] loadTrustManager(final String trustStoreProvider,
                                                   final String trustStorePath,
                                                   final String trustStorePassword) throws Exception {
-      if (trustStorePath == null && (trustStoreProvider == null || (trustStoreProvider != null && !"PKCS11".equals(trustStoreProvider.toUpperCase())))) {
+      if (trustStorePath == null && (trustStoreProvider == null || !"PKCS11".equals(trustStoreProvider.toUpperCase()))) {
          return null;
       }
       else {
@@ -103,7 +103,7 @@ public class SSLSupport {
             URL keystoreURL = SSLSupport.validateStoreURL(keystorePath);
             in = keystoreURL.openStream();
          }
-         ks.load(in, keystorePassword.toCharArray());
+         ks.load(in, keystorePassword == null ? null : keystorePassword.toCharArray());
       }
       finally {
          if (in != null) {
@@ -120,13 +120,13 @@ public class SSLSupport {
    private static KeyManager[] loadKeyManagers(final String keyStoreProvider,
                                                final String keystorePath,
                                                final String keystorePassword) throws Exception {
-      if (keystorePath == null && (keyStoreProvider == null || (keyStoreProvider != null && !"PKCS11".equals(keyStoreProvider.toUpperCase())))) {
+      if (keystorePath == null && (keyStoreProvider == null || !"PKCS11".equals(keyStoreProvider.toUpperCase()))) {
          return null;
       }
       else {
          KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
          KeyStore ks = SSLSupport.loadKeystore(keyStoreProvider, keystorePath, keystorePassword);
-         kmf.init(ks, keystorePassword.toCharArray());
+         kmf.init(ks, keystorePassword == null ? null : keystorePassword.toCharArray());
 
          return kmf.getKeyManagers();
       }

@@ -20,6 +20,8 @@ import java.util.concurrent.Executor;
 
 import io.netty.buffer.ByteBuf;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.server.MessageReference;
+import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.qpid.proton.amqp.Binary;
@@ -92,6 +94,11 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    }
 
    @Override
+   public void browserFinished(ServerConsumer consumer) {
+
+   }
+
+   @Override
    public void init(AMQPSessionContext protonSession, SASLResult saslResult) throws Exception {
 
       this.protonSession = protonSession;
@@ -112,7 +119,12 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
                                                         false, // boolean autoCommitAcks,
                                                         false, // boolean preAcknowledge,
                                                         true, //boolean xa,
-                                                        (String) null, this, null, true);
+                                                        (String) null, this, true);
+   }
+
+   @Override
+   public void afterDelivery() throws Exception {
+
    }
 
    @Override
@@ -204,7 +216,12 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
 
    @Override
    public Binary getCurrentTXID() {
-      return new Binary(ByteUtil.longToBytes(serverSession.getCurrentTransaction().getID()));
+      Transaction tx = serverSession.getCurrentTransaction();
+      if (tx == null) {
+         tx = serverSession.newTransaction();
+         serverSession.resetTX(tx);
+      }
+      return new Binary(ByteUtil.longToBytes(tx.getID()));
    }
 
    @Override
@@ -214,38 +231,57 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
 
    @Override
    public void commitCurrentTX() throws Exception {
-      serverSession.commit();
+      recoverContext();
+      try {
+         serverSession.commit();
+      }
+      finally {
+         resetContext();
+      }
    }
 
    @Override
    public void rollbackCurrentTX() throws Exception {
-      serverSession.rollback(false);
+      recoverContext();
+      try {
+         serverSession.rollback(false);
+      }
+      finally {
+         resetContext();
+      }
    }
 
    @Override
    public void close() throws Exception {
-      closeExecutor.execute(new Runnable() {
-         @Override
-         public void run() {
-            try {
-               serverSession.close(false);
-            }
-            catch (Exception e) {
-               // TODO Logger
-               e.printStackTrace();
-            }
-         }
-      });
+      recoverContext();
+      try {
+         serverSession.close(false);
+      }
+      finally {
+         resetContext();
+      }
    }
 
    @Override
    public void ack(Object brokerConsumer, Object message) throws Exception {
-      ((ServerConsumer) brokerConsumer).individualAcknowledge(null, ((ServerMessage) message).getMessageID());
+      recoverContext();
+      try {
+         ((ServerConsumer) brokerConsumer).individualAcknowledge(null, ((ServerMessage) message).getMessageID());
+      }
+      finally {
+         resetContext();
+      }
    }
 
    @Override
    public void cancel(Object brokerConsumer, Object message, boolean updateCounts) throws Exception {
-      ((ServerConsumer) brokerConsumer).individualCancel(((ServerMessage) message).getMessageID(), updateCounts);
+      recoverContext();
+      try {
+         ((ServerConsumer) brokerConsumer).individualCancel(((ServerMessage) message).getMessageID(), updateCounts);
+      }
+      finally {
+         resetContext();
+      }
    }
 
    @Override
@@ -267,25 +303,40 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
          message.setAddress(new SimpleString(address));
       }
 
-      serverSession.send(message, false);
+      recoverContext();
 
-      manager.getServer().getStorageManager().afterCompleteOperations(new IOCallback() {
-         @Override
-         public void done() {
-            synchronized (connection.getLock()) {
-               delivery.settle();
-               connection.flush();
-            }
-         }
+      try {
+         serverSession.send(message, false);
 
-         @Override
-         public void onError(int errorCode, String errorMessage) {
-            synchronized (connection.getLock()) {
-               receiver.setCondition(new ErrorCondition(AmqpError.ILLEGAL_STATE, errorCode + ":" + errorMessage));
-               connection.flush();
+         manager.getServer().getStorageManager().afterCompleteOperations(new IOCallback() {
+            @Override
+            public void done() {
+               synchronized (connection.getLock()) {
+                  delivery.settle();
+                  connection.flush();
+               }
             }
-         }
-      });
+
+            @Override
+            public void onError(int errorCode, String errorMessage) {
+               synchronized (connection.getLock()) {
+                  receiver.setCondition(new ErrorCondition(AmqpError.ILLEGAL_STATE, errorCode + ":" + errorMessage));
+                  connection.flush();
+               }
+            }
+         });
+      }
+      finally {
+         resetContext();
+      }
+   }
+
+   private void resetContext() {
+      manager.getServer().getStorageManager().setContext(null);
+   }
+
+   private void recoverContext() {
+      manager.getServer().getStorageManager().setContext(serverSession.getSessionContext());
    }
 
    @Override
@@ -293,11 +344,16 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    }
 
    @Override
+   public boolean updateDeliveryCountAfterCancel(ServerConsumer consumer, MessageReference ref, boolean failed) {
+      return false;
+   }
+
+   @Override
    public void sendProducerCreditsFailMessage(int credits, SimpleString address) {
    }
 
    @Override
-   public int sendMessage(ServerMessage message, ServerConsumer consumer, int deliveryCount) {
+   public int sendMessage(MessageReference ref, ServerMessage message, ServerConsumer consumer, int deliveryCount) {
 
       ProtonPlugSender plugSender = (ProtonPlugSender) consumer.getProtocolContext();
 
@@ -315,7 +371,7 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    }
 
    @Override
-   public int sendLargeMessage(ServerMessage message, ServerConsumer consumer, long bodySize, int deliveryCount) {
+   public int sendLargeMessage(MessageReference ref, ServerMessage message, ServerConsumer consumer, long bodySize, int deliveryCount) {
       return 0;
    }
 

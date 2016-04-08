@@ -124,7 +124,7 @@ public class ActiveMQActivationSpec extends ConnectionFactoryProperties implemen
 
    private String jndiParams = null;
 
-   private Hashtable parsedJndiParams;
+   private Hashtable<String, String> parsedJndiParams;
 
    /* use local tx instead of XA*/
    private Boolean localTx;
@@ -678,6 +678,11 @@ public class ActiveMQActivationSpec extends ConnectionFactoryProperties implemen
       }
 
       this.setupInterval = setupInterval;
+   }
+
+   // ARTEMIS-399 - support both "clientId" and "clientID" activation config properties
+   public void setClientId(String clientId) {
+      setClientID(clientId);
    }
 
    /**

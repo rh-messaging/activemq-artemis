@@ -869,9 +869,7 @@ public class QueueImpl implements Queue {
 
    @Override
    public synchronized MessageReference removeReferenceWithID(final long id1) throws Exception {
-      LinkedListIterator<MessageReference> iterator = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iterator = iterator()) {
 
          MessageReference removed = null;
 
@@ -895,16 +893,11 @@ public class QueueImpl implements Queue {
 
          return removed;
       }
-      finally {
-         iterator.close();
-      }
    }
 
    @Override
    public synchronized MessageReference getReference(final long id1) throws ActiveMQException {
-      LinkedListIterator<MessageReference> iterator = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iterator = iterator()) {
 
          while (iterator.hasNext()) {
             MessageReference ref = iterator.next();
@@ -915,9 +908,6 @@ public class QueueImpl implements Queue {
          }
 
          return null;
-      }
-      finally {
-         iterator.close();
       }
    }
 
@@ -1084,7 +1074,7 @@ public class QueueImpl implements Queue {
          if (isTrace) {
             ActiveMQServerLogger.LOGGER.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName());
          }
-         move(expiryAddress, ref, true, false);
+         move(null, expiryAddress, ref, true, false);
       }
       else {
          if (isTrace) {
@@ -1181,8 +1171,7 @@ public class QueueImpl implements Queue {
 
       Transaction tx = new TransactionImpl(storageManager);
 
-      LinkedListIterator<MessageReference> iter = iterator();
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
 
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1256,9 +1245,6 @@ public class QueueImpl implements Queue {
 
          return count;
       }
-      finally {
-         iter.close();
-      }
    }
 
    @Override
@@ -1276,8 +1262,7 @@ public class QueueImpl implements Queue {
 
       Transaction tx = new TransactionImpl(storageManager);
 
-      LinkedListIterator<MessageReference> iter = iterator();
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
 
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1299,9 +1284,6 @@ public class QueueImpl implements Queue {
          tx.commit();
 
          return deleted;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -1358,8 +1340,7 @@ public class QueueImpl implements Queue {
          return false;
       }
 
-      LinkedListIterator<MessageReference> iter = iterator();
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
 
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1372,9 +1353,6 @@ public class QueueImpl implements Queue {
             }
          }
          return false;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -1390,9 +1368,8 @@ public class QueueImpl implements Queue {
       Transaction tx = new TransactionImpl(storageManager);
 
       int count = 0;
-      LinkedListIterator<MessageReference> iter = iterator();
 
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
 
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1408,9 +1385,6 @@ public class QueueImpl implements Queue {
          tx.commit();
 
          return count;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -1482,14 +1456,12 @@ public class QueueImpl implements Queue {
 
    @Override
    public synchronized boolean sendMessageToDeadLetterAddress(final long messageID) throws Exception {
-      LinkedListIterator<MessageReference> iter = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
             if (ref.getMessage().getMessageID() == messageID) {
                incDelivering();
-               sendToDeadLetterAddress(ref);
+               sendToDeadLetterAddress(null, ref);
                iter.remove();
                refRemoved(ref);
                return true;
@@ -1497,31 +1469,24 @@ public class QueueImpl implements Queue {
          }
          return false;
       }
-      finally {
-         iter.close();
-      }
    }
 
    @Override
    public synchronized int sendMessagesToDeadLetterAddress(Filter filter) throws Exception {
       int count = 0;
-      LinkedListIterator<MessageReference> iter = iterator();
 
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
             if (filter == null || filter.match(ref.getMessage())) {
                incDelivering();
-               sendToDeadLetterAddress(ref);
+               sendToDeadLetterAddress(null, ref);
                iter.remove();
                refRemoved(ref);
                count++;
             }
          }
          return count;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -1534,9 +1499,7 @@ public class QueueImpl implements Queue {
    public synchronized boolean moveReference(final long messageID,
                                              final SimpleString toAddress,
                                              final boolean rejectDuplicate) throws Exception {
-      LinkedListIterator<MessageReference> iter = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
             if (ref.getMessage().getMessageID() == messageID) {
@@ -1544,7 +1507,7 @@ public class QueueImpl implements Queue {
                refRemoved(ref);
                incDelivering();
                try {
-                  move(toAddress, ref, false, rejectDuplicate);
+                  move(null, toAddress, ref, false, rejectDuplicate);
                }
                catch (Exception e) {
                   decDelivering();
@@ -1554,9 +1517,6 @@ public class QueueImpl implements Queue {
             }
          }
          return false;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -1651,9 +1611,7 @@ public class QueueImpl implements Queue {
 
    @Override
    public synchronized boolean changeReferencePriority(final long messageID, final byte newPriority) throws Exception {
-      LinkedListIterator<MessageReference> iter = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
 
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1668,16 +1626,11 @@ public class QueueImpl implements Queue {
 
          return false;
       }
-      finally {
-         iter.close();
-      }
    }
 
    @Override
    public synchronized int changeReferencesPriority(final Filter filter, final byte newPriority) throws Exception {
-      LinkedListIterator<MessageReference> iter = iterator();
-
-      try {
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
          int count = 0;
          while (iter.hasNext()) {
             MessageReference ref = iter.next();
@@ -1690,9 +1643,6 @@ public class QueueImpl implements Queue {
             }
          }
          return count;
-      }
-      finally {
-         iter.close();
       }
    }
 
@@ -2170,7 +2120,7 @@ public class QueueImpl implements Queue {
          if (isTrace) {
             ActiveMQServerLogger.LOGGER.trace("Sending reference " + reference + " to DLA = " + addressSettings.getDeadLetterAddress() + " since ref.getDeliveryCount=" + reference.getDeliveryCount() + "and maxDeliveries=" + maxDeliveries + " from queue=" + this.getName());
          }
-         sendToDeadLetterAddress(reference, addressSettings.getDeadLetterAddress());
+         sendToDeadLetterAddress(null, reference, addressSettings.getDeadLetterAddress());
 
          return false;
       }
@@ -2387,36 +2337,45 @@ public class QueueImpl implements Queue {
       }
    }
 
-   public void sendToDeadLetterAddress(final MessageReference ref) throws Exception {
-      sendToDeadLetterAddress(ref, addressSettingsRepository.getMatch(address.toString()).getDeadLetterAddress());
+   public void sendToDeadLetterAddress(final Transaction tx, final MessageReference ref) throws Exception {
+      sendToDeadLetterAddress(tx, ref, addressSettingsRepository.getMatch(address.toString()).getDeadLetterAddress());
    }
 
-   private void sendToDeadLetterAddress(final MessageReference ref,
+   private void sendToDeadLetterAddress(final Transaction tx, final MessageReference ref,
                                         final SimpleString deadLetterAddress) throws Exception {
       if (deadLetterAddress != null) {
          Bindings bindingList = postOffice.getBindingsForAddress(deadLetterAddress);
 
          if (bindingList.getBindings().isEmpty()) {
             ActiveMQServerLogger.LOGGER.messageExceededMaxDelivery(ref, deadLetterAddress);
-            acknowledge(ref);
+            ref.acknowledge(tx);
          }
          else {
             ActiveMQServerLogger.LOGGER.messageExceededMaxDeliverySendtoDLA(ref, deadLetterAddress, name);
-            move(deadLetterAddress, ref, false, false);
+            move(tx, deadLetterAddress, ref, false, false);
          }
       }
       else {
          ActiveMQServerLogger.LOGGER.messageExceededMaxDeliveryNoDLA(name);
 
-         acknowledge(ref);
+         ref.acknowledge(tx);
       }
    }
 
-   private void move(final SimpleString address,
+   private void move(final Transaction originalTX,
+                     final SimpleString address,
                      final MessageReference ref,
                      final boolean expiry,
                      final boolean rejectDuplicate) throws Exception {
-      Transaction tx = new TransactionImpl(storageManager);
+      Transaction tx;
+
+      if (originalTX != null) {
+         tx = originalTX;
+      }
+      else {
+         // if no TX we create a new one to commit at the end
+         tx = new TransactionImpl(storageManager);
+      }
 
       ServerMessage copyMessage = makeCopy(ref, expiry);
 
@@ -2426,7 +2385,9 @@ public class QueueImpl implements Queue {
 
       acknowledge(tx, ref);
 
-      tx.commit();
+      if (originalTX == null) {
+         tx.commit();
+      }
    }
 
    /*
@@ -2603,7 +2564,9 @@ public class QueueImpl implements Queue {
          message = null;
       }
 
-      boolean durableRef = message != null && message.isDurable() && queue.durable;
+      if (message == null) return;
+
+      boolean durableRef = message.isDurable() && queue.durable;
 
       try {
          message.decrementRefCount();
@@ -2978,6 +2941,8 @@ public class QueueImpl implements Queue {
                      }
                   }
 
+                  serverConsumer.fireSlowConsumer();
+
                   if (connection != null) {
                      ActiveMQServerLogger.LOGGER.slowConsumerDetected(serverConsumer.getSessionID(), serverConsumer.getID(), getName().toString(), connection.getRemoteAddress(), threshold, consumerRate);
                      if (policy.equals(SlowConsumerPolicy.KILL)) {
@@ -2991,12 +2956,10 @@ public class QueueImpl implements Queue {
 
                         props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, address);
 
-                        if (connection != null) {
-                           props.putSimpleStringProperty(ManagementHelper.HDR_REMOTE_ADDRESS, SimpleString.toSimpleString(connection.getRemoteAddress()));
+                        props.putSimpleStringProperty(ManagementHelper.HDR_REMOTE_ADDRESS, SimpleString.toSimpleString(connection.getRemoteAddress()));
 
-                           if (connection.getID() != null) {
-                              props.putSimpleStringProperty(ManagementHelper.HDR_CONNECTION_NAME, SimpleString.toSimpleString(connection.getID().toString()));
-                           }
+                        if (connection.getID() != null) {
+                           props.putSimpleStringProperty(ManagementHelper.HDR_CONNECTION_NAME, SimpleString.toSimpleString(connection.getID().toString()));
                         }
 
                         props.putLongProperty(ManagementHelper.HDR_CONSUMER_NAME, serverConsumer.getID());

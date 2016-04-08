@@ -105,6 +105,27 @@ public interface ActiveMQServer extends ActiveMQComponent {
 
    void unregisterActivateCallback(ActivateCallback callback);
 
+   /**
+    * Register a listener to detect problems during activation
+    *
+    * @param listener @see org.apache.activemq.artemis.core.server.ActivationFailureListener
+    */
+   void registerActivationFailureListener(ActivationFailureListener listener);
+
+   /**
+    * Remove a previously registered failure listener
+    *
+    * @param listener
+    */
+   void unregisterActivationFailureListener(ActivationFailureListener listener);
+
+   /**
+    * Alert activation failure listeners of a failure.
+    *
+    * @param e the exception that caused the activation failure
+    */
+   void callActivationFailureListeners(Exception e);
+
    void checkQueueCreationLimit(String username) throws Exception;
 
    ServerSession createSession(String name,
@@ -118,7 +139,6 @@ public interface ActiveMQServer extends ActiveMQComponent {
                                boolean xa,
                                String defaultAddress,
                                SessionCallback callback,
-                               ServerSessionFactory sessionFactory,
                                boolean autoCreateQueues) throws Exception;
 
    SecurityStore getSecurityStore();
@@ -221,6 +241,10 @@ public interface ActiveMQServer extends ActiveMQComponent {
                      boolean temporary) throws Exception;
 
    Queue locateQueue(SimpleString queueName);
+
+   BindingQueryResult bindingQuery(SimpleString address) throws Exception;
+
+   QueueQueryResult queueQuery(SimpleString name) throws Exception;
 
    void destroyQueue(SimpleString queueName) throws Exception;
 

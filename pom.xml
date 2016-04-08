@@ -80,8 +80,9 @@
       <ActiveMQ-Version>
          ${project.version}(${activemq.version.incrementingVersion})
       </ActiveMQ-Version>
-      <resteasy.version>3.0.13.Final</resteasy.version>
-      <proton.version>0.10</proton.version>
+      <resteasy.version>3.0.16.Final</resteasy.version>
+      <proton.version>0.12.0</proton.version>
+      <activemq5-version>5.12.0</activemq5-version>
       <fuse.mqtt.client.version>1.10</fuse.mqtt.client.version>
       <apache.derby.version>10.11.1.1</apache.derby.version>
       <skipUnitTests>true</skipUnitTests>
@@ -208,6 +209,7 @@
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
             <version>${apache.derby.version}</version>
+            <scope>test</scope>
          </dependency>
          <dependency>
             <groupId>org.eclipse.paho</groupId>
@@ -298,13 +300,13 @@
          <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>3.1.4.GA</version>
+            <version>3.3.0.Final</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
-            <version>1.5.4.Final</version>
+            <version>2.0.3.Final</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
@@ -331,7 +333,7 @@
          <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
-            <version>1.0-SP4</version>
+            <version>1.2</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
@@ -361,7 +363,7 @@
          <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
-            <version>3.6.6.Final</version>
+            <version>3.6.8.Final</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
@@ -398,7 +400,7 @@
          <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
-            <version>5.12.0</version>
+            <version>${activemq5-version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>

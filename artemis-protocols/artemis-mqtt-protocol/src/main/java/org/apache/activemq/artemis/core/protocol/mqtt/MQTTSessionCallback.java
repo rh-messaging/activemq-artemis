@@ -18,6 +18,7 @@
 package org.apache.activemq.artemis.core.protocol.mqtt;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
@@ -41,7 +42,7 @@ public class MQTTSessionCallback implements SessionCallback {
    }
 
    @Override
-   public int sendMessage(ServerMessage message, ServerConsumer consumer, int deliveryCount) {
+   public int sendMessage(MessageReference referece, ServerMessage message, ServerConsumer consumer, int deliveryCount) {
       try {
          session.getMqttPublishManager().sendMessage(message, consumer, deliveryCount);
       }
@@ -53,6 +54,12 @@ public class MQTTSessionCallback implements SessionCallback {
    }
 
    @Override
+   public boolean updateDeliveryCountAfterCancel(ServerConsumer consumer, MessageReference ref, boolean failed) {
+      return false;
+   }
+
+
+   @Override
    public int sendLargeMessageContinuation(ServerConsumer consumerID,
                                            byte[] body,
                                            boolean continues,
@@ -62,8 +69,8 @@ public class MQTTSessionCallback implements SessionCallback {
    }
 
    @Override
-   public int sendLargeMessage(ServerMessage message, ServerConsumer consumer, long bodySize, int deliveryCount) {
-      return sendMessage(message, consumer, deliveryCount);
+   public int sendLargeMessage(MessageReference reference, ServerMessage message, ServerConsumer consumer, long bodySize, int deliveryCount) {
+      return sendMessage(reference, message, consumer, deliveryCount);
    }
 
    @Override
@@ -74,6 +81,17 @@ public class MQTTSessionCallback implements SessionCallback {
       catch (Exception e) {
          log.error(e.getMessage());
       }
+   }
+
+   @Override
+   public void afterDelivery() throws Exception {
+
+   }
+
+
+   @Override
+   public void browserFinished(ServerConsumer consumer) {
+
    }
 
    @Override

@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -110,9 +110,10 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
 
    private volatile boolean enabled;
 
+   private final AtomicBoolean writable = new AtomicBoolean(true);
+
    private final Object replicationLock = new Object();
 
-   private final ReusableLatch latch = new ReusableLatch();
    private final Queue<OperationContext> pendingTokens = new ConcurrentLinkedQueue<>();
 
    private final ExecutorFactory executorFactory;
@@ -271,10 +272,11 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
       if (replicatingChannel != null) {
          replicatingChannel.close();
          replicatingChannel.getConnection().getTransportConnection().fireReady(true);
-         latch.setCount(0);
       }
 
       synchronized (replicationLock) {
+         writable.set(true);
+         replicationLock.notifyAll();
          clearReplicationTokens();
       }
 
@@ -328,7 +330,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
       return sendReplicatePacket(packet, true);
    }
 
-   private OperationContext sendReplicatePacket(final Packet packet, boolean lineUp) {
+   private synchronized OperationContext sendReplicatePacket(final Packet packet, boolean lineUp) {
       if (!enabled)
          return null;
       boolean runItNow = false;
@@ -342,10 +344,15 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
          if (enabled) {
             pendingTokens.add(repliToken);
             if (!replicatingChannel.getConnection().isWritable(this)) {
-               latch.countUp();
                try {
+                  writable.set(false);
                   //don't wait for ever as this may hang tests etc, we've probably been closed anyway
-                  latch.await(5, TimeUnit.SECONDS);
+                  long now = System.currentTimeMillis();
+                  long deadline = now + 5000;
+                  while (!writable.get() && now < deadline)  {
+                     replicationLock.wait(deadline - now);
+                     now = System.currentTimeMillis();
+                  }
                }
                catch (InterruptedException e) {
                   throw new ActiveMQInterruptedException(e);
@@ -370,7 +377,10 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
 
    @Override
    public void readyForWriting() {
-      latch.countDown();
+      synchronized (replicationLock) {
+         writable.set(true);
+         replicationLock.notifyAll();
+      }
    }
 
    /**
@@ -508,42 +518,33 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
          file.open();
       }
       try {
-         final FileInputStream fis = new FileInputStream(file.getJavaFile());
-         try {
-            final FileChannel channel = fis.getChannel();
-            try {
-               // We can afford having a single buffer here for this entire loop
-               // because sendReplicatePacket will encode the packet as a NettyBuffer
-               // through ActiveMQBuffer class leaving this buffer free to be reused on the next copy
-               final ByteBuffer buffer = ByteBuffer.allocate(1 << 17); // 1 << 17 == 131072 == 128 * 1024
-               while (true) {
-                  buffer.clear();
-                  final int bytesRead = channel.read(buffer);
-                  int toSend = bytesRead;
-                  if (bytesRead > 0) {
-                     if (bytesRead >= maxBytesToSend) {
-                        toSend = (int) maxBytesToSend;
-                        maxBytesToSend = 0;
-                     }
-                     else {
-                        maxBytesToSend = maxBytesToSend - bytesRead;
-                     }
-                     buffer.limit(toSend);
+         try (final FileInputStream fis = new FileInputStream(file.getJavaFile());
+              final FileChannel channel = fis.getChannel()) {
+            // We can afford having a single buffer here for this entire loop
+            // because sendReplicatePacket will encode the packet as a NettyBuffer
+            // through ActiveMQBuffer class leaving this buffer free to be reused on the next copy
+            final ByteBuffer buffer = ByteBuffer.allocate(1 << 17); // 1 << 17 == 131072 == 128 * 1024
+            while (true) {
+               buffer.clear();
+               final int bytesRead = channel.read(buffer);
+               int toSend = bytesRead;
+               if (bytesRead > 0) {
+                  if (bytesRead >= maxBytesToSend) {
+                     toSend = (int) maxBytesToSend;
+                     maxBytesToSend = 0;
                   }
-                  buffer.rewind();
-
-                  // sending -1 or 0 bytes will close the file at the backup
-                  sendReplicatePacket(new ReplicationSyncFileMessage(content, pageStore, id, toSend, buffer));
-                  if (bytesRead == -1 || bytesRead == 0 || maxBytesToSend == 0)
-                     break;
+                  else {
+                     maxBytesToSend = maxBytesToSend - bytesRead;
+                  }
+                  buffer.limit(toSend);
                }
+               buffer.rewind();
+
+               // sending -1 or 0 bytes will close the file at the backup
+               sendReplicatePacket(new ReplicationSyncFileMessage(content, pageStore, id, toSend, buffer));
+               if (bytesRead == -1 || bytesRead == 0 || maxBytesToSend == 0)
+                  break;
             }
-            finally {
-               channel.close();
-            }
-         }
-         finally {
-            fis.close();
          }
       }
       finally {

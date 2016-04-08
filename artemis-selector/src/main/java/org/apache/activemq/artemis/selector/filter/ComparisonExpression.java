@@ -158,13 +158,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
       @Override
       public boolean matches(Filterable message) throws FilterException {
          Object object = evaluate(message);
-         return object != null && object == Boolean.TRUE;
+         return object == Boolean.TRUE;
       }
    }
 
    public static BooleanExpression createLike(Expression left, String right, String escape) {
       if (escape != null && escape.length() != 1) {
-         throw new RuntimeException("The ESCAPE string litteral is invalid.  It can only be one character.  Litteral used: " + escape);
+         throw new RuntimeException("The ESCAPE string literal is invalid.  It can only be one character.  Literal used: " + escape);
       }
       int c = -1;
       if (escape != null) {
@@ -178,7 +178,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
       return UnaryExpression.createNOT(createLike(left, right, escape));
    }
 
-   public static BooleanExpression createInFilter(Expression left, List elements) {
+   public static BooleanExpression createInFilter(Expression left, List<Object> elements) {
 
       if (!(left instanceof PropertyExpression)) {
          throw new RuntimeException("Expected a property for In expression, got: " + left);
@@ -187,7 +187,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
    }
 
-   public static BooleanExpression createNotInFilter(Expression left, List elements) {
+   public static BooleanExpression createNotInFilter(Expression left, List<Object> elements) {
 
       if (!(left instanceof PropertyExpression)) {
          throw new RuntimeException("Expected a property for In expression, got: " + left);
@@ -392,19 +392,19 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             }
             else if (lc == Byte.class) {
                if (rc == Short.class) {
-                  lv = Short.valueOf(((Number) lv).shortValue());
+                  lv = ((Number) lv).shortValue();
                }
                else if (rc == Integer.class) {
-                  lv = Integer.valueOf(((Number) lv).intValue());
+                  lv = ((Number) lv).intValue();
                }
                else if (rc == Long.class) {
-                  lv = Long.valueOf(((Number) lv).longValue());
+                  lv = ((Number) lv).longValue();
                }
                else if (rc == Float.class) {
-                  lv = new Float(((Number) lv).floatValue());
+                  lv = ((Number) lv).floatValue();
                }
                else if (rc == Double.class) {
-                  lv = new Double(((Number) lv).doubleValue());
+                  lv = ((Number) lv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Byte.valueOf((String) rv);
@@ -415,16 +415,16 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             }
             else if (lc == Short.class) {
                if (rc == Integer.class) {
-                  lv = Integer.valueOf(((Number) lv).intValue());
+                  lv = ((Number) lv).intValue();
                }
                else if (rc == Long.class) {
-                  lv = Long.valueOf(((Number) lv).longValue());
+                  lv = ((Number) lv).longValue();
                }
                else if (rc == Float.class) {
-                  lv = new Float(((Number) lv).floatValue());
+                  lv = ((Number) lv).floatValue();
                }
                else if (rc == Double.class) {
-                  lv = new Double(((Number) lv).doubleValue());
+                  lv = ((Number) lv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Short.valueOf((String) rv);
@@ -435,13 +435,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             }
             else if (lc == Integer.class) {
                if (rc == Long.class) {
-                  lv = Long.valueOf(((Number) lv).longValue());
+                  lv = ((Number) lv).longValue();
                }
                else if (rc == Float.class) {
-                  lv = new Float(((Number) lv).floatValue());
+                  lv = ((Number) lv).floatValue();
                }
                else if (rc == Double.class) {
-                  lv = new Double(((Number) lv).doubleValue());
+                  lv = ((Number) lv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Integer.valueOf((String) rv);
@@ -452,13 +452,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             }
             else if (lc == Long.class) {
                if (rc == Integer.class) {
-                  rv = Long.valueOf(((Number) rv).longValue());
+                  rv = ((Number) rv).longValue();
                }
                else if (rc == Float.class) {
-                  lv = new Float(((Number) lv).floatValue());
+                  lv = ((Number) lv).floatValue();
                }
                else if (rc == Double.class) {
-                  lv = new Double(((Number) lv).doubleValue());
+                  lv = ((Number) lv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Long.valueOf((String) rv);
@@ -468,14 +468,11 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
                }
             }
             else if (lc == Float.class) {
-               if (rc == Integer.class) {
-                  rv = new Float(((Number) rv).floatValue());
-               }
-               else if (rc == Long.class) {
-                  rv = new Float(((Number) rv).floatValue());
+               if (rc == Integer.class || rc == Long.class) {
+                  rv = ((Number) rv).floatValue();
                }
                else if (rc == Double.class) {
-                  lv = new Double(((Number) lv).doubleValue());
+                  lv = ((Number) lv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Float.valueOf((String) rv);
@@ -485,14 +482,8 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
                }
             }
             else if (lc == Double.class) {
-               if (rc == Integer.class) {
-                  rv = new Double(((Number) rv).doubleValue());
-               }
-               else if (rc == Long.class) {
-                  rv = new Double(((Number) rv).doubleValue());
-               }
-               else if (rc == Float.class) {
-                  rv = new Double(((Number) rv).doubleValue());
+               if (rc == Integer.class || rc == Long.class || rc == Float.class) {
+                  rv = ((Number) rv).doubleValue();
                }
                else if (convertStringExpressions && rc == String.class) {
                   rv = Double.valueOf((String) rv);
@@ -545,7 +536,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
    @Override
    public boolean matches(Filterable message) throws FilterException {
       Object object = evaluate(message);
-      return object != null && object == Boolean.TRUE;
+      return object == Boolean.TRUE;
    }
 
 }

@@ -16,6 +16,8 @@
  */
 package org.proton.plug.handler;
 
+import java.util.concurrent.Executor;
+
 import io.netty.buffer.ByteBuf;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Transport;
@@ -29,10 +31,11 @@ import org.proton.plug.handler.impl.ProtonHandlerImpl;
  */
 public interface ProtonHandler {
 
-   public static final class Factory {
+   long tick(boolean firstTick);
 
-      public static ProtonHandler create() {
-         return new ProtonHandlerImpl();
+   final class Factory {
+      public static ProtonHandler create(Executor dispatchExecutor) {
+         return new ProtonHandlerImpl(dispatchExecutor);
       }
    }
 

@@ -17,8 +17,9 @@
 package org.apache.activemq.artemis.core.remoting.impl.netty;
 
 import java.net.SocketAddress;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
 
 import io.netty.buffer.ByteBuf;
@@ -36,8 +37,8 @@ import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.core.security.ActiveMQPrincipal;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.spi.core.remoting.BaseConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
-import org.apache.activemq.artemis.spi.core.remoting.ConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.IPV6Util;
 
@@ -52,7 +53,7 @@ public class NettyConnection implements Connection {
 
    private boolean closed;
 
-   private final ConnectionLifeCycleListener listener;
+   private final BaseConnectionLifeCycleListener listener;
 
    private final boolean batchingEnabled;
 
@@ -70,7 +71,7 @@ public class NettyConnection implements Connection {
 
    /** if {@link #isWritable(ReadyListener)} returns false, we add a callback
     *  here for when the connection (or Netty Channel) becomes available again. */
-   private final ConcurrentLinkedDeque<ReadyListener> readyListeners = new ConcurrentLinkedDeque<>();
+   private final Deque<ReadyListener> readyListeners = new LinkedList<>();
 
    // Static --------------------------------------------------------
 
@@ -78,7 +79,7 @@ public class NettyConnection implements Connection {
 
    public NettyConnection(final Map<String, Object> configuration,
                           final Channel channel,
-                          final ConnectionLifeCycleListener listener,
+                          final BaseConnectionLifeCycleListener listener,
                           boolean batchingEnabled,
                           boolean directDeliver) {
       this.configuration = configuration;
@@ -99,36 +100,36 @@ public class NettyConnection implements Connection {
    }
    // Connection implementation ----------------------------
 
-
    @Override
-   public boolean isWritable(ReadyListener callback) {
-      synchronized (readyListeners) {
-         if (!ready) {
-            readyListeners.push(callback);
-         }
-
-         return ready;
-      }
+   public void setAutoRead(boolean autoRead) {
+      channel.config().setAutoRead(autoRead);
    }
 
    @Override
-   public void fireReady(final boolean ready) {
-      synchronized (readyListeners) {
-         this.ready = ready;
+   public synchronized boolean isWritable(ReadyListener callback) {
+      if (!ready) {
+         readyListeners.push(callback);
+      }
 
-         if (ready) {
-            for (;;) {
-               ReadyListener readyListener = readyListeners.poll();
-               if (readyListener == null) {
-                  return;
-               }
+      return ready;
+   }
 
-               try {
-                  readyListener.readyForWriting();
-               }
-               catch (Throwable logOnly) {
-                  ActiveMQClientLogger.LOGGER.warn(logOnly.getMessage(), logOnly);
-               }
+   @Override
+   public synchronized void fireReady(final boolean ready) {
+      this.ready = ready;
+
+      if (ready) {
+         for (;;) {
+            ReadyListener readyListener = readyListeners.poll();
+            if (readyListener == null) {
+               return;
+            }
+
+            try {
+               readyListener.readyForWriting();
+            }
+            catch (Throwable logOnly) {
+               ActiveMQClientLogger.LOGGER.warn(logOnly.getMessage(), logOnly);
             }
          }
       }

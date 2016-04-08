@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -76,6 +77,8 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageM
 import org.apache.activemq.artemis.core.persistence.impl.journal.OperationContextImpl;
 import org.apache.activemq.artemis.core.persistence.impl.nullpm.NullStorageManager;
 import org.apache.activemq.artemis.core.postoffice.Binding;
+import org.apache.activemq.artemis.core.postoffice.BindingType;
+import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.postoffice.impl.DivertBinding;
@@ -91,11 +94,13 @@ import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.security.SecurityStore;
 import org.apache.activemq.artemis.core.security.impl.SecurityStoreImpl;
 import org.apache.activemq.artemis.core.server.ActivateCallback;
+import org.apache.activemq.artemis.core.server.ActivationFailureListener;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.Bindable;
+import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
@@ -104,9 +109,9 @@ import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.QueueFactory;
+import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
 import org.apache.activemq.artemis.core.server.ServerSession;
-import org.apache.activemq.artemis.core.server.ServerSessionFactory;
 import org.apache.activemq.artemis.core.server.ServiceRegistry;
 import org.apache.activemq.artemis.core.server.cluster.BackupManager;
 import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
@@ -244,6 +249,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private final ReusableLatch activationLatch = new ReusableLatch(0);
 
    private final Set<ActivateCallback> activateCallbacks = new ConcurrentHashSet<>();
+
+   private final Set<ActivationFailureListener> activationFailureListeners = new ConcurrentHashSet<>();
 
    private volatile GroupingHandler groupingHandler;
 
@@ -539,6 +546,72 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public boolean isAddressBound(String address) throws Exception {
       return postOffice.isAddressBound(SimpleString.toSimpleString(address));
+   }
+
+   @Override
+   public BindingQueryResult bindingQuery(SimpleString address) throws Exception {
+      if (address == null) {
+         throw ActiveMQMessageBundle.BUNDLE.addressIsNull();
+      }
+
+      boolean autoCreateJmsQueues = address.toString().startsWith(ResourceNames.JMS_QUEUE) && getAddressSettingsRepository().getMatch(address.toString()).isAutoCreateJmsQueues();
+
+      List<SimpleString> names = new ArrayList<>();
+
+      // make an exception for the management address (see HORNETQ-29)
+      ManagementService managementService = getManagementService();
+      if (managementService != null) {
+         if (address.equals(managementService.getManagementAddress())) {
+            return new BindingQueryResult(true, names, autoCreateJmsQueues);
+         }
+      }
+
+      Bindings bindings = getPostOffice().getMatchingBindings(address);
+
+      for (Binding binding : bindings.getBindings()) {
+         if (binding.getType() == BindingType.LOCAL_QUEUE || binding.getType() == BindingType.REMOTE_QUEUE) {
+            names.add(binding.getUniqueName());
+         }
+      }
+
+      return new BindingQueryResult(!names.isEmpty(), names, autoCreateJmsQueues);
+   }
+
+   @Override
+   public QueueQueryResult queueQuery(SimpleString name) {
+      if (name == null) {
+         throw ActiveMQMessageBundle.BUNDLE.queueNameIsNull();
+      }
+
+      boolean autoCreateJmsQueues = name.toString().startsWith(ResourceNames.JMS_QUEUE) && getAddressSettingsRepository().getMatch(name.toString()).isAutoCreateJmsQueues();
+
+      QueueQueryResult response;
+
+      Binding binding = getPostOffice().getBinding(name);
+
+      SimpleString managementAddress = getManagementService() != null ? getManagementService().getManagementAddress() : null;
+
+      if (binding != null && binding.getType() == BindingType.LOCAL_QUEUE) {
+         Queue queue = (Queue) binding.getBindable();
+
+         Filter filter = queue.getFilter();
+
+         SimpleString filterString = filter == null ? null : filter.getFilterString();
+
+         response = new QueueQueryResult(name, binding.getAddress(), queue.isDurable(), queue.isTemporary(), filterString, queue.getConsumerCount(), queue.getMessageCount(), autoCreateJmsQueues);
+      }
+      // make an exception for the management address (see HORNETQ-29)
+      else if (name.equals(managementAddress)) {
+         response = new QueueQueryResult(name, managementAddress, true, false, null, -1, -1, autoCreateJmsQueues);
+      }
+      else if (autoCreateJmsQueues) {
+         response = new QueueQueryResult(name, name, true, false, null, 0, 0, true, false);
+      }
+      else {
+         response = new QueueQueryResult(null, null, false, false, null, 0, 0, false, false);
+      }
+
+      return response;
    }
 
    @Override
@@ -1017,7 +1090,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                       final boolean xa,
                                       final String defaultAddress,
                                       final SessionCallback callback,
-                                      final ServerSessionFactory sessionFactory,
                                       final boolean autoCreateQueues) throws Exception {
 
       if (securityStore != null) {
@@ -1031,7 +1103,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       checkSessionLimit(username);
 
       final OperationContext context = storageManager.newContext(getExecutorFactory().getExecutor());
-      final ServerSessionImpl session = internalCreateSession(name, username, password, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, sessionFactory, autoCreateQueues);
+      final ServerSessionImpl session = internalCreateSession(name, username, password, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues);
 
       sessions.put(name, session);
 
@@ -1104,14 +1176,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                                      String defaultAddress,
                                                      SessionCallback callback,
                                                      OperationContext context,
-                                                     ServerSessionFactory sessionFactory,
                                                      boolean autoCreateJMSQueues) throws Exception {
-      if (sessionFactory == null) {
-         return new ServerSessionImpl(name, username, password, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, storageManager, postOffice, resourceManager, securityStore, managementService, this, configuration.getManagementAddress(), defaultAddress == null ? null : new SimpleString(defaultAddress), callback, context, autoCreateJMSQueues ? jmsQueueCreator : null);
-      }
-      else {
-         return sessionFactory.createCoreSession(name, username, password, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, storageManager, postOffice, resourceManager, securityStore, managementService, this, configuration.getManagementAddress(), defaultAddress == null ? null : new SimpleString(defaultAddress), callback, jmsQueueCreator, context);
-      }
+      return new ServerSessionImpl(name, username, password, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, storageManager, postOffice, resourceManager, securityStore, managementService, this, configuration.getManagementAddress(), defaultAddress == null ? null : new SimpleString(defaultAddress), callback, context, autoCreateJMSQueues ? jmsQueueCreator : null);
    }
 
    @Override
@@ -1276,13 +1342,19 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public Queue deployQueue(final SimpleString address,
-                            final SimpleString queueName,
+                            final SimpleString resourceName,
                             final SimpleString filterString,
                             final boolean durable,
                             final boolean temporary) throws Exception {
-      ActiveMQServerLogger.LOGGER.deployQueue(queueName);
 
-      return createQueue(address, queueName, filterString, null, durable, temporary, true, false, false);
+      if (resourceName.toString().toLowerCase().startsWith("jms.topic")) {
+         ActiveMQServerLogger.LOGGER.deployTopic(resourceName);
+      }
+      else {
+         ActiveMQServerLogger.LOGGER.deployQueue(resourceName);
+      }
+
+      return createQueue(address, resourceName, filterString, null, durable, temporary, true, false, false);
    }
 
    @Override
@@ -1347,6 +1419,23 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public void unregisterActivateCallback(final ActivateCallback callback) {
       activateCallbacks.remove(callback);
+   }
+
+   @Override
+   public void registerActivationFailureListener(final ActivationFailureListener listener) {
+      activationFailureListeners.add(listener);
+   }
+
+   @Override
+   public void unregisterActivationFailureListener(final ActivationFailureListener listener) {
+      activationFailureListeners.remove(listener);
+   }
+
+   @Override
+   public void callActivationFailureListeners(final Exception e) {
+      for (ActivationFailureListener listener : activationFailureListeners) {
+         listener.activationFailed(e);
+      }
    }
 
    @Override
@@ -1593,9 +1682,15 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       // Create the pools - we have two pools - one for non scheduled - and another for scheduled
       initializeExecutorServices();
 
-      if (configuration.getJournalType() == JournalType.ASYNCIO && !AIOSequentialFileFactory.isSupported()) {
-         ActiveMQServerLogger.LOGGER.switchingNIO();
-         configuration.setJournalType(JournalType.NIO);
+      if (configuration.getJournalType() == JournalType.ASYNCIO) {
+         if (!AIOSequentialFileFactory.isSupported()) {
+            ActiveMQServerLogger.LOGGER.switchingNIO();
+            configuration.setJournalType(JournalType.NIO);
+         }
+         else if (!AIOSequentialFileFactory.isSupported(configuration.getJournalLocation())) {
+            ActiveMQServerLogger.LOGGER.switchingNIOonPath(configuration.getJournalLocation().getAbsolutePath());
+            configuration.setJournalType(JournalType.NIO);
+         }
       }
 
       managementService = new ManagementServiceImpl(mbeanServer, configuration);
@@ -1781,15 +1876,15 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       JournalLoadInformation[] journalInfo = new JournalLoadInformation[2];
 
-      List<QueueBindingInfo> queueBindingInfos = new ArrayList();
+      List<QueueBindingInfo> queueBindingInfos = new ArrayList<>();
 
-      List<GroupingInfo> groupingInfos = new ArrayList();
+      List<GroupingInfo> groupingInfos = new ArrayList<>();
 
       journalInfo[0] = storageManager.loadBindingJournal(queueBindingInfos, groupingInfos);
 
       recoverStoredConfigs();
 
-      Map<Long, QueueBindingInfo> queueBindingInfosMap = new HashMap();
+      Map<Long, QueueBindingInfo> queueBindingInfosMap = new HashMap<>();
 
       journalLoader.initQueues(queueBindingInfosMap, queueBindingInfos);
 

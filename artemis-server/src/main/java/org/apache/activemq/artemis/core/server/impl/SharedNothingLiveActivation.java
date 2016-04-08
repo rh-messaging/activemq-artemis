@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class SharedNothingLiveActivation extends LiveActivation {
@@ -106,6 +107,7 @@ public class SharedNothingLiveActivation extends LiveActivation {
       }
       catch (Exception e) {
          ActiveMQServerLogger.LOGGER.initializationError(e);
+         activeMQServer.callActivationFailureListeners(e);
       }
    }
 
@@ -166,7 +168,7 @@ public class SharedNothingLiveActivation extends LiveActivation {
                   //backupUpToDate = false;
 
                   if (isFailBackRequest && replicatedPolicy.isAllowAutoFailBack()) {
-                     BackupTopologyListener listener1 = new BackupTopologyListener(activeMQServer.getNodeID().toString());
+                     BackupTopologyListener listener1 = new BackupTopologyListener(activeMQServer.getNodeID().toString(), clusterConnection.getConnector());
                      clusterConnection.addClusterTopologyListener(listener1);
                      if (listener1.waitForBackup()) {
                         //if we have to many backups kept or are not configured to restart just stop, otherwise restart as a backup
@@ -229,17 +231,20 @@ public class SharedNothingLiveActivation extends LiveActivation {
 
       @Override
       public void connectionClosed() {
-         activeMQServer.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-               synchronized (replicationLock) {
-                  if (replicationManager != null) {
-                     activeMQServer.getStorageManager().stopReplication();
-                     replicationManager = null;
+         ExecutorService executorService = activeMQServer.getThreadPool();
+         if (executorService != null) {
+            executorService.execute(new Runnable() {
+               @Override
+               public void run() {
+                  synchronized (replicationLock) {
+                     if (replicationManager != null) {
+                        activeMQServer.getStorageManager().stopReplication();
+                        replicationManager = null;
+                     }
                   }
                }
-            }
-         });
+            });
+         }
       }
    }
 
@@ -269,36 +274,22 @@ public class SharedNothingLiveActivation extends LiveActivation {
          nodeId0 = null;
       }
 
-      ServerLocatorInternal locator;
-
       ClusterConnectionConfiguration config = ConfigurationUtils.getReplicationClusterConfiguration(activeMQServer.getConfiguration(), replicatedPolicy.getClusterName());
-
-      locator = getLocator(config);
-
-      ClientSessionFactoryInternal factory = null;
 
       NodeIdListener listener = new NodeIdListener(nodeId0);
 
-      locator.addClusterTopologyListener(listener);
-      try {
+      try (ServerLocatorInternal locator = getLocator(config)) {
+         locator.addClusterTopologyListener(listener);
          locator.setReconnectAttempts(0);
-         try {
-            locator.addClusterTopologyListener(listener);
-            factory = locator.connectNoWarnings();
+         try (ClientSessionFactoryInternal factory = locator.connectNoWarnings()) {
+            // Just try connecting
+            listener.latch.await(5, TimeUnit.SECONDS);
          }
          catch (Exception notConnected) {
             return false;
          }
 
-         listener.latch.await(5, TimeUnit.SECONDS);
-
          return listener.isNodePresent;
-      }
-      finally {
-         if (factory != null)
-            factory.close();
-         if (locator != null)
-            locator.close();
       }
    }
 

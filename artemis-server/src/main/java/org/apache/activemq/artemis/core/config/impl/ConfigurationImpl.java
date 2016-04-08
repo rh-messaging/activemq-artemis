@@ -21,7 +21,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.net.URI;
 import java.security.AccessController;
@@ -1299,6 +1301,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
    public TransportConfiguration[] getTransportConfigurations(final List<String> connectorNames) {
       TransportConfiguration[] tcConfigs = (TransportConfiguration[]) Array.newInstance(TransportConfiguration.class, connectorNames.size());
       int count = 0;
+
       for (String connectorName : connectorNames) {
          TransportConfiguration connector = getConnectorConfigurations().get(connectorName);
 
@@ -1312,6 +1315,21 @@ public class ConfigurationImpl implements Configuration, Serializable {
       }
 
       return tcConfigs;
+   }
+
+   public String debugConnectors() {
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter writer = new PrintWriter(stringWriter);
+
+
+      for (Map.Entry<String, TransportConfiguration> connector : getConnectorConfigurations().entrySet()) {
+         writer.println("Connector::" + connector.getKey() + " value = " + connector.getValue());
+      }
+
+      writer.close();
+
+      return stringWriter.toString();
+
    }
 
    @Override
@@ -1666,8 +1684,10 @@ public class ConfigurationImpl implements Configuration, Serializable {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream os = new ObjectOutputStream(bos);
             os.writeObject(ConfigurationImpl.this);
-            ObjectInputStream ois = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(bos.toByteArray()));
-            Configuration config = (Configuration) ois.readObject();
+            Configuration config;
+            try (ObjectInputStream ois = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(bos.toByteArray()))) {
+               config = (Configuration) ois.readObject();
+            }
 
             // this is transient because of possible jgroups integration, we need to copy it manually
             config.setBroadcastGroupConfigurations(ConfigurationImpl.this.getBroadcastGroupConfigurations());

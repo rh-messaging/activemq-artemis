@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,9 +53,9 @@ import org.apache.activemq.artemis.core.remoting.impl.TransportConfigurationUtil
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
+import org.apache.activemq.artemis.spi.core.remoting.ClientConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.ClientProtocolManager;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
-import org.apache.activemq.artemis.spi.core.remoting.ConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.Connector;
 import org.apache.activemq.artemis.spi.core.remoting.ConnectorFactory;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
@@ -66,7 +67,7 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.OrderedExecutorFactory;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 
-public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, ConnectionLifeCycleListener {
+public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, ClientConnectionLifeCycleListener {
    // Constants
    // ------------------------------------------------------------------------------------
 
@@ -118,6 +119,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private final long retryInterval;
 
    private final double retryIntervalMultiplier; // For exponential backoff
+
+   private final CountDownLatch latchFinalTopology = new CountDownLatch(1);
 
    private final long maxRetryInterval;
 
@@ -347,7 +350,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    @Override
    public void connectionCreated(final ActiveMQComponent component,
                                  final Connection connection,
-                                 final String protocol) {
+                                 final ClientProtocolManager protocol) {
    }
 
    @Override
@@ -474,6 +477,18 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    }
 
    @Override
+   public boolean waitForTopology(long timeout, TimeUnit unit) {
+      try {
+         return latchFinalTopology.await(timeout, unit);
+      }
+      catch (InterruptedException e) {
+         Thread.currentThread().interrupt();
+         ActiveMQClientLogger.LOGGER.warn(e.getMessage(), e);
+         return false;
+      }
+   }
+
+   @Override
    public boolean isClosed() {
       return closed || serverLocator.isClosed();
    }
@@ -500,6 +515,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       catch (ActiveMQInterruptedException e1) {
          // this is just a debug, since an interrupt is an expected event (in case of a shutdown)
          ActiveMQClientLogger.LOGGER.debug(e1.getMessage(), e1);
+      }
+      catch (Throwable t) {
+         //for anything else just close so clients are un blocked
+         close();
+         throw t;
       }
    }
 
@@ -843,11 +863,14 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    }
 
    private void checkCloseConnection() {
-      if (connection != null && sessions.size() == 0) {
+      RemotingConnection connectionInUse = connection;
+      Connector connectorInUse = connector;
+
+      if (connectionInUse != null && sessions.size() == 0) {
          cancelScheduledTasks();
 
          try {
-            connection.destroy();
+            connectionInUse.destroy();
          }
          catch (Throwable ignore) {
          }
@@ -855,8 +878,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          connection = null;
 
          try {
-            if (connector != null) {
-               connector.close();
+            if (connectorInUse != null) {
+               connectorInUse.close();
             }
          }
          catch (Throwable ignore) {
@@ -878,22 +901,25 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             return connection;
          }
          else {
-            connection = establishNewConnection();
+            RemotingConnection connection = establishNewConnection();
+
+            this.connection = connection;
 
             //we check if we can actually connect.
             // we do it here as to receive the reply connection has to be not null
+            //make sure to reset this.connection == null
             if (connection != null && liveNodeID != null) {
                try {
                   if (!clientProtocolManager.checkForFailover(liveNodeID)) {
                      connection.destroy();
-                     connection = null;
+                     this.connection = null;
+                     return null;
                   }
                }
                catch (ActiveMQException e) {
-                  if (connection != null) {
-                     connection.destroy();
-                     connection = null;
-                  }
+                  connection.destroy();
+                  this.connection = null;
+                  return null;
                }
             }
 
@@ -1080,7 +1106,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             transportConnection = openTransportConnection(backupConnector);
 
-            if ((transportConnection = openTransportConnection(backupConnector)) != null) {
+            if (transportConnection != null) {
             /*looks like the backup is now live, let's use that*/
 
                if (ClientSessionFactoryImpl.isDebug) {
@@ -1207,8 +1233,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          long now = System.currentTimeMillis();
 
-         if (clientFailureCheckPeriod != -1 && connectionTTL != -1 && now >= lastCheck + connectionTTL) {
-            if (!connection.checkDataReceived()) {
+         final RemotingConnection connectionInUse = connection;
+
+         if (connectionInUse != null && clientFailureCheckPeriod != -1 && connectionTTL != -1 && now >= lastCheck + connectionTTL) {
+            if (!connectionInUse.checkDataReceived()) {
 
                // We use a different thread to send the fail
                // but the exception has to be created here to preserve the stack trace
@@ -1220,7 +1248,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   // Must be executed on different thread
                   @Override
                   public void run() {
-                     connection.fail(me);
+                     connectionInUse.fail(me);
                   }
                });
 
@@ -1314,11 +1342,21 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                String scaleDownGroupName,
                                Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                boolean isLast) {
-         // if it is our connector then set the live id used for failover
-         if (connectorPair.getA() != null && TransportConfigurationUtil.isSameHost(connectorPair.getA(), connectorConfig)) {
-            liveNodeID = nodeID;
+
+         try {
+            // if it is our connector then set the live id used for failover
+            if (connectorPair.getA() != null && TransportConfigurationUtil.isSameHost(connectorPair.getA(), connectorConfig)) {
+               liveNodeID = nodeID;
+            }
+
+            serverLocator.notifyNodeUp(uniqueEventID, nodeID, backupGroupName, scaleDownGroupName, connectorPair, isLast);
          }
-         serverLocator.notifyNodeUp(uniqueEventID, nodeID, backupGroupName, scaleDownGroupName, connectorPair, isLast);
+         finally {
+            if (isLast) {
+               latchFinalTopology.countDown();
+            }
+         }
+
       }
 
       @Override

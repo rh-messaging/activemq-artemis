@@ -29,19 +29,13 @@ import org.apache.activemq.artemis.core.journal.TransactionFailureCallback;
 
 public class JDBCJournalLoaderCallback implements LoaderCallback {
 
-   private static final int DELETE_FLUSH = 20000;
-
    private final List<PreparedTransactionInfo> preparedTransactions;
 
    private final TransactionFailureCallback failureCallback;
 
-   private final boolean fixBadTX;
-
    /* We keep track of list entries for each ID.  This preserves order and allows multiple record insertions with the
    same ID.  We use this for deleting records */
-   private final Map<Long, List<Integer>> deleteReferences = new HashMap<Long, List<Integer>>();
-
-   private Runtime runtime = Runtime.getRuntime();
+   private final Map<Long, List<Integer>> deleteReferences = new HashMap<>();
 
    private final List<RecordInfo> committedRecords;
 
@@ -54,7 +48,6 @@ public class JDBCJournalLoaderCallback implements LoaderCallback {
       this.committedRecords = committedRecords;
       this.preparedTransactions = preparedTransactions;
       this.failureCallback = failureCallback;
-      this.fixBadTX = fixBadTX;
    }
 
    public synchronized void checkMaxId(long id) {
@@ -63,34 +56,34 @@ public class JDBCJournalLoaderCallback implements LoaderCallback {
       }
    }
 
+   @Override
    public void addPreparedTransaction(final PreparedTransactionInfo preparedTransaction) {
       preparedTransactions.add(preparedTransaction);
    }
 
+   @Override
    public synchronized void addRecord(final RecordInfo info) {
       int index = committedRecords.size();
       committedRecords.add(index, info);
 
-      ArrayList<Integer> indexes = new ArrayList<Integer>();
+      ArrayList<Integer> indexes = new ArrayList<>();
       indexes.add(index);
 
       deleteReferences.put(info.id, indexes);
       checkMaxId(info.id);
    }
 
+   @Override
    public synchronized void updateRecord(final RecordInfo info) {
       int index = committedRecords.size();
       committedRecords.add(index, info);
    }
 
+   @Override
    public synchronized void deleteRecord(final long id) {
       for (Integer i : deleteReferences.get(id)) {
          committedRecords.remove(i);
       }
-   }
-
-   public int getNoRecords() {
-      return committedRecords.size();
    }
 
    @Override

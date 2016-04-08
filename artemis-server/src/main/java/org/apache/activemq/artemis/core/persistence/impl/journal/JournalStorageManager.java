@@ -438,6 +438,10 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
 
          largeMessage.setMessageID(id);
 
+         // We do this here to avoid a case where the replication gets a list without this file
+         // to avoid a race
+         largeMessage.validateFile();
+
          if (largeMessage.isDurable()) {
             // We store a marker on the journal that the large file is pending
             long pendingRecordID = storePendingLargeMessage(id);
@@ -584,7 +588,12 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
          SequentialFile seqFile = largeMessagesFactory.createSequentialFile(fileName);
          if (!seqFile.exists())
             continue;
-         replicator.syncLargeMessageFile(seqFile, size, id);
+         if (replicator != null) {
+            replicator.syncLargeMessageFile(seqFile, size, id);
+         }
+         else {
+            throw ActiveMQMessageBundle.BUNDLE.replicatorIsNull();
+         }
       }
    }
 
