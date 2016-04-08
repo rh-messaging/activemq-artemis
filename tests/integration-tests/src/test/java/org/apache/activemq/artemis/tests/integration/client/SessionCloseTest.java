@@ -132,9 +132,15 @@ public class SessionCloseTest extends ActiveMQTestBase {
       Assert.assertTrue(session.isXA());
       Assert.assertTrue(session.isClosed());
 
+      ActiveMQTestBase.expectXAException(XAException.XAER_RMFAIL, new ActiveMQAction() {
+         public void run() throws XAException {
+            session.commit(RandomUtil.randomXid(), true);
+         }
+      });
+
       ActiveMQTestBase.expectXAException(XAException.XA_RETRY, new ActiveMQAction() {
          public void run() throws XAException {
-            session.commit(RandomUtil.randomXid(), RandomUtil.randomBoolean());
+            session.commit(RandomUtil.randomXid(), false);
          }
       });
 
