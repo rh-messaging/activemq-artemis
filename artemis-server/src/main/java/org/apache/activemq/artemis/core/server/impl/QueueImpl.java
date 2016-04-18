@@ -2130,7 +2130,6 @@ public class QueueImpl implements Queue {
          }
       }
 
-      copyMessage.finishCopy();
       postOffice.processRoute(copyMessage, routingContext, false);
 
       ref.handled();

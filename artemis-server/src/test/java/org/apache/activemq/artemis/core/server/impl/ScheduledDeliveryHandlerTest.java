@@ -336,11 +336,6 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public void finishCopy() throws Exception {
-
-      }
-
-      @Override
       public ServerMessage copy() {
          return null;
       }

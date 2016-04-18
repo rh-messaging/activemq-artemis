@@ -144,7 +144,6 @@ public class Redistributor implements Consumer {
       }
 
       if (!reference.getMessage().isLargeMessage()) {
-         routingInfo.getB().finishCopy();
 
          postOffice.processRoute(routingInfo.getB(), routingInfo.getA(), false);
 
@@ -155,7 +154,6 @@ public class Redistributor implements Consumer {
          executor.execute(new Runnable() {
             public void run() {
                try {
-                  routingInfo.getB().finishCopy();
 
                   postOffice.processRoute(routingInfo.getB(), routingInfo.getA(), false);
 
