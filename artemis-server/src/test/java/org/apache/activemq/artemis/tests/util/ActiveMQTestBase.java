@@ -230,7 +230,6 @@ public abstract class ActiveMQTestBase extends Assert {
       closeAllServerLocatorsFactories();
 
       try {
-         assertAllExecutorsFinished();
          assertAllClientConsumersAreClosed();
          assertAllClientProducersAreClosed();
          assertAllClientSessionsAreClosed();
@@ -271,6 +270,7 @@ public abstract class ActiveMQTestBase extends Assert {
             s.shutdown();
          }
          InVMConnector.resetThreadPool();
+         assertAllExecutorsFinished();
 
 
          //clean up pools before failing
