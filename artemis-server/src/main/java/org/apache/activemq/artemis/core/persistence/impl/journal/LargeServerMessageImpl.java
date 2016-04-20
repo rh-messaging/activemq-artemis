@@ -270,6 +270,10 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
       try {
          LargeServerMessage newMessage = storageManager.createLargeMessage(newID, this);
 
+         boolean originallyOpen = file != null && file.isOpen();
+
+         validateFile();
+
 
          byte[] bufferBytes = new byte[100 * 1024];
 
@@ -277,7 +281,6 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
          long oldPosition = file.position();
 
-         boolean originallyOpen = file.isOpen();
          file.open();
          file.position(0);
 
@@ -288,7 +291,7 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
             int bytesRead = file.read(buffer);
 
             byte[] bufferToWrite;
-            if (bytesRead == 0) {
+            if (bytesRead <= 0) {
                break;
             }
             else if (bytesRead == bufferBytes.length) {
