@@ -38,12 +38,10 @@ import org.apache.activemq.artemis.core.security.ActiveMQPrincipal;
 import org.apache.activemq.artemis.spi.core.protocol.AbstractRemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.SimpleIDGenerator;
+import org.jboss.logging.Logger;
 
 public class RemotingConnectionImpl extends AbstractRemotingConnection implements CoreRemotingConnection {
-   // Constants
-   // ------------------------------------------------------------------------------------
-
-   private static final boolean isTrace = ActiveMQClientLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(RemotingConnectionImpl.class);
 
    // Static
    // ---------------------------------------------------------------------------------------
@@ -323,8 +321,8 @@ public class RemotingConnectionImpl extends AbstractRemotingConnection implement
       try {
          final Packet packet = packetDecoder.decode(buffer);
 
-         if (isTrace) {
-            ActiveMQClientLogger.LOGGER.trace("handling packet " + packet);
+         if (logger.isTraceEnabled()) {
+            logger.trace("handling packet " + packet);
          }
 
          dataReceived = true;
