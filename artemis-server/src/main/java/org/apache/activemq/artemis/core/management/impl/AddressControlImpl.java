@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.management.impl;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -180,7 +181,6 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
       long totalMsgs = 0;
       try {
          Bindings bindings = postOffice.getBindingsForAddress(address);
-         List<String> queueNames = new ArrayList<>();
          for (Binding binding : bindings.getBindings()) {
             if (binding instanceof QueueBinding) {
                totalMsgs += ((QueueBinding) binding).getQueue().getMessageCount();
@@ -228,6 +228,11 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
    @Override
    protected MBeanOperationInfo[] fillMBeanOperationInfo() {
       return MBeanInfoHelper.getMBeanOperationsInfo(AddressControl.class);
+   }
+
+   @Override
+   protected MBeanAttributeInfo[] fillMBeanAttributeInfo() {
+      return MBeanInfoHelper.getMBeanAttributesInfo(AddressControl.class);
    }
 
    // Package protected ---------------------------------------------

@@ -24,7 +24,9 @@ import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 
-import org.apache.qpid.proton.jms.JMSVendor;
+import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerDestination;
+import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSObjectMessage;
+import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.core.buffers.impl.ResetLimitWrappedActiveMQBuffer;
 import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSBytesMessage;
 import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSMapMessage;
@@ -34,8 +36,9 @@ import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMST
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.impl.ServerMessageImpl;
 import org.apache.activemq.artemis.utils.IDGenerator;
+import org.apache.activemq.transport.amqp.message.JMSVendor;
 
-public class ActiveMQJMSVendor extends JMSVendor {
+public class ActiveMQJMSVendor implements JMSVendor {
 
    private final IDGenerator serverGenerator;
 
@@ -65,7 +68,7 @@ public class ActiveMQJMSVendor extends JMSVendor {
 
    @Override
    public ObjectMessage createObjectMessage() {
-      return null;
+      return new ServerJMSObjectMessage(newMessage(org.apache.activemq.artemis.api.core.Message.OBJECT_TYPE), 0);
    }
 
    @Override
@@ -80,12 +83,7 @@ public class ActiveMQJMSVendor extends JMSVendor {
    @Override
    @SuppressWarnings("deprecation")
    public Destination createDestination(String name) {
-      return super.createDestination(name);
-   }
-
-   @Override
-   public <T extends Destination> T createDestination(String name, Class<T> kind) {
-      return super.createDestination(name, kind);
+      return new ServerDestination(name);
    }
 
    @Override
@@ -113,6 +111,8 @@ public class ActiveMQJMSVendor extends JMSVendor {
             return new ServerJMSMapMessage(wrapped, deliveryCount);
          case org.apache.activemq.artemis.api.core.Message.TEXT_TYPE:
             return new ServerJMSTextMessage(wrapped, deliveryCount);
+         case org.apache.activemq.artemis.api.core.Message.OBJECT_TYPE:
+            return new ServerJMSObjectMessage(wrapped, deliveryCount);
          default:
             return new ServerJMSMessage(wrapped, deliveryCount);
       }
@@ -121,6 +121,9 @@ public class ActiveMQJMSVendor extends JMSVendor {
 
    @Override
    public String toAddress(Destination destination) {
+      if (destination instanceof ActiveMQDestination) {
+         return ((ActiveMQDestination) destination).getAddress();
+      }
       return null;
    }
 

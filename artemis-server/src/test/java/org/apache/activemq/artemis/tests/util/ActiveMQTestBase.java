@@ -96,6 +96,7 @@ import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory;
+import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnector;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMRegistry;
 import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
@@ -229,14 +230,10 @@ public abstract class ActiveMQTestBase extends Assert {
 
    @After
    public void tearDown() throws Exception {
-      for (ExecutorService s : executorSet) {
-         s.shutdown();
-      }
       closeAllSessionFactories();
       closeAllServerLocatorsFactories();
 
       try {
-         assertAllExecutorsFinished();
          assertAllClientConsumersAreClosed();
          assertAllClientProducersAreClosed();
          assertAllClientSessionsAreClosed();
@@ -272,6 +269,14 @@ public abstract class ActiveMQTestBase extends Assert {
          finally {
             cleanupPools();
          }
+
+         for (ExecutorService s : executorSet) {
+            s.shutdown();
+         }
+         InVMConnector.resetThreadPool();
+         assertAllExecutorsFinished();
+
+
          //clean up pools before failing
          if (!exceptions.isEmpty()) {
             for (Exception exception : exceptions) {
@@ -1050,7 +1055,7 @@ public abstract class ActiveMQTestBase extends Assert {
          if (value != null && prop.getWriteMethod() != null && prop.getReadMethod() == null) {
             System.out.println("WriteOnly property " + prop.getName() + " on " + pojo.getClass());
          }
-         else if (value != null & prop.getWriteMethod() != null &&
+         else if (value != null && prop.getWriteMethod() != null &&
             prop.getReadMethod() != null &&
             !ignoreSet.contains(prop.getName())) {
             System.out.println("Validating " + prop.getName() + " type = " + prop.getPropertyType());

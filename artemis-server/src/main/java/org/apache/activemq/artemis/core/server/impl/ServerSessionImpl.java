@@ -52,6 +52,7 @@ import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
+import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.core.security.CheckType;
@@ -253,6 +254,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       this.securityEnabled = false;
    }
 
+   @Override
    public boolean isClosed() {
       return closed;
    }
@@ -395,6 +397,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       return this.createConsumer(consumerID, queueName, filterString, browseOnly, true, null);
    }
 
+   @Override
    public ServerConsumer createConsumer(final long consumerID,
                                         final SimpleString queueName,
                                         final SimpleString filterString,
@@ -458,6 +461,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    /** Some protocols may chose to hold their transactions outside of the ServerSession.
     *  This can be used to replace the transaction.
     *  Notice that we set autoCommitACK and autoCommitSends to true if tx == null */
+   @Override
    public void resetTX(Transaction transaction) {
       this.tx = transaction;
       this.autoCommitAcks = transaction == null;
@@ -648,6 +652,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       }
    }
 
+   @Override
    public ServerConsumer locateConsumer(long consumerID) {
       return consumers.get(consumerID);
    }
@@ -756,6 +761,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    /**
     * @return
     */
+   @Override
    public Transaction newTransaction() {
       return new TransactionImpl(null, storageManager, timeoutSeconds);
    }
@@ -1208,7 +1214,13 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    @Override
-   public void send(final ServerMessage message, final boolean direct) throws Exception {
+   public RoutingStatus send(final ServerMessage message, final boolean direct) throws Exception {
+      return send(message, direct, false);
+   }
+
+   @Override
+   public RoutingStatus send(final ServerMessage message, final boolean direct, boolean noAutoCreateQueue) throws Exception {
+      RoutingStatus result = RoutingStatus.OK;
       //large message may come from StompSession directly, in which
       //case the id header already generated.
       if (!message.isLargeMessage()) {
@@ -1251,8 +1263,9 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          handleManagementMessage(message, direct);
       }
       else {
-         doSend(message, direct);
+         result = doSend(message, direct, noAutoCreateQueue);
       }
+      return result;
    }
 
    @Override
@@ -1276,7 +1289,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
             currentLargeMessage.putLongProperty(Message.HDR_LARGE_BODY_SIZE, messageBodySize);
          }
 
-         doSend(currentLargeMessage, false);
+         doSend(currentLargeMessage, false, false);
 
          currentLargeMessage = null;
       }
@@ -1474,7 +1487,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       if (replyTo != null) {
          reply.setAddress(replyTo);
 
-         doSend(reply, direct);
+         doSend(reply, direct, false);
       }
    }
 
@@ -1530,7 +1543,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       theTx.rollback();
    }
 
-   protected void doSend(final ServerMessage msg, final boolean direct) throws Exception {
+   protected RoutingStatus doSend(final ServerMessage msg, final boolean direct, final boolean noAutoCreateQueue) throws Exception {
+      RoutingStatus result = RoutingStatus.OK;
       // check the user has write access to this address.
       try {
          securityCheck(msg.getAddress(), CheckType.SEND, this);
@@ -1549,7 +1563,12 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       }
 
       try {
-         postOffice.route(msg, queueCreator, routingContext, direct);
+         if (noAutoCreateQueue) {
+            result = postOffice.route(msg, null, routingContext, direct);
+         }
+         else {
+            result = postOffice.route(msg, queueCreator, routingContext, direct);
+         }
 
          Pair<UUID, AtomicLong> value = targetAddressInfos.get(msg.getAddress());
 
@@ -1564,6 +1583,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       finally {
          routingContext.clear();
       }
+      return result;
    }
 
    @Override

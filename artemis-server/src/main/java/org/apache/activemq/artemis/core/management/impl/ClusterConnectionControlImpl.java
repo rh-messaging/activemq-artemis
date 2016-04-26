@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.management.impl;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import java.util.List;
 import java.util.Map;
@@ -125,11 +126,12 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
    public String[] getStaticConnectors() {
       clearIO();
       try {
-         if (configuration.getStaticConnectors() == null) {
+         List<String> staticConnectors = configuration.getStaticConnectors();
+         if (staticConnectors == null) {
             return null;
          }
          else {
-            return configuration.getStaticConnectors().toArray(new String[0]);
+            return staticConnectors.toArray(new String[staticConnectors.size()]);
          }
       }
       finally {
@@ -241,6 +243,11 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
    @Override
    protected MBeanOperationInfo[] fillMBeanOperationInfo() {
       return MBeanInfoHelper.getMBeanOperationsInfo(ClusterConnectionControl.class);
+   }
+
+   @Override
+   protected MBeanAttributeInfo[] fillMBeanAttributeInfo() {
+      return MBeanInfoHelper.getMBeanAttributesInfo(ClusterConnectionControl.class);
    }
 
    // Public --------------------------------------------------------

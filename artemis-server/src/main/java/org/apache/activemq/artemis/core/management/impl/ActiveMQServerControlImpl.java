@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.ListenerNotFoundException;
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.Notification;
@@ -643,6 +644,32 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
+   public String getUptime() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getUptime();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getUptimeMillis() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getUptimeMillis();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
    public String[] getAddressNames() {
       checkStarted();
 
@@ -684,6 +711,71 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
       try {
          return server.getConnectionCount();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getTotalConnectionCount() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getTotalConnectionCount();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getTotalMessageCount() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getTotalMessageCount();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getTotalMessagesAdded() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getTotalMessagesAdded();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getTotalMessagesAcknowledged() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getTotalMessagesAcknowledged();
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
+   public long getTotalConsumerCount() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return server.getTotalConsumerCount();
       }
       finally {
          blockOnIO();
@@ -1840,6 +1932,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    @Override
    protected MBeanOperationInfo[] fillMBeanOperationInfo() {
       return MBeanInfoHelper.getMBeanOperationsInfo(ActiveMQServerControl.class);
+   }
+
+   @Override
+   protected MBeanAttributeInfo[] fillMBeanAttributeInfo() {
+      return MBeanInfoHelper.getMBeanAttributesInfo(ActiveMQServerControl.class);
    }
 
    private void checkStarted() {

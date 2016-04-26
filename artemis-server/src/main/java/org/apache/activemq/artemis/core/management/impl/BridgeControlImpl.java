@@ -16,12 +16,15 @@
  */
 package org.apache.activemq.artemis.core.management.impl;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 
 import org.apache.activemq.artemis.api.core.management.BridgeControl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.cluster.Bridge;
+
+import java.util.List;
 
 public class BridgeControlImpl extends AbstractControl implements BridgeControl {
 
@@ -51,7 +54,8 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl 
    public String[] getStaticConnectors() throws Exception {
       clearIO();
       try {
-         return configuration.getStaticConnectors().toArray(new String[0]);
+         List<String> staticConnectors = configuration.getStaticConnectors();
+         return staticConnectors.toArray(new String[staticConnectors.size()]);
       }
       finally {
          blockOnIO();
@@ -216,6 +220,11 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl 
    @Override
    protected MBeanOperationInfo[] fillMBeanOperationInfo() {
       return MBeanInfoHelper.getMBeanOperationsInfo(BridgeControl.class);
+   }
+
+   @Override
+   protected MBeanAttributeInfo[] fillMBeanAttributeInfo() {
+      return MBeanInfoHelper.getMBeanAttributesInfo(BridgeControl.class);
    }
 
    // Public --------------------------------------------------------

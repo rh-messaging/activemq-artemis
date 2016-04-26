@@ -2222,7 +2222,6 @@ public class QueueImpl implements Queue {
          }
       }
 
-      copyMessage.finishCopy();
       postOffice.processRoute(copyMessage, routingContext, false);
 
       ref.handled();
@@ -2337,6 +2336,7 @@ public class QueueImpl implements Queue {
       }
    }
 
+   @Override
    public void sendToDeadLetterAddress(final Transaction tx, final MessageReference ref) throws Exception {
       sendToDeadLetterAddress(tx, ref, addressSettingsRepository.getMatch(address.toString()).getDeadLetterAddress());
    }

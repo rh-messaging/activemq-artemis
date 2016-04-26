@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.openwire.amq;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.ResourceAllocationException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.PagingStore;
+import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireMessageConverter;
 import org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil;
@@ -278,6 +280,7 @@ public class AMQSession implements SessionCallback {
 
       if (sendProducerAck) {
          runnable = new Runnable() {
+            @Override
             public void run() {
                try {
                   ProducerAck ack = new ProducerAck(producerInfo.getProducerId(), messageSend.getSize());
@@ -302,6 +305,7 @@ public class AMQSession implements SessionCallback {
          }
          else {
             runnable = new Runnable() {
+               @Override
                public void run() {
                   transportConnection.setAutoRead(true);
                }
@@ -359,7 +363,11 @@ public class AMQSession implements SessionCallback {
             connection.getTransportConnection().setAutoRead(false);
          }
 
-         getCoreSession().send(coreMsg, false);
+         RoutingStatus result = getCoreSession().send(coreMsg, false, actualDestinations[i].isTemporary());
+
+         if (result == RoutingStatus.NO_BINDINGS && actualDestinations[i].isQueue()) {
+            throw new InvalidDestinationException("Cannot publish to a non-existent Destination: " + actualDestinations[i]);
+         }
 
          if (runToUse != null) {
             // if the timeout is >0, it will wait this much milliseconds

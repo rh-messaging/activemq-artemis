@@ -29,6 +29,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.GenericFutureListener;
+
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
@@ -106,25 +108,41 @@ public class NettyConnection implements Connection {
    }
 
    @Override
-   public synchronized boolean isWritable(ReadyListener callback) {
-      if (!ready) {
-         readyListeners.push(callback);
-      }
+   public boolean isWritable(ReadyListener callback) {
+      synchronized (readyListeners) {
+         if (!ready) {
+            readyListeners.push(callback);
+         }
 
-      return ready;
+         return ready;
+      }
    }
 
    @Override
-   public synchronized void fireReady(final boolean ready) {
-      this.ready = ready;
+   public void fireReady(final boolean ready) {
+      LinkedList<ReadyListener> readyToCall = null;
+      synchronized (readyListeners) {
+         this.ready = ready;
 
-      if (ready) {
-         for (;;) {
-            ReadyListener readyListener = readyListeners.poll();
-            if (readyListener == null) {
-               return;
+         if (ready) {
+            for (;;) {
+               ReadyListener readyListener = readyListeners.poll();
+               if (readyListener == null) {
+                  break;
+               }
+
+
+               if (readyToCall == null) {
+                  readyToCall = new LinkedList<>();
+               }
+
+               readyToCall.add(readyListener);
             }
+         }
+      }
 
+      if (readyToCall != null) {
+         for (ReadyListener readyListener : readyToCall) {
             try {
                readyListener.readyForWriting();
             }
@@ -177,13 +195,13 @@ public class NettyConnection implements Connection {
       boolean inEventLoop = eventLoop.inEventLoop();
       //if we are in an event loop we need to close the channel after the writes have finished
       if (!inEventLoop) {
-         closeSSLAndChannel(sslHandler, channel);
+         closeSSLAndChannel(sslHandler, channel, false);
       }
       else {
          eventLoop.execute(new Runnable() {
             @Override
             public void run() {
-               closeSSLAndChannel(sslHandler, channel);
+               closeSSLAndChannel(sslHandler, channel, true);
             }
          });
       }
@@ -396,12 +414,17 @@ public class NettyConnection implements Connection {
 
    // Private -------------------------------------------------------
 
-   private void closeSSLAndChannel(SslHandler sslHandler, Channel channel) {
+   private void closeSSLAndChannel(SslHandler sslHandler, final Channel channel, boolean inEventLoop) {
       if (sslHandler != null) {
          try {
             ChannelFuture sslCloseFuture = sslHandler.close();
-
-            if (!sslCloseFuture.awaitUninterruptibly(10000)) {
+            sslCloseFuture.addListener(new GenericFutureListener<ChannelFuture>() {
+               @Override
+               public void operationComplete(ChannelFuture future) throws Exception {
+                  channel.close();
+               }
+            });
+            if (!inEventLoop && !sslCloseFuture.awaitUninterruptibly(10000)) {
                ActiveMQClientLogger.LOGGER.timeoutClosingSSL();
             }
          }
@@ -409,10 +432,11 @@ public class NettyConnection implements Connection {
             // ignore
          }
       }
-
-      ChannelFuture closeFuture = channel.close();
-      if (!closeFuture.awaitUninterruptibly(10000)) {
-         ActiveMQClientLogger.LOGGER.timeoutClosingNettyChannel();
+      else {
+         ChannelFuture closeFuture = channel.close();
+         if (!inEventLoop && !closeFuture.awaitUninterruptibly(10000)) {
+            ActiveMQClientLogger.LOGGER.timeoutClosingNettyChannel();
+         }
       }
    }
    // Inner classes -------------------------------------------------

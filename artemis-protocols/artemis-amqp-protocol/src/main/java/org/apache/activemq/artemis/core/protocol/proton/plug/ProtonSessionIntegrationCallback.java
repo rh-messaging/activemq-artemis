@@ -24,13 +24,13 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
+import org.apache.activemq.transport.amqp.message.EncodedMessage;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
-import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.message.ProtonJMessage;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
@@ -242,23 +242,29 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
 
    @Override
    public void rollbackCurrentTX() throws Exception {
-      recoverContext();
-      try {
-         serverSession.rollback(false);
-      }
-      finally {
-         resetContext();
+      //need to check here as this can be called if init fails
+      if (serverSession != null) {
+         recoverContext();
+         try {
+            serverSession.rollback(false);
+         }
+         finally {
+            resetContext();
+         }
       }
    }
 
    @Override
    public void close() throws Exception {
-      recoverContext();
-      try {
-         serverSession.close(false);
-      }
-      finally {
-         resetContext();
+      //need to check here as this can be called if init fails
+      if (serverSession != null) {
+         recoverContext();
+         try {
+            serverSession.close(false);
+         }
+         finally {
+            resetContext();
+         }
       }
    }
 
@@ -298,10 +304,6 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
       EncodedMessage encodedMessage = new EncodedMessage(messageFormat, messageEncoded.array(), messageEncoded.arrayOffset(), messageEncoded.writerIndex());
 
       ServerMessage message = manager.getConverter().inbound(encodedMessage);
-      //use the address on the receiver if not null, if null let's hope it was set correctly on the message
-      if (address != null) {
-         message.setAddress(new SimpleString(address));
-      }
 
       recoverContext();
 

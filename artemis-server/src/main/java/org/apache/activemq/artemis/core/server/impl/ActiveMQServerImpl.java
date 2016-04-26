@@ -1127,7 +1127,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       int sessionCount = 0;
 
       for (Entry<String, ServerSession> sessionEntry : sessions.entrySet()) {
-         if (sessionEntry.getValue().getUsername().toString().equals(username)) {
+         if (sessionEntry.getValue().getUsername().equals(username)) {
             sessionCount++;
          }
       }
@@ -1241,6 +1241,63 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public int getConnectionCount() {
       return remotingService.getConnections().size();
+   }
+
+   @Override
+   public long getTotalConnectionCount() {
+      return remotingService.getTotalConnectionCount();
+   }
+
+   @Override
+   public long getTotalMessageCount() {
+      long total = 0;
+
+      for (Binding binding : postOffice.getAllBindings().values()) {
+         if (binding.getType() == BindingType.LOCAL_QUEUE) {
+            total += ((LocalQueueBinding)binding).getQueue().getMessageCount();
+         }
+      }
+
+      return total;
+   }
+
+   @Override
+   public long getTotalMessagesAdded() {
+      long total = 0;
+
+      for (Binding binding : postOffice.getAllBindings().values()) {
+         if (binding.getType() == BindingType.LOCAL_QUEUE) {
+            total += ((LocalQueueBinding)binding).getQueue().getMessagesAdded();
+         }
+      }
+
+      return total;
+   }
+
+   @Override
+   public long getTotalMessagesAcknowledged() {
+      long total = 0;
+
+      for (Binding binding : postOffice.getAllBindings().values()) {
+         if (binding.getType() == BindingType.LOCAL_QUEUE) {
+            total += ((LocalQueueBinding)binding).getQueue().getMessagesAcknowledged();
+         }
+      }
+
+      return total;
+   }
+
+   @Override
+   public long getTotalConsumerCount() {
+      long total = 0;
+
+      for (Binding binding : postOffice.getAllBindings().values()) {
+         if (binding.getType() == BindingType.LOCAL_QUEUE) {
+            total += ((LocalQueueBinding)binding).getQueue().getConsumerCount();
+         }
+      }
+
+      return total;
    }
 
    @Override
@@ -2195,6 +2252,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
    }
 
+   @Override
    public String getUptime() {
       long delta = getUptimeMillis();
 
@@ -2205,6 +2263,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return TimeUtils.printDuration(delta);
    }
 
+   @Override
    public long getUptimeMillis() {
       if (startDate == null) {
          return 0;
