@@ -16,10 +16,10 @@
  */
 package org.apache.activemq.artemis.uri;
 
-import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory;
-
 import java.net.URI;
 import java.util.Set;
+
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory;
 
 public class TCPAcceptorTransportConfigurationSchema extends TCPTransportConfigurationSchema {
 

@@ -16,14 +16,12 @@
  */
 package org.apache.activemq.artemis.tests.util;
 
-import org.junit.Test;
-
 import java.util.concurrent.CountDownLatch;
-
-import org.junit.Assert;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.utils.DataConstants;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class SimpleStringTest extends Assert {
 

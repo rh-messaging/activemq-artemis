@@ -22,8 +22,11 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.TransientQueueManager;
 import org.apache.activemq.artemis.utils.ReferenceCounterUtil;
+import org.jboss.logging.Logger;
 
 public class TransientQueueManagerImpl implements TransientQueueManager {
+
+   private static final Logger logger = Logger.getLogger(TransientQueueManagerImpl.class);
 
    private final SimpleString queueName;
 
@@ -32,8 +35,8 @@ public class TransientQueueManagerImpl implements TransientQueueManager {
    private final Runnable runnable = new Runnable() {
       public void run() {
          try {
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug("deleting temporary queue " + queueName);
+            if (logger.isDebugEnabled()) {
+               logger.debug("deleting temporary queue " + queueName);
             }
 
             try {

@@ -18,7 +18,6 @@ package org.apache.activemq.artemis.core.remoting.impl.netty;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.AccessController;
@@ -54,7 +53,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
-
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -75,14 +73,17 @@ import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ConnectionLifeCycleListener;
-import org.apache.activemq.artemis.utils.ConfigurationHelper;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
+import org.apache.activemq.artemis.utils.ConfigurationHelper;
 import org.apache.activemq.artemis.utils.TypedProperties;
+import org.jboss.logging.Logger;
 
 /**
  * A Netty TCP Acceptor that supports SSL
  */
 public class NettyAcceptor implements Acceptor {
+
+   private static final Logger logger = Logger.getLogger(NettyAcceptor.class);
 
    static {
       // Disable resource leak detection for performance reasons by default
@@ -632,8 +633,8 @@ public class NettyAcceptor implements Acceptor {
             return nc;
          }
          else {
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug(new StringBuilder().append("Connection limit of ").append(connectionsAllowed).append(" reached. Refusing connection from ").append(ctx.channel().remoteAddress()));
+            if (logger.isDebugEnabled()) {
+               logger.debug(new StringBuilder().append("Connection limit of ").append(connectionsAllowed).append(" reached. Refusing connection from ").append(ctx.channel().remoteAddress()));
             }
             throw new Exception();
          }

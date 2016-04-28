@@ -16,9 +16,8 @@
  */
 package org.apache.activemq.artemis.core.server;
 
-import java.lang.management.ManagementFactory;
-
 import javax.management.MBeanServer;
+import java.lang.management.ManagementFactory;
 
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;

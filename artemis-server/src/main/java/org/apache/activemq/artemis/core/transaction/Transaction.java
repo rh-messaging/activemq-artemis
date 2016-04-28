@@ -16,9 +16,8 @@
  */
 package org.apache.activemq.artemis.core.transaction;
 
-import java.util.List;
-
 import javax.transaction.xa.Xid;
+import java.util.List;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.server.Queue;

@@ -16,12 +16,12 @@
  */
 package org.apache.activemq.artemis.core.server.cluster.qourum;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.client.impl.Topology;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A Qourum Vote for deciding if a replicated backup should become live.

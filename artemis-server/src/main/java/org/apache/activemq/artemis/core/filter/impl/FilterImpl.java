@@ -17,16 +17,16 @@
 package org.apache.activemq.artemis.core.filter.impl;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
-import org.apache.activemq.artemis.selector.filter.BooleanExpression;
-import org.apache.activemq.artemis.selector.filter.FilterException;
-import org.apache.activemq.artemis.selector.filter.Filterable;
-import org.apache.activemq.artemis.selector.impl.SelectorParser;
 import org.apache.activemq.artemis.api.core.FilterConstants;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.ServerMessage;
+import org.apache.activemq.artemis.selector.filter.BooleanExpression;
+import org.apache.activemq.artemis.selector.filter.FilterException;
+import org.apache.activemq.artemis.selector.filter.Filterable;
+import org.apache.activemq.artemis.selector.impl.SelectorParser;
 
 /**
  * This class implements an ActiveMQ Artemis filter

@@ -16,14 +16,14 @@
  */
 package org.apache.activemq.artemis.core.server.cluster;
 
+import java.lang.reflect.Array;
+import java.util.List;
+
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
-
-import java.lang.reflect.Array;
-import java.util.List;
 
 public class ClusterConfigurationUtil {
 

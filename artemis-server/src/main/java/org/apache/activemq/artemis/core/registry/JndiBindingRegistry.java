@@ -16,12 +16,12 @@
  */
 package org.apache.activemq.artemis.core.registry;
 
-import org.apache.activemq.artemis.spi.core.naming.BindingRegistry;
-import org.apache.activemq.artemis.utils.JNDIUtil;
-
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
+import org.apache.activemq.artemis.spi.core.naming.BindingRegistry;
+import org.apache.activemq.artemis.utils.JNDIUtil;
 
 public class JndiBindingRegistry implements BindingRegistry {
 

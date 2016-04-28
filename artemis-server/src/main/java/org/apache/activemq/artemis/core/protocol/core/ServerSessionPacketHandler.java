@@ -78,6 +78,7 @@ import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
+import org.jboss.logging.Logger;
 
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CREATE_QUEUE;
 import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.CREATE_SHARED_QUEUE;
@@ -115,7 +116,7 @@ import static org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl.SES
 
 public class ServerSessionPacketHandler implements ChannelHandler {
 
-   private final boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(ServerSessionPacketHandler.class);
 
    private final ServerSession session;
 
@@ -195,8 +196,8 @@ public class ServerSessionPacketHandler implements ChannelHandler {
       boolean closeChannel = false;
       boolean requiresResponse = false;
 
-      if (isTrace) {
-         ActiveMQServerLogger.LOGGER.trace("ServerSessionPacketHandler::handlePacket," + packet);
+      if (logger.isTraceEnabled()) {
+         logger.trace("ServerSessionPacketHandler::handlePacket," + packet);
       }
 
       try {
@@ -485,7 +486,7 @@ public class ServerSessionPacketHandler implements ChannelHandler {
          catch (ActiveMQIOErrorException e) {
             getSession().markTXFailed(e);
             if (requiresResponse) {
-               ActiveMQServerLogger.LOGGER.debug("Sending exception to client", e);
+               logger.debug("Sending exception to client", e);
                response = new ActiveMQExceptionMessage(e);
             }
             else {
@@ -494,7 +495,7 @@ public class ServerSessionPacketHandler implements ChannelHandler {
          }
          catch (ActiveMQXAException e) {
             if (requiresResponse) {
-               ActiveMQServerLogger.LOGGER.debug("Sending exception to client", e);
+               logger.debug("Sending exception to client", e);
                response = new SessionXAResponseMessage(true, e.errorCode, e.getMessage());
             }
             else {
@@ -503,12 +504,12 @@ public class ServerSessionPacketHandler implements ChannelHandler {
          }
          catch (ActiveMQException e) {
             if (requiresResponse) {
-               ActiveMQServerLogger.LOGGER.debug("Sending exception to client", e);
+               logger.debug("Sending exception to client", e);
                response = new ActiveMQExceptionMessage(e);
             }
             else {
                if (e.getType() == ActiveMQExceptionType.QUEUE_EXISTS) {
-                  ActiveMQServerLogger.LOGGER.debug("Caught exception", e);
+                  logger.debug("Caught exception", e);
                }
                else {
                   ActiveMQServerLogger.LOGGER.caughtException(e);
@@ -539,8 +540,8 @@ public class ServerSessionPacketHandler implements ChannelHandler {
                              final Packet response,
                              final boolean flush,
                              final boolean closeChannel) {
-      if (isTrace) {
-         ActiveMQServerLogger.LOGGER.trace("ServerSessionPacketHandler::scheduling response::" + response);
+      if (logger.isTraceEnabled()) {
+         logger.trace("ServerSessionPacketHandler::scheduling response::" + response);
       }
 
       storageManager.afterCompleteOperations(new IOCallback() {
@@ -551,8 +552,8 @@ public class ServerSessionPacketHandler implements ChannelHandler {
 
             doConfirmAndResponse(confirmPacket, exceptionMessage, flush, closeChannel);
 
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("ServerSessionPacketHandler::response sent::" + response);
+            if (logger.isTraceEnabled()) {
+               logger.trace("ServerSessionPacketHandler::response sent::" + response);
             }
 
          }

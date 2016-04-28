@@ -16,6 +16,10 @@
  */
 package org.apache.activemq.artemis.core.server.impl;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
@@ -26,10 +30,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class EmbeddedServerTest {
 

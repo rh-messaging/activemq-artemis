@@ -16,12 +16,10 @@
  */
 package org.apache.activemq.artemis.core.config.impl;
 
-import org.junit.Test;
-
-import org.junit.Assert;
-
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.tests.util.RandomUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ValidatorsTest extends Assert {
 

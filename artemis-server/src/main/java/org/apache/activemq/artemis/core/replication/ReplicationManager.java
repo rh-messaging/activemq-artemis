@@ -34,8 +34,8 @@ import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.io.SequentialFile;
+import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
@@ -82,9 +82,7 @@ import org.jboss.logging.Logger;
  */
 public final class ReplicationManager implements ActiveMQComponent, ReadyListener {
 
-
-   Logger logger = Logger.getLogger(ReplicationManager.class);
-   final boolean isTrace = logger.isTraceEnabled();
+   private static Logger logger = Logger.getLogger(ReplicationManager.class);
 
    public enum ADD_OPERATION_TYPE {
       UPDATE {
@@ -587,7 +585,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
    public void sendSynchronizationDone(String nodeID, long initialReplicationSyncTimeout) {
       if (enabled) {
 
-         if (isTrace) {
+         if (logger.isTraceEnabled()) {
             logger.trace("sendSynchronizationDone ::" + nodeID + ", " + initialReplicationSyncTimeout);
          }
 
@@ -599,7 +597,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
             }
          }
          catch (InterruptedException e) {
-            ActiveMQServerLogger.LOGGER.debug(e);
+            logger.debug(e);
          }
          inSync = false;
       }
@@ -630,9 +628,9 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
     * @return
     */
    public OperationContext sendLiveIsStopping(final LiveStopping finalMessage) {
-      ActiveMQServerLogger.LOGGER.debug("LIVE IS STOPPING?!? message=" + finalMessage + " enabled=" + enabled);
+      logger.debug("LIVE IS STOPPING?!? message=" + finalMessage + " enabled=" + enabled);
       if (enabled) {
-         ActiveMQServerLogger.LOGGER.debug("LIVE IS STOPPING?!? message=" + finalMessage + " " + enabled);
+         logger.debug("LIVE IS STOPPING?!? message=" + finalMessage + " " + enabled);
          return sendReplicatePacket(new ReplicationLiveIsStoppingMessage(finalMessage));
       }
       return null;

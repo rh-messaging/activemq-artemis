@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.core.config.impl;
 
+import java.util.List;
+
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.FileDeploymentManager;
 import org.apache.activemq.artemis.core.server.cluster.ha.ColocatedPolicy;
@@ -36,8 +38,6 @@ import org.apache.activemq.artemis.core.server.impl.SharedStoreBackupActivation;
 import org.apache.activemq.artemis.core.server.impl.SharedStoreLiveActivation;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.Test;
-
-import java.util.List;
 
 public class HAPolicyConfigurationTest extends ActiveMQTestBase {
 
