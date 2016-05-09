@@ -14,31 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.protocol.core.impl.wireformat;
 
-import org.apache.activemq.artemis.api.core.Message;
-import org.apache.activemq.artemis.core.message.impl.MessageInternal;
-import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
+package org.apache.activemq.artemis.core.server;
 
-public abstract class MessagePacket extends PacketImpl implements MessagePacketI {
+import org.apache.activemq.artemis.api.core.SimpleString;
 
-   protected MessageInternal message;
+public interface QueueDeleter {
 
-   public MessagePacket(final byte type, final MessageInternal message) {
-      super(type);
-
-      this.message = message;
-   }
-
-   @Override
-   public Message getMessage() {
-      return message;
-   }
-
-   @Override
-   public String getParentString() {
-      return super.getParentString() + ", message=" + message;
-   }
-
-
+   /**
+    * @return True if a queue was deleted.
+    */
+   boolean delete(SimpleString address) throws Exception;
 }
