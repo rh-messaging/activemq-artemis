@@ -192,6 +192,8 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          return;
       }
 
+      logger.tracef("Starting remoting service %s", this);
+
       paused = false;
 
       // The remoting service maintains it's own thread pool for handling remoting traffic

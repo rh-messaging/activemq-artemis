@@ -41,7 +41,6 @@ import org.jboss.logging.Logger;
 public final class Page implements Comparable<Page> {
 
    // Constants -----------------------------------------------------
-
    private static final Logger logger = Logger.getLogger(Page.class);
 
    public static final int SIZE_RECORD = DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + DataConstants.SIZE_BYTE;
@@ -252,7 +251,7 @@ public final class Page implements Comparable<Page> {
       }
 
       if (logger.isDebugEnabled()) {
-         logger.debug("Deleting pageId=" + pageId + " on store " + storeName);
+         logger.debug("Deleting pageNr=" + pageId + " on store " + storeName);
       }
 
       if (messages != null) {
@@ -295,7 +294,7 @@ public final class Page implements Comparable<Page> {
 
    @Override
    public String toString() {
-      return "Page::pageID=" + this.pageId + ", file=" + this.file;
+      return "Page::pageNr=" + this.pageId + ", file=" + this.file;
    }
 
    public int compareTo(Page otherPage) {
