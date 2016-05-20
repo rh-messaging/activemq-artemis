@@ -18,8 +18,8 @@ package org.apache.activemq.artemis.core.remoting.impl.netty;
 
 import java.net.SocketAddress;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 
 import io.netty.buffer.ByteBuf;
@@ -71,7 +71,7 @@ public class NettyConnection implements Connection {
 
    /** if {@link #isWritable(ReadyListener)} returns false, we add a callback
     *  here for when the connection (or Netty Channel) becomes available again. */
-   private final Deque<ReadyListener> readyListeners = new LinkedBlockingDeque<>();
+   private final Deque<ReadyListener> readyListeners = new LinkedList<>();
 
    // Static --------------------------------------------------------
 
@@ -101,6 +101,7 @@ public class NettyConnection implements Connection {
    // Connection implementation ----------------------------
 
 
+   @Override
    public boolean isWritable(ReadyListener callback) {
       synchronized (readyListeners) {
          if (!ready) {
@@ -111,7 +112,9 @@ public class NettyConnection implements Connection {
       }
    }
 
+   @Override
    public void fireReady(final boolean ready) {
+      LinkedList<ReadyListener> readyToCall = null;
       synchronized (readyListeners) {
          this.ready = ready;
 
@@ -119,20 +122,32 @@ public class NettyConnection implements Connection {
             for (;;) {
                ReadyListener readyListener = readyListeners.poll();
                if (readyListener == null) {
-                  return;
+                  break;
                }
 
-               try {
-                  readyListener.readyForWriting();
+
+               if (readyToCall == null) {
+                  readyToCall = new LinkedList<>();
                }
-               catch (Throwable logOnly) {
-                  ActiveMQClientLogger.LOGGER.warn(logOnly.getMessage(), logOnly);
-               }
+
+               readyToCall.add(readyListener);
+            }
+         }
+      }
+
+      if (readyToCall != null) {
+         for (ReadyListener readyListener : readyToCall) {
+            try {
+               readyListener.readyForWriting();
+            }
+            catch (Throwable logOnly) {
+               ActiveMQClientLogger.LOGGER.warn(logOnly.getMessage(), logOnly);
             }
          }
       }
    }
 
+   @Override
    public void forceClose() {
       if (channel != null) {
          try {
@@ -153,14 +168,17 @@ public class NettyConnection implements Connection {
       return channel;
    }
 
+   @Override
    public RemotingConnection getProtocolConnection() {
       return protocolConnection;
    }
 
+   @Override
    public void setProtocolConnection(RemotingConnection protocolConnection) {
       this.protocolConnection = protocolConnection;
    }
 
+   @Override
    public void close() {
       if (closed) {
          return;
@@ -187,16 +205,19 @@ public class NettyConnection implements Connection {
       listener.connectionDestroyed(getID());
    }
 
+   @Override
    public ActiveMQBuffer createTransportBuffer(final int size) {
       return new ChannelBufferWrapper(PartialPooledByteBufAllocator.INSTANCE.directBuffer(size), true);
    }
 
+   @Override
    public Object getID() {
       // TODO: Think of it
       return channel.hashCode();
    }
 
    // This is called periodically to flush the batch buffer
+   @Override
    public void checkFlushBatchBuffer() {
       if (!batchingEnabled) {
          return;
@@ -216,14 +237,17 @@ public class NettyConnection implements Connection {
       }
    }
 
+   @Override
    public void write(final ActiveMQBuffer buffer) {
       write(buffer, false, false);
    }
 
+   @Override
    public void write(ActiveMQBuffer buffer, final boolean flush, final boolean batched) {
       write(buffer, flush, batched, null);
    }
 
+   @Override
    public void write(ActiveMQBuffer buffer,
                      final boolean flush,
                      final boolean batched,
@@ -328,6 +352,7 @@ public class NettyConnection implements Connection {
       }
    }
 
+   @Override
    public String getRemoteAddress() {
       SocketAddress address = channel.remoteAddress();
       if (address == null) {
@@ -336,6 +361,7 @@ public class NettyConnection implements Connection {
       return address.toString();
    }
 
+   @Override
    public String getLocalAddress() {
       SocketAddress address = channel.localAddress();
       if (address == null) {
@@ -349,6 +375,7 @@ public class NettyConnection implements Connection {
    }
 
    //never allow this
+   @Override
    public ActiveMQPrincipal getDefaultActiveMQPrincipal() {
       return null;
    }

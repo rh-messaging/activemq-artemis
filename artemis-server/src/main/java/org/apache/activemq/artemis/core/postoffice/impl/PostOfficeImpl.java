@@ -81,6 +81,7 @@ import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.utils.TypedProperties;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.jboss.logging.Logger;
 
 /**
  * This is the class that will make the routing to Queues and decide which consumer will get the messages
@@ -88,7 +89,7 @@ import org.apache.activemq.artemis.utils.UUIDGenerator;
  */
 public class PostOfficeImpl implements PostOffice, NotificationListener, BindingsFactory {
 
-   private static final boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(PostOfficeImpl.class);
 
    public static final SimpleString HDR_RESET_QUEUE_DATA = new SimpleString("_AMQ_RESET_QUEUE_DATA");
 
@@ -215,8 +216,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       if (!(notification.getType() instanceof CoreNotificationType))
          return;
 
-      if (isTrace) {
-         ActiveMQServerLogger.LOGGER.trace("Receiving notification : " + notification + " on server " + this.server);
+      if (logger.isTraceEnabled()) {
+         logger.trace("Receiving notification : " + notification + " on server " + this.server);
       }
       synchronized (notificationLock) {
          CoreNotificationType type = (CoreNotificationType) notification.getType();
@@ -439,8 +440,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       String uid = UUIDGenerator.getInstance().generateStringUUID();
 
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-         ActiveMQServerLogger.LOGGER.debug("ClusterCommunication::Sending notification for addBinding " + binding + " from server " + server);
+      if (logger.isDebugEnabled()) {
+         logger.debug("ClusterCommunication::Sending notification for addBinding " + binding + " from server " + server);
       }
 
       managementService.sendNotification(new Notification(uid, CoreNotificationType.BINDING_ADDED, props));
@@ -618,13 +619,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
       else {
          // this is a debug and not warn because this could be a regular scenario on publish-subscribe queues (or topic subscriptions on JMS)
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-            ActiveMQServerLogger.LOGGER.debug("Couldn't find any bindings for address=" + address + " on message=" + message);
+         if (logger.isDebugEnabled()) {
+            logger.debug("Couldn't find any bindings for address=" + address + " on message=" + message);
          }
       }
 
-      if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
-         ActiveMQServerLogger.LOGGER.trace("Message after routed=" + message);
+      if (logger.isTraceEnabled()) {
+         logger.trace("Message after routed=" + message);
       }
 
       if (context.getQueueCount() == 0) {
@@ -639,8 +640,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
             SimpleString dlaAddress = addressSettings.getDeadLetterAddress();
 
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug("sending message to dla address = " + dlaAddress + ", message=" + message);
+            if (logger.isDebugEnabled()) {
+               logger.debug("sending message to dla address = " + dlaAddress + ", message=" + message);
             }
 
             if (dlaAddress == null) {
@@ -655,8 +656,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             }
          }
          else {
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug("Message " + message + " is not going anywhere as it didn't have a binding on address:" + address);
+            if (logger.isDebugEnabled()) {
+               logger.debug("Message " + message + " is not going anywhere as it didn't have a binding on address:" + address);
             }
 
             if (message.isLargeMessage()) {
@@ -791,8 +792,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          throw new IllegalStateException("Cannot find queue " + queueName);
       }
 
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-         ActiveMQServerLogger.LOGGER.debug("PostOffice.sendQueueInfoToQueue on server=" + this.server + ", queueName=" + queueName + " and address=" + address);
+      if (logger.isDebugEnabled()) {
+         logger.debug("PostOffice.sendQueueInfoToQueue on server=" + this.server + ", queueName=" + queueName + " and address=" + address);
       }
 
       Queue queue = (Queue) binding.getBindable();
@@ -808,8 +809,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          routeQueueInfo(message, queue, false);
 
          for (QueueInfo info : queueInfos.values()) {
-            if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
-               ActiveMQServerLogger.LOGGER.trace("QueueInfo on sendQueueInfoToQueue = " + info);
+            if (logger.isTraceEnabled()) {
+               logger.trace("QueueInfo on sendQueueInfoToQueue = " + info);
             }
             if (info.matchesAddress(address)) {
                message = createQueueInfoMessage(CoreNotificationType.BINDING_ADDED, queueName);

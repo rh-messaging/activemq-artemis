@@ -16,21 +16,20 @@
  */
 package org.apache.activemq.artemis.spi.core.security;
 
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import javax.security.auth.Subject;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.jboss.logging.Logger;
 
 /**
  * This implementation delegates to the JAAS security interfaces.
@@ -43,7 +42,7 @@ public class JAASSecurityManager implements ActiveMQSecurityManager {
 
    // Attributes ----------------------------------------------------
 
-   private final boolean trace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(JAASSecurityManager.class);
 
    private String configurationName;
 
@@ -97,8 +96,8 @@ public class JAASSecurityManager implements ActiveMQSecurityManager {
 
          authenticated = hasRole;
 
-         if (trace) {
-            ActiveMQServerLogger.LOGGER.trace("user " + user + (authenticated ? " is " : " is NOT ") + "authorized");
+         if (logger.isTraceEnabled()) {
+            logger.trace("user " + user + (authenticated ? " is " : " is NOT ") + "authorized");
          }
       }
       return authenticated;

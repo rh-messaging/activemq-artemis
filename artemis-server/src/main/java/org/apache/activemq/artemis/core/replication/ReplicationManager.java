@@ -34,8 +34,8 @@ import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.SessionFailureListener;
-import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.io.SequentialFile;
+import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
@@ -70,6 +70,7 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.ReusableLatch;
+import org.jboss.logging.Logger;
 
 /**
  * Manages replication tasks on the live server (that is the live server side of a "remote backup"
@@ -80,6 +81,8 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
  * @see ReplicationEndpoint
  */
 public final class ReplicationManager implements ActiveMQComponent, ReadyListener {
+
+   private static Logger logger = Logger.getLogger(ReplicationManager.class);
 
    public enum ADD_OPERATION_TYPE {
       UPDATE {
@@ -329,7 +332,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
       return sendReplicatePacket(packet, true);
    }
 
-   private synchronized OperationContext sendReplicatePacket(final Packet packet, boolean lineUp) {
+   private OperationContext sendReplicatePacket(final Packet packet, boolean lineUp) {
       if (!enabled)
          return null;
       boolean runItNow = false;
@@ -581,6 +584,11 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
     */
    public void sendSynchronizationDone(String nodeID, long initialReplicationSyncTimeout) {
       if (enabled) {
+
+         if (logger.isTraceEnabled()) {
+            logger.trace("sendSynchronizationDone ::" + nodeID + ", " + initialReplicationSyncTimeout);
+         }
+
          synchronizationIsFinishedAcknowledgement.countUp();
          sendReplicatePacket(new ReplicationStartSyncMessage(nodeID));
          try {
@@ -589,7 +597,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
             }
          }
          catch (InterruptedException e) {
-            ActiveMQServerLogger.LOGGER.debug(e);
+            logger.debug(e);
          }
          inSync = false;
       }
@@ -620,9 +628,9 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
     * @return
     */
    public OperationContext sendLiveIsStopping(final LiveStopping finalMessage) {
-      ActiveMQServerLogger.LOGGER.debug("LIVE IS STOPPING?!? message=" + finalMessage + " enabled=" + enabled);
+      logger.debug("LIVE IS STOPPING?!? message=" + finalMessage + " enabled=" + enabled);
       if (enabled) {
-         ActiveMQServerLogger.LOGGER.debug("LIVE IS STOPPING?!? message=" + finalMessage + " " + enabled);
+         logger.debug("LIVE IS STOPPING?!? message=" + finalMessage + " " + enabled);
          return sendReplicatePacket(new ReplicationLiveIsStoppingMessage(finalMessage));
       }
       return null;

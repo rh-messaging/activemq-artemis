@@ -16,9 +16,9 @@
  */
 package org.apache.activemq.artemis.core.transaction;
 
-import org.apache.activemq.artemis.core.persistence.StorageManager;
-
 import javax.transaction.xa.Xid;
+
+import org.apache.activemq.artemis.core.persistence.StorageManager;
 
 public interface TransactionFactory {
 

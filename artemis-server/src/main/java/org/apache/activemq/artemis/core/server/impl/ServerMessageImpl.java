@@ -85,25 +85,30 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       super(other, properties);
    }
 
+   @Override
    public boolean isServerMessage() {
       return true;
    }
 
+   @Override
    public ServerMessageImpl setMessageID(final long id) {
       messageID = id;
       return this;
    }
 
+   @Override
    public MessageReference createReference(final Queue queue) {
       MessageReference ref = new MessageReferenceImpl(this, queue);
 
       return ref;
    }
 
+   @Override
    public boolean hasInternalProperties() {
       return properties.hasInternalProperties();
    }
 
+   @Override
    public int incrementRefCount() throws Exception {
       int count = refCount.incrementAndGet();
 
@@ -119,6 +124,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       return count;
    }
 
+   @Override
    public int decrementRefCount() throws Exception {
       int count = refCount.decrementAndGet();
 
@@ -139,24 +145,29 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       return count;
    }
 
+   @Override
    public int incrementDurableRefCount() {
       return durableRefCount.incrementAndGet();
    }
 
+   @Override
    public int decrementDurableRefCount() {
       return durableRefCount.decrementAndGet();
    }
 
+   @Override
    public int getRefCount() {
       return refCount.get();
    }
 
+   @Override
    public boolean isLargeMessage() {
       return false;
    }
 
    private volatile int memoryEstimate = -1;
 
+   @Override
    public int getMemoryEstimate() {
       if (memoryEstimate == -1) {
          memoryEstimate = ServerMessageImpl.memoryOffset + buffer.capacity() + properties.getMemoryOffset();
@@ -165,6 +176,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       return memoryEstimate;
    }
 
+   @Override
    public ServerMessage copy(final long newID) {
       ServerMessage m = new ServerMessageImpl(this);
 
@@ -173,9 +185,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       return m;
    }
 
-   public void finishCopy() throws Exception {
-   }
-
+   @Override
    public ServerMessage copy() {
       // This is a simple copy, used only to avoid changing original properties
       return new ServerMessageImpl(this);
@@ -187,6 +197,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       return makeCopyForExpiryOrDLA(newID, originalReference, expiry, true);
    }
 
+   @Override
    public ServerMessage makeCopyForExpiryOrDLA(final long newID,
                                                MessageReference originalReference,
                                                final boolean expiry,
@@ -201,7 +212,6 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       */
 
       ServerMessage copy = copy(newID);
-      copy.finishCopy();
 
       if (copyOriginalHeaders) {
          copy.setOriginalHeaders(this, originalReference, expiry);
@@ -246,6 +256,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       bufferValid = false;
    }
 
+   @Override
    public void setPagingStore(final PagingStore pagingStore) {
       this.pagingStore = pagingStore;
 
@@ -254,15 +265,18 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       address = pagingStore.getAddress();
    }
 
+   @Override
    public synchronized void forceAddress(final SimpleString address) {
       this.address = address;
       bufferValid = false;
    }
 
+   @Override
    public PagingStore getPagingStore() {
       return pagingStore;
    }
 
+   @Override
    public boolean storeIsPaging() {
       if (pagingStore != null) {
          return pagingStore.isPaging();
@@ -289,12 +303,14 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
 
    }
 
+   @Override
    public InputStream getBodyInputStream() {
       return null;
    }
 
    // Encoding stuff
 
+   @Override
    public void encodeMessageIDToBuffer() {
       // We first set the message id - this needs to be set on the buffer since this buffer will be re-used
 
@@ -318,6 +334,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage {
       }
    }
 
+   @Override
    public Object getDuplicateProperty() {
       return getObjectProperty(Message.HDR_DUPLICATE_DETECTION_ID);
    }

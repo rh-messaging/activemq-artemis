@@ -16,12 +16,11 @@
  */
 package org.apache.activemq.artemis.core.transaction;
 
+import javax.transaction.xa.Xid;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import javax.transaction.xa.Xid;
 
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.ServerMessage;

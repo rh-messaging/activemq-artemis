@@ -33,11 +33,12 @@ import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.impl.ServerMessageImpl;
 import org.apache.activemq.artemis.utils.DataConstants;
 import org.apache.activemq.artemis.utils.TypedProperties;
+import org.jboss.logging.Logger;
 
 public final class LargeServerMessageImpl extends ServerMessageImpl implements LargeServerMessage {
 
    // Constants -----------------------------------------------------
-   private static boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(LargeServerMessageImpl.class);
 
    // Attributes ----------------------------------------------------
 
@@ -178,8 +179,8 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
    private void checkDelete() throws Exception {
       if (getRefCount() <= 0) {
-         if (LargeServerMessageImpl.isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Deleting file " + file + " as the usage was complete");
+         if (logger.isTraceEnabled()) {
+            logger.trace("Deleting file " + file + " as the usage was complete");
          }
 
          try {
@@ -258,51 +259,66 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
    }
 
    @Override
-   public synchronized ServerMessage copy() {
+   public ServerMessage copy() {
       SequentialFile newfile = storageManager.createFileForLargeMessage(messageID, durable);
 
       ServerMessage newMessage = new LargeServerMessageImpl(this, properties, newfile, messageID);
       return newMessage;
    }
 
-   public void copyFrom(final SequentialFile fileSource) throws Exception {
-      this.bodySize = -1;
-      this.pendingCopy = fileSource;
-   }
-
    @Override
-   public void finishCopy() throws Exception {
-      if (pendingCopy != null) {
-         SequentialFile copyTo = createFile();
-         try {
-            this.pendingRecordID = storageManager.storePendingLargeMessage(this.messageID);
-            copyTo.open();
-            pendingCopy.open();
-            pendingCopy.copyTo(copyTo);
-         }
-         finally {
-            copyTo.close();
-            pendingCopy.close();
-            pendingCopy = null;
-         }
-
-         closeFile();
-         bodySize = -1;
-         file = null;
-      }
-   }
-
-   /**
-    * The copy of the file itself will be done later by {@link LargeServerMessageImpl#finishCopy()}
-    */
-   @Override
-   public synchronized ServerMessage copy(final long newID) {
+   public ServerMessage copy(final long newID) {
       try {
-         SequentialFile newfile = storageManager.createFileForLargeMessage(newID, durable);
+         LargeServerMessage newMessage = storageManager.createLargeMessage(newID, this);
 
-         LargeServerMessageImpl newMessage = new LargeServerMessageImpl(this, properties, newfile, newID);
-         newMessage.copyFrom(createFile());
+         boolean originallyOpen = file != null && file.isOpen();
+
+         validateFile();
+
+
+         byte[] bufferBytes = new byte[100 * 1024];
+
+         ByteBuffer buffer = ByteBuffer.wrap(bufferBytes);
+
+         long oldPosition = file.position();
+
+         file.open();
+         file.position(0);
+
+         for (;;) {
+            // The buffer is reused...
+            // We need to make sure we clear the limits and the buffer before reusing it
+            buffer.clear();
+            int bytesRead = file.read(buffer);
+
+            byte[] bufferToWrite;
+            if (bytesRead <= 0) {
+               break;
+            }
+            else if (bytesRead == bufferBytes.length) {
+               bufferToWrite = bufferBytes;
+            }
+            else {
+               bufferToWrite = new byte[bytesRead];
+               System.arraycopy(bufferBytes, 0, bufferToWrite, 0, bytesRead);
+            }
+
+            newMessage.addBytes(bufferToWrite);
+
+            if (bytesRead < bufferBytes.length) {
+               break;
+            }
+         }
+
+         file.position(oldPosition);
+
+         if (!originallyOpen) {
+            file.close();
+         }
+
          return newMessage;
+
+
       }
       catch (Exception e) {
          ActiveMQServerLogger.LOGGER.lareMessageErrorCopying(e, this);
@@ -317,10 +333,21 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
    @Override
    public String toString() {
-      return "LargeServerMessage[messageID=" + messageID + ",priority=" + this.getPriority() +
-         ",expiration=[" + (this.getExpiration() != 0 ? new java.util.Date(this.getExpiration()) : "null") + "]" +
+      return "LargeServerMessage[messageID=" + messageID + ",durable=" + isDurable() + ",userID=" + getUserID() + ",priority=" + this.getPriority() +
+         ", timestamp=" + toDate(getTimestamp()) + ",expiration=" + toDate(getExpiration()) +
          ", durable=" + durable + ", address=" + getAddress() + ",properties=" + properties.toString() + "]@" + System.identityHashCode(this);
    }
+
+   private static String toDate(long timestamp) {
+      if (timestamp == 0) {
+         return "0";
+      }
+      else {
+         return new java.util.Date(timestamp).toString();
+      }
+
+   }
+
 
    // Package protected ---------------------------------------------
 
@@ -334,7 +361,7 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
    // Private -------------------------------------------------------
 
-   private synchronized void validateFile() throws ActiveMQException {
+   public synchronized void validateFile() throws ActiveMQException {
       try {
          if (file == null) {
             if (messageID <= 0) {

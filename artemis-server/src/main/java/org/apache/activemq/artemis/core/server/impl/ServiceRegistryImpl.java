@@ -16,17 +16,6 @@
  */
 package org.apache.activemq.artemis.core.server.impl;
 
-import org.apache.activemq.artemis.api.core.BaseInterceptor;
-import org.apache.activemq.artemis.api.core.Interceptor;
-import org.apache.activemq.artemis.api.core.Pair;
-import org.apache.activemq.artemis.core.config.ConnectorServiceConfiguration;
-import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
-import org.apache.activemq.artemis.core.server.ConnectorServiceFactory;
-import org.apache.activemq.artemis.core.server.ServiceRegistry;
-import org.apache.activemq.artemis.core.server.cluster.Transformer;
-import org.apache.activemq.artemis.spi.core.remoting.AcceptorFactory;
-import org.apache.activemq.artemis.utils.ClassloadingUtil;
-
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -37,6 +26,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.apache.activemq.artemis.api.core.BaseInterceptor;
+import org.apache.activemq.artemis.api.core.Interceptor;
+import org.apache.activemq.artemis.api.core.Pair;
+import org.apache.activemq.artemis.core.config.ConnectorServiceConfiguration;
+import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ConnectorServiceFactory;
+import org.apache.activemq.artemis.core.server.ServiceRegistry;
+import org.apache.activemq.artemis.core.server.cluster.Transformer;
+import org.apache.activemq.artemis.spi.core.remoting.AcceptorFactory;
+import org.apache.activemq.artemis.utils.ClassloadingUtil;
 
 public class ServiceRegistryImpl implements ServiceRegistry {
 

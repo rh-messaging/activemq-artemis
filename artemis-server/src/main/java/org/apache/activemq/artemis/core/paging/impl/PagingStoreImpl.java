@@ -47,7 +47,6 @@ import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
 import org.apache.activemq.artemis.core.paging.cursor.LivePageCache;
 import org.apache.activemq.artemis.core.paging.cursor.PageCursorProvider;
 import org.apache.activemq.artemis.core.paging.cursor.impl.LivePageCacheImpl;
-import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
@@ -62,11 +61,14 @@ import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
 import org.apache.activemq.artemis.utils.FutureLatch;
+import org.jboss.logging.Logger;
 
 /**
  * @see PagingStore
  */
 public class PagingStoreImpl implements PagingStore {
+
+   private static final Logger logger = Logger.getLogger(PagingStoreImpl.class);
 
    private final SimpleString address;
 
@@ -121,8 +123,6 @@ public class PagingStoreImpl implements PagingStore {
 
    private volatile AtomicBoolean blocking = new AtomicBoolean(false);
 
-   private static final boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
-
    public PagingStoreImpl(final SimpleString address,
                           final ScheduledExecutorService scheduledExecutor,
                           final long syncTimeout,
@@ -172,7 +172,7 @@ public class PagingStoreImpl implements PagingStore {
          this.syncTimer = null;
       }
 
-      this.cursorProvider = new PageCursorProviderImpl(this, this.storageManager, executor, addressSettings.getPageCacheMaxSize());
+      this.cursorProvider = storeFactory.newCursorProvider(this, this.storageManager, addressSettings, executor);
 
    }
 
@@ -330,7 +330,7 @@ public class PagingStoreImpl implements PagingStore {
          flushExecutors();
 
          if (currentPage != null) {
-            currentPage.close();
+            currentPage.close(false);
             currentPage = null;
          }
       }
@@ -371,7 +371,7 @@ public class PagingStoreImpl implements PagingStore {
 
                currentPageId = 0;
                if (currentPage != null) {
-                  currentPage.close();
+                  currentPage.close(false);
                }
                currentPage = null;
 
@@ -563,7 +563,7 @@ public class PagingStoreImpl implements PagingStore {
                }
 
                returnPage = currentPage;
-               returnPage.close();
+               returnPage.close(false);
                currentPage = null;
 
                // The current page is empty... which means we reached the end of the pages
@@ -798,9 +798,9 @@ public class PagingStoreImpl implements PagingStore {
                sync();
             }
 
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("Paging message " + pagedMessage + " on pageStore " + this.getStoreName() +
-                                                    " pageId=" + currentPage.getPageId());
+            if (logger.isTraceEnabled()) {
+               logger.trace("Paging message " + pagedMessage + " on pageStore " + this.getStoreName() +
+                                                    " pageNr=" + currentPage.getPageId());
             }
 
             return true;
@@ -982,8 +982,12 @@ public class PagingStoreImpl implements PagingStore {
 
          int tmpCurrentPageId = currentPageId + 1;
 
+         if (logger.isTraceEnabled()) {
+            logger.trace("new pageNr=" + tmpCurrentPageId, new Exception("trace"));
+         }
+
          if (currentPage != null) {
-            currentPage.close();
+            currentPage.close(true);
          }
 
          currentPage = createPage(tmpCurrentPageId);

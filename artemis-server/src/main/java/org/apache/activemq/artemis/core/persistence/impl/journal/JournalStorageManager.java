@@ -372,13 +372,15 @@ public class JournalStorageManager implements StorageManager {
             }
             bindingsJournal = new ReplicatedJournal(((byte) 0), originalBindingsJournal, replicator);
             messageJournal = new ReplicatedJournal((byte) 1, originalMessageJournal, replicator);
+
+            // We need to send the list while locking otherwise part of the body might get sent too soon
+            // it will send a list of IDs that we are allocating
+            replicator.sendLargeMessageIdListMessage(pendingLargeMessages);
          }
          finally {
             storageManagerLock.writeLock().unlock();
          }
 
-         // it will send a list of IDs that we are allocating
-         replicator.sendLargeMessageIdListMessage(pendingLargeMessages);
          sendJournalFile(messageFiles, JournalContent.MESSAGES);
          sendJournalFile(bindingsFiles, JournalContent.BINDINGS);
          sendLargeMessageFiles(pendingLargeMessages);
@@ -713,6 +715,10 @@ public class JournalStorageManager implements StorageManager {
          largeMessage.copyHeadersAndProperties(message);
 
          largeMessage.setMessageID(id);
+
+         // We do this here to avoid a case where the replication gets a list without this file
+         // to avoid a race
+         largeMessage.validateFile();
 
          if (largeMessage.isDurable()) {
             // We store a marker on the journal that the large file is pending

@@ -88,6 +88,7 @@ import org.apache.activemq.artemis.utils.PriorityLinkedListImpl;
 import org.apache.activemq.artemis.utils.ReferenceCounter;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.TypedProperties;
+import org.jboss.logging.Logger;
 
 /**
  * Implementation of a Queue
@@ -96,7 +97,7 @@ import org.apache.activemq.artemis.utils.TypedProperties;
  */
 public class QueueImpl implements Queue {
 
-   private static final boolean isTrace = ActiveMQServerLogger.LOGGER.isTraceEnabled();
+   private static final Logger logger = Logger.getLogger(QueueImpl.class);
 
    public static final int REDISTRIBUTOR_BATCH_SIZE = 100;
 
@@ -454,10 +455,10 @@ public class QueueImpl implements Queue {
             public void run() {
                synchronized (QueueImpl.this) {
                   if (groups.remove(groupIDToRemove) != null) {
-                     ActiveMQServerLogger.LOGGER.debug("Removing group after unproposal " + groupID + " from queue " + QueueImpl.this);
+                     logger.debug("Removing group after unproposal " + groupID + " from queue " + QueueImpl.this);
                   }
                   else {
-                     ActiveMQServerLogger.LOGGER.debug("Couldn't remove Removing group " + groupIDToRemove + " after unproposal on queue " + QueueImpl.this);
+                     logger.debug("Couldn't remove Removing group " + groupIDToRemove + " after unproposal on queue " + QueueImpl.this);
                   }
                }
             }
@@ -573,14 +574,14 @@ public class QueueImpl implements Queue {
 
    public void forceDelivery() {
       if (pageSubscription != null && pageSubscription.isPaging()) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Force delivery scheduling depage");
+         if (logger.isTraceEnabled()) {
+            logger.trace("Force delivery scheduling depage");
          }
          scheduleDepage(false);
       }
 
-      if (isTrace) {
-         ActiveMQServerLogger.LOGGER.trace("Force delivery deliverying async");
+      if (logger.isTraceEnabled()) {
+         logger.trace("Force delivery deliverying async");
       }
 
       deliverAsync();
@@ -665,8 +666,8 @@ public class QueueImpl implements Queue {
    }
 
    public void addConsumer(final Consumer consumer) throws Exception {
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-         ActiveMQServerLogger.LOGGER.debug(this + " adding consumer " + consumer);
+      if (logger.isDebugEnabled()) {
+         logger.debug(this + " adding consumer " + consumer);
       }
 
       synchronized (this) {
@@ -1024,14 +1025,14 @@ public class QueueImpl implements Queue {
 
    public void expire(final MessageReference ref) throws Exception {
       if (expiryAddress != null) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName());
+         if (logger.isTraceEnabled()) {
+            logger.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName());
          }
          move(expiryAddress, ref, true, false);
       }
       else {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("expiry is null, just acking expired message for reference " + ref + " from queue=" + this.getName());
+         if (logger.isTraceEnabled()) {
+            logger.trace("expiry is null, just acking expired message for reference " + ref + " from queue=" + this.getName());
          }
          acknowledge(ref);
       }
@@ -1282,8 +1283,8 @@ public class QueueImpl implements Queue {
    public synchronized boolean expireReference(final long messageID) throws Exception {
       if (expiryAddress != null && expiryAddress.equals(this.address)) {
          // check expire with itself would be silly (waste of time)
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled())
-            ActiveMQServerLogger.LOGGER.debug("Cannot expire from " + address + " into " + expiryAddress);
+         if (logger.isDebugEnabled())
+            logger.debug("Cannot expire from " + address + " into " + expiryAddress);
          return false;
       }
 
@@ -1310,8 +1311,8 @@ public class QueueImpl implements Queue {
    public synchronized int expireReferences(final Filter filter) throws Exception {
       if (expiryAddress != null && expiryAddress.equals(this.address)) {
          // check expire with itself would be silly (waste of time)
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled())
-            ActiveMQServerLogger.LOGGER.debug("Cannot expire from " + address + " into " + expiryAddress);
+         if (logger.isDebugEnabled())
+            logger.debug("Cannot expire from " + address + " into " + expiryAddress);
          return 0;
       }
 
@@ -1345,8 +1346,8 @@ public class QueueImpl implements Queue {
    public void expireReferences() {
       if (expiryAddress != null && expiryAddress.equals(this.address)) {
          // check expire with itself would be silly (waste of time)
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled())
-            ActiveMQServerLogger.LOGGER.debug("Cannot expire from " + address + " into " + expiryAddress);
+         if (logger.isDebugEnabled())
+            logger.debug("Cannot expire from " + address + " into " + expiryAddress);
          return;
       }
 
@@ -1697,8 +1698,8 @@ public class QueueImpl implements Queue {
     * are no more matching or available messages.
     */
    private void deliver() {
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-         ActiveMQServerLogger.LOGGER.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
+      if (logger.isDebugEnabled()) {
+         logger.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
       }
 
       doInternalPoll();
@@ -1725,8 +1726,8 @@ public class QueueImpl implements Queue {
          }
 
          if (System.currentTimeMillis() > timeout) {
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("delivery has been running for too long. Scheduling another delivery task now");
+            if (logger.isTraceEnabled()) {
+               logger.trace("delivery has been running for too long. Scheduling another delivery task now");
             }
 
             deliverAsync();
@@ -1782,8 +1783,8 @@ public class QueueImpl implements Queue {
             }
             else {
                if (checkExpired(ref)) {
-                  if (isTrace) {
-                     ActiveMQServerLogger.LOGGER.trace("Reference " + ref + " being expired");
+                  if (logger.isTraceEnabled()) {
+                     logger.trace("Reference " + ref + " being expired");
                   }
                   holder.iter.remove();
 
@@ -1794,8 +1795,8 @@ public class QueueImpl implements Queue {
                   continue;
                }
 
-               if (isTrace) {
-                  ActiveMQServerLogger.LOGGER.trace("Queue " + this.getName() + " is delivering reference " + ref);
+               if (logger.isTraceEnabled()) {
+                  logger.trace("Queue " + this.getName() + " is delivering reference " + ref);
                }
 
                // If a group id is set, then this overrides the consumer chosen round-robin
@@ -1848,8 +1849,8 @@ public class QueueImpl implements Queue {
                      ActiveMQServerLogger.LOGGER.nonDeliveryHandled();
                   }
                   else {
-                     if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-                        ActiveMQServerLogger.LOGGER.debug(this + "::All the consumers were busy, giving up now");
+                     if (logger.isDebugEnabled()) {
+                        logger.debug(this + "::All the consumers were busy, giving up now");
                      }
                      break;
                   }
@@ -1926,8 +1927,8 @@ public class QueueImpl implements Queue {
 
    private void scheduleDepage(final boolean scheduleExpiry) {
       if (!depagePending) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Scheduling depage for queue " + this.getName());
+         if (logger.isTraceEnabled()) {
+            logger.trace("Scheduling depage for queue " + this.getName());
          }
          depagePending = true;
          pageSubscription.getExecutor().execute(new DepageRunner(scheduleExpiry));
@@ -1947,8 +1948,8 @@ public class QueueImpl implements Queue {
 
       long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
 
-      if (isTrace) {
-         ActiveMQServerLogger.LOGGER.trace("QueueMemorySize before depage on queue=" + this.getName() + " is " + queueMemorySize.get());
+      if (logger.isTraceEnabled()) {
+         logger.trace("QueueMemorySize before depage on queue=" + this.getName() + " is " + queueMemorySize.get());
       }
 
       this.directDeliver = false;
@@ -1957,20 +1958,20 @@ public class QueueImpl implements Queue {
       while (timeout > System.currentTimeMillis() && needsDepage() && pageIterator.hasNext()) {
          depaged++;
          PagedReference reference = pageIterator.next();
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Depaging reference " + reference + " on queue " + this.getName());
+         if (logger.isTraceEnabled()) {
+            logger.trace("Depaging reference " + reference + " on queue " + this.getName());
          }
          addTail(reference, false);
          pageIterator.remove();
       }
 
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
+      if (logger.isDebugEnabled()) {
          if (depaged == 0 && queueMemorySize.get() >= maxSize) {
-            ActiveMQServerLogger.LOGGER.debug("Couldn't depage any message as the maxSize on the queue was achieved. " + "There are too many pending messages to be acked in reference to the page configuration");
+            logger.debug("Couldn't depage any message as the maxSize on the queue was achieved. " + "There are too many pending messages to be acked in reference to the page configuration");
          }
 
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-            ActiveMQServerLogger.LOGGER.debug("Queue Memory Size after depage on queue=" + this.getName() +
+         if (logger.isDebugEnabled()) {
+            logger.debug("Queue Memory Size after depage on queue=" + this.getName() +
                                                  " is " +
                                                  queueMemorySize.get() +
                                                  " with maxSize = " +
@@ -1994,8 +1995,8 @@ public class QueueImpl implements Queue {
    private void internalAddRedistributor(final Executor executor) {
       // create the redistributor only once if there are no local consumers
       if (consumerSet.isEmpty() && redistributor == null) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("QueueImpl::Adding redistributor on queue " + this.toString());
+         if (logger.isTraceEnabled()) {
+            logger.trace("QueueImpl::Adding redistributor on queue " + this.toString());
          }
          redistributor = new Redistributor(this, storageManager, postOffice, executor, QueueImpl.REDISTRIBUTOR_BATCH_SIZE);
 
@@ -2015,8 +2016,8 @@ public class QueueImpl implements Queue {
       ServerMessage message = reference.getMessage();
 
       if (internalQueue) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Queue " + this.getName() + " is an internal queue, no checkRedelivery");
+         if (logger.isTraceEnabled()) {
+            logger.trace("Queue " + this.getName() + " is an internal queue, no checkRedelivery");
          }
          // no DLQ check on internal queues
          return true;
@@ -2034,8 +2035,8 @@ public class QueueImpl implements Queue {
 
       // First check DLA
       if (maxDeliveries > 0 && deliveryCount >= maxDeliveries) {
-         if (isTrace) {
-            ActiveMQServerLogger.LOGGER.trace("Sending reference " + reference + " to DLA = " + addressSettings.getDeadLetterAddress() + " since ref.getDeliveryCount=" + reference.getDeliveryCount() + "and maxDeliveries=" + maxDeliveries + " from queue=" + this.getName());
+         if (logger.isTraceEnabled()) {
+            logger.trace("Sending reference " + reference + " to DLA = " + addressSettings.getDeadLetterAddress() + " since ref.getDeliveryCount=" + reference.getDeliveryCount() + "and maxDeliveries=" + maxDeliveries + " from queue=" + this.getName());
          }
          sendToDeadLetterAddress(reference, addressSettings.getDeadLetterAddress());
 
@@ -2046,8 +2047,8 @@ public class QueueImpl implements Queue {
          if (!ignoreRedeliveryDelay && redeliveryDelay > 0) {
             redeliveryDelay = calculateRedeliveryDelay(addressSettings, deliveryCount);
 
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("Setting redeliveryDelay=" + redeliveryDelay + " on reference=" + reference);
+            if (logger.isTraceEnabled()) {
+               logger.trace("Setting redeliveryDelay=" + redeliveryDelay + " on reference=" + reference);
             }
 
             reference.setScheduledDeliveryTime(timeBase + redeliveryDelay);
@@ -2099,7 +2100,7 @@ public class QueueImpl implements Queue {
          if (propName.startsWith(MessageImpl.HDR_ROUTE_TO_IDS)) {
             oldRouteToIDs = (byte[]) copyMessage.removeProperty(propName);
             final String hashcodeToString = oldRouteToIDs.toString(); // don't use Arrays.toString(..) here
-            ActiveMQServerLogger.LOGGER.debug("Removed property from message: " + propName + " = " + hashcodeToString + " (" + ByteBuffer.wrap(oldRouteToIDs).getLong() + ")");
+            logger.debug("Removed property from message: " + propName + " = " + hashcodeToString + " (" + ByteBuffer.wrap(oldRouteToIDs).getLong() + ")");
 
             // there should only be one of these properties so potentially save some loop iterations
             break;
@@ -2125,12 +2126,11 @@ public class QueueImpl implements Queue {
             ActiveMQServerLogger.LOGGER.unableToFindTargetQueue(targetNodeID);
          }
          else {
-            ActiveMQServerLogger.LOGGER.debug("Routing on binding: " + targetBinding);
+            logger.debug("Routing on binding: " + targetBinding);
             targetBinding.route(copyMessage, routingContext);
          }
       }
 
-      copyMessage.finishCopy();
       postOffice.processRoute(copyMessage, routingContext, false);
 
       ref.handled();
@@ -2170,7 +2170,7 @@ public class QueueImpl implements Queue {
                // parse the queue name of the remote queue binding to determine the node ID
                String temp = remoteQueueBinding.getQueue().getName().toString();
                targetNodeID = temp.substring(temp.lastIndexOf(".") + 1);
-               ActiveMQServerLogger.LOGGER.debug("Message formerly destined for " + oldQueueName + " with ID: " + oldQueueID + " on address " + copyMessage.getAddress() + " on node " + targetNodeID);
+               logger.debug("Message formerly destined for " + oldQueueName + " with ID: " + oldQueueID + " on address " + copyMessage.getAddress() + " on node " + targetNodeID);
 
                // now that we have the name of the queue we need to look through all the bindings again to find the new remote queue binding
                for (Map.Entry<SimpleString, Binding> entry2 : postOffice.getAllBindings().entrySet()) {
@@ -2183,13 +2183,13 @@ public class QueueImpl implements Queue {
                      targetNodeID = temp.substring(temp.lastIndexOf(".") + 1);
                      if (oldQueueName.equals(remoteQueueBinding.getRoutingName()) && targetNodeID.equals(queueSuffix.toString())) {
                         targetBinding = remoteQueueBinding;
-                        if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-                           ActiveMQServerLogger.LOGGER.debug("Message now destined for " + remoteQueueBinding.getRoutingName() + " with ID: " + remoteQueueBinding.getRemoteQueueID() + " on address " + copyMessage.getAddress() + " on node " + targetNodeID);
+                        if (logger.isDebugEnabled()) {
+                           logger.debug("Message now destined for " + remoteQueueBinding.getRoutingName() + " with ID: " + remoteQueueBinding.getRemoteQueueID() + " on address " + copyMessage.getAddress() + " on node " + targetNodeID);
                         }
                         break;
                      }
                      else {
-                        ActiveMQServerLogger.LOGGER.debug("Failed to match: " + remoteQueueBinding);
+                        logger.debug("Failed to match: " + remoteQueueBinding);
                      }
                   }
                }
@@ -2380,8 +2380,8 @@ public class QueueImpl implements Queue {
    private boolean checkExpired(final MessageReference reference) {
       try {
          if (reference.getMessage().isExpired()) {
-            if (isTrace) {
-               ActiveMQServerLogger.LOGGER.trace("Reference " + reference + " is expired");
+            if (logger.isTraceEnabled()) {
+               logger.trace("Reference " + reference + " is expired");
             }
             reference.handled();
 
@@ -2744,8 +2744,8 @@ public class QueueImpl implements Queue {
             slowConsumerReaperFuture.cancel(false);
             slowConsumerReaperFuture = null;
             slowConsumerReaperRunnable = null;
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug("Cancelled slow-consumer-reaper thread for queue \"" + getName() + "\"");
+            if (logger.isDebugEnabled()) {
+               logger.debug("Cancelled slow-consumer-reaper thread for queue \"" + getName() + "\"");
             }
          }
       }
@@ -2767,8 +2767,8 @@ public class QueueImpl implements Queue {
 
       slowConsumerReaperFuture = scheduledExecutor.scheduleWithFixedDelay(slowConsumerReaperRunnable, settings.getSlowConsumerCheckPeriod(), settings.getSlowConsumerCheckPeriod(), TimeUnit.SECONDS);
 
-      if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-         ActiveMQServerLogger.LOGGER.debug("Scheduled slow-consumer-reaper thread for queue \"" + getName() +
+      if (logger.isDebugEnabled()) {
+         logger.debug("Scheduled slow-consumer-reaper thread for queue \"" + getName() +
                                               "\"; slow-consumer-check-period=" + settings.getSlowConsumerCheckPeriod() +
                                               ", slow-consumer-threshold=" + settings.getSlowConsumerThreshold() +
                                               ", slow-consumer-policy=" + settings.getSlowConsumerPolicy());
@@ -2800,16 +2800,16 @@ public class QueueImpl implements Queue {
       @Override
       public void run() {
          float queueRate = getRate();
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-            ActiveMQServerLogger.LOGGER.debug(getAddress() + ":" + getName() + " has " + getConsumerCount() + " consumer(s) and is receiving messages at a rate of " + queueRate + " msgs/second.");
+         if (logger.isDebugEnabled()) {
+            logger.debug(getAddress() + ":" + getName() + " has " + getConsumerCount() + " consumer(s) and is receiving messages at a rate of " + queueRate + " msgs/second.");
          }
          for (Consumer consumer : getConsumers()) {
             if (consumer instanceof ServerConsumerImpl) {
                ServerConsumerImpl serverConsumer = (ServerConsumerImpl) consumer;
                float consumerRate = serverConsumer.getRate();
                if (queueRate < threshold) {
-                  if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-                     ActiveMQServerLogger.LOGGER.debug("Insufficient messages received on queue \"" + getName() + "\" to satisfy slow-consumer-threshold. Skipping inspection of consumer.");
+                  if (logger.isDebugEnabled()) {
+                     logger.debug("Insufficient messages received on queue \"" + getName() + "\" to satisfy slow-consumer-threshold. Skipping inspection of consumer.");
                   }
                }
                else if (consumerRate < threshold) {

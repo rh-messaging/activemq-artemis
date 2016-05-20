@@ -16,14 +16,14 @@
  */
 package org.apache.activemq.artemis.core.config.impl;
 
-import org.apache.activemq.artemis.core.security.User;
-import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.activemq.artemis.core.security.User;
+import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 
 public class SecurityConfiguration {
 

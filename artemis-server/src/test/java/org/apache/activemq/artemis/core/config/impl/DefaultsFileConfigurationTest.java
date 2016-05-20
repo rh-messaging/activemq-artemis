@@ -16,17 +16,15 @@
  */
 package org.apache.activemq.artemis.core.config.impl;
 
-import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
-import org.apache.activemq.artemis.core.config.FileDeploymentManager;
-import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
-import org.junit.Test;
-
 import java.util.Collections;
 
-import org.junit.Assert;
-
+import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.FileDeploymentManager;
+import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.journal.impl.JournalConstants;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class DefaultsFileConfigurationTest extends ConfigurationImplTest {
 

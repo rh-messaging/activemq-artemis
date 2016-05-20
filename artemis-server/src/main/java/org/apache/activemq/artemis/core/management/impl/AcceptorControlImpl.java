@@ -16,9 +16,8 @@
  */
 package org.apache.activemq.artemis.core.management.impl;
 
-import java.util.Map;
-
 import javax.management.MBeanOperationInfo;
+import java.util.Map;
 
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.management.AcceptorControl;

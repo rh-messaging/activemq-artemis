@@ -69,6 +69,7 @@ import org.apache.activemq.artemis.journal.ActiveMQJournalBundle;
 import org.apache.activemq.artemis.journal.ActiveMQJournalLogger;
 import org.apache.activemq.artemis.utils.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.DataConstants;
+import org.jboss.logging.Logger;
 
 /**
  * <p>A circular log implementation.</p>
@@ -84,22 +85,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    private static final int[] COMPATIBLE_VERSIONS = new int[]{1};
 
    // Static --------------------------------------------------------
-   private static final boolean trace = ActiveMQJournalLogger.LOGGER.isTraceEnabled();
-
-   // This is useful at debug time...
-   // if you set it to true, all the appends, deletes, rollbacks, commits, etc.. are sent to System.out
-   private static final boolean TRACE_RECORDS = trace;
-
-   // This method exists just to make debug easier.
-   // I could replace log.trace by log.info temporarily while I was debugging
-   // Journal
-   private static void trace(final String message) {
-      ActiveMQJournalLogger.LOGGER.trace(message);
-   }
-
-   private static void traceRecord(final String message) {
-      ActiveMQJournalLogger.LOGGER.trace(message);
-   }
+   private static final Logger logger = Logger.getLogger(JournalImpl.class);
 
    // The sizes of primitive types
 
@@ -540,7 +526,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                preparedTransactionExtraDataSize)) {
                // Avoid a buffer overflow caused by damaged data... continue
                // scanning for more pendingTransactions...
-               JournalImpl.trace("Record at position " + pos +
+               logger.trace("Record at position " + pos +
                                     " recordType = " +
                                     recordType +
                                     " file:" +
@@ -573,7 +559,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             // This is like testing a hash for the record. (We could replace the
             // checkSize by some sort of calculated hash)
             if (checkSize != variableSize + recordSize + preparedTransactionExtraDataSize) {
-               JournalImpl.trace("Record at position " + pos +
+               logger.trace("Record at position " + pos +
                                     " recordType = " +
                                     recordType +
                                     " possible transactionID = " +
@@ -712,10 +698,11 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(addRecord, false, sync, null, callback);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendAddRecord::id=" + id +
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendAddRecord::id=" + id +
                                           ", userRecordType=" +
                                           recordType +
+                                          ", record = " + record +
                                           ", usedFile = " +
                                           usedFile);
             }
@@ -756,10 +743,11 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(updateRecord, false, sync, null, callback);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendUpdateRecord::id=" + id +
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendUpdateRecord::id=" + id +
                                           ", userRecordType=" +
                                           recordType +
+                                          ", record = " + record +
                                           ", usedFile = " +
                                           usedFile);
             }
@@ -810,8 +798,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(deleteRecord, false, sync, null, callback);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendDeleteRecord::id=" + id + ", usedFile = " + usedFile);
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendDeleteRecord::id=" + id + ", usedFile = " + usedFile);
             }
 
             // record== null here could only mean there is a compactor, and computing the delete should be done after
@@ -847,12 +835,13 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(addRecord, false, false, tx, null);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendAddRecordTransactional:txID=" + txID +
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendAddRecordTransactional:txID=" + txID +
                                           ",id=" +
                                           id +
                                           ", userRecordType=" +
                                           recordType +
+                                          ", record = " + record +
                                           ", usedFile = " +
                                           usedFile);
             }
@@ -892,12 +881,13 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(updateRecordTX, false, false, tx, null);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendUpdateRecordTransactional::txID=" + txID +
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendUpdateRecordTransactional::txID=" + txID +
                                           ",id=" +
                                           id +
                                           ", userRecordType=" +
                                           recordType +
+                                          ", record = " + record +
                                           ", usedFile = " +
                                           usedFile);
             }
@@ -926,8 +916,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(deleteRecordTX, false, false, tx, null);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendDeleteRecordTransactional::txID=" + txID +
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendDeleteRecordTransactional::txID=" + txID +
                                           ", id=" +
                                           id +
                                           ", usedFile = " +
@@ -976,8 +966,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(prepareRecord, true, sync, tx, callback);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendPrepareRecord::txID=" + txID + ", usedFile = " + usedFile);
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendPrepareRecord::txID=" + txID + ", usedFile = " + usedFile);
             }
 
             tx.prepare(usedFile);
@@ -1022,8 +1012,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          synchronized (lockAppend) {
             JournalFile usedFile = appendRecord(commitRecord, true, sync, tx, callback);
 
-            if (JournalImpl.TRACE_RECORDS) {
-               JournalImpl.traceRecord("appendCommitRecord::txID=" + txID + ", usedFile = " + usedFile);
+            if (logger.isTraceEnabled()) {
+               logger.trace("appendCommitRecord::txID=" + txID + ", usedFile = " + usedFile);
             }
 
             tx.commit(usedFile);
@@ -1275,7 +1265,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                filesRepository.clearDataFiles();
 
                if (dataFilesToProcess.size() == 0) {
-                  trace("Finishing compacting, nothing to process");
+                  logger.trace("Finishing compacting, nothing to process");
                   return;
                }
 
@@ -1341,14 +1331,14 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                // Restore compacted dataFiles
                for (int i = newDatafiles.size() - 1; i >= 0; i--) {
                   JournalFile fileToAdd = newDatafiles.get(i);
-                  if (JournalImpl.trace) {
-                     JournalImpl.trace("Adding file " + fileToAdd + " back as datafile");
+                  if (logger.isTraceEnabled()) {
+                     logger.trace("Adding file " + fileToAdd + " back as datafile");
                   }
                   filesRepository.addDataFileOnTop(fileToAdd);
                }
 
-               if (JournalImpl.trace) {
-                  JournalImpl.trace("There are " + filesRepository.getDataFilesCount() + " datafiles Now");
+               if (logger.isTraceEnabled()) {
+                  logger.trace("There are " + filesRepository.getDataFilesCount() + " datafiles Now");
                }
 
                // Replay pending commands (including updates, deletes and commits)
@@ -1364,8 +1354,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                // that happened during the compacting
 
                for (JournalTransaction newTransaction : localCompactor.getNewTransactions().values()) {
-                  if (JournalImpl.trace) {
-                     JournalImpl.trace("Merging pending transaction " + newTransaction + " after compacting the journal");
+                  if (logger.isTraceEnabled()) {
+                     logger.trace("Merging pending transaction " + newTransaction + " after compacting the journal");
                   }
                   JournalTransaction liveTransaction = transactions.get(newTransaction.getId());
                   if (liveTransaction != null) {
@@ -1486,7 +1476,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       final AtomicLong maxID = new AtomicLong(-1);
 
       for (final JournalFile file : orderedFiles) {
-         JournalImpl.trace("Loading file " + file.getFile().getFileName());
+         logger.trace("Loading file " + file.getFile().getFileName());
 
          final AtomicBoolean hasData = new AtomicBoolean(false);
 
@@ -1786,8 +1776,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          for (JournalFile file : filesRepository.getDataFiles()) {
             if (file.isCanReclaim()) {
                // File can be reclaimed or deleted
-               if (JournalImpl.trace) {
-                  JournalImpl.trace("Reclaiming file " + file);
+               if (logger.isTraceEnabled()) {
+                  logger.trace("Reclaiming file " + file);
                }
 
                filesRepository.removeDataFile(file);
@@ -2733,8 +2723,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          scheduleReclaim();
       }
 
-      if (trace) {
-         ActiveMQJournalLogger.LOGGER.trace("Moving next file " + currentFile);
+      if (logger.isTraceEnabled()) {
+         logger.trace("Moving next file " + currentFile);
       }
 
       fileFactory.activateBuffer(currentFile.getFile());

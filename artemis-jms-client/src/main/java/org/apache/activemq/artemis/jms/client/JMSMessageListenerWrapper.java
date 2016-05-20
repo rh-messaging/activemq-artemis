@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.MessageHandler;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSConstants;
+import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 
 public class JMSMessageListenerWrapper implements MessageHandler {
 
@@ -72,7 +73,7 @@ public class JMSMessageListenerWrapper implements MessageHandler {
          msg.doBeforeReceive();
       }
       catch (Exception e) {
-         ActiveMQJMSClientLogger.LOGGER.errorPreparingMessageForReceipt(e);
+         ActiveMQJMSClientLogger.LOGGER.errorPreparingMessageForReceipt(msg.getCoreMessage().toString(), e);
 
          return;
       }
@@ -82,6 +83,7 @@ public class JMSMessageListenerWrapper implements MessageHandler {
             message.acknowledge();
          }
          catch (ActiveMQException e) {
+            ((ClientSessionInternal)session.getCoreSession()).markRollbackOnly();
             ActiveMQJMSClientLogger.LOGGER.errorProcessingMessage(e);
          }
       }
@@ -121,6 +123,7 @@ public class JMSMessageListenerWrapper implements MessageHandler {
             }
          }
          catch (ActiveMQException e) {
+            ((ClientSessionInternal)session.getCoreSession()).markRollbackOnly();
             ActiveMQJMSClientLogger.LOGGER.errorProcessingMessage(e);
          }
       }

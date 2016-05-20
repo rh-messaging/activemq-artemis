@@ -16,6 +16,12 @@
  */
 package org.apache.activemq.artemis.core.server.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -36,12 +42,6 @@ import org.apache.activemq.artemis.core.server.cluster.qourum.QuorumVote;
 import org.apache.activemq.artemis.core.server.cluster.qourum.QuorumVoteHandler;
 import org.apache.activemq.artemis.core.server.cluster.qourum.Vote;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ColocatedActivation extends LiveActivation {
 

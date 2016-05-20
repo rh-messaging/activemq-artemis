@@ -16,6 +16,18 @@
  */
 package org.apache.activemq.artemis.core.server.cluster;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
@@ -53,18 +65,7 @@ import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.utils.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.FutureLatch;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
+import org.jboss.logging.Logger;
 
 /**
  * A ClusterManager manages {@link ClusterConnection}s, {@link BroadcastGroup}s and {@link Bridge}s.
@@ -74,6 +75,8 @@ import java.util.concurrent.ScheduledExecutorService;
  * deployed.
  */
 public final class ClusterManager implements ActiveMQComponent {
+
+   private static final Logger logger = Logger.getLogger(ClusterManager.class);
 
    private ClusterController clusterController;
 
@@ -471,7 +474,7 @@ public final class ClusterManager implements ActiveMQComponent {
       serverLocator.addIncomingInterceptor(new IncomingInterceptorLookingForExceptionMessage(this, executor));
 
       if (!config.isUseDuplicateDetection()) {
-         ActiveMQServerLogger.LOGGER.debug("Bridge " + config.getName() +
+         logger.debug("Bridge " + config.getName() +
                                               " is configured to not use duplicate detecion, it will send messages synchronously");
       }
 
@@ -596,8 +599,8 @@ public final class ClusterManager implements ActiveMQComponent {
          if (dg == null)
             return;
 
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-            ActiveMQServerLogger.LOGGER.debug(this + " Starting a Discovery Group Cluster Connection, name=" +
+         if (logger.isDebugEnabled()) {
+            logger.debug(this + " Starting a Discovery Group Cluster Connection, name=" +
                                                  config.getDiscoveryGroupName() +
                                                  ", dg=" +
                                                  dg);
@@ -610,8 +613,8 @@ public final class ClusterManager implements ActiveMQComponent {
       else {
          TransportConfiguration[] tcConfigs = ClusterConfigurationUtil.getTransportConfigurations(config, configuration);
 
-         if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-            ActiveMQServerLogger.LOGGER.debug(this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
+         if (logger.isDebugEnabled()) {
+            logger.debug(this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
          }
 
          clusterConnection = new ClusterConnectionImpl(this, tcConfigs, connector, new SimpleString(config.getName()), new SimpleString(config.getAddress()), config.getMinLargeMessageSize(), config.getClientFailureCheckPeriod(), config.getConnectionTTL(), config.getRetryInterval(), config.getRetryIntervalMultiplier(), config.getMaxRetryInterval(), config.getInitialConnectAttempts(), config.getReconnectAttempts(), config.getCallTimeout(), config.getCallFailoverTimeout(), config.isDuplicateDetection(), config.getMessageLoadBalancingType(), config.getConfirmationWindowSize(), executorFactory, server, postOffice, managementService, scheduledExecutor, config.getMaxHops(), nodeManager, server.getConfiguration().getClusterUser(), server.getConfiguration().getClusterPassword(), config.isAllowDirectConnectionsOnly(), config.getClusterNotificationInterval(), config.getClusterNotificationAttempts());
@@ -628,8 +631,8 @@ public final class ClusterManager implements ActiveMQComponent {
 
       clusterConnections.put(config.getName(), clusterConnection);
 
-      if (ActiveMQServerLogger.LOGGER.isTraceEnabled()) {
-         ActiveMQServerLogger.LOGGER.trace("ClusterConnection.start at " + clusterConnection, new Exception("trace"));
+      if (logger.isTraceEnabled()) {
+         logger.trace("ClusterConnection.start at " + clusterConnection, new Exception("trace"));
       }
    }
 
