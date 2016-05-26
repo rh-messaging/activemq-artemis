@@ -674,6 +674,26 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       this.jmsQueueDeleter = jmsQueueDeleter;
    }
 
+   @Override
+   public boolean isReplicaSync() {
+      if (activation instanceof SharedNothingLiveActivation) {
+         ReplicationManager replicationManager = getReplicationManager();
+
+         if (replicationManager == null) {
+            return false;
+         }
+         else {
+            return !replicationManager.isSynchronizing();
+         }
+      }
+      else if (activation instanceof SharedNothingBackupActivation) {
+         return ((SharedNothingBackupActivation) activation).isRemoteBackupUpToDate();
+      }
+      else {
+         throw ActiveMQMessageBundle.BUNDLE.methodNotApplicable();
+      }
+   }
+
    /**
     * Stops the server
     *
@@ -1651,9 +1671,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       this.queueFactory = factory;
    }
 
-   private PagingManager createPagingManager() {
+   protected PagingManager createPagingManager() {
 
-      return new PagingManagerImpl(new PagingStoreFactoryNIO(storageManager, configuration.getPagingLocation(), configuration.getJournalBufferTimeout_NIO(), scheduledPool, executorFactory, configuration.isJournalSyncNonTransactional(), shutdownOnCriticalIO), addressSettingsRepository);
+      return new PagingManagerImpl(getPagingStoreFactory(), addressSettingsRepository);
+   }
+
+   protected PagingStoreFactoryNIO getPagingStoreFactory() {
+      return new PagingStoreFactoryNIO(storageManager, configuration.getPagingLocation(), configuration.getJournalBufferTimeout_NIO(), scheduledPool, executorFactory, configuration.isJournalSyncNonTransactional(), shutdownOnCriticalIO);
    }
 
    /**

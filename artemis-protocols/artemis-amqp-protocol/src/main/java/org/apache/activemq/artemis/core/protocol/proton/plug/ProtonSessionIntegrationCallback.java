@@ -27,6 +27,7 @@ import org.apache.activemq.artemis.core.server.impl.ServerConsumerImpl;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
+import org.apache.activemq.artemis.utils.SelectorTranslator;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -158,11 +159,13 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    @Override
    public Object createSender(ProtonPlugSender protonSender,
                               String queue,
-                              String filer,
+                              String filter,
                               boolean browserOnly) throws Exception {
       long consumerID = consumerIDGenerator.generateID();
 
-      ServerConsumer consumer = serverSession.createConsumer(consumerID, SimpleString.toSimpleString(queue), SimpleString.toSimpleString(filer), browserOnly);
+      filter = SelectorTranslator.convertToActiveMQFilterString(filter);
+
+      ServerConsumer consumer = serverSession.createConsumer(consumerID, SimpleString.toSimpleString(queue), SimpleString.toSimpleString(filter), browserOnly);
 
       // AMQP handles its own flow control for when it's started
       consumer.setStarted(true);
@@ -182,6 +185,16 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    @Override
    public void createTemporaryQueue(String queueName) throws Exception {
       serverSession.createQueue(SimpleString.toSimpleString(queueName), SimpleString.toSimpleString(queueName), null, true, false);
+   }
+
+   @Override
+   public void createTemporaryQueue(String address, String queueName) throws Exception {
+      serverSession.createQueue(SimpleString.toSimpleString(address), SimpleString.toSimpleString(queueName), null, false, true);
+   }
+
+   @Override
+   public void createDurableQueue(String address, String queueName) throws Exception {
+      serverSession.createQueue(SimpleString.toSimpleString(address), SimpleString.toSimpleString(queueName), null, false, true);
    }
 
    @Override
@@ -264,12 +277,12 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
    }
 
    @Override
-   public void rollbackCurrentTX() throws Exception {
+   public void rollbackCurrentTX(boolean lastMessageDelivered) throws Exception {
       //need to check here as this can be called if init fails
       if (serverSession != null) {
          recoverContext();
          try {
-            serverSession.rollback(false);
+            serverSession.rollback(lastMessageDelivered);
          }
          finally {
             resetContext();
@@ -358,6 +371,16 @@ public class ProtonSessionIntegrationCallback implements AMQPSessionCallback, Se
       finally {
          resetContext();
       }
+   }
+
+   @Override
+   public String getPubSubPrefix() {
+      return manager.getPubSubPrefix();
+   }
+
+   @Override
+   public void deleteQueue(String address) throws Exception {
+      manager.getServer().destroyQueue(new SimpleString(address));
    }
 
    private void resetContext() {

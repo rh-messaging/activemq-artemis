@@ -48,6 +48,7 @@ import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -125,7 +126,14 @@ public class JMSMappingOutboundTransformer extends OutboundTransformer {
          }
          catch (MessageEOFException e) {
          }
-         body = new AmqpSequence(list);
+
+         String amqpType = msg.getStringProperty(AMQPMessageTypes.AMQP_TYPE_KEY);
+         if (amqpType.equals(AMQPMessageTypes.AMQP_LIST)) {
+            body = new AmqpValue(list);
+         }
+         else {
+            body = new AmqpSequence(list);
+         }
       }
       if (msg instanceof ObjectMessage) {
          body = new AmqpValue(((ObjectMessage) msg).getObject());
@@ -207,9 +215,9 @@ public class JMSMappingOutboundTransformer extends OutboundTransformer {
          }
          else if (key.startsWith("JMSXUserID")) {
             String value = msg.getStringProperty(key);
-            props.setUserId(new Binary(value.getBytes("UTF-8")));
+            props.setUserId(new Binary(value.getBytes(StandardCharsets.UTF_8)));
          }
-         else if (key.startsWith("JMSXGroupID")) {
+         else if (key.startsWith("JMSXGroupID") || key.startsWith("_AMQ_GROUP_ID")) {
             String value = msg.getStringProperty(key);
             props.setGroupId(value);
             if (apMap == null) {
@@ -254,6 +262,9 @@ public class JMSMappingOutboundTransformer extends OutboundTransformer {
             }
             String name = key.substring(prefixFooterKey.length());
             footerMap.put(name, msg.getObjectProperty(key));
+         }
+         else if (key.equals(AMQPMessageTypes.AMQP_TYPE_KEY)) {
+            // skip
          }
          else {
             if (apMap == null) {

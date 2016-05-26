@@ -71,6 +71,26 @@ public class MinimalSessionSPI implements AMQPSessionCallback {
    }
 
    @Override
+   public void createDurableQueue(String address, String queueName) throws Exception {
+
+   }
+
+   @Override
+   public void createTemporaryQueue(String address, String queueName) throws Exception {
+
+   }
+
+   @Override
+   public void deleteQueue(String address) throws Exception {
+
+   }
+
+   @Override
+   public String getPubSubPrefix() {
+      return null;
+   }
+
+   @Override
    public void onFlowConsumer(Object consumer, int credits, boolean drain) {
    }
 
@@ -100,7 +120,7 @@ public class MinimalSessionSPI implements AMQPSessionCallback {
    }
 
    @Override
-   public void rollbackCurrentTX() {
+   public void rollbackCurrentTX(boolean lastMessage) {
    }
 
    @Override
