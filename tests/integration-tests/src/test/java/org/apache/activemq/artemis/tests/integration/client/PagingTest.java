@@ -5684,41 +5684,56 @@ public class PagingTest extends ActiveMQTestBase {
          this.pageUp = pageUp;
       }
 
+      @Override
       public void onError(int errorCode, String errorMessage) {
       }
 
+      @Override
       public void done() {
       }
 
+      @Override
       public void storeLineUp() {
       }
 
+      @Override
       public boolean waitCompletion(long timeout) throws Exception {
          return false;
       }
 
+      @Override
       public void waitCompletion() throws Exception {
 
       }
 
+      @Override
       public void replicationLineUp() {
 
       }
 
+      @Override
       public void replicationDone() {
 
       }
 
+      @Override
       public void pageSyncLineUp() {
          pageUp.countDown();
       }
 
+      @Override
       public void pageSyncDone() {
          pageDone.countDown();
       }
 
+      @Override
       public void executeOnCompletion(IOCallback runnable) {
+         runnable.done();
+      }
 
+      @Override
+      public void executeOnCompletion(IOCallback runnable, boolean storeOnly) {
+         runnable.done();
       }
    }
 }

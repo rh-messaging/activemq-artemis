@@ -94,6 +94,11 @@ public class NullStorageManager implements StorageManager {
       }
 
       @Override
+      public void executeOnCompletion(IOCallback runnable, boolean storeOnly) {
+         runnable.done();
+      }
+
+      @Override
       public void storeLineUp() {
       }
 
@@ -339,6 +344,11 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
+   public void afterStoreOperations(IOCallback run) {
+      run.done();
+   }
+
+   @Override
    public void waitOnOperations() throws Exception {
    }
 
@@ -417,9 +427,11 @@ public class NullStorageManager implements StorageManager {
    public void deleteCursorAcknowledge(long ackID) throws Exception {
    }
 
+   @Override
    public void storePageCompleteTransactional(long txID, long queueID, PagePosition position) throws Exception {
    }
 
+   @Override
    public void deletePageComplete(long ackID) throws Exception {
    }
 
@@ -445,6 +457,7 @@ public class NullStorageManager implements StorageManager {
    public void deletePageCounter(final long txID, final long recordID) throws Exception {
    }
 
+   @Override
    public void deletePendingPageCounter(long txID, long recordID) throws Exception {
    }
 

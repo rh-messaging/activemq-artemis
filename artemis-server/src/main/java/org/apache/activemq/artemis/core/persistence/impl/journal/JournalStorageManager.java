@@ -119,6 +119,7 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.IDGenerator;
 import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.XidCodecSupport;
+import org.jboss.logging.Logger;
 
 import static org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds.ACKNOWLEDGE_CURSOR;
 import static org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds.ADD_LARGE_MESSAGE;
@@ -142,6 +143,8 @@ import static org.apache.activemq.artemis.core.persistence.impl.journal.JournalR
  * <p>
  */
 public class JournalStorageManager implements StorageManager {
+
+   private static final Logger logger = Logger.getLogger(JournalStorageManager.class);
 
    private static final long CHECKPOINT_BATCH_SIZE = Integer.MAX_VALUE;
 
@@ -398,6 +401,7 @@ public class JournalStorageManager implements StorageManager {
          }
       }
       catch (Exception e) {
+         logger.warn(e.getMessage(), e);
          stopReplication();
          throw e;
       }
@@ -434,6 +438,7 @@ public class JournalStorageManager implements StorageManager {
     */
    @Override
    public void stopReplication() {
+      logger.trace("stopReplication()");
       storageManagerLock.writeLock().lock();
       try {
          if (replicator == null)
@@ -672,6 +677,11 @@ public class JournalStorageManager implements StorageManager {
    public void afterCompleteOperations(final IOCallback run) {
       getContext().executeOnCompletion(run);
    }
+
+   public void afterStoreOperations(IOCallback run) {
+      getContext().executeOnCompletion(run, true);
+   }
+
 
    public long generateID() {
       return idGenerator.generateID();
@@ -2328,6 +2338,11 @@ public class JournalStorageManager implements StorageManager {
          // There are no executeOnCompletion calls while using the DummyOperationContext
          // However we keep the code here for correctness
          runnable.done();
+      }
+
+      @Override
+      public void executeOnCompletion(IOCallback runnable, boolean storeOnly) {
+         executeOnCompletion(runnable);
       }
 
       public void replicationDone() {

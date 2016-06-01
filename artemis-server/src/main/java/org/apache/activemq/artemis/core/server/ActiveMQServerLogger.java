@@ -1186,6 +1186,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
       format = Message.Format.MESSAGE_FORMAT)
    void noProtocolManagerFound(String protocol, String host);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222207, value = "The backup server is not responding promptly introducing latency beyond the limit. Replication server being disconnected now.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void slowReplicationResponse();
+
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
    void initializationError(@Cause Throwable e);
