@@ -976,6 +976,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
    public void setAddress(final Message message, final SimpleString address) {
       if (defaultAddress == null) {
+         logger.tracef("setAddress() Setting default address as %s", address);
          defaultAddress = address;
 
          if (message != null) {
@@ -1007,7 +1008,6 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    }
 
    public synchronized ClientProducerCredits getCredits(final SimpleString address, final boolean anon) {
-      setAddress(null, address);
       ClientProducerCredits credits = producerCreditManager.getCredits(address, anon, sessionContext);
 
       return credits;
