@@ -978,9 +978,11 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       if (defaultAddress == null) {
          defaultAddress = address;
 
-         message.setAddress(address);
+         if (message != null) {
+            message.setAddress(address);
+         }
       }
-      else {
+      else if (message != null) {
          if (!address.equals(defaultAddress)) {
             message.setAddress(address);
          }
@@ -1005,6 +1007,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    }
 
    public synchronized ClientProducerCredits getCredits(final SimpleString address, final boolean anon) {
+      setAddress(null, address);
       ClientProducerCredits credits = producerCreditManager.getCredits(address, anon, sessionContext);
 
       return credits;
