@@ -43,7 +43,7 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
  */
 public class OperationContextImpl implements OperationContext {
 
-   private static final ThreadLocal<OperationContext> threadLocalContext = new ThreadLocal<OperationContext>();
+   private static final ThreadLocal<OperationContext> threadLocalContext = new ThreadLocal<>();
 
    public static void clearContext() {
       OperationContextImpl.threadLocalContext.set(null);
@@ -72,6 +72,7 @@ public class OperationContextImpl implements OperationContext {
    }
 
    private List<TaskHolder> tasks;
+   private List<TaskHolder> storeOnlyTasks;
 
    private long minimalStore = Long.MAX_VALUE;
    private long minimalReplicated = Long.MAX_VALUE;
@@ -98,29 +99,40 @@ public class OperationContextImpl implements OperationContext {
       this.executor = executor;
    }
 
+   @Override
    public void pageSyncLineUp() {
       pageLineUp.incrementAndGet();
    }
 
+   @Override
    public synchronized void pageSyncDone() {
       paged++;
       checkTasks();
    }
 
+   @Override
    public void storeLineUp() {
       storeLineUp.incrementAndGet();
    }
 
+   @Override
    public void replicationLineUp() {
       replicationLineUp.incrementAndGet();
    }
 
+   @Override
    public synchronized void replicationDone() {
       replicated++;
       checkTasks();
    }
 
-   public void executeOnCompletion(final IOCallback completion) {
+   @Override
+   public void executeOnCompletion(IOCallback runnable) {
+      executeOnCompletion(runnable, false);
+   }
+
+   @Override
+   public void executeOnCompletion(final IOCallback completion, final boolean storeOnly) {
       if (errorCode != -1) {
          completion.onError(errorCode, errorMessage);
          return;
@@ -129,14 +141,22 @@ public class OperationContextImpl implements OperationContext {
       boolean executeNow = false;
 
       synchronized (this) {
-         if (tasks == null) {
-            tasks = new LinkedList<TaskHolder>();
-            minimalReplicated = replicationLineUp.intValue();
-            minimalStore = storeLineUp.intValue();
-            minimalPage = pageLineUp.intValue();
+         if (storeOnly) {
+            if (storeOnlyTasks == null) {
+               storeOnlyTasks = new LinkedList<>();
+            }
+         }
+         else {
+            if (tasks == null) {
+               tasks = new LinkedList<>();
+               minimalReplicated = replicationLineUp.intValue();
+               minimalStore = storeLineUp.intValue();
+               minimalPage = pageLineUp.intValue();
+            }
          }
 
          // On this case, we can just execute the context directly
+
          if (replicationLineUp.intValue() == replicated && storeLineUp.intValue() == stored &&
             pageLineUp.intValue() == paged) {
             // We want to avoid the executor if everything is complete...
@@ -152,7 +172,12 @@ public class OperationContextImpl implements OperationContext {
             }
          }
          else {
-            tasks.add(new TaskHolder(completion));
+            if (storeOnly) {
+               storeOnlyTasks.add(new TaskHolder(completion));
+            }
+            else {
+               tasks.add(new TaskHolder(completion));
+            }
          }
       }
 
@@ -163,12 +188,27 @@ public class OperationContextImpl implements OperationContext {
 
    }
 
+   @Override
    public synchronized void done() {
       stored++;
       checkTasks();
    }
 
    private void checkTasks() {
+
+      if (storeOnlyTasks != null) {
+         Iterator<TaskHolder> iter = storeOnlyTasks.iterator();
+         while (iter.hasNext()) {
+            TaskHolder holder = iter.next();
+            if (stored >= holder.storeLined) {
+               // If set, we use an executor to avoid the server being single threaded
+               execute(holder.task);
+
+               iter.remove();
+            }
+         }
+      }
+
       if (stored >= minimalStore && replicated >= minimalReplicated && paged >= minimalPage) {
          Iterator<TaskHolder> iter = tasks.iterator();
          while (iter.hasNext()) {
@@ -194,6 +234,7 @@ public class OperationContextImpl implements OperationContext {
       executorsPending.incrementAndGet();
       try {
          executor.execute(new Runnable() {
+            @Override
             public void run() {
                try {
                   // If any IO is done inside the callback, it needs to be done on a new context

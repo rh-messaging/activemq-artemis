@@ -43,7 +43,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
    private static final Logger logger = Logger.getLogger(DuplicateIDCacheImpl.class);
 
    // ByteHolder, position
-   private final Map<ByteArrayHolder, Integer> cache = new ConcurrentHashMap<ByteArrayHolder, Integer>();
+   private final Map<ByteArrayHolder, Integer> cache = new ConcurrentHashMap<>();
 
    private final SimpleString address;
 
@@ -67,13 +67,14 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
 
       cacheSize = size;
 
-      ids = new ArrayList<Pair<ByteArrayHolder, Long>>(size);
+      ids = new ArrayList<>(size);
 
       this.storageManager = storageManager;
 
       this.persist = persist;
    }
 
+   @Override
    public void load(final List<Pair<byte[], Long>> theIds) throws Exception {
       long txID = -1;
 
@@ -122,6 +123,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
 
    }
 
+   @Override
    public void deleteFromCache(byte[] duplicateID) throws Exception {
       if (logger.isTraceEnabled()) {
          logger.trace("DuplicateIDCacheImpl::deleteFromCache deleting id=" + describeID(duplicateID, 0));
@@ -159,6 +161,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
       }
    }
 
+   @Override
    public boolean contains(final byte[] duplID) {
       boolean contains = cache.get(new ByteArrayHolder(duplID)) != null;
 
@@ -168,6 +171,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
       return contains;
    }
 
+   @Override
    public void addToCache(final byte[] duplID) throws Exception {
       addToCache(duplID, null, false);
    }
@@ -193,6 +197,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
 
    }
 
+   @Override
    public synchronized void addToCache(final byte[] duplID, final Transaction tx, boolean instantAdd) throws Exception {
       long recordID = -1;
 
@@ -221,11 +226,12 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
             }
             // For a tx, it's important that the entry is not added to the cache until commit
             // since if the client fails then resends them tx we don't want it to get rejected
-            tx.addOperation(new AddDuplicateIDOperation(duplID, recordID));
+            tx.afterStore(new AddDuplicateIDOperation(duplID, recordID));
          }
       }
    }
 
+   @Override
    public void load(final Transaction tx, final byte[] duplID) {
       tx.addOperation(new AddDuplicateIDOperation(duplID, tx.getID()));
    }
@@ -280,7 +286,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
          holder.pos = pos;
       }
       else {
-         id = new Pair<ByteArrayHolder, Long>(holder, recordID >= 0 ? recordID : null);
+         id = new Pair<>(holder, recordID >= 0 ? recordID : null);
 
          if (logger.isTraceEnabled()) {
             logger.trace("DuplicateIDCacheImpl(" + this.address + ")::addToCacheInMemory Adding new duplicateID " + describeID(id.getA().bytes, id.getB()));
@@ -296,6 +302,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache {
       }
    }
 
+   @Override
    public void clear() throws Exception {
       logger.debug("DuplicateIDCacheImpl(" + this.address + ")::clear removing duplicate ID data");
       synchronized (this) {

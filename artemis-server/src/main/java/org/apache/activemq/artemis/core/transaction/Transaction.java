@@ -16,8 +16,9 @@
  */
 package org.apache.activemq.artemis.core.transaction;
 
-import javax.transaction.xa.Xid;
 import java.util.List;
+
+import javax.transaction.xa.Xid;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -31,6 +32,12 @@ public interface Transaction {
    static enum State {
       ACTIVE, PREPARED, COMMITTED, ROLLEDBACK, SUSPENDED, ROLLBACK_ONLY
    }
+
+   Object getProtocolData();
+
+   /** Protocol managers can use this field to store any object needed.
+    *  An example would be the Session used by the transaction on openwire */
+   void setProtocolData(Object data);
 
    boolean isEffective();
 
@@ -59,6 +66,11 @@ public interface Transaction {
    long getCreateTime();
 
    void addOperation(TransactionOperation sync);
+
+   /** This is an operation that will be called right after the storage is completed.
+    *  addOperation could only happen after paging and replication, while these operations will just be
+    *  about the storage*/
+   void afterStore(TransactionOperation sync);
 
    List<TransactionOperation> getAllOperations();
 

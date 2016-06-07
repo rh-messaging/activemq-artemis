@@ -104,6 +104,22 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
    private final class FakeTransaction implements Transaction {
 
+      @Override
+      public Object getProtocolData() {
+         return null;
+      }
+
+      @Override
+      public void setProtocolData(Object data) {
+
+      }
+
+      @Override
+      public void afterStore(TransactionOperation sync) {
+
+      }
+
+      @Override
       public void addOperation(final TransactionOperation sync) {
 
       }
@@ -113,28 +129,34 @@ public class BindingsImplTest extends ActiveMQTestBase {
          return false;
       }
 
+      @Override
       public boolean hasTimedOut(long currentTime, int defaultTimeout) {
          return false;
       }
 
+      @Override
       public void commit() throws Exception {
 
       }
 
+      @Override
       public void commit(final boolean onePhase) throws Exception {
 
       }
 
+      @Override
       public long getCreateTime() {
 
          return 0;
       }
 
+      @Override
       public long getID() {
 
          return 0;
       }
 
+      @Override
       public Object getProperty(final int index) {
 
          return null;
@@ -145,23 +167,28 @@ public class BindingsImplTest extends ActiveMQTestBase {
          return false;
       }
 
+      @Override
       public State getState() {
 
          return null;
       }
 
+      @Override
       public Xid getXid() {
          return null;
       }
 
+      @Override
       public void markAsRollbackOnly(final ActiveMQException exception) {
 
       }
 
+      @Override
       public void prepare() throws Exception {
 
       }
 
+      @Override
       public void putProperty(final int index, final Object property) {
 
       }
@@ -170,6 +197,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
       }
 
+      @Override
       public void resume() {
 
       }
@@ -177,6 +205,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.transaction.Transaction#rollback()
        */
+      @Override
       public void rollback() throws Exception {
 
       }
@@ -184,6 +213,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.transaction.Transaction#setState(org.apache.activemq.artemis.core.transaction.Transaction.State)
        */
+      @Override
       public void setState(final State state) {
 
       }
@@ -191,6 +221,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.transaction.Transaction#suspend()
        */
+      @Override
       public void suspend() {
 
       }
@@ -202,14 +233,17 @@ public class BindingsImplTest extends ActiveMQTestBase {
          return Collections.emptySet();
       }
 
+      @Override
       public void setContainsPersistent() {
 
       }
 
+      @Override
       public void setTimeout(int timeout) {
 
       }
 
+      @Override
       public List<TransactionOperation> getAllOperations() {
          return null;
       }
@@ -229,6 +263,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.filter.Filter#getFilterString()
        */
+      @Override
       public SimpleString getFilterString() {
          return null;
       }
@@ -236,6 +271,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.filter.Filter#match(org.apache.activemq.artemis.core.server.ServerMessage)
        */
+      @Override
       public boolean match(final ServerMessage message) {
          return false;
       }
@@ -244,6 +280,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
 
    private final class FakeBinding implements Binding {
 
+      @Override
       public void close() throws Exception {
 
       }
@@ -259,6 +296,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
          this.name = name;
       }
 
+      @Override
       public SimpleString getAddress() {
          return null;
       }
@@ -266,6 +304,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getBindable()
        */
+      @Override
       public Bindable getBindable() {
 
          return null;
@@ -274,6 +313,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getClusterName()
        */
+      @Override
       public SimpleString getClusterName() {
 
          return null;
@@ -282,6 +322,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getDistance()
        */
+      @Override
       public int getDistance() {
          return 0;
       }
@@ -289,10 +330,12 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getFilter()
        */
+      @Override
       public Filter getFilter() {
          return new FakeFilter();
       }
 
+      @Override
       public long getID() {
          return 0;
       }
@@ -300,6 +343,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getRoutingName()
        */
+      @Override
       public SimpleString getRoutingName() {
          return name;
       }
@@ -307,6 +351,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getType()
        */
+      @Override
       public BindingType getType() {
 
          return null;
@@ -315,18 +360,22 @@ public class BindingsImplTest extends ActiveMQTestBase {
       /* (non-Javadoc)
        * @see org.apache.activemq.artemis.core.postoffice.Binding#getUniqueName()
        */
+      @Override
       public SimpleString getUniqueName() {
          return null;
       }
 
+      @Override
       public boolean isExclusive() {
          return false;
       }
 
+      @Override
       public boolean isHighAcceptPriority(final ServerMessage message) {
          return false;
       }
 
+      @Override
       public void route(final ServerMessage message, final RoutingContext context) throws Exception {
 
       }
