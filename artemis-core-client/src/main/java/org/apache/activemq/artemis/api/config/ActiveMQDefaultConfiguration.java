@@ -295,6 +295,9 @@ public final class ActiveMQDefaultConfiguration {
    // Once the bridge has received this many bytes, it sends a confirmation
    private static int DEFAULT_BRIDGE_CONFIRMATION_WINDOW_SIZE = 1048576;
 
+   // Producer flow control
+   private static int DEFAULT_BRIDGE_PRODUCER_WINDOW_SIZE = -1;
+
    // Upon reconnection this configures the number of time the same node on the topology will be retried before reseting the server locator and using the initial connectors
    private static int DEFAULT_BRIDGE_CONNECT_SAME_NODE = 10;
 
@@ -805,6 +808,13 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static int getDefaultBridgeConfirmationWindowSize() {
       return DEFAULT_BRIDGE_CONFIRMATION_WINDOW_SIZE;
+   }
+
+   /**
+    * Producer flow control
+    */
+   public static int getDefaultBridgeProducerWindowSize() {
+      return DEFAULT_BRIDGE_PRODUCER_WINDOW_SIZE;
    }
 
    /**
