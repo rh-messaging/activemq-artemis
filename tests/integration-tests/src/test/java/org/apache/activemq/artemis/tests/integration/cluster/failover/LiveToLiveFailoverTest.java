@@ -313,7 +313,7 @@ public class LiveToLiveFailoverTest extends FailoverTest {
    }
 
    @Override
-   public void testSimpleReplication() throws Exception {
+   public void testSimpleFailover() throws Exception {
    }
 
    @Override
