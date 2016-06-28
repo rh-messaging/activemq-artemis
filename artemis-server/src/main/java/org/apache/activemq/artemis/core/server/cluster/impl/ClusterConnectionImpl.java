@@ -1454,7 +1454,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
          }
       }
       catch (Exception e) {
-         e.printStackTrace();
+         ActiveMQServerLogger.LOGGER.warn(e);
       }
    }
 
@@ -1468,7 +1468,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
          }
       }
       catch (Exception e) {
-         e.printStackTrace();
+         ActiveMQServerLogger.LOGGER.warn(e.getMessage(),e);
       }
    }
 
