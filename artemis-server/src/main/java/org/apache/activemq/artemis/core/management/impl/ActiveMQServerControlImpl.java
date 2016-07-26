@@ -1530,6 +1530,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                             final int reconnectAttempts,
                             final boolean useDuplicateDetection,
                             final int confirmationWindowSize,
+                            final int producerWindowSize,
                             final long clientFailureCheckPeriod,
                             final String staticConnectorsOrDiscoveryGroup,
                             boolean useDiscoveryGroup,
@@ -1541,7 +1542,76 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
 
       try {
-         BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerClassName(transformerClassName).setClientFailureCheckPeriod(clientFailureCheckPeriod).setRetryInterval(retryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setHA(ha).setUser(user).setPassword(password);
+         BridgeConfiguration config = new BridgeConfiguration()
+            .setName(name)
+            .setQueueName(queueName)
+            .setForwardingAddress(forwardingAddress)
+            .setFilterString(filterString)
+            .setTransformerClassName(transformerClassName)
+            .setClientFailureCheckPeriod(clientFailureCheckPeriod)
+            .setRetryInterval(retryInterval)
+            .setRetryIntervalMultiplier(retryIntervalMultiplier)
+            .setInitialConnectAttempts(initialConnectAttempts)
+            .setReconnectAttempts(reconnectAttempts)
+            .setUseDuplicateDetection(useDuplicateDetection)
+            .setConfirmationWindowSize(confirmationWindowSize)
+            .setProducerWindowSize(producerWindowSize)
+            .setHA(ha)
+            .setUser(user)
+            .setPassword(password);
+
+         if (useDiscoveryGroup) {
+            config.setDiscoveryGroupName(staticConnectorsOrDiscoveryGroup);
+         }
+         else {
+            config.setStaticConnectors(toList(staticConnectorsOrDiscoveryGroup));
+         }
+
+         server.deployBridge(config);
+      }
+      finally {
+         blockOnIO();
+      }
+   }
+
+   public void createBridge(final String name,
+                            final String queueName,
+                            final String forwardingAddress,
+                            final String filterString,
+                            final String transformerClassName,
+                            final long retryInterval,
+                            final double retryIntervalMultiplier,
+                            final int initialConnectAttempts,
+                            final int reconnectAttempts,
+                            final boolean useDuplicateDetection,
+                            final int confirmationWindowSize,
+                            final long clientFailureCheckPeriod,
+                            final String staticConnectorsOrDiscoveryGroup,
+                            boolean useDiscoveryGroup,
+                            final boolean ha,
+                            final String user,
+                            final String password) throws Exception {
+      checkStarted();
+
+      clearIO();
+
+      try {
+         BridgeConfiguration config = new BridgeConfiguration()
+            .setName(name)
+            .setQueueName(queueName)
+            .setForwardingAddress(forwardingAddress)
+            .setFilterString(filterString)
+            .setTransformerClassName(transformerClassName)
+            .setClientFailureCheckPeriod(clientFailureCheckPeriod)
+            .setRetryInterval(retryInterval)
+            .setRetryIntervalMultiplier(retryIntervalMultiplier)
+            .setInitialConnectAttempts(initialConnectAttempts)
+            .setReconnectAttempts(reconnectAttempts)
+            .setUseDuplicateDetection(useDuplicateDetection)
+            .setConfirmationWindowSize(confirmationWindowSize)
+            .setHA(ha)
+            .setUser(user)
+            .setPassword(password);
 
          if (useDiscoveryGroup) {
             config.setDiscoveryGroupName(staticConnectorsOrDiscoveryGroup);
