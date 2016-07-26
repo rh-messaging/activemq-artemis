@@ -103,7 +103,7 @@ public final class SharedNothingBackupActivation extends Activation {
          }
          // move all data away:
          activeMQServer.getNodeManager().stop();
-         activeMQServer.moveServerData();
+         activeMQServer.moveServerData(replicaPolicy.getMaxSavedReplicatedJournalsSize());
          activeMQServer.getNodeManager().start();
          synchronized (this) {
             if (closed)
@@ -310,7 +310,7 @@ public final class SharedNothingBackupActivation extends Activation {
          }
 
          if (logger.isTraceEnabled()) {
-            logger.trace("setReplicaPolicy::" + replicaPolicy);
+            logger.trace("@@@ setReplicaPolicy::" + replicaPolicy);
          }
 
          replicaPolicy.getReplicatedPolicy().setReplicaPolicy(replicaPolicy);

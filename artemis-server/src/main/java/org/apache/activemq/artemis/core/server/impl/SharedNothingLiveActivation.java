@@ -89,10 +89,15 @@ public class SharedNothingLiveActivation extends LiveActivation {
       try {
          if (replicatedPolicy.isCheckForLiveServer() && isNodeIdUsed()) {
             //set for when we failback
+            if (logger.isTraceEnabled()) {
+               logger.tracef("@@@ setting up replicatedPolicy.getReplicaPolicy for back start, replicaPolicy::%s, isBackup=%s, server=%s", replicatedPolicy.getReplicaPolicy(), replicatedPolicy.isBackup(), activeMQServer);
+            }
             replicatedPolicy.getReplicaPolicy().setReplicatedPolicy(replicatedPolicy);
             activeMQServer.setHAPolicy(replicatedPolicy.getReplicaPolicy());
             return;
          }
+
+         logger.trace("@@@ did not do it now");
 
          activeMQServer.initialisePart1(false);
 
@@ -155,7 +160,7 @@ public class SharedNothingLiveActivation extends LiveActivation {
          ReplicationFailureListener listener = new ReplicationFailureListener();
          rc.addCloseListener(listener);
          rc.addFailureListener(listener);
-         replicationManager = new ReplicationManager(rc, activeMQServer.getExecutorFactory());
+         replicationManager = new ReplicationManager(rc, clusterConnection.getCallTimeout(), activeMQServer.getExecutorFactory());
          replicationManager.start();
          Thread t = new Thread(new Runnable() {
             public void run() {
@@ -172,16 +177,11 @@ public class SharedNothingLiveActivation extends LiveActivation {
                      clusterConnection.addClusterTopologyListener(listener1);
                      if (listener1.waitForBackup()) {
                         //if we have to many backups kept or are not configured to restart just stop, otherwise restart as a backup
-                        if (!replicatedPolicy.getReplicaPolicy().isRestartBackup() && activeMQServer.countNumberOfCopiedJournals() >= replicatedPolicy.getReplicaPolicy().getMaxSavedReplicatedJournalsSize() && replicatedPolicy.getReplicaPolicy().getMaxSavedReplicatedJournalsSize() >= 0) {
-                           activeMQServer.stop(true);
-                           ActiveMQServerLogger.LOGGER.stopReplicatedBackupAfterFailback();
-                        }
-                        else {
-                           activeMQServer.stop(true);
-                           ActiveMQServerLogger.LOGGER.restartingReplicatedBackupAfterFailback();
-                           activeMQServer.setHAPolicy(replicatedPolicy.getReplicaPolicy());
-                           activeMQServer.start();
-                        }
+                        activeMQServer.stop(true);
+                        ActiveMQServerLogger.LOGGER.restartingReplicatedBackupAfterFailback();
+//                        activeMQServer.moveServerData(replicatedPolicy.getReplicaPolicy().getMaxSavedReplicatedJournalsSize());
+                        activeMQServer.setHAPolicy(replicatedPolicy.getReplicaPolicy());
+                        activeMQServer.start();
                      }
                      else {
                         ActiveMQServerLogger.LOGGER.failbackMissedBackupAnnouncement();

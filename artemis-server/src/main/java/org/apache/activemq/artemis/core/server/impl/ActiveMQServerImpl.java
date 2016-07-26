@@ -18,7 +18,7 @@ package org.apache.activemq.artemis.core.server.impl;
 
 import javax.management.MBeanServer;
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -232,6 +233,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private final Map<String, ServerSession> sessions = new ConcurrentHashMap<String, ServerSession>();
 
+   private final Semaphore activationLock = new Semaphore(1);
    /**
     * This class here has the same principle of CountDownLatch but you can reuse the counters.
     * It's based on the same super classes of {@code CountDownLatch}
@@ -405,7 +407,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                activation = haPolicy.createActivation(this, wasLive, activationParams, shutdownOnCriticalIO);
             }
 
-            backupActivationThread = new Thread(activation, ActiveMQMessageBundle.BUNDLE.activationForServer(this));
+            if (logger.isTraceEnabled()) {
+               logger.trace("starting backupActivation");
+            }
+            backupActivationThread = new ActivationThread(activation, ActiveMQMessageBundle.BUNDLE.activationForServer(this));
             backupActivationThread.start();
          }
          else {
@@ -418,6 +423,21 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       finally {
          // this avoids embedded applications using dirty contexts from startup
          OperationContextImpl.clearContext();
+      }
+   }
+
+   @Override
+   public void unlockActivation() {
+      activationLock.release();
+   }
+
+   @Override
+   public void lockActivation() {
+      try {
+         activationLock.acquire();
+      }
+      catch (Exception e) {
+         logger.warn(e.getMessage(), e);
       }
    }
 
@@ -478,6 +498,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public void setHAPolicy(HAPolicy haPolicy) {
+      if (logger.isTraceEnabled()) {
+         logger.tracef("XXX @@@ Setting %s, isBackup=%s at %s", haPolicy, haPolicy.isBackup(), this);
+      }
       this.haPolicy = haPolicy;
    }
 
@@ -574,6 +597,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * @param criticalIOError whether we have encountered an IO error with the journal etc
     */
    void stop(boolean failoverOnServerShutdown, final boolean criticalIOError, boolean restarting) {
+
       synchronized (this) {
          if (state == SERVER_STATE.STOPPED || state == SERVER_STATE.STOPPING) {
             return;
@@ -1854,7 +1878,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    /**
     * Check if journal directory exists or create it (if configured to do so)
     */
-   void checkJournalDirectory() {
+   public void checkJournalDirectory() {
       File journalDir = configuration.getJournalLocation();
 
       if (!journalDir.exists() && configuration.isPersistenceEnabled()) {
@@ -1918,86 +1942,38 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return scaledDownNodeIDs.contains(scaledDownNodeId);
    }
 
-   int countNumberOfCopiedJournals() {
-      //will use the main journal to check for how many backups have been kept
-      File journalDir = new File(configuration.getJournalDirectory());
-      final String fileName = journalDir.getName();
-      int numberOfbackupsSaved = 0;
-      //fine if it doesn't exist, we aren't using file based persistence so it's no issue
-      if (journalDir.exists()) {
-         File parentFile = new File(journalDir.getParent());
-         String[] backupJournals = parentFile.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-               return name.startsWith(fileName) && !name.matches(fileName);
-            }
-         });
-         numberOfbackupsSaved = backupJournals != null ? backupJournals.length : 0;
-      }
-      return numberOfbackupsSaved;
-   }
-
    /**
     * Move data away before starting data synchronization for fail-back.
     * <p>
     * Use case is a server, upon restarting, finding a former backup running in its place. It will
     * move any older data away and log a warning about it.
     */
-   void moveServerData() {
+   void moveServerData(int maxSavedReplicated) throws IOException {
       File[] dataDirs = new File[]{configuration.getBindingsLocation(), configuration.getJournalLocation(), configuration.getPagingLocation(), configuration.getLargeMessagesLocation()};
 
-      boolean allEmpty = true;
-      int lowestSuffixForMovedData = 1;
-      boolean redo = true;
+      for (File data : dataDirs) {
+         FileMoveManager moveManager = new FileMoveManager(data, maxSavedReplicated);
+         moveManager.doMove();
+      }
+   }
 
-      while (redo) {
-         redo = false;
-         for (File fDir : dataDirs) {
-            if (fDir.exists()) {
-               if (!fDir.isDirectory()) {
-                  throw ActiveMQMessageBundle.BUNDLE.journalDirIsFile(fDir);
-               }
+   private final class ActivationThread extends Thread {
+      final Runnable runnable;
 
-               if (fDir.list().length > 0)
-                  allEmpty = false;
-            }
+      ActivationThread(Runnable runnable, String name) {
+         super(name);
+         this.runnable = runnable;
+      }
 
-            String sanitizedPath = fDir.getPath();
-            while (new File(sanitizedPath + lowestSuffixForMovedData).exists()) {
-               lowestSuffixForMovedData++;
-               redo = true;
-            }
+      public void run() {
+         lockActivation();
+         try {
+            runnable.run();
+         }
+         finally {
+            unlockActivation();
          }
       }
-      if (allEmpty)
-         return;
 
-      for (File dir : dataDirs) {
-         File newPath = new File(dir.getPath() + lowestSuffixForMovedData);
-         if (dir.exists()) {
-            if (!dir.renameTo(newPath)) {
-               throw ActiveMQMessageBundle.BUNDLE.couldNotMoveJournal(dir);
-            }
-
-            ActiveMQServerLogger.LOGGER.backupMovingDataAway(dir.getAbsolutePath(), newPath.getPath());
-         }
-         /*
-         * sometimes OS's can hold on to file handles for a while so we need to check this actually qorks and then wait
-         * a while and try again if it doesn't
-         * */
-
-         int count = 0;
-         while (!dir.exists() && !dir.mkdir()) {
-            try {
-               Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
-            }
-            count++;
-            if (count == 5) {
-               throw ActiveMQMessageBundle.BUNDLE.cannotCreateDir(dir.getPath());
-            }
-         }
-      }
    }
 }

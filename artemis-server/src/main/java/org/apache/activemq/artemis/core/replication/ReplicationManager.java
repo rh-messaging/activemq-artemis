@@ -125,6 +125,8 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
 
    private CoreRemotingConnection remotingConnection;
 
+   private final long timeout;
+
    private volatile boolean inSync = true;
 
    private final ReusableLatch synchronizationIsFinishedAcknowledgement = new ReusableLatch(0);
@@ -132,10 +134,11 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
    /**
     * @param remotingConnection
     */
-   public ReplicationManager(CoreRemotingConnection remotingConnection, final ExecutorFactory executorFactory) {
+   public ReplicationManager(CoreRemotingConnection remotingConnection, final long timeout, final ExecutorFactory executorFactory) {
       this.executorFactory = executorFactory;
       this.replicatingChannel = remotingConnection.getChannel(CHANNEL_ID.REPLICATION.id, -1);
       this.remotingConnection = remotingConnection;
+      this.timeout = timeout;
    }
 
    public void appendUpdateRecord(final byte journalID,
@@ -382,7 +385,7 @@ public final class ReplicationManager implements ActiveMQComponent, ReadyListene
             writable.set(false);
             //don't wait for ever as this may hang tests etc, we've probably been closed anyway
             long now = System.currentTimeMillis();
-            long deadline = now + 5000;
+            long deadline = now + timeout;
             while (!writable.get() && now < deadline)  {
                replicationLock.wait(deadline - now);
                now = System.currentTimeMillis();
