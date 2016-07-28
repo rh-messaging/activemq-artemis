@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.stomp;
 
+import javax.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -268,7 +269,7 @@ public final class StompConnection implements RemotingConnection {
       }
    }
 
-   Acceptor getAcceptorUsed() {
+   public Acceptor getAcceptorUsed() {
       return acceptorUsed;
    }
 
@@ -283,6 +284,12 @@ public final class StompConnection implements RemotingConnection {
       synchronized (failLock) {
          if (destroyed) {
             return;
+         }
+
+         if (me != null) {
+            StompFrame frame = frameHandler.createStompFrame(Stomp.Responses.ERROR);
+            frame.addHeader(Stomp.Headers.Error.MESSAGE, me.getMessage());
+            sendFrame(frame);
          }
 
          destroyed = true;
@@ -504,11 +511,11 @@ public final class StompConnection implements RemotingConnection {
       manager.sendReply(this, frame);
    }
 
-   public boolean validateUser(final String login1, final String passcode1) {
-      this.valid = manager.validateUser(login1, passcode1);
+   public boolean validateUser(final String login, final String pass, final X509Certificate[] certificates) {
+      this.valid = manager.validateUser(login, pass, certificates);
       if (valid) {
-         this.login = login1;
-         this.passcode = passcode1;
+         this.login = login;
+         this.passcode = pass;
       }
       return valid;
    }
@@ -648,9 +655,9 @@ public final class StompConnection implements RemotingConnection {
       }
    }
 
-   public void unsubscribe(String subscriptionID, String durableSubscriberName) throws ActiveMQStompException {
+   public void unsubscribe(String subscriptionID, String durableSubscriptionName) throws ActiveMQStompException {
       try {
-         manager.unsubscribe(this, subscriptionID, durableSubscriberName);
+         manager.unsubscribe(this, subscriptionID, durableSubscriptionName);
       }
       catch (ActiveMQStompException e) {
          throw e;
@@ -717,6 +724,10 @@ public final class StompConnection implements RemotingConnection {
 
    public int getMinLargeMessageSize() {
       return minLargeMessageSize;
+   }
+
+   public StompProtocolManager getManager() {
+      return manager;
    }
 
 }

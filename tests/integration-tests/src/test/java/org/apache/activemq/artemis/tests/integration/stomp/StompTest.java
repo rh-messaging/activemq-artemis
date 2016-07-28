@@ -46,6 +46,26 @@ public class StompTest extends StompTestBase {
    private static final transient IntegrationTestLogger log = IntegrationTestLogger.LOGGER;
 
    @Test
+   public void testConnectionTTL() throws Exception {
+      int index = 1;
+      int port = 61614;
+
+      server.getActiveMQServer().getRemotingService().createAcceptor("test", "tcp://127.0.0.1:" + port + "?connectionTtl=1000").start();
+      createBootstrap(index, port);
+      String frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n\n" + Stomp.NULL;
+      sendFrame(index, frame);
+      frame = receiveFrame(index, 10000);
+
+      Assert.assertTrue(frame.startsWith("CONNECTED"));
+
+      Thread.sleep(5000);
+
+      assertTrue(receiveFrame(index, 10000).indexOf(Stomp.Responses.ERROR) != -1);
+
+      assertChannelClosed(index);
+   }
+
+   @Test
    public void testSendManyMessages() throws Exception {
       MessageConsumer consumer = session.createConsumer(queue);
 
@@ -541,6 +561,10 @@ public class StompTest extends StompTestBase {
       Assert.assertTrue(frame.startsWith("MESSAGE"));
       Assert.assertTrue(frame.indexOf("destination:") > 0);
       Assert.assertTrue(frame.indexOf(getName()) > 0);
+
+      Pattern cl = Pattern.compile("Content-length:\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+      Matcher cl_matcher = cl.matcher(frame);
+      Assert.assertFalse(cl_matcher.find());
 
       frame = "DISCONNECT\n" + "\n\n" + Stomp.NULL;
       sendFrame(frame);
@@ -1328,6 +1352,60 @@ public class StompTest extends StompTestBase {
 
       frame = "DISCONNECT\n" + "\n\n" + Stomp.NULL;
       sendFrame(frame);
+   }
+
+   @Test
+   public void testDurableUnSubscribe() throws Exception {
+      String frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n" + "client-id: myclientid\n\n" + Stomp.NULL;
+      sendFrame(frame);
+
+      frame = receiveFrame(1000);
+      Assert.assertTrue(frame.startsWith("CONNECTED"));
+
+      String subscribeFrame = "SUBSCRIBE\n" + "destination:" +
+         getTopicPrefix() +
+         getTopicName() +
+         "\n" +
+         "receipt: 12\n" +
+         "durable-subscriber-name: " +
+         getName() +
+         "\n" +
+         "\n\n" +
+         Stomp.NULL;
+      sendFrame(subscribeFrame);
+      // wait for SUBSCRIBE's receipt
+      frame = receiveFrame(1000);
+      Assert.assertTrue(frame.startsWith("RECEIPT"));
+
+      frame = "DISCONNECT\n" + "\n\n" + Stomp.NULL;
+      sendFrame(frame);
+      waitForFrameToTakeEffect();
+
+      assertNotNull(server.getActiveMQServer().locateQueue(SimpleString.toSimpleString("myclientid." + getName())));
+
+      reconnect(100);
+      frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n" + "client-id: myclientid\n\n" + Stomp.NULL;
+      sendFrame(frame);
+
+      frame = receiveFrame(1000);
+      Assert.assertTrue(frame.startsWith("CONNECTED"));
+
+      String unsubscribeFrame = "UNSUBSCRIBE\n" + "destination:" +
+         getTopicPrefix() +
+         getTopicName() +
+         "\n" +
+         "durable-subscriber-name: " +
+         getName() +
+         "\n" +
+         "\n\n" +
+         Stomp.NULL;
+      sendFrame(unsubscribeFrame);
+
+      frame = "DISCONNECT\n" + "\n\n" + Stomp.NULL;
+      sendFrame(frame);
+      waitForFrameToTakeEffect();
+
+      assertNull(server.getActiveMQServer().locateQueue(SimpleString.toSimpleString("myclientid." + getName())));
    }
 
    @Test

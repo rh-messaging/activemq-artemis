@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.tests.integration.IntegrationTestLogger;
 import org.apache.activemq.artemis.tests.integration.stomp.util.ClientStompFrame;
 import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConnection;
@@ -48,6 +49,7 @@ import org.junit.Test;
 public class StompV11Test extends StompV11TestBase {
 
    private static final transient IntegrationTestLogger log = IntegrationTestLogger.LOGGER;
+   public static final String CLIENT_ID = "myclientid";
 
    private StompClientConnection connV11;
 
@@ -741,6 +743,224 @@ public class StompV11Test extends StompV11TestBase {
    }
 
    @Test
+   public void testHeartBeatToTTL() throws Exception {
+      ClientStompFrame frame;
+      ClientStompFrame reply;
+      int port = 61614;
+
+      server.getActiveMQServer().getRemotingService().createAcceptor("test", "tcp://127.0.0.1:" + port + "?connectionTtl=1000&connectionTtlMin=5000&connectionTtlMax=10000").start();
+      StompClientConnection connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+
+      //no heart beat at all if heat-beat absent
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      Thread.sleep(3000);
+
+      assertEquals(Stomp.Responses.ERROR, connection.receiveFrame(1000).getCommand());
+
+      assertEquals(0, connection.getFrameQueueSize());
+
+      try {
+         connection.disconnect();
+         fail("Channel should be closed here already due to TTL");
+      }
+      catch (Exception e) {
+         // ignore
+      }
+
+      //no heart beat for (0,0)
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "0,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      IntegrationTestLogger.LOGGER.info("Reply: " + reply);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,0", reply.getHeader("heart-beat"));
+
+      Thread.sleep(3000);
+
+      assertEquals(Stomp.Responses.ERROR, connection.receiveFrame(1000).getCommand());
+
+      assertEquals(0, connection.getFrameQueueSize());
+
+      try {
+         connection.disconnect();
+         fail("Channel should be closed here already due to TTL");
+      }
+      catch (Exception e) {
+         // ignore
+      }
+
+      //heart-beat (1,0), should receive a min client ping accepted by server
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "1,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,2500", reply.getHeader("heart-beat"));
+
+      Thread.sleep(7000);
+
+      //now server side should be disconnected because we didn't send ping for 2 sec
+      frame = connection.createFrame("SEND");
+      frame.addHeader("destination", getQueuePrefix() + getQueueName());
+      frame.addHeader("content-type", "text/plain");
+      frame.setBody("Hello World");
+
+      //send will fail
+      try {
+         connection.sendFrame(frame);
+         fail("connection should have been destroyed by now");
+      }
+      catch (IOException e) {
+         //ignore
+      }
+
+      //heart-beat (1,0), start a ping, then send a message, should be ok.
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "1,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,2500", reply.getHeader("heart-beat"));
+
+      System.out.println("========== start pinger!");
+
+      connection.startPinger(2500);
+
+      Thread.sleep(7000);
+
+      //now server side should be disconnected because we didn't send ping for 2 sec
+      frame = connection.createFrame("SEND");
+      frame.addHeader("destination", getQueuePrefix() + getQueueName());
+      frame.addHeader("content-type", "text/plain");
+      frame.setBody("Hello World");
+
+      //send will be ok
+      connection.sendFrame(frame);
+
+      connection.stopPinger();
+
+      connection.disconnect();
+
+      //heart-beat (20000,0), should receive a max client ping accepted by server
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "20000,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,5000", reply.getHeader("heart-beat"));
+
+      Thread.sleep(12000);
+
+      //now server side should be disconnected because we didn't send ping for 2 sec
+      frame = connection.createFrame("SEND");
+      frame.addHeader("destination", getQueuePrefix() + getQueueName());
+      frame.addHeader("content-type", "text/plain");
+      frame.setBody("Hello World");
+
+      //send will fail
+      try {
+         connection.sendFrame(frame);
+         fail("connection should have been destroyed by now");
+      }
+      catch (IOException e) {
+         //ignore
+      }
+   }
+
+   @Test
+   public void testHeartBeatToConnectionTTLModifier() throws Exception {
+      ClientStompFrame frame;
+      ClientStompFrame reply;
+      StompClientConnection connection;
+      int port = 61614;
+
+      server.getActiveMQServer().getRemotingService().createAcceptor("test", "tcp://127.0.0.1:" + port + "?heartBeatToConnectionTtlModifier=1").start();
+
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "5000,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,5000", reply.getHeader("heart-beat"));
+
+      Thread.sleep(6000);
+
+      try {
+         connection.disconnect();
+         fail("Connection should be closed here already due to TTL");
+      }
+      catch (Exception e) {
+         // ignore
+      }
+
+      server.getActiveMQServer().getRemotingService().destroyAcceptor("test");
+      server.getActiveMQServer().getRemotingService().createAcceptor("test", "tcp://127.0.0.1:" + port + "?heartBeatToConnectionTtlModifier=1.5").start();
+
+      connection = StompClientConnectionFactory.createClientConnection("1.1", "localhost", port);
+      frame = connection.createFrame("CONNECT");
+      frame.addHeader("host", "127.0.0.1");
+      frame.addHeader("login", this.defUser);
+      frame.addHeader("passcode", this.defPass);
+      frame.addHeader("heart-beat", "5000,0");
+      frame.addHeader("accept-version", "1.0,1.1");
+
+      reply = connection.sendFrame(frame);
+
+      assertEquals("CONNECTED", reply.getCommand());
+
+      assertEquals("0,5000", reply.getHeader("heart-beat"));
+
+      Thread.sleep(6000);
+
+      connection.disconnect();
+   }
+
+   @Test
    public void testNack() throws Exception {
       connV11.connect(defUser, defPass);
 
@@ -1115,7 +1335,7 @@ public class StompV11Test extends StompV11TestBase {
 
    @Test
    public void testTwoSubscribers() throws Exception {
-      connV11.connect(defUser, defPass, "myclientid");
+      connV11.connect(defUser, defPass, CLIENT_ID);
 
       this.subscribeTopic(connV11, "sub1", "auto", null);
 
@@ -1317,7 +1537,7 @@ public class StompV11Test extends StompV11TestBase {
 
    @Test
    public void testDurableSubscriberWithReconnection() throws Exception {
-      connV11.connect(defUser, defPass, "myclientid");
+      connV11.connect(defUser, defPass, CLIENT_ID);
 
       this.subscribeTopic(connV11, "sub1", "auto", getName());
 
@@ -1335,7 +1555,7 @@ public class StompV11Test extends StompV11TestBase {
 
       connV11.destroy();
       connV11 = StompClientConnectionFactory.createClientConnection("1.1", hostname, port);
-      connV11.connect(defUser, defPass, "myclientid");
+      connV11.connect(defUser, defPass, CLIENT_ID);
 
       this.subscribeTopic(connV11, "sub1", "auto", getName());
 
@@ -1347,6 +1567,30 @@ public class StompV11Test extends StompV11TestBase {
       Assert.assertEquals(getName(), frame.getBody());
 
       this.unsubscribe(connV11, "sub1");
+
+      connV11.disconnect();
+   }
+
+   @Test
+   public void testDurableUnSubscribe() throws Exception {
+      connV11.connect(defUser, defPass, CLIENT_ID);
+
+      this.subscribeTopic(connV11, null, "auto", getName());
+
+      connV11.disconnect();
+      connV11.destroy();
+      connV11 = StompClientConnectionFactory.createClientConnection("1.1", hostname, port);
+      connV11.connect(defUser, defPass, CLIENT_ID);
+
+      this.unsubscribe(connV11, getName(), false, true);
+
+      long start = System.currentTimeMillis();
+      SimpleString queueName = SimpleString.toSimpleString(CLIENT_ID + "." + getName());
+      while (server.getActiveMQServer().locateQueue(queueName) != null && (System.currentTimeMillis() - start) < 5000) {
+         Thread.sleep(100);
+      }
+
+      assertNull(server.getActiveMQServer().locateQueue(queueName));
 
       connV11.disconnect();
    }
@@ -1788,6 +2032,8 @@ public class StompV11Test extends StompV11TestBase {
 
       ClientStompFrame frame = connV11.receiveFrame();
 
+      assertEquals(getName().length(), Integer.parseInt(frame.getHeader("content-length")));
+
       this.ack(connV11, "sub1", frame);
 
       connV11.disconnect();
@@ -2144,8 +2390,10 @@ public class StompV11Test extends StompV11TestBase {
                                boolean receipt,
                                boolean noLocal) throws IOException, InterruptedException {
       ClientStompFrame subFrame = conn.createFrame("SUBSCRIBE");
-      subFrame.addHeader("id", subId);
       subFrame.addHeader("destination", getTopicPrefix() + getTopicName());
+      if (subId != null) {
+         subFrame.addHeader("id", subId);
+      }
       if (ack != null) {
          subFrame.addHeader("ack", ack);
       }
@@ -2166,18 +2414,14 @@ public class StompV11Test extends StompV11TestBase {
       }
    }
 
-   private void unsubscribe(StompClientConnection conn, String subId) throws IOException, InterruptedException {
-      ClientStompFrame subFrame = conn.createFrame("UNSUBSCRIBE");
-      subFrame.addHeader("id", subId);
-
-      conn.sendFrame(subFrame);
-   }
-
-   private void unsubscribe(StompClientConnection conn,
-                            String subId,
-                            boolean receipt) throws IOException, InterruptedException {
-      ClientStompFrame subFrame = conn.createFrame("UNSUBSCRIBE");
-      subFrame.addHeader("id", subId);
+   private void unsubscribe(StompClientConnection conn, String subId, boolean receipt, boolean durable) throws IOException, InterruptedException {
+      ClientStompFrame subFrame = conn.createFrame(Stomp.Commands.UNSUBSCRIBE);
+      if (durable) {
+         subFrame.addHeader(Stomp.Headers.Unsubscribe.DURABLE_SUBSCRIPTION_NAME, subId);
+      }
+      else {
+         subFrame.addHeader(Stomp.Headers.Unsubscribe.ID, subId);
+      }
 
       if (receipt) {
          subFrame.addHeader("receipt", "4321");
@@ -2190,6 +2434,16 @@ public class StompV11Test extends StompV11TestBase {
          assertEquals("RECEIPT", f.getCommand());
          assertEquals("4321", f.getHeader("receipt-id"));
       }
+   }
+
+   private void unsubscribe(StompClientConnection conn, String subId) throws IOException, InterruptedException {
+      unsubscribe(conn, subId, false, false);
+   }
+
+   private void unsubscribe(StompClientConnection conn,
+                            String subId,
+                            boolean receipt) throws IOException, InterruptedException {
+      unsubscribe(conn, subId, receipt, false);
    }
 
    protected void assertSubscribeWithClientAckThenConsumeWithAutoAck(boolean sendDisconnect) throws Exception {

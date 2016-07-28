@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.stomp;
 
+import javax.security.cert.X509Certificate;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.remoting.Acceptor;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
+import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager2;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager3;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 
@@ -53,7 +55,7 @@ import static org.apache.activemq.artemis.core.protocol.stomp.ActiveMQStompProto
 /**
  * StompProtocolManager
  */
-class StompProtocolManager extends AbstractProtocolManager<StompFrame,StompFrameInterceptor,StompConnection> {
+public class StompProtocolManager extends AbstractProtocolManager<StompFrame,StompFrameInterceptor,StompConnection> {
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
@@ -326,14 +328,17 @@ class StompProtocolManager extends AbstractProtocolManager<StompFrame,StompFrame
       return "activemq";
    }
 
-   public boolean validateUser(String login, String passcode) {
+   public boolean validateUser(String login, String passcode, X509Certificate[] certificates) {
       boolean validated = true;
 
       ActiveMQSecurityManager sm = server.getSecurityManager();
 
       if (sm != null && server.getConfiguration().isSecurityEnabled()) {
          if (sm instanceof ActiveMQSecurityManager3) {
-            validated = ((ActiveMQSecurityManager3) sm).validateUser(login, passcode, null) != null;
+            validated = ((ActiveMQSecurityManager3) sm).validateUser(login, passcode, certificates) != null;
+         }
+         else if (sm instanceof ActiveMQSecurityManager2) {
+            validated = ((ActiveMQSecurityManager2) sm).validateUser(login, passcode, certificates);
          }
          else {
             validated = sm.validateUser(login, passcode);
@@ -380,15 +385,14 @@ class StompProtocolManager extends AbstractProtocolManager<StompFrame,StompFrame
             ". Either use unique subscription IDs or do not create multiple subscriptions for the same destination");
       }
       long consumerID = server.getStorageManager().generateID();
-      String clientID = (connection.getClientID() != null) ? connection.getClientID() : null;
-      stompSession.addSubscription(consumerID, subscriptionID, clientID, durableSubscriptionName, destination, selector, ack);
+      stompSession.addSubscription(consumerID, subscriptionID, connection.getClientID(), durableSubscriptionName, destination, selector, ack);
    }
 
    public void unsubscribe(StompConnection connection,
                            String subscriptionID,
                            String durableSubscriberName) throws Exception {
       StompSession stompSession = getSession(connection);
-      boolean unsubscribed = stompSession.unsubscribe(subscriptionID, durableSubscriberName);
+      boolean unsubscribed = stompSession.unsubscribe(subscriptionID, durableSubscriberName, connection.getClientID());
       if (!unsubscribed) {
          throw new ActiveMQStompException(connection, "Cannot unsubscribe as no subscription exists for id: " + subscriptionID);
       }
