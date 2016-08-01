@@ -167,6 +167,10 @@ public class QueueImpl implements Queue {
 
    private long messagesAcknowledged;
 
+   private long messagesExpired;
+
+   private long messagesKilled;
+
    protected final AtomicInteger deliveringCount = new AtomicInteger(0);
 
    private boolean paused;
@@ -962,6 +966,11 @@ public class QueueImpl implements Queue {
 
    @Override
    public void acknowledge(final MessageReference ref) throws Exception {
+      acknowledge(ref, AckReason.NORMAL);
+   }
+
+   @Override
+   public void acknowledge(final MessageReference ref, AckReason reason) throws Exception {
       if (ref.isPaged()) {
          pageSubscription.ack((PagedReference) ref);
          postAcknowledge(ref);
@@ -977,12 +986,25 @@ public class QueueImpl implements Queue {
          postAcknowledge(ref);
       }
 
-      messagesAcknowledged++;
+      if (reason == AckReason.EXPIRED) {
+         messagesExpired++;
+      }
+      else if (reason == AckReason.KILLED) {
+         messagesKilled++;
+      }
+      else {
+         messagesAcknowledged++;
+      }
 
    }
 
    @Override
    public void acknowledge(final Transaction tx, final MessageReference ref) throws Exception {
+      acknowledge(tx, ref, AckReason.NORMAL);
+   }
+
+   @Override
+   public void acknowledge(final Transaction tx, final MessageReference ref, AckReason reason) throws Exception {
       if (ref.isPaged()) {
          pageSubscription.ackTx(tx, (PagedReference) ref);
 
@@ -1002,7 +1024,15 @@ public class QueueImpl implements Queue {
          getRefsOperation(tx).addAck(ref);
       }
 
-      messagesAcknowledged++;
+      if (reason == AckReason.EXPIRED) {
+         messagesExpired++;
+      }
+      else if (reason == AckReason.KILLED) {
+         messagesKilled++;
+      }
+      else {
+         messagesAcknowledged++;
+      }
    }
 
    @Override
@@ -1075,13 +1105,13 @@ public class QueueImpl implements Queue {
          if (logger.isTraceEnabled()) {
             logger.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName());
          }
-         move(null, expiryAddress, ref, true, false);
+         move(null, expiryAddress, ref, false, AckReason.EXPIRED);
       }
       else {
          if (logger.isTraceEnabled()) {
             logger.trace("expiry is null, just acking expired message for reference " + ref + " from queue=" + this.getName());
          }
-         acknowledge(ref);
+         acknowledge(ref, AckReason.EXPIRED);
       }
    }
 
@@ -1125,6 +1155,16 @@ public class QueueImpl implements Queue {
    @Override
    public long getMessagesAcknowledged() {
       return messagesAcknowledged;
+   }
+
+   @Override
+   public long getMessagesExpired() {
+      return messagesExpired;
+   }
+
+   @Override
+   public long getMessagesKilled() {
+      return messagesKilled;
    }
 
    @Override
@@ -1508,7 +1548,7 @@ public class QueueImpl implements Queue {
                refRemoved(ref);
                incDelivering();
                try {
-                  move(null, toAddress, ref, false, rejectDuplicate);
+                  move(null, toAddress, ref, rejectDuplicate, AckReason.NORMAL);
                }
                catch (Exception e) {
                   decDelivering();
@@ -2349,25 +2389,25 @@ public class QueueImpl implements Queue {
 
          if (bindingList.getBindings().isEmpty()) {
             ActiveMQServerLogger.LOGGER.messageExceededMaxDelivery(ref, deadLetterAddress);
-            ref.acknowledge(tx);
+            ref.acknowledge(tx, AckReason.KILLED);
          }
          else {
             ActiveMQServerLogger.LOGGER.messageExceededMaxDeliverySendtoDLA(ref, deadLetterAddress, name);
-            move(tx, deadLetterAddress, ref, false, false);
+            move(tx, deadLetterAddress, ref, false, AckReason.KILLED);
          }
       }
       else {
          ActiveMQServerLogger.LOGGER.messageExceededMaxDeliveryNoDLA(name);
 
-         ref.acknowledge(tx);
+         ref.acknowledge(tx, AckReason.KILLED);
       }
    }
 
    private void move(final Transaction originalTX,
                      final SimpleString address,
                      final MessageReference ref,
-                     final boolean expiry,
-                     final boolean rejectDuplicate) throws Exception {
+                     final boolean rejectDuplicate,
+                     final AckReason reason) throws Exception {
       Transaction tx;
 
       if (originalTX != null) {
@@ -2378,13 +2418,13 @@ public class QueueImpl implements Queue {
          tx = new TransactionImpl(storageManager);
       }
 
-      ServerMessage copyMessage = makeCopy(ref, expiry);
+      ServerMessage copyMessage = makeCopy(ref, reason == AckReason.EXPIRED);
 
       copyMessage.setAddress(address);
 
       postOffice.route(copyMessage, null, tx, false, rejectDuplicate);
 
-      acknowledge(tx, ref);
+      acknowledge(tx, ref, reason);
 
       if (originalTX == null) {
          tx.commit();
@@ -2631,6 +2671,16 @@ public class QueueImpl implements Queue {
    @Override
    public synchronized void resetMessagesAcknowledged() {
       messagesAcknowledged = 0;
+   }
+
+   @Override
+   public synchronized void resetMessagesExpired() {
+      messagesExpired = 0;
+   }
+
+   @Override
+   public synchronized void resetMessagesKilled() {
+      messagesKilled = 0;
    }
 
    @Override

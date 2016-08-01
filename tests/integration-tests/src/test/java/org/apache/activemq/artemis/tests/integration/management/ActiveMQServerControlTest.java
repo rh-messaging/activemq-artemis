@@ -16,10 +16,17 @@
  */
 package org.apache.activemq.artemis.tests.integration.management;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 
+import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
@@ -36,19 +43,23 @@ import org.apache.activemq.artemis.api.core.management.DivertControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.api.core.management.RoleInfo;
+import org.apache.activemq.artemis.core.client.impl.ClientSessionImpl;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
 import org.apache.activemq.artemis.core.messagecounter.impl.MessageCounterManagerImpl;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
+import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.artemis.jlibaio.LibaioContext;
+import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
+import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule;
+import org.apache.activemq.artemis.tests.integration.IntegrationTestLogger;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.apache.activemq.artemis.utils.json.JSONArray;
-import org.apache.activemq.artemis.utils.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,6 +81,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    private static boolean contains(final String name, final String[] strings) {
       boolean found = false;
       for (String str : strings) {
+         IntegrationTestLogger.LOGGER.info("Does " + str + " match " + name);
          if (name.equals(str)) {
             found = true;
             break;
@@ -154,12 +166,12 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       String jsonString = serverControl.getConnectorsAsJSON();
       Assert.assertNotNull(jsonString);
-      JSONArray array = new JSONArray(jsonString);
-      Assert.assertEquals(1, array.length());
-      JSONObject data = array.getJSONObject(0);
-      Assert.assertEquals(connectorConfig.getName(), data.optString("name"));
-      Assert.assertEquals(connectorConfig.getFactoryClassName(), data.optString("factoryClassName"));
-      Assert.assertEquals(connectorConfig.getParams().size(), data.getJSONObject("params").length());
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(1, array.size());
+      JsonObject data = array.getJsonObject(0);
+      Assert.assertEquals(connectorConfig.getName(), data.getString("name"));
+      Assert.assertEquals(connectorConfig.getFactoryClassName(), data.getString("factoryClassName"));
+      Assert.assertEquals(connectorConfig.getParams().size(), data.getJsonObject("params").size());
    }
 
    @Test
@@ -401,7 +413,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       String addressMatch = "test.#";
       String exactAddress = "test.whatever";
 
-      assertEquals(0, serverControl.getRoles(addressMatch).length);
+      assertEquals(1, serverControl.getRoles(addressMatch).length);
       serverControl.addSecuritySettings(addressMatch, "foo", "foo, bar", "foo", "bar", "foo, bar", "", "", "bar");
 
       // Restart the server. Those settings should be persisted
@@ -442,7 +454,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       assertTrue(barRole.isBrowse());
 
       serverControl.removeSecuritySettings(addressMatch);
-      assertEquals(0, serverControl.getRoles(exactAddress).length);
+      assertEquals(1, serverControl.getRoles(exactAddress).length);
    }
 
    @Test
@@ -755,10 +767,10 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       ActiveMQServerControl serverControl = createManagementControl();
 
-      JSONArray jsonArray = new JSONArray(serverControl.listProducersInfoAsJSON());
+      JsonArray jsonArray = JsonUtil.readJsonArray(serverControl.listProducersInfoAsJSON());
 
-      assertEquals(1, jsonArray.length());
-      assertEquals(4, ((JSONObject) jsonArray.get(0)).getInt("msgSent"));
+      assertEquals(1, jsonArray.size());
+      assertEquals(4, ((JsonObject) jsonArray.get(0)).getInt("msgSent"));
 
       clientSession.close();
       locator.close();
@@ -889,7 +901,14 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    @Test
    public void testForceFailover() throws Exception {
       ActiveMQServerControl serverControl = createManagementControl();
-      serverControl.forceFailover();
+      try {
+         serverControl.forceFailover();
+      }
+      catch (Exception e) {
+         if (!usingCore()) {
+            fail(e.getMessage());
+         }
+      }
       assertFalse(server.isStarted());
    }
 
@@ -937,7 +956,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }
 
       assertEquals(CONNECTION_COUNT + (usingCore() ? 1 : 0), serverControl.getTotalConnectionCount());
-      assertEquals(0 + (usingCore() ? 1 : 0), serverControl.getConnectionCount());
+      assertEquals((usingCore() ? 1 : 0), serverControl.getConnectionCount());
 
       locator.close();
    }
@@ -975,7 +994,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       session.commit();
 
       assertEquals(2, serverControl.getTotalMessagesAdded());
-      assertEquals(0 + (usingCore() ? 1 : 0), serverControl.getTotalMessageCount());
+      assertEquals(0, serverControl.getTotalMessageCount());
 
       consumer1.close();
       consumer2.close();
@@ -1021,7 +1040,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       session.commit();
 
       assertEquals(2, serverControl.getTotalMessagesAcknowledged());
-      assertEquals(0  + (usingCore() ? 1 : 0), serverControl.getTotalMessageCount());
+      assertEquals(0, serverControl.getTotalMessageCount());
 
       consumer1.close();
       consumer2.close();
@@ -1053,7 +1072,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       ClientConsumer consumer1 = session.createConsumer(random1);
       ClientConsumer consumer2 = session.createConsumer(random2);
 
-      assertEquals(2 + (usingCore() ? 1 : 0), serverControl.getTotalConsumerCount());
+      assertEquals(usingCore() ? 3 : 2, serverControl.getTotalConsumerCount());
       assertEquals(1, queueControl1.getConsumerCount());
       assertEquals(1, queueControl2.getConsumerCount());
 
@@ -1066,6 +1085,234 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       session.close();
 
       locator.close();
+   }
+
+   @Test
+   public void testListConnectionsAsJSON() throws Exception {
+      ActiveMQServerControl serverControl = createManagementControl();
+      List<ClientSessionFactory> factories = new ArrayList<>();
+
+      ServerLocator locator = createInVMNonHALocator();
+      factories.add(createSessionFactory(locator));
+      Thread.sleep(200);
+      factories.add(createSessionFactory(locator));
+      addClientSession(factories.get(1).createSession());
+
+      String jsonString = serverControl.listConnectionsAsJSON();
+      IntegrationTestLogger.LOGGER.info(jsonString);
+      Assert.assertNotNull(jsonString);
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(usingCore() ? 3 : 2, array.size());
+
+      String key = "creationTime";
+      JsonObject[] sorted = new JsonObject[array.size()];
+      for (int i = 0; i < array.size(); i++) {
+         sorted[i] = array.getJsonObject(i);
+      }
+
+      if (sorted[0].getJsonNumber(key).longValue() > sorted[1].getJsonNumber(key).longValue()) {
+         JsonObject o = sorted[1];
+         sorted[1] = sorted[0];
+         sorted[0] = o;
+      }
+      if (usingCore()) {
+         if (sorted[1].getJsonNumber(key).longValue() > sorted[2].getJsonNumber(key).longValue()) {
+            JsonObject o = sorted[2];
+            sorted[2] = sorted[1];
+            sorted[1] = o;
+         }
+         if (sorted[0].getJsonNumber(key).longValue() > sorted[1].getJsonNumber(key).longValue()) {
+            JsonObject o = sorted[1];
+            sorted[1] = sorted[0];
+            sorted[0] = o;
+         }
+      }
+
+      JsonObject first = sorted[0];
+      JsonObject second = sorted[1];
+
+      Assert.assertTrue(first.getString("connectionID").length() > 0);
+      Assert.assertTrue(first.getString("clientAddress").length() > 0);
+      Assert.assertTrue(first.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(0, first.getJsonNumber("sessionCount").longValue());
+
+      Assert.assertTrue(second.getString("connectionID").length() > 0);
+      Assert.assertTrue(second.getString("clientAddress").length() > 0);
+      Assert.assertTrue(second.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(1, second.getJsonNumber("sessionCount").longValue());
+   }
+
+   @Test
+   public void testListConsumersAsJSON() throws Exception {
+      SimpleString queueName = new SimpleString(UUID.randomUUID().toString());
+      final String filter = "x = 1";
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      ServerLocator locator = createInVMNonHALocator();
+      ClientSessionFactory factory = createSessionFactory(locator);
+      ClientSession session = addClientSession(factory.createSession());
+      server.createQueue(queueName, queueName, null, false, false);
+      addClientConsumer(session.createConsumer(queueName));
+      addClientConsumer(session.createConsumer(queueName, SimpleString.toSimpleString(filter), true));
+
+      String jsonString = serverControl.listConsumersAsJSON(factory.getConnection().getID().toString());
+      IntegrationTestLogger.LOGGER.info(jsonString);
+      Assert.assertNotNull(jsonString);
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(2, array.size());
+      JsonObject first;
+      JsonObject second;
+      if (array.getJsonObject(0).getJsonNumber("creationTime").longValue() < array.getJsonObject(1).getJsonNumber("creationTime").longValue()) {
+         first = array.getJsonObject(0);
+         second = array.getJsonObject(1);
+      }
+      else {
+         first = array.getJsonObject(1);
+         second = array.getJsonObject(0);
+      }
+
+      Assert.assertNotNull(first.getJsonNumber("consumerID").longValue());
+      Assert.assertTrue(first.getString("connectionID").length() > 0);
+      Assert.assertEquals(factory.getConnection().getID().toString(), first.getString("connectionID"));
+      Assert.assertTrue(first.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session).getName(), first.getString("sessionID"));
+      Assert.assertTrue(first.getString("queueName").length() > 0);
+      Assert.assertEquals(queueName.toString(), first.getString("queueName"));
+      Assert.assertEquals(false, first.getBoolean("browseOnly"));
+      Assert.assertTrue(first.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(0, first.getJsonNumber("deliveringCount").longValue());
+
+      Assert.assertNotNull(second.getJsonNumber("consumerID").longValue());
+      Assert.assertTrue(second.getString("connectionID").length() > 0);
+      Assert.assertEquals(factory.getConnection().getID().toString(), second.getString("connectionID"));
+      Assert.assertTrue(second.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session).getName(), second.getString("sessionID"));
+      Assert.assertTrue(second.getString("queueName").length() > 0);
+      Assert.assertEquals(queueName.toString(), second.getString("queueName"));
+      Assert.assertEquals(true, second.getBoolean("browseOnly"));
+      Assert.assertTrue(second.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(0, second.getJsonNumber("deliveringCount").longValue());
+      Assert.assertTrue(second.getString("filter").length() > 0);
+      Assert.assertEquals(filter, second.getString("filter"));
+   }
+
+   @Test
+   public void testListAllConsumersAsJSON() throws Exception {
+      SimpleString queueName = new SimpleString(UUID.randomUUID().toString());
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      ServerLocator locator = createInVMNonHALocator();
+      ClientSessionFactory factory = createSessionFactory(locator);
+      ClientSession session = addClientSession(factory.createSession());
+
+      ServerLocator locator2 = createInVMNonHALocator();
+      ClientSessionFactory factory2 = createSessionFactory(locator2);
+      ClientSession session2 = addClientSession(factory2.createSession());
+
+      server.createQueue(queueName, queueName, null, false, false);
+
+      addClientConsumer(session.createConsumer(queueName));
+      Thread.sleep(200);
+      addClientConsumer(session2.createConsumer(queueName));
+
+      String jsonString = serverControl.listAllConsumersAsJSON();
+      IntegrationTestLogger.LOGGER.info(jsonString);
+      Assert.assertNotNull(jsonString);
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(usingCore() ? 3 : 2, array.size());
+
+      String key = "creationTime";
+      JsonObject[] sorted = new JsonObject[array.size()];
+      for (int i = 0; i < array.size(); i++) {
+         sorted[i] = array.getJsonObject(i);
+      }
+
+      if (sorted[0].getJsonNumber(key).longValue() > sorted[1].getJsonNumber(key).longValue()) {
+         JsonObject o = sorted[1];
+         sorted[1] = sorted[0];
+         sorted[0] = o;
+      }
+      if (usingCore()) {
+         if (sorted[1].getJsonNumber(key).longValue() > sorted[2].getJsonNumber(key).longValue()) {
+            JsonObject o = sorted[2];
+            sorted[2] = sorted[1];
+            sorted[1] = o;
+         }
+         if (sorted[0].getJsonNumber(key).longValue() > sorted[1].getJsonNumber(key).longValue()) {
+            JsonObject o = sorted[1];
+            sorted[1] = sorted[0];
+            sorted[0] = o;
+         }
+      }
+
+      JsonObject first = sorted[0];
+      JsonObject second = sorted[1];
+
+      Assert.assertTrue(first.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertNotNull(first.getJsonNumber("consumerID").longValue());
+      Assert.assertTrue(first.getString("connectionID").length() > 0);
+      Assert.assertEquals(factory.getConnection().getID().toString(), first.getString("connectionID"));
+      Assert.assertTrue(first.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session).getName(), first.getString("sessionID"));
+      Assert.assertTrue(first.getString("queueName").length() > 0);
+      Assert.assertEquals(queueName.toString(), first.getString("queueName"));
+      Assert.assertEquals(false, first.getBoolean("browseOnly"));
+      Assert.assertEquals(0, first.getJsonNumber("deliveringCount").longValue());
+
+      Assert.assertTrue(second.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertNotNull(second.getJsonNumber("consumerID").longValue());
+      Assert.assertTrue(second.getString("connectionID").length() > 0);
+      Assert.assertEquals(factory2.getConnection().getID().toString(), second.getString("connectionID"));
+      Assert.assertTrue(second.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session2).getName(), second.getString("sessionID"));
+      Assert.assertTrue(second.getString("queueName").length() > 0);
+      Assert.assertEquals(queueName.toString(), second.getString("queueName"));
+      Assert.assertEquals(false, second.getBoolean("browseOnly"));
+      Assert.assertEquals(0, second.getJsonNumber("deliveringCount").longValue());
+   }
+
+   @Test
+   public void testListSessionsAsJSON() throws Exception {
+      SimpleString queueName = new SimpleString(UUID.randomUUID().toString());
+      server.createQueue(queueName, queueName, null, false, false);
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      ServerLocator locator = createInVMNonHALocator();
+      ClientSessionFactory factory = createSessionFactory(locator);
+      ClientSession session1 = addClientSession(factory.createSession());
+      Thread.sleep(5);
+      ClientSession session2 = addClientSession(factory.createSession("myUser", "myPass", false, false, false, false, 0));
+      session2.createConsumer(queueName);
+
+      String jsonString = serverControl.listSessionsAsJSON(factory.getConnection().getID().toString());
+      IntegrationTestLogger.LOGGER.info(jsonString);
+      Assert.assertNotNull(jsonString);
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(2, array.size());
+      JsonObject first;
+      JsonObject second;
+      if (array.getJsonObject(0).getJsonNumber("creationTime").longValue() < array.getJsonObject(1).getJsonNumber("creationTime").longValue()) {
+         first = array.getJsonObject(0);
+         second = array.getJsonObject(1);
+      }
+      else {
+         first = array.getJsonObject(1);
+         second = array.getJsonObject(0);
+      }
+
+      Assert.assertTrue(first.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session1).getName(), first.getString("sessionID"));
+      Assert.assertTrue(first.getString("principal").length() > 0);
+      Assert.assertEquals("guest", first.getString("principal"));
+      Assert.assertTrue(first.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(0, first.getJsonNumber("consumerCount").longValue());
+
+      Assert.assertTrue(second.getString("sessionID").length() > 0);
+      Assert.assertEquals(((ClientSessionImpl)session2).getName(), second.getString("sessionID"));
+      Assert.assertTrue(second.getString("principal").length() > 0);
+      Assert.assertEquals("myUser", second.getString("principal"));
+      Assert.assertTrue(second.getJsonNumber("creationTime").longValue() > 0);
+      Assert.assertEquals(1, second.getJsonNumber("consumerCount").longValue());
    }
 
    protected void scaleDown(ScaleDownHandler handler) throws Exception {
@@ -1118,9 +1365,21 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       connectorConfig = new TransportConfiguration(INVM_CONNECTOR_FACTORY);
 
-      conf = createDefaultInVMConfig().setJMXManagementEnabled(true).addConnectorConfiguration(connectorConfig.getName(), connectorConfig);
-      server = addServer(ActiveMQServers.newActiveMQServer(conf, mbeanServer, true));
+      conf = createDefaultNettyConfig().setJMXManagementEnabled(true).addConnectorConfiguration(connectorConfig.getName(), connectorConfig);
+      conf.setSecurityEnabled(true);
+      SecurityConfiguration securityConfiguration = new SecurityConfiguration();
+      securityConfiguration.addUser("guest", "guest");
+      securityConfiguration.addUser("myUser", "myPass");
+      securityConfiguration.addRole("guest", "guest");
+      securityConfiguration.addRole("myUser", "guest");
+      securityConfiguration.setDefaultUser("guest");
+      ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), securityConfiguration);
+      server = addServer(ActiveMQServers.newActiveMQServer(conf, mbeanServer, securityManager, true));
       server.start();
+
+      HashSet<Role> role = new HashSet<>();
+      role.add(new Role("guest", true, true, true, true, true, true, true, true));
+      server.getSecurityRepository().addMatch("#", role);
    }
 
    protected ActiveMQServerControl createManagementControl() throws Exception {

@@ -17,6 +17,11 @@
 package org.apache.activemq.artemis.jms.management.impl;
 
 import javax.jms.JMSRuntimeException;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanNotificationInfo;
@@ -61,8 +66,6 @@ import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfi
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.utils.TypedProperties;
-import org.apache.activemq.artemis.utils.json.JSONArray;
-import org.apache.activemq.artemis.utils.json.JSONObject;
 
 public class JMSServerControlImpl extends AbstractControl implements JMSServerControl, NotificationEmitter, org.apache.activemq.artemis.core.server.management.NotificationListener {
 
@@ -599,7 +602,7 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
       clearIO();
 
       try {
-         JSONArray array = new JSONArray();
+         JsonArrayBuilder array = Json.createArrayBuilder();
 
          Set<RemotingConnection> connections = server.getActiveMQServer().getRemotingService().getConnections();
 
@@ -617,17 +620,23 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
          for (RemotingConnection connection : connections) {
             ServerSession session = jmsSessions.get(connection.getID());
             if (session != null) {
-               JSONObject obj = new JSONObject();
-               obj.put("connectionID", connection.getID().toString());
-               obj.put("clientAddress", connection.getRemoteAddress());
-               obj.put("creationTime", connection.getCreationTime());
-               // Notice: this will be null when the user haven't set the client-id
-               obj.put("clientID", session.getMetaData(ClientSession.JMS_SESSION_CLIENT_ID_PROPERTY));
-               obj.put("principal", session.getUsername());
-               array.put(obj);
+               JsonObjectBuilder objectBuilder = Json.createObjectBuilder()
+                  .add("connectionID", connection.getID().toString())
+                  .add("clientAddress", connection.getRemoteAddress())
+                  .add("creationTime", connection.getCreationTime());
+
+               if (session.getMetaData(ClientSession.JMS_SESSION_CLIENT_ID_PROPERTY) != null) {
+                  objectBuilder.add("clientID", session.getMetaData(ClientSession.JMS_SESSION_CLIENT_ID_PROPERTY));
+               }
+
+               if (session.getUsername() != null) {
+                  objectBuilder.add("principal", session.getUsername());
+               }
+
+               array.add(objectBuilder.build());
             }
          }
-         return array.toString();
+         return array.build().toString();
       }
       finally {
          blockOnIO();
@@ -641,7 +650,7 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
       clearIO();
 
       try {
-         JSONArray array = new JSONArray();
+         JsonArrayBuilder array = Json.createArrayBuilder();
 
          Set<RemotingConnection> connections = server.getActiveMQServer().getRemotingService().getConnections();
          for (RemotingConnection connection : connections) {
@@ -650,15 +659,15 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
                for (ServerSession session : sessions) {
                   Set<ServerConsumer> consumers = session.getServerConsumers();
                   for (ServerConsumer consumer : consumers) {
-                     JSONObject obj = toJSONObject(consumer);
+                     JsonObject obj = toJSONObject(consumer);
                      if (obj != null) {
-                        array.put(obj);
+                        array.add(obj);
                      }
                   }
                }
             }
          }
-         return array.toString();
+         return array.build().toString();
       }
       finally {
          blockOnIO();
@@ -672,19 +681,8 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
       clearIO();
 
       try {
-         JSONArray array = new JSONArray();
-
-         Set<ServerSession> sessions = server.getActiveMQServer().getSessions();
-         for (ServerSession session : sessions) {
-            Set<ServerConsumer> consumers = session.getServerConsumers();
-            for (ServerConsumer consumer : consumers) {
-               JSONObject obj = toJSONObject(consumer);
-               if (obj != null) {
-                  array.put(obj);
-               }
-            }
-         }
-         return array.toString();
+         JsonArray jsonArray = toJsonArray(server.getActiveMQServer().getSessions());
+         return jsonArray.toString();
       }
       finally {
          blockOnIO();
@@ -810,20 +808,12 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
 
       clearIO();
 
-      JSONArray array = new JSONArray();
       try {
-         List<ServerSession> sessions = server.getActiveMQServer().getSessions(connectionID);
-         for (ServerSession sess : sessions) {
-            JSONObject obj = new JSONObject();
-            obj.put("sessionID", sess.getName());
-            obj.put("creationTime", sess.getCreationTime());
-            array.put(obj);
-         }
+         return server.listSessionsAsJSON(connectionID);
       }
       finally {
          blockOnIO();
       }
-      return array.toString();
    }
 
    @Override
@@ -832,7 +822,7 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
 
       clearIO();
       try {
-         JSONArray brokers = new JSONArray();
+         JsonArrayBuilder brokers = Json.createArrayBuilder();
          ClusterManager clusterManager = server.getActiveMQServer().getClusterManager();
          if (clusterManager != null) {
             Set<ClusterConnection> clusterConnections = clusterManager.getClusterConnections();
@@ -841,21 +831,21 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
                Collection<TopologyMemberImpl> members = topology.getMembers();
                for (TopologyMemberImpl member : members) {
 
-                  JSONObject obj = new JSONObject();
+                  JsonObjectBuilder obj = Json.createObjectBuilder();
                   TransportConfiguration live = member.getLive();
                   if (live != null) {
-                     obj.put("nodeID", member.getNodeId());
-                     obj.put("live", live.getParams().get("host") + ":" + live.getParams().get("port"));
+                     obj.add("nodeID", member.getNodeId())
+                        .add("live", live.getParams().get("host") + ":" + live.getParams().get("port"));
                      TransportConfiguration backup = member.getBackup();
                      if (backup != null) {
-                        obj.put("backup", backup.getParams().get("host") + ":" + backup.getParams().get("port"));
+                        obj.add("backup", backup.getParams().get("host") + ":" + backup.getParams().get("port"));
                      }
                   }
-                  brokers.put(obj);
+                  brokers.add(obj);
                }
             }
          }
-         return brokers.toString();
+         return brokers.build().toString();
       }
       finally {
          blockOnIO();
@@ -867,39 +857,41 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
       return server.getActiveMQServer().destroyConnectionWithSessionMetadata(ClientSession.JMS_SESSION_CLIENT_ID_PROPERTY, clientID);
    }
 
-   private JSONObject toJSONObject(ServerConsumer consumer) throws Exception {
-      JSONObject obj = new JSONObject();
-      obj.put("consumerID", consumer.getID());
-      obj.put("connectionID", consumer.getConnectionID());
-      obj.put("sessionID", consumer.getSessionID());
-      obj.put("queueName", consumer.getQueue().getName().toString());
-      obj.put("browseOnly", consumer.isBrowseOnly());
-      obj.put("creationTime", consumer.getCreationTime());
-      // JMS consumer with message filter use the queue's filter
-      Filter queueFilter = consumer.getQueue().getFilter();
-      if (queueFilter != null) {
-         obj.put("filter", queueFilter.getFilterString().toString());
-      }
+   private JsonObject toJSONObject(ServerConsumer consumer) {
       String[] destinationInfo = determineJMSDestination(consumer.getQueue().getAddress().toString());
       if (destinationInfo == null) {
          return null;
       }
-      obj.put("destinationName", destinationInfo[0]);
-      obj.put("destinationType", destinationInfo[1]);
+      JsonObjectBuilder obj = Json.createObjectBuilder()
+         .add("consumerID", consumer.getID())
+         .add("connectionID", consumer.getConnectionID().toString())
+         .add("sessionID", consumer.getSessionID())
+         .add("queueName", consumer.getQueue().getName().toString())
+         .add("browseOnly", consumer.isBrowseOnly())
+         .add("creationTime", consumer.getCreationTime())
+         .add("destinationName", destinationInfo[0])
+         .add("destinationType", destinationInfo[1]);
+      // JMS consumer with message filter use the queue's filter
+      Filter queueFilter = consumer.getQueue().getFilter();
+      if (queueFilter != null) {
+         obj.add("filter", queueFilter.getFilterString().toString());
+      }
+
+
       if (destinationInfo[1].equals("topic")) {
          try {
             ActiveMQDestination.decomposeQueueNameForDurableSubscription(consumer.getQueue().getName().toString());
-            obj.put("durable", true);
+            obj.add("durable", true);
          }
          catch (IllegalArgumentException | JMSRuntimeException e) {
-            obj.put("durable", false);
+            obj.add("durable", false);
          }
       }
       else {
-         obj.put("durable", false);
+         obj.add("durable", false);
       }
 
-      return obj;
+      return obj.build();
    }
 
    @Override
@@ -910,6 +902,21 @@ public class JMSServerControlImpl extends AbstractControl implements JMSServerCo
       TypedProperties prop = notification.getProperties();
 
       this.broadcaster.sendNotification(new Notification(type.toString(), this, notifSeq.incrementAndGet(), prop.getSimpleStringProperty(JMSNotificationType.MESSAGE).toString()));
+   }
+
+   private JsonArray toJsonArray(Collection<ServerSession> sessions) {
+      JsonArrayBuilder array = Json.createArrayBuilder();
+
+      for (ServerSession session : sessions) {
+         Set<ServerConsumer> consumers = session.getServerConsumers();
+         for (ServerConsumer consumer : consumers) {
+            JsonObject obj = toJSONObject(consumer);
+            if (obj != null) {
+               array.add(obj);
+            }
+         }
+      }
+      return array.build();
    }
 
 }

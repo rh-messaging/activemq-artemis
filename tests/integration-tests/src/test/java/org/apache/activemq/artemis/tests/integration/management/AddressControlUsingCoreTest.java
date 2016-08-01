@@ -44,6 +44,10 @@ public class AddressControlUsingCoreTest extends ManagementTestBase {
 
    private ActiveMQServer server;
 
+   private ServerLocator locator;
+
+   private ClientSessionFactory sf;
+
    protected ClientSession session;
 
    // Static --------------------------------------------------------
@@ -136,7 +140,7 @@ public class AddressControlUsingCoreTest extends ManagementTestBase {
       newRoles.add(role);
       server.getSecurityRepository().addMatch(address.toString(), newRoles);
 
-      roles = (Object[]) proxy.retrieveAttributeValue("roles");
+      roles = (Object[]) proxy.retrieveAttributeValue("roles", String.class);
       Assert.assertEquals(1, roles.length);
       Object[] r = (Object[]) roles[0];
       Assert.assertEquals(role.getName(), r[0]);
@@ -165,14 +169,14 @@ public class AddressControlUsingCoreTest extends ManagementTestBase {
       server.setMBeanServer(mbeanServer);
       server.start();
 
-      ServerLocator locator = createInVMNonHALocator().setBlockOnNonDurableSend(true);
-      ClientSessionFactory sf = createSessionFactory(locator);
+      locator = createInVMNonHALocator().setBlockOnNonDurableSend(true);
+      sf = createSessionFactory(locator);
       session = sf.createSession(false, true, false);
       session.start();
    }
 
    protected CoreMessagingProxy createProxy(final SimpleString address) throws Exception {
-      CoreMessagingProxy proxy = new CoreMessagingProxy(session, ResourceNames.CORE_ADDRESS + address);
+      CoreMessagingProxy proxy = new CoreMessagingProxy(addServerLocator(createInVMNonHALocator()), ResourceNames.CORE_ADDRESS + address);
 
       return proxy;
    }

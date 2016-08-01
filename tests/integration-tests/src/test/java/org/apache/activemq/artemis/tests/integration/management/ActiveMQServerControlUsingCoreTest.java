@@ -16,13 +16,9 @@
  */
 package org.apache.activemq.artemis.tests.integration.management;
 
-import org.apache.activemq.artemis.api.core.client.ClientSession;
-import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
-import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.Parameter;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
-import org.junit.Before;
 
 public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTest {
 
@@ -46,33 +42,6 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
    // ActiveMQServerControlTest overrides --------------------------
 
-   private ClientSession session;
-   private ServerLocator locator;
-
-   @Override
-   @Before
-   public void setUp() throws Exception {
-      super.setUp();
-
-      locator = createInVMNonHALocator();
-      ClientSessionFactory sf = createSessionFactory(locator);
-      session = sf.createSession(false, true, true);
-      session.start();
-   }
-
-   @Override
-   protected void restartServer() throws Exception {
-      session.close();
-
-      super.restartServer();
-
-      ServerLocator locator = createInVMNonHALocator();
-      ClientSessionFactory sf = createSessionFactory(locator);
-      session = sf.createSession(false, true, true);
-      session.start();
-
-   }
-
    // the core messaging proxy doesn't work when the server is stopped so we cant run these 2 tests
    @Override
    public void testScaleDownWithOutConnector() throws Exception {
@@ -95,7 +64,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
             throw new UnsupportedOperationException();
          }
 
-         private final CoreMessagingProxy proxy = new CoreMessagingProxy(session, ResourceNames.CORE_SERVER);
+         private final CoreMessagingProxy proxy = new CoreMessagingProxy(addServerLocator(createInVMNonHALocator()), ResourceNames.CORE_SERVER);
 
          @Override
          public boolean isSharedStore() {
@@ -175,7 +144,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getConnectionCount() {
-            return (Integer) proxy.retrieveAttributeValue("connectionCount");
+            return (Integer) proxy.retrieveAttributeValue("connectionCount", Integer.class);
          }
 
          @Override
@@ -225,7 +194,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public String[] getQueueNames() {
-            return ActiveMQServerControlUsingCoreTest.toStringArray((Object[]) proxy.retrieveAttributeValue("queueNames"));
+            return ActiveMQServerControlUsingCoreTest.toStringArray((Object[]) proxy.retrieveAttributeValue("queueNames", String.class));
          }
 
          @Override
@@ -245,7 +214,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getIDCacheSize() {
-            return (Integer) proxy.retrieveAttributeValue("IDCacheSize");
+            return (Integer) proxy.retrieveAttributeValue("IDCacheSize", Integer.class);
          }
 
          public String[] getInterceptorClassNames() {
@@ -269,17 +238,17 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getJournalFileSize() {
-            return (Integer) proxy.retrieveAttributeValue("journalFileSize");
+            return (Integer) proxy.retrieveAttributeValue("journalFileSize", Integer.class);
          }
 
          @Override
          public int getJournalMaxIO() {
-            return (Integer) proxy.retrieveAttributeValue("journalMaxIO");
+            return (Integer) proxy.retrieveAttributeValue("journalMaxIO", Integer.class);
          }
 
          @Override
          public int getJournalMinFiles() {
-            return (Integer) proxy.retrieveAttributeValue("journalMinFiles");
+            return (Integer) proxy.retrieveAttributeValue("journalMinFiles", Integer.class);
          }
 
          @Override
@@ -304,7 +273,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getMessageCounterMaxDayCount() {
-            return (Integer) proxy.retrieveAttributeValue("messageCounterMaxDayCount");
+            return (Integer) proxy.retrieveAttributeValue("messageCounterMaxDayCount", Integer.class);
          }
 
          @Override
@@ -329,12 +298,12 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getScheduledThreadPoolMaxSize() {
-            return (Integer) proxy.retrieveAttributeValue("scheduledThreadPoolMaxSize");
+            return (Integer) proxy.retrieveAttributeValue("scheduledThreadPoolMaxSize", Integer.class);
          }
 
          @Override
          public int getThreadPoolMaxSize() {
-            return (Integer) proxy.retrieveAttributeValue("threadPoolMaxSize");
+            return (Integer) proxy.retrieveAttributeValue("threadPoolMaxSize", Integer.class);
          }
 
          @Override
@@ -354,7 +323,7 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public String getVersion() {
-            return (String) proxy.retrieveAttributeValue("version");
+            return proxy.retrieveAttributeValue("version").toString();
          }
 
          @Override
@@ -517,22 +486,22 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
 
          @Override
          public int getJournalBufferSize() {
-            return (Integer) proxy.retrieveAttributeValue("JournalBufferSize");
+            return (Integer) proxy.retrieveAttributeValue("JournalBufferSize", Integer.class);
          }
 
          @Override
          public int getJournalBufferTimeout() {
-            return (Integer) proxy.retrieveAttributeValue("JournalBufferTimeout");
+            return (Integer) proxy.retrieveAttributeValue("JournalBufferTimeout", Integer.class);
          }
 
          @Override
          public int getJournalCompactMinFiles() {
-            return (Integer) proxy.retrieveAttributeValue("JournalCompactMinFiles");
+            return (Integer) proxy.retrieveAttributeValue("JournalCompactMinFiles", Integer.class);
          }
 
          @Override
          public int getJournalCompactPercentage() {
-            return (Integer) proxy.retrieveAttributeValue("JournalCompactPercentage");
+            return (Integer) proxy.retrieveAttributeValue("JournalCompactPercentage", Integer.class);
          }
 
          @Override
@@ -704,6 +673,26 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          @Override
          public String listProducersInfoAsJSON() throws Exception {
             return (String) proxy.invokeOperation("listProducersInfoAsJSON");
+         }
+
+         @Override
+         public String listConsumersAsJSON(String connectionID) throws Exception {
+            return (String) proxy.invokeOperation("listConsumersAsJSON", connectionID);
+         }
+
+         @Override
+         public String listAllConsumersAsJSON() throws Exception {
+            return (String) proxy.invokeOperation("listAllConsumersAsJSON");
+         }
+
+         @Override
+         public String listConnectionsAsJSON() throws Exception {
+            return (String) proxy.invokeOperation("listConnectionsAsJSON");
+         }
+
+         @Override
+         public String listSessionsAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception {
+            return (String) proxy.invokeOperation("listSessionsAsJSON", connectionID);
          }
       };
    }

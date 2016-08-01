@@ -957,7 +957,17 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
+      public void acknowledge(MessageReference ref, AckReason reason) throws Exception {
+
+      }
+
+      @Override
       public void acknowledge(Transaction tx, MessageReference ref) throws Exception {
+
+      }
+
+      @Override
+      public void acknowledge(Transaction tx, MessageReference ref, AckReason reason) throws Exception {
 
       }
 
@@ -1043,6 +1053,16 @@ public class ScheduledDeliveryHandlerTest extends Assert {
 
       @Override
       public long getMessagesAcknowledged() {
+         return 0;
+      }
+
+      @Override
+      public long getMessagesExpired() {
+         return 0;
+      }
+
+      @Override
+      public long getMessagesKilled() {
          return 0;
       }
 
@@ -1252,6 +1272,16 @@ public class ScheduledDeliveryHandlerTest extends Assert {
 
       @Override
       public void resetMessagesAcknowledged() {
+
+      }
+
+      @Override
+      public void resetMessagesExpired() {
+
+      }
+
+      @Override
+      public void resetMessagesKilled() {
 
       }
 

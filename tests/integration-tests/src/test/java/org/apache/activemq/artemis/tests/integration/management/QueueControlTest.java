@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.tests.integration.management;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
 import javax.management.Notification;
 import javax.management.openmbean.CompositeData;
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.JsonUtil;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
@@ -49,8 +52,6 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.integration.jms.server.management.JMSUtil;
 import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.apache.activemq.artemis.utils.json.JSONArray;
-import org.apache.activemq.artemis.utils.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -219,16 +220,16 @@ public class QueueControlTest extends ManagementTestBase {
 
       System.out.println("Consumers: " + queueControl.listConsumersAsJSON());
 
-      JSONArray obj = new JSONArray(queueControl.listConsumersAsJSON());
+      JsonArray obj = JsonUtil.readJsonArray(queueControl.listConsumersAsJSON());
 
-      assertEquals(1, obj.length());
+      assertEquals(1, obj.size());
 
       consumer.close();
       Assert.assertEquals(0, queueControl.getConsumerCount());
 
-      obj = new JSONArray(queueControl.listConsumersAsJSON());
+      obj = JsonUtil.readJsonArray(queueControl.listConsumersAsJSON());
 
-      assertEquals(0, obj.length());
+      assertEquals(0, obj.size());
 
       session.deleteQueue(queue);
    }
@@ -562,16 +563,16 @@ public class QueueControlTest extends ManagementTestBase {
 
       String jsonString = queueControl.listScheduledMessagesAsJSON();
       Assert.assertNotNull(jsonString);
-      JSONArray array = new JSONArray(jsonString);
-      Assert.assertEquals(1, array.length());
-      Assert.assertEquals(intValue, array.getJSONObject(0).get("key"));
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(1, array.size());
+      Assert.assertEquals(intValue, array.getJsonObject(0).getJsonNumber("key").intValue());
 
       Thread.sleep(delay + 500);
 
       jsonString = queueControl.listScheduledMessagesAsJSON();
       Assert.assertNotNull(jsonString);
-      array = new JSONArray(jsonString);
-      Assert.assertEquals(0, array.length());
+      array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(0, array.size());
 
       consumeMessages(2, session, queue);
 
@@ -620,16 +621,16 @@ public class QueueControlTest extends ManagementTestBase {
 
       String jsonString = queueControl.listMessagesAsJSON(null);
       Assert.assertNotNull(jsonString);
-      JSONArray array = new JSONArray(jsonString);
-      Assert.assertEquals(1, array.length());
-      Assert.assertEquals(intValue, array.getJSONObject(0).get("key"));
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(1, array.size());
+      Assert.assertEquals(intValue, array.getJsonObject(0).getInt("key"));
 
       consumeMessages(1, session, queue);
 
       jsonString = queueControl.listMessagesAsJSON(null);
       Assert.assertNotNull(jsonString);
-      array = new JSONArray(jsonString);
-      Assert.assertEquals(0, array.length());
+      array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(0, array.size());
 
       session.deleteQueue(queue);
    }
@@ -736,16 +737,16 @@ public class QueueControlTest extends ManagementTestBase {
 
       String jsonString = queueControl.listMessagesAsJSON(filter);
       Assert.assertNotNull(jsonString);
-      JSONArray array = new JSONArray(jsonString);
-      Assert.assertEquals(1, array.length());
-      Assert.assertEquals(matchingValue, array.getJSONObject(0).get("key"));
+      JsonArray array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(1, array.size());
+      Assert.assertEquals(matchingValue, array.getJsonObject(0).getJsonNumber("key").longValue());
 
       consumeMessages(2, session, queue);
 
       jsonString = queueControl.listMessagesAsJSON(filter);
       Assert.assertNotNull(jsonString);
-      array = new JSONArray(jsonString);
-      Assert.assertEquals(0, array.length());
+      array = JsonUtil.readJsonArray(jsonString);
+      Assert.assertEquals(0, array.size());
 
       session.deleteQueue(queue);
    }
@@ -1983,6 +1984,91 @@ public class QueueControlTest extends ManagementTestBase {
       session.deleteQueue(queue);
    }
 
+   @Test
+   public void testResetMessagesExpired() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, queue, null, false);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+      Assert.assertEquals(0, queueControl.getMessagesExpired());
+
+      ClientProducer producer = session.createProducer(address);
+      ClientMessage message = session.createMessage(false);
+      producer.send(message);
+
+      // the message IDs are set on the server
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      Assert.assertEquals(1, messages.length);
+      long messageID = (Long) messages[0].get("messageID");
+
+      queueControl.expireMessage(messageID);
+      Assert.assertEquals(1, queueControl.getMessagesExpired());
+
+      message = session.createMessage(false);
+      producer.send(message);
+
+      // the message IDs are set on the server
+      messages = queueControl.listMessages(null);
+      Assert.assertEquals(1, messages.length);
+      messageID = (Long) messages[0].get("messageID");
+
+      queueControl.expireMessage(messageID);
+      Assert.assertEquals(2, queueControl.getMessagesExpired());
+
+      queueControl.resetMessagesExpired();
+
+      Assert.assertEquals(0, queueControl.getMessagesExpired());
+
+      session.deleteQueue(queue);
+   }
+
+   @Test
+   public void testResetMessagesKilled() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, queue, null, false);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+      Assert.assertEquals(0, queueControl.getMessagesExpired());
+
+      ClientProducer producer = session.createProducer(address);
+      ClientMessage message = session.createMessage(false);
+      producer.send(message);
+
+      // the message IDs are set on the server
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      Assert.assertEquals(1, messages.length);
+      long messageID = (Long) messages[0].get("messageID");
+
+      queueControl.sendMessageToDeadLetterAddress(messageID);
+      Assert.assertEquals(1, queueControl.getMessagesKilled());
+
+      message = session.createMessage(false);
+      producer.send(message);
+
+      // send to DLA the old-fashioned way
+      ClientConsumer consumer = session.createConsumer(queue);
+      for (int i = 0; i < server.getAddressSettingsRepository().getMatch(queue.toString()).getMaxDeliveryAttempts(); i++) {
+         message = consumer.receive(500);
+         assertNotNull(message);
+         message.acknowledge();
+         session.rollback();
+      }
+
+      consumer.close();
+
+      Assert.assertEquals(2, queueControl.getMessagesKilled());
+
+      queueControl.resetMessagesKilled();
+
+      Assert.assertEquals(0, queueControl.getMessagesKilled());
+
+      session.deleteQueue(queue);
+   }
+
    //make sure notifications are always received no matter whether
    //a Queue is created via QueueControl or by JMSServerManager directly.
    @Test
@@ -2099,8 +2185,8 @@ public class QueueControlTest extends ManagementTestBase {
    }
 
    protected long getFirstMessageId(final QueueControl queueControl) throws Exception {
-      JSONArray array = new JSONArray(queueControl.getFirstMessageAsJSON());
-      JSONObject object = (JSONObject)array.get(0);
-      return object.getLong("messageID");
+      JsonArray array = JsonUtil.readJsonArray(queueControl.getFirstMessageAsJSON());
+      JsonObject object = (JsonObject) array.get(0);
+      return object.getJsonNumber("messageID").longValue();
    }
 }

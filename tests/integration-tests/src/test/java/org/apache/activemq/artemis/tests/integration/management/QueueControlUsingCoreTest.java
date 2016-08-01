@@ -16,29 +16,21 @@
  */
 package org.apache.activemq.artemis.tests.integration.management;
 
+import javax.management.openmbean.CompositeData;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.client.ClientSession;
-import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
-import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
-import org.junit.Before;
-
-import javax.management.openmbean.CompositeData;
 
 public class QueueControlUsingCoreTest extends QueueControlTest {
-
-   protected ClientSession session;
-   private ServerLocator locator;
 
    @Override
    protected QueueControl createManagementControl(final SimpleString address,
                                                   final SimpleString queue) throws Exception {
       return new QueueControl() {
-         private final CoreMessagingProxy proxy = new CoreMessagingProxy(session, ResourceNames.CORE_QUEUE + queue);
+         private final CoreMessagingProxy proxy = new CoreMessagingProxy(addServerLocator(createInVMNonHALocator()), ResourceNames.CORE_QUEUE + queue);
 
          @Override
          public void flushExecutor() {
@@ -62,7 +54,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public long countMessages(final String filter) throws Exception {
-            return ((Number) proxy.invokeOperation("countMessages", filter)).longValue();
+            return (Long) proxy.invokeOperation(Long.class, "countMessages", filter);
          }
 
          @Override
@@ -72,7 +64,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int expireMessages(final String filter) throws Exception {
-            return (Integer) proxy.invokeOperation("expireMessages", filter);
+            return (Integer) proxy.invokeOperation(Integer.class, "expireMessages", filter);
          }
 
          @Override
@@ -82,7 +74,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int getConsumerCount() {
-            return (Integer) proxy.retrieveAttributeValue("consumerCount");
+            return (Integer) proxy.retrieveAttributeValue("consumerCount", Integer.class);
          }
 
          @Override
@@ -92,7 +84,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int getDeliveringCount() {
-            return (Integer) proxy.retrieveAttributeValue("deliveringCount");
+            return (Integer) proxy.retrieveAttributeValue("deliveringCount", Integer.class);
          }
 
          @Override
@@ -107,17 +99,27 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public long getMessageCount() {
-            return ((Number) proxy.retrieveAttributeValue("messageCount")).longValue();
+            return (Long) proxy.retrieveAttributeValue("messageCount", Long.class);
          }
 
          @Override
          public long getMessagesAdded() {
-            return (Integer) proxy.retrieveAttributeValue("messagesAdded");
+            return (Integer) proxy.retrieveAttributeValue("messagesAdded", Integer.class);
          }
 
          @Override
          public long getMessagesAcknowledged() {
-            return (Integer) proxy.retrieveAttributeValue("messagesAcknowledged");
+            return (Integer) proxy.retrieveAttributeValue("messagesAcknowledged", Integer.class);
+         }
+
+         @Override
+         public long getMessagesExpired() {
+            return (Long) proxy.retrieveAttributeValue("messagesExpired", Long.class);
+         }
+
+         @Override
+         public long getMessagesKilled() {
+            return ((Number) proxy.retrieveAttributeValue("messagesKilled")).longValue();
          }
 
          @Override
@@ -128,6 +130,16 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
          @Override
          public void resetMessagesAcknowledged() throws Exception {
             proxy.invokeOperation("resetMessagesAcknowledged");
+         }
+
+         @Override
+         public void resetMessagesExpired() throws Exception {
+            proxy.invokeOperation("resetMessagesExpired");
+         }
+
+         @Override
+         public void resetMessagesKilled() throws Exception {
+            proxy.invokeOperation("resetMessagesKilled");
          }
 
          @Override
@@ -191,13 +203,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
           */
          @Override
          public Long getFirstMessageAge() throws Exception {
-            Object value = proxy.invokeOperation("getFirstMessageAge");
-
-            if (value instanceof Integer) {
-               return ((Integer) value).longValue();
-            }
-
-            return (Long) value;
+            return (Long) proxy.invokeOperation(Long.class, "getFirstMessageAge");
          }
 
          @Override
@@ -237,7 +243,7 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int moveMessages(final String filter, final String otherQueueName) throws Exception {
-            return (Integer) proxy.invokeOperation("moveMessages", filter, otherQueueName);
+            return (Integer) proxy.invokeOperation(Integer.class, "moveMessages", filter, otherQueueName);
          }
 
          @Override
@@ -274,17 +280,17 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
 
          @Override
          public int retryMessages() throws Exception {
-            return (Integer) proxy.invokeOperation("retryMessages");
+            return (Integer) proxy.invokeOperation(Integer.class, "retryMessages");
          }
 
          @Override
          public int removeMessages(final String filter) throws Exception {
-            return (Integer) proxy.invokeOperation("removeMessages", filter);
+            return (Integer) proxy.invokeOperation(Integer.class, "removeMessages", filter);
          }
 
          @Override
          public int removeMessages(final int limit, final String filter) throws Exception {
-            return (Integer) proxy.invokeOperation("removeMessages", limit, filter);
+            return (Integer) proxy.invokeOperation(Integer.class, "removeMessages", limit, filter);
          }
 
          @Override
@@ -380,16 +386,5 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
             return (String) proxy.invokeOperation("listDeliveringMessagesAsJSON");
          }
       };
-   }
-
-   @Override
-   @Before
-   public void setUp() throws Exception {
-      super.setUp();
-
-      locator = createInVMNonHALocator();
-      ClientSessionFactory sf = createSessionFactory(locator);
-      session = sf.createSession(false, true, true);
-      session.start();
    }
 }

@@ -29,6 +29,7 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.ServerMessage;
+import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.LinkedListIterator;
 import org.apache.activemq.artemis.utils.ReferenceCounter;
@@ -158,7 +159,19 @@ public class FakeQueue implements Queue {
    }
 
    @Override
+   public void acknowledge(MessageReference ref, AckReason reason) throws Exception {
+      // no-op
+
+   }
+
+   @Override
    public void acknowledge(final Transaction tx, final MessageReference ref) throws Exception {
+      // no-op
+
+   }
+
+   @Override
+   public void acknowledge(Transaction tx, MessageReference ref, AckReason reason) throws Exception {
       // no-op
 
    }
@@ -312,6 +325,18 @@ public class FakeQueue implements Queue {
    }
 
    @Override
+   public long getMessagesExpired() {
+      // no-op
+      return 0;
+   }
+
+   @Override
+   public long getMessagesKilled() {
+      // no-op
+      return 0;
+   }
+
+   @Override
    public void resetMessagesAdded() {
       // no-op
 
@@ -319,6 +344,18 @@ public class FakeQueue implements Queue {
 
    @Override
    public void resetMessagesAcknowledged() {
+      // no-op
+
+   }
+
+   @Override
+   public void resetMessagesExpired() {
+      // no-op
+
+   }
+
+   @Override
+   public void resetMessagesKilled() {
       // no-op
 
    }
