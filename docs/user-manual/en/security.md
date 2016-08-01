@@ -180,3 +180,109 @@ they use for this should always be changed from the installation default
 to prevent a security risk.
 
 Please see [Management](management.md) for instructions on how to do this.
+
+
+## Securing the console
+
+Artemis comes with a web console that allows user to browse Artemis documentation via an embedded server. By default the
+web access is plain HTTP. It is configured in `bootstrap.xml`:
+
+    <web bind="http://localhost:8161" path="web">
+        <app url="jolokia" war="jolokia-war-1.3.3.war"/>
+    </web>
+
+Alternatively you can edit the above configuration to enable secure access using HTTPS protocol. e.g.:
+
+    <web bind="https://localhost:8443"
+        path="web"
+        keyStorePath="${artemis.instance}/etc/keystore.jks"
+        keyStorePassword="password">
+        <app url="jolokia" war="jolokia-war-1.3.3.war"/>
+    </web>
+
+As shown in the example, to enable https the first thing to do is config the `bind` to be an `https` url. In addition,
+You will have to configure a few extra properties desribed as below.
+
+-   `keyStorePath` - The path of the key store file.
+
+-   `keyStorePassword` - The key store's password.
+
+-   `clientAuth` - The boolean flag indicates whether or not client authentication is required. Default is `false`.
+
+-   `trustStorePath` - The path of the trust store file. This is needed only if `clientAuth` is `true`.
+
+-   `trustStorePassword` - The trust store's password.
+
+## Controlling JMS ObjectMessage deserialization
+
+Artemis provides a simple class filtering mechanism with which a user can specify which
+packages are to be trusted and which are not. Objects whose classes are from trusted packages
+can be deserialized without problem, whereas those from 'not trusted' packages will be denied
+deserialization.
+
+Artemis keeps a `black list` to keep track of packages that are not trusted and a `white list`
+for trusted packages. By default both lists are empty, meaning any serializable object is 
+allowed to be deserialized. If an object whose class matches one of the packages in black list,
+it is not allowed to be deserialized. If it matches one in the white list
+the object can be deserialized. If a package appears in both black list and white list, 
+the one in black list takes precedence. If a class neither matches with `black list` 
+nor with the `white list`, the class deserialization will be denied 
+unless the white list is empty (meaning the user doesn't specify the white list at all).
+
+A class is considered as a 'match' if
+
+-   its full name exactly matches one of the entries in the list.
+-   its package matches one of the entries in the list or is a sub-package of one of the entries.
+
+For example, if a class full name is "org.apache.pkg1.Class1", some matching entries could be:
+
+-   `org.apache.pkg1.Class1` - exact match.
+-   `org.apache.pkg1` - exact package match.
+-   `org.apache` -- sub package match.
+
+A `*` means 'match-all' in a black or white list.
+
+### Specifying black list and white list via Connection Factories
+
+To specify the white and black lists one can append properties `deserializationBlackList` and `deserializationWhiteList` respectively
+to a Connection Factory's url string. For example:
+
+     ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("vm://0?deserializationBlackList=org.apache.pkg1,org.some.pkg2");
+
+The above statement creates a factory that has a black list contains two forbidden packages, "org.apache.pkg1" and "org.some.pkg2",
+separated by a comma.
+
+You can also set the values via ActiveMQConnectionFactory's API:
+
+    public void setDeserializationBlackList(String blackList);
+    public void setDeserializationWhiteList(String whiteList);
+   
+Again the parameters are comma separated list of package/class names.
+
+### Specifying black list and white list via system properties
+
+There are two system properties available for specifying black list and white list:
+
+-   `org.apache.activemq.artemis.jms.deserialization.whitelist` - comma separated list of entries for the white list.
+-   `org.apache.activemq.artemis.jms.deserialization.blacklist` - comma separated list of entries for the black list.
+
+Once defined, all JMS object message deserialization in the VM is subject to checks against the two lists. However if you create a ConnectionFactory
+and set a new set of black/white lists on it, the new values will override the system properties.
+
+### Specifying black list and white list for resource adapters
+
+Message beans using a JMS resource adapter to receive messages can also control their object deserialization via properly configuring relevant
+properties for their resource adapters. There are two properties that you can configure with connection factories in a resource adapter:
+
+-   `deserializationBlackList` - comma separated values for black list
+-   `deserializationWhiteList` - comma separated values for white list
+
+These properties, once specified, are eventually set on the corresponding internal factories.
+
+
+
+
+
+
+
+

@@ -76,6 +76,8 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
    private static SimpleString REJECTING_FILTER = new SimpleString("_AMQX=-1");
 
+   private final ConnectionFactoryOptions options;
+
    private final ActiveMQConnection connection;
 
    private final ClientSession session;
@@ -94,12 +96,15 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
    // Constructors --------------------------------------------------
 
-   protected ActiveMQSession(final ActiveMQConnection connection,
+   protected ActiveMQSession(final ConnectionFactoryOptions options,
+                             final ActiveMQConnection connection,
                              final boolean transacted,
                              final boolean xa,
                              final int ackMode,
                              final ClientSession session,
                              final int sessionType) {
+      this.options = options;
+
       this.connection = connection;
 
       this.ackMode = ackMode;
@@ -136,13 +141,13 @@ public class ActiveMQSession implements QueueSession, TopicSession {
    public ObjectMessage createObjectMessage() throws JMSException {
       checkClosed();
 
-      return new ActiveMQObjectMessage(session);
+      return new ActiveMQObjectMessage(session, options);
    }
 
    public ObjectMessage createObjectMessage(final Serializable object) throws JMSException {
       checkClosed();
 
-      ActiveMQObjectMessage msg = new ActiveMQObjectMessage(session);
+      ActiveMQObjectMessage msg = new ActiveMQObjectMessage(session, options);
 
       msg.setObject(object);
 
@@ -294,7 +299,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
          ClientProducer producer = session.createProducer(jbd == null ? null : jbd.getSimpleAddress());
 
-         return new ActiveMQMessageProducer(connection, producer, jbd, session);
+         return new ActiveMQMessageProducer(connection, producer, jbd, session, options);
       }
       catch (ActiveMQException e) {
          throw JMSExceptionHelper.convertFromActiveMQException(e);
@@ -501,6 +506,14 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       return internalCreateSharedConsumer(localTopic, name, messageSelector, ConsumerDurability.DURABLE, true);
    }
 
+   public String getDeserializationBlackList() {
+      return connection.getDeserializationBlackList();
+   }
+
+   public String getDeserializationWhiteList() {
+      return connection.getDeserializationWhiteList();
+   }
+
    enum ConsumerDurability {
       DURABLE, NON_DURABLE;
    }
@@ -567,7 +580,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
          consumer = session.createConsumer(queueName, null, false);
 
-         ActiveMQMessageConsumer jbc = new ActiveMQMessageConsumer(connection, this, consumer, false, dest, selectorString, autoDeleteQueueName);
+         ActiveMQMessageConsumer jbc = new ActiveMQMessageConsumer(options, connection, this, consumer, false, dest, selectorString, autoDeleteQueueName);
 
          consumers.add(jbc);
 
@@ -719,7 +732,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
             }
          }
 
-         ActiveMQMessageConsumer jbc = new ActiveMQMessageConsumer(connection, this, consumer, noLocal, dest, selectorString, autoDeleteQueueName);
+         ActiveMQMessageConsumer jbc = new ActiveMQMessageConsumer(options, connection, this, consumer, noLocal, dest, selectorString, autoDeleteQueueName);
 
          consumers.add(jbc);
 
@@ -784,7 +797,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
          throw JMSExceptionHelper.convertFromActiveMQException(e);
       }
 
-      return new ActiveMQQueueBrowser((ActiveMQQueue) jbq, filterString, session);
+      return new ActiveMQQueueBrowser(options, (ActiveMQQueue) jbq, filterString, session);
 
    }
 
