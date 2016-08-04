@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.rest.queue;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
+import org.apache.activemq.artemis.jms.client.ConnectionFactoryOptions;
 import org.apache.activemq.artemis.rest.HttpHeaderProperty;
 import org.apache.activemq.artemis.rest.ActiveMQRestLogger;
 
@@ -50,13 +51,13 @@ public abstract class ConsumedMessage {
       }
    }
 
-   public static ConsumedMessage createConsumedMessage(ClientMessage message) {
+   public static ConsumedMessage createConsumedMessage(ClientMessage message, ConnectionFactoryOptions options) {
       Boolean aBoolean = message.getBooleanProperty(POSTED_AS_HTTP_MESSAGE);
       if (aBoolean != null && aBoolean.booleanValue()) {
          return new ConsumedHttpMessage(message);
       }
       else if (message.getType() == ClientMessage.OBJECT_TYPE) {
-         return new ConsumedObjectMessage(message);
+         return new ConsumedObjectMessage(message, options);
       }
       else {
          throw new IllegalArgumentException("ClientMessage must be an HTTP message or an Object message: " + message + " type: " + message.getType());

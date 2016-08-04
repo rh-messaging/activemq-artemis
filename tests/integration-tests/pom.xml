@@ -273,6 +273,69 @@
             </exclusion>
          </exclusions>
       </dependency>
+
+      <!-- rest test -->
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-deploy</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-jmx</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-plus</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-annotations</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-util</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-jaspi</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-jndi</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-rewrite</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-servlets</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.jetty</groupId>
+         <artifactId>jetty-alpn-client</artifactId>
+         <version>${jetty.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jboss.resteasy</groupId>
+         <artifactId>resteasy-jaxrs</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.activemq.rest</groupId>
+         <artifactId>artemis-rest</artifactId>
+         <version>${project.version}</version>
+         <scope>compile</scope>
+      </dependency>
    </dependencies>
 
    <build>
@@ -280,9 +343,44 @@
          <testResource>
             <directory>src/test/resources</directory>
             <filtering>true</filtering>
+            <excludes>
+               <exclude>**/rest/*.xml</exclude>
+            </excludes>
          </testResource>
       </testResources>
       <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-assembly-plugin</artifactId>
+               <executions>
+                  <execution>
+                     <phase>process-test-classes</phase>
+                     <id>bwlist-rest-test-war</id>
+                     <goals>
+                        <goal>single</goal>
+                     </goals>
+                     <configuration>
+                        <descriptor>src/test/resources/rest/bwlist-rest-test-asm.xml</descriptor>
+                        <finalName>rest-test-bwlist</finalName>
+                        <appendAssemblyId>false</appendAssemblyId>
+                        <outputDirectory>target/test-classes/rest/</outputDirectory>
+                     </configuration>
+                  </execution>
+                  <execution>
+                     <phase>process-test-classes</phase>
+                     <id>rest-test-war</id>
+                     <goals>
+                        <goal>single</goal>
+                     </goals>
+                     <configuration>
+                        <descriptor>src/test/resources/rest/rest-test-asm.xml</descriptor>
+                           <finalName>rest-test</finalName>
+                           <appendAssemblyId>false</appendAssemblyId>
+                           <outputDirectory>target/test-classes/rest/</outputDirectory>
+                     </configuration>
+                  </execution>
+               </executions>
+            </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
