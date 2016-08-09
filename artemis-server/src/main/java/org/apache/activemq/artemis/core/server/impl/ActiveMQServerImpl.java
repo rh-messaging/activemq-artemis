@@ -2366,6 +2366,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          this.server = server;
       }
 
+      @Override
       public void run() {
          try {
             URL url = server.getConfiguration().getConfigurationUrl();
