@@ -184,4 +184,10 @@ public interface RemotingConnection extends BufferHandler {
 
    boolean isWritable(ReadyListener callback);
 
+   /**
+    * This will check if reconnects are supported on the protocol and configuration.
+    * In case it's not supported a connection failure could remove messages right away from pending deliveries.
+    * @return
+    */
+   boolean isSupportReconnect();
 }

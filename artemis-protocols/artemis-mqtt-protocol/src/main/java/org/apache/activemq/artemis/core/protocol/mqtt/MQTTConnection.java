@@ -210,4 +210,9 @@ public class MQTTConnection implements RemotingConnection {
    public boolean getConnected() {
       return connected;
    }
+
+   @Override
+   public boolean isSupportReconnect() {
+      return false;
+   }
 }

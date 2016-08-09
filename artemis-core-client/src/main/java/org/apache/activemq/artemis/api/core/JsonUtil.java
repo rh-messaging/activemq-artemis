@@ -18,6 +18,8 @@ package org.apache.activemq.artemis.api.core;
 
 import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.utils.Base64;
+import org.apache.activemq.artemis.utils.JsonLoader;
+import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
 import org.apache.activemq.artemis.utils.StringEscapeUtils;
 
 import javax.json.Json;
@@ -31,7 +33,6 @@ import javax.json.JsonValue;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +41,13 @@ import java.util.Set;
 
 public final class JsonUtil {
    public static JsonArray toJSONArray(final Object[] array) throws Exception {
-      JsonArrayBuilder jsonArray = Json.createArrayBuilder();
+      JsonArrayBuilder jsonArray = JsonLoader.createArrayBuilder();
 
       for (Object parameter : array) {
          if (parameter instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) parameter;
 
-            JsonObjectBuilder jsonObject = Json.createObjectBuilder();
+            JsonObjectBuilder jsonObject = JsonLoader.createObjectBuilder();
 
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                String key = entry.getKey();
@@ -73,12 +74,12 @@ public final class JsonUtil {
                   Object[] innerArray = (Object[]) parameter;
 
                   if (innerArray instanceof CompositeData[]) {
-                     JsonArrayBuilder innerJsonArray = Json.createArrayBuilder();
+                     JsonArrayBuilder innerJsonArray = JsonLoader.createArrayBuilder();
                      for (Object data : innerArray) {
                         String s = Base64.encodeObject((CompositeDataSupport) data);
                         innerJsonArray.add(s);
                      }
-                     JsonObjectBuilder jsonObject = Json.createObjectBuilder();
+                     JsonObjectBuilder jsonObject = JsonLoader.createObjectBuilder();
                      jsonObject.add(CompositeData.class.getName(), innerJsonArray);
                      jsonArray.add(jsonObject);
                   }
@@ -125,6 +126,21 @@ public final class JsonUtil {
                else if (innerVal instanceof JsonString) {
                   innerVal = ((JsonString)innerVal).getString();
                }
+               else if (innerVal == JsonValue.FALSE) {
+                  innerVal = Boolean.FALSE;
+               }
+               else if (innerVal == JsonValue.TRUE) {
+                  innerVal = Boolean.TRUE;
+               }
+               else if (innerVal instanceof JsonNumber) {
+                  JsonNumber jsonNumber = (JsonNumber)innerVal;
+                  if (jsonNumber.isIntegral()) {
+                     innerVal = jsonNumber.longValue();
+                  }
+                  else {
+                     innerVal = jsonNumber.doubleValue();
+                  }
+               }
                else if (innerVal instanceof JsonObject) {
                   Map<String, Object> innerMap = new HashMap<>();
                   JsonObject o = (JsonObject) innerVal;
@@ -134,16 +150,13 @@ public final class JsonUtil {
                   }
                   innerVal = innerMap;
                }
-               else if (innerVal instanceof JsonNumber) {
-                  JsonNumber jsonNumber = (JsonNumber)innerVal;
-                  innerVal = jsonNumber.longValue();
-               }
                if (CompositeData.class.getName().equals(key)) {
                   Object[] data = (Object[]) innerVal;
                   CompositeData[] cds = new CompositeData[data.length];
                   for (int i1 = 0; i1 < data.length; i1++) {
                      String dataConverted  = convertJsonValue(data[i1], String.class).toString();
-                     ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(dataConverted)));
+                     ObjectInputStreamWithClassLoader ois = new ObjectInputStreamWithClassLoader(new ByteArrayInputStream(Base64.decode(dataConverted)));
+                     ois.setWhiteList("java.util,java.lang,javax.management");
                      cds[i1] = (CompositeDataSupport) ois.readObject();
                   }
                   innerVal = cds;
@@ -153,6 +166,24 @@ public final class JsonUtil {
             }
 
             array[i] = map;
+         }
+         else if (val instanceof JsonString) {
+            array[i] = ((JsonString)val).getString();
+         }
+         else if (val == JsonValue.FALSE) {
+            array[i] = Boolean.FALSE;
+         }
+         else if (val == JsonValue.TRUE) {
+            array[i] = Boolean.TRUE;
+         }
+         else if (val instanceof JsonNumber) {
+            JsonNumber jsonNumber = (JsonNumber)val;
+            if (jsonNumber.isIntegral()) {
+               array[i] = jsonNumber.longValue();
+            }
+            else {
+               array[i] = jsonNumber.doubleValue();
+            }
          }
          else {
             if (val == JsonObject.NULL) {
@@ -237,7 +268,7 @@ public final class JsonUtil {
    }
 
    public static JsonArray toJsonArray(List<String> strings) {
-      JsonArrayBuilder array = Json.createArrayBuilder();
+      JsonArrayBuilder array = JsonLoader.createArrayBuilder();
       if (strings != null) {
          for (String connector : strings) {
             array.add(connector);
@@ -247,7 +278,7 @@ public final class JsonUtil {
    }
 
    public static JsonObject toJsonObject(Map<String, Object> map) {
-      JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
+      JsonObjectBuilder jsonObjectBuilder = JsonLoader.createObjectBuilder();
       if (map != null) {
          for (Map.Entry<String, Object> entry : map.entrySet()) {
             addToObject(entry.getKey(), entry.getValue(), jsonObjectBuilder);
@@ -293,6 +324,24 @@ public final class JsonUtil {
          }
          else {
             return jsonValue.toString();
+         }
+      }
+      else if (jsonValue instanceof  Number) {
+         Number jsonNumber = (Number)jsonValue;
+         if (desiredType == Integer.TYPE || desiredType == Integer.class) {
+            return  jsonNumber.intValue();
+         }
+         else if (desiredType == Long.TYPE || desiredType == Long.class) {
+            return jsonNumber.longValue();
+         }
+         else if (desiredType == Double.TYPE || desiredType == Double.class) {
+            return jsonNumber.doubleValue();
+         }
+         else if (desiredType == Short.TYPE || desiredType == Short.class) {
+            return jsonNumber.shortValue();
+         }
+         else {
+            return jsonValue;
          }
       }
       else if (jsonValue instanceof Object[]) {
