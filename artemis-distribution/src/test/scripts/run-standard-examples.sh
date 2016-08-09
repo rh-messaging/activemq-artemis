@@ -24,27 +24,9 @@ mkdir target
 # Setting the script to fail if anything goes wrong
 set -e
 
-export CURRENT_DIR=`pwd`
+export TEST_TARGET="./target"
 
-if [ $# -eq 0 ]; then
-    export LOCAL_USED=`ls ../../../target/apache-artemis-*bin.tar.gz`
-    echo Unziping $LOCAL_USED
-    tar -zxf $LOCAL_USED -C "./target/"
-    cd "./target/"
-    export ARTEMIS_HOME="`pwd`/`ls`"
-    echo home is $ARTEMIS_HOME
-else
-    if [ -z "$1" ] ; then
-       echo "Couldn't find folder $1"
-       exit -1
-    fi
-    export ARTEMIS_HOME="$CURRENT_DIR/target/artemis_home"
-    cp -r "$1" "$ARTEMIS_HOME"
-fi
-
-cd $CURRENT_DIR
-
-echo home used is $ARTEMIS_HOME
+. ./installHome.sh
 
 cd $ARTEMIS_HOME/examples/features/standard/
 
@@ -108,46 +90,6 @@ cd transactional; mvn verify; cd ..
 cd xa-heuristic; mvn verify; cd ..
 cd xa-receive; mvn verify; cd ..
 cd xa-send; mvn verify; cd ..
-
-
-cd $ARTEMIS_HOME/examples/features/clustered/
-
-
-cd client-side-load-balancing; mvn verify; cd ..
-cd clustered-durable-subscription; mvn verify; cd ..
-cd clustered-grouping; mvn verify; cd ..
-cd clustered-jgroups; mvn verify; cd ..
-cd clustered-queue; mvn verify; cd ..
-cd clustered-static-oneway; mvn verify; cd ..
-cd clustered-static-discovery; mvn verify; cd ..
-cd clustered-static-discovery-uri; mvn verify; cd ..
-cd clustered-topic; mvn verify; cd ..
-cd clustered-topic-uri; mvn verify; cd ..
-cd queue-message-redistribution; mvn verify; cd ..
-cd symmetric-cluster; mvn verify; cd ..
-
-
-# TODO: these will hung eventually when ran in series
-
-#cd $ARTEMIS_HOME/examples/features/ha/
-#
-#cd application-layer-failover; mvn verify; cd ..
-#cd client-side-failoverlistener; mvn verify; cd ..
-#cd colocated-failover; mvn verify; cd ..
-#cd colocated-failover-scale-down; mvn verify; cd ..
-#cd ha-policy-autobackup; mvn verify; cd ..
-#cd multiple-failover; mvn verify; cd ..
-#cd multiple-failover-failback; mvn verify; cd ..
-#cd non-transaction-failover; mvn verify; cd ..
-#cd replicated-failback; mvn verify; cd ..
-#cd replicated-failback-static; mvn verify; cd ..
-
-#cd replicated-multiple-failover; mvn verify; cd ..
-
-#cd replicated-transaction-failover; mvn verify; cd ..
-#cd scale-down; mvn verify; cd ..
-#cd transaction-failover; mvn verify; cd ..
-
 
 cd $CURRENT_DIR
 rm -rf target
