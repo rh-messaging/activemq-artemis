@@ -120,7 +120,6 @@ public class FailoverConsumerUnconsumedTest extends OpenwireArtemisBaseTest {
       doTestFailoverConsumerDups(false);
    }
 
-   @SuppressWarnings("unchecked")
    @Test
    @BMRules(
            rules = {
@@ -233,7 +232,6 @@ public class FailoverConsumerUnconsumedTest extends OpenwireArtemisBaseTest {
       connection.close();
    }
 
-   @SuppressWarnings("unchecked")
    public void doTestFailoverConsumerDups(final boolean watchTopicAdvisories) throws Exception {
 
       maxConsumers = 4;
