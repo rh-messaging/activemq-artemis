@@ -178,7 +178,12 @@ public enum ActiveMQExceptionType {
          return new ActiveMQRemoteDisconnectException(msg);
       }
    },
-
+   TRANSACTION_TIMEOUT(120) {
+      @Override
+      public ActiveMQException createException(String msg) {
+         return new ActiveMQTransactionTimeoutException(msg);
+      }
+   },
    GENERIC_EXCEPTION(999),
    NATIVE_ERROR_INTERNAL(200),
    NATIVE_ERROR_INVALID_BUFFER(201),

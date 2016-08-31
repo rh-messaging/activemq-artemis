@@ -58,7 +58,7 @@ public class ArtemisCLIPlugin extends ArtemisAbstractPlugin {
    @Parameter
    private boolean spawn = false;
 
-   @Parameter(defaultValue = "10000")
+   @Parameter(defaultValue = "300000")
    private long spawnTimeout;
 
    @Parameter

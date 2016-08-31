@@ -51,14 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
-import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
-import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ByteUtil;
+import org.apache.activemq.artemis.utils.VersionLoader;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
 import org.apache.activemq.transport.amqp.client.AmqpMessage;
@@ -66,6 +64,7 @@ import org.apache.activemq.transport.amqp.client.AmqpReceiver;
 import org.apache.activemq.transport.amqp.client.AmqpSender;
 import org.apache.activemq.transport.amqp.client.AmqpSession;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.message.ProtonJMessage;
@@ -76,6 +75,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import static org.junit.Assume.assumeTrue;
 import org.proton.plug.AMQPClientConnectionContext;
 import org.proton.plug.AMQPClientReceiverContext;
 import org.proton.plug.AMQPClientSenderContext;
@@ -85,7 +85,7 @@ import org.proton.plug.test.Constants;
 import org.proton.plug.test.minimalclient.SimpleAMQPConnector;
 
 @RunWith(Parameterized.class)
-public class ProtonTest extends ActiveMQTestBase {
+public class ProtonTest extends ProtonTestBase {
 
    private static final String amqpConnectionUri = "amqp://localhost:5672";
 
@@ -128,7 +128,6 @@ public class ProtonTest extends ActiveMQTestBase {
       }
    }
 
-   private ActiveMQServer server;
    private final String coreAddress;
    private final String address;
    private Connection connection;
@@ -137,23 +136,7 @@ public class ProtonTest extends ActiveMQTestBase {
    @Before
    public void setUp() throws Exception {
       super.setUp();
-      disableCheckThread();
 
-      server = this.createServer(true, true);
-      HashMap<String, Object> params = new HashMap<>();
-      params.put(TransportConstants.PORT_PROP_NAME, "5672");
-      params.put(TransportConstants.PROTOCOLS_PROP_NAME, "AMQP");
-      TransportConfiguration transportConfiguration = new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, params);
-
-      server.getConfiguration().getAcceptorConfigurations().add(transportConfiguration);
-      server.getConfiguration().setName(brokerName);
-
-      // Default Page
-      AddressSettings addressSettings = new AddressSettings();
-      addressSettings.setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE);
-      server.getConfiguration().getAddressesSettings().put("#", addressSettings);
-
-      server.start();
       server.createQueue(new SimpleString(coreAddress), new SimpleString(coreAddress), null, true, false);
       server.createQueue(new SimpleString(coreAddress + "1"), new SimpleString(coreAddress + "1"), null, true, false);
       server.createQueue(new SimpleString(coreAddress + "2"), new SimpleString(coreAddress + "2"), null, true, false);
@@ -188,8 +171,6 @@ public class ProtonTest extends ActiveMQTestBase {
          if (connection != null) {
             connection.close();
          }
-
-         server.stop();
       }
       finally {
          super.tearDown();
@@ -204,6 +185,25 @@ public class ProtonTest extends ActiveMQTestBase {
       AmqpConnection amqpConnection = client.connect();
       try {
          assertTrue(brokerName.equals(amqpConnection.getEndpoint().getRemoteContainer()));
+      }
+      finally {
+         amqpConnection.close();
+      }
+   }
+
+   @Test
+   public void testBrokerConnectionProperties() throws Exception {
+      if (protocol != 0 && protocol != 3) return; // Only run this test for AMQP protocol
+
+      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
+      AmqpConnection amqpConnection = client.connect();
+      try {
+         Map<Symbol, Object> properties = amqpConnection.getEndpoint().getRemoteProperties();
+         assertTrue(properties != null);
+         if (properties != null) {
+            assertTrue("apache-activemq-artemis".equals(properties.get(Symbol.valueOf("product"))));
+            assertTrue(VersionLoader.getVersion().getFullVersion().equals(properties.get(Symbol.valueOf("version"))));
+         }
       }
       finally {
          amqpConnection.close();
@@ -616,6 +616,42 @@ public class ProtonTest extends ActiveMQTestBase {
 
       AmqpMessage receivedMessage = receiver.receive();
       assertNotNull(receivedMessage);
+   }
+
+   @Test
+   public void testManagementQueryOverAMQP() throws Throwable {
+      assumeTrue(protocol == 0 || protocol == 3); // Only run this test for AMQP protocol
+
+      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
+      AmqpConnection amqpConnection = client.connect();
+      try {
+         String destinationAddress = address + 1;
+         AmqpSession session = amqpConnection.createSession();
+         AmqpSender sender = session.createSender("jms.queue.activemq.management");
+         AmqpReceiver receiver = session.createReceiver(destinationAddress);
+         receiver.flow(10);
+
+         //create request message for getQueueNames query
+         AmqpMessage request = new AmqpMessage();
+         request.setApplicationProperty("_AMQ_ResourceName", "core.server");
+         request.setApplicationProperty("_AMQ_OperationName", "getQueueNames");
+         request.setApplicationProperty("JMSReplyTo", destinationAddress);
+         request.setText("[]");
+
+         sender.send(request);
+         AmqpMessage response = receiver.receive();
+         assertNotNull(response);
+         Object section = response.getWrappedMessage().getBody();
+         assertTrue(section instanceof AmqpValue);
+         Object value = ((AmqpValue) section).getValue();
+         assertTrue(value instanceof String);
+         assertTrue(((String) value).length() > 0);
+         assertTrue(((String) value).contains(destinationAddress));
+         response.accept();
+      }
+      finally {
+         amqpConnection.close();
+      }
    }
 
    @Test

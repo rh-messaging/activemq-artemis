@@ -129,6 +129,9 @@ import org.apache.activemq.artemis.core.server.group.impl.LocalGroupingHandler;
 import org.apache.activemq.artemis.core.server.group.impl.RemoteGroupingHandler;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
+import org.apache.activemq.artemis.core.server.reload.ReloadCallback;
+import org.apache.activemq.artemis.core.server.reload.ReloadManager;
+import org.apache.activemq.artemis.core.server.reload.ReloadManagerImpl;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
@@ -244,6 +247,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private MemoryManager memoryManager;
 
+   private ReloadManager reloadManager;
+
    /**
     * This will be set by the JMS Queue Manager.
     */
@@ -298,6 +303,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private ServiceRegistry serviceRegistry;
 
    private Date startDate;
+
+   private final List<ActiveMQComponent> externalComponents = new ArrayList<>();
    // Constructors
    // ---------------------------------------------------------------------------------
 
@@ -372,6 +379,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       this.parentServer = parentServer;
 
       this.serviceRegistry = serviceRegistry == null ? new ServiceRegistryImpl() : serviceRegistry;
+   }
+
+   @Override
+   public ReloadManager getReloadManager() {
+      return reloadManager;
    }
 
    // life-cycle methods
@@ -452,10 +464,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          // start connector service
          connectorsService = new ConnectorsService(configuration, storageManager, scheduledPool, postOffice, serviceRegistry);
          connectorsService.start();
-
-         if (configuration.getConfigurationUrl() != null && getScheduledPool() != null) {
-            getScheduledPool().scheduleWithFixedDelay(new ConfigurationFileReloader(this), configuration.getConfigurationFileRefreshPeriod(), configuration.getConfigurationFileRefreshPeriod(), TimeUnit.MILLISECONDS);
-         }
       }
       finally {
          // this avoids embedded applications using dirty contexts from startup
@@ -548,6 +556,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          throw ActiveMQMessageBundle.BUNDLE.cannotSetMBeanserver();
       }
       this.mbeanServer = mbeanServer;
+   }
+
+   @Override
+   public void addExternalComponent(ActiveMQComponent externalComponent) {
+      externalComponents.add(externalComponent);
    }
 
    public ExecutorService getThreadPool() {
@@ -930,6 +943,15 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       addressSettingsRepository.clearCache();
 
       scaledDownNodeIDs.clear();
+
+      for (ActiveMQComponent externalComponent : externalComponents) {
+         try {
+            externalComponent.stop();
+         }
+         catch (Exception e) {
+            ActiveMQServerLogger.LOGGER.errorStoppingComponent(e, externalComponent.getClass().getName());
+         }
+      }
 
       if (identity != null) {
          ActiveMQServerLogger.LOGGER.serverStopped("identity=" + identity + ",version=" + getVersion().getFullVersion(), tempNodeID, getUptime());
@@ -1941,6 +1963,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       deployGroupingHandlerConfiguration(configuration.getGroupingHandlerConfiguration());
 
+      this.reloadManager = new ReloadManagerImpl(getScheduledPool(), configuration.getConfigurationFileRefreshPeriod());
+
+      if (configuration.getConfigurationUrl() != null && getScheduledPool() != null) {
+         reloadManager.addCallback(configuration.getConfigurationUrl(), new ConfigurationFileReloader());
+      }
+
+
       return true;
    }
 
@@ -2357,37 +2386,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    }
 
-   private final class ConfigurationFileReloader extends Thread {
-      long lastModified;
-      boolean first = true;
-      ActiveMQServer server;
-
-      ConfigurationFileReloader(ActiveMQServer server) {
-         this.server = server;
-      }
-
-      public void run() {
-         try {
-            URL url = server.getConfiguration().getConfigurationUrl();
-            long currentLastModified = new File(url.toURI()).lastModified();
-            if (first) {
-               first = false;
-               lastModified = currentLastModified;
-               return;
-            }
-            if (currentLastModified > lastModified) {
-               if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-                  ActiveMQServerLogger.LOGGER.debug("Configuration file change detected. Reloading...");
-               }
-               Configuration config = new FileConfigurationParser().parseMainConfig(url.openStream());
-               securityRepository.swap(config.getSecurityRoles().entrySet());
-
-               lastModified = currentLastModified;
-            }
-         }
-         catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.configurationReloadFailed(e);
-         }
+   private final class ConfigurationFileReloader implements ReloadCallback {
+      @Override
+      public void reload(URL uri) throws Exception {
+         Configuration config = new FileConfigurationParser().parseMainConfig(uri.openStream());
+         ActiveMQServerLogger.LOGGER.reloadingConfiguration("security");
+         securityRepository.swap(config.getSecurityRoles().entrySet());
+         ActiveMQServerLogger.LOGGER.reloadingConfiguration("address settings");
+         addressSettingsRepository.swap(config.getAddressesSettings().entrySet());
       }
    }
 }

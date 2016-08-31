@@ -24,12 +24,15 @@ import java.util.List;
 import io.airlift.airline.Cli;
 import org.apache.activemq.artemis.cli.commands.Action;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
-import org.apache.activemq.artemis.cli.commands.Browse;
-import org.apache.activemq.artemis.cli.commands.Consumer;
+import org.apache.activemq.artemis.cli.commands.messages.Browse;
+import org.apache.activemq.artemis.cli.commands.messages.Consumer;
 import org.apache.activemq.artemis.cli.commands.Create;
+import org.apache.activemq.artemis.cli.commands.destination.CreateDestination;
+import org.apache.activemq.artemis.cli.commands.destination.DeleteDestination;
 import org.apache.activemq.artemis.cli.commands.HelpAction;
+import org.apache.activemq.artemis.cli.commands.destination.HelpDestination;
 import org.apache.activemq.artemis.cli.commands.Kill;
-import org.apache.activemq.artemis.cli.commands.Producer;
+import org.apache.activemq.artemis.cli.commands.messages.Producer;
 import org.apache.activemq.artemis.cli.commands.Run;
 import org.apache.activemq.artemis.cli.commands.Stop;
 import org.apache.activemq.artemis.cli.commands.tools.CompactJournal;
@@ -81,6 +84,13 @@ public class Artemis {
          System.err.println(cliException.getMessage());
          return cliException;
       }
+      catch (NullPointerException e) {
+         // Yeah.. I really meant System.err..
+         // this is the CLI and System.out and System.err are common places for interacting with the user
+         // this is a programming error that must be visualized and corrected
+         e.printStackTrace();
+         return e;
+      }
       catch (RuntimeException re) {
          System.err.println(re.getMessage());
          System.out.println();
@@ -112,7 +122,15 @@ public class Artemis {
 
    private static Cli.CliBuilder<Action> builder(File artemisInstance) {
       String instance = artemisInstance != null ? artemisInstance.getAbsolutePath() : System.getProperty("artemis.instance");
-      Cli.CliBuilder<Action> builder = Cli.<Action>builder("artemis").withDescription("ActiveMQ Artemis Command Line").withCommand(HelpAction.class).withCommand(Producer.class).withCommand(Consumer.class).withCommand(Browse.class).withDefaultCommand(HelpAction.class);
+      Cli.CliBuilder<Action> builder = Cli.<Action>builder("artemis").withDescription("ActiveMQ Artemis Command Line")
+              .withCommand(HelpAction.class)
+              .withCommand(Producer.class)
+              .withCommand(Consumer.class)
+              .withCommand(Browse.class)
+              .withDefaultCommand(HelpAction.class);
+
+      builder.withGroup("destination").withDescription("Destination tools group (create|delete) (example ./artemis destination create)").
+            withDefaultCommand(HelpDestination.class).withCommands(CreateDestination.class, DeleteDestination.class);
 
       if (instance != null) {
          builder.withGroup("data").withDescription("data tools group (print|exp|imp|exp|encode|decode|compact) (example ./artemis data print)").

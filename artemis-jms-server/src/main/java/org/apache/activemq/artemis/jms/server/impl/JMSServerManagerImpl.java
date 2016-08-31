@@ -21,7 +21,11 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.naming.NamingException;
 import javax.transaction.xa.Xid;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +56,7 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActivateCallback;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.PostQueueCreationCallback;
 import org.apache.activemq.artemis.core.server.PostQueueDeletionCallback;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -59,6 +64,8 @@ import org.apache.activemq.artemis.core.server.QueueCreator;
 import org.apache.activemq.artemis.core.server.QueueDeleter;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.core.server.management.Notification;
+import org.apache.activemq.artemis.core.server.reload.ReloadCallback;
+import org.apache.activemq.artemis.core.server.reload.ReloadManager;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -82,6 +89,7 @@ import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
 import org.apache.activemq.artemis.jms.server.config.JMSQueueConfiguration;
 import org.apache.activemq.artemis.jms.server.config.TopicConfiguration;
 import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfigurationImpl;
+import org.apache.activemq.artemis.jms.server.config.impl.FileJMSConfiguration;
 import org.apache.activemq.artemis.jms.server.management.JMSManagementService;
 import org.apache.activemq.artemis.jms.server.management.JMSNotificationType;
 import org.apache.activemq.artemis.jms.server.management.impl.JMSManagementServiceImpl;
@@ -91,6 +99,8 @@ import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.SelectorTranslator;
 import org.apache.activemq.artemis.utils.TimeAndCounterIDGenerator;
 import org.apache.activemq.artemis.utils.TypedProperties;
+import org.apache.activemq.artemis.utils.XMLUtil;
+import org.w3c.dom.Element;
 
 /**
  * A Deployer used to create and add to Bindings queues, topics and connection
@@ -204,6 +214,8 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback 
          // do not clear the cachedCommands - HORNETQ-1047
 
          recoverBindings();
+
+
       }
       catch (Exception e) {
          active = false;
@@ -262,6 +274,10 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback 
 
    @Override
    public void activationComplete() {
+      ReloadManager reloadManager = server.getReloadManager();
+      if (config != null && config.getConfigurationUrl() != null && reloadManager != null) {
+         reloadManager.addCallback(config.getConfigurationUrl(), new JMSReloader());
+      }
 
    }
 
@@ -1741,4 +1757,29 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback 
          }
       }
    }
+
+   private final class JMSReloader implements ReloadCallback {
+      @Override
+      public void reload(URL url) throws Exception {
+         ActiveMQServerLogger.LOGGER.reloadingConfiguration("jms");
+
+         InputStream input = url.openStream();
+         String xml;
+         try (Reader reader = new InputStreamReader(input)) {
+            xml = XMLUtil.readerToString(reader);
+         }
+         xml = XMLUtil.replaceSystemProps(xml);
+         Element e = XMLUtil.stringToElement(xml);
+
+         if (config instanceof FileJMSConfiguration) {
+            ((FileJMSConfiguration)config).parse(e, url);
+
+            JMSServerManagerImpl.this.deploy();
+         }
+
+
+
+      }
+   }
+
 }

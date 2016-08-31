@@ -94,7 +94,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void serverStopped(String version, SimpleString nodeId, String uptime);
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 221003, value = "Trying to deploy queue {0}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 221003, value = "Deploying queue {0}", format = Message.Format.MESSAGE_FORMAT)
    void deployQueue(SimpleString queueName);
 
    @LogMessage(level = Logger.Level.INFO)
@@ -310,7 +310,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void populatingSecurityRolesFromLDAP(String url);
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 221052, value = "trying to deploy topic {0}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 221052, value = "Deploying topic {0}", format = Message.Format.MESSAGE_FORMAT)
    void deployTopic(SimpleString topicName);
 
    @LogMessage(level = Logger.Level.INFO)
@@ -327,6 +327,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 221055, value = "There were too many old replicated folders upon startup, removing {0}",
       format = Message.Format.MESSAGE_FORMAT)
    void removingBackupData(String path);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 221056, value = "Reloading configuration ...{0}",
+      format = Message.Format.MESSAGE_FORMAT)
+   void reloadingConfiguration(String module);
 
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222000, value = "ActiveMQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope",

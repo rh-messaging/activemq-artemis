@@ -41,6 +41,7 @@ import org.apache.activemq.artemis.core.server.group.GroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.Activation;
 import org.apache.activemq.artemis.core.server.impl.ConnectorsService;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
+import org.apache.activemq.artemis.core.server.reload.ReloadManager;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
@@ -379,6 +380,8 @@ public interface ActiveMQServer extends ActiveMQComponent {
    * */
    void removeProtocolManagerFactory(ProtocolManagerFactory factory);
 
+   ReloadManager getReloadManager();
+
    ActiveMQServer createBackupServer(Configuration configuration);
 
    void addScaledDownNode(SimpleString scaledDownNodeId);
@@ -392,4 +395,6 @@ public interface ActiveMQServer extends ActiveMQComponent {
    void setHAPolicy(HAPolicy haPolicy);
 
    void setMBeanServer(MBeanServer mBeanServer);
+
+   void addExternalComponent(ActiveMQComponent externalComponent);
 }

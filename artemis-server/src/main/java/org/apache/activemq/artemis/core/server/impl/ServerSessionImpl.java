@@ -420,10 +420,20 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       }
 
       if (browseOnly) {
-         securityCheck(binding.getAddress(), CheckType.BROWSE, this);
+         try {
+            securityCheck(binding.getAddress(), CheckType.BROWSE, this);
+         }
+         catch (Exception e) {
+            securityCheck(binding.getAddress().concat(".").concat(queueName), CheckType.BROWSE, this);
+         }
       }
       else {
-         securityCheck(binding.getAddress(), CheckType.CONSUME, this);
+         try {
+            securityCheck(binding.getAddress(), CheckType.CONSUME, this);
+         }
+         catch (Exception e) {
+            securityCheck(binding.getAddress().concat(".").concat(queueName), CheckType.CONSUME, this);
+         }
       }
 
       Filter filter = FilterImpl.createFilter(filterString);
@@ -845,9 +855,15 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          else if (tx.getState() == Transaction.State.ROLLEDBACK) {
             final String msg = "Cannot end, transaction is rolled back";
 
+            final boolean timeout = tx.hasTimedOut();
             tx = null;
 
-            throw new ActiveMQXAException(XAException.XAER_PROTO, msg);
+            if (timeout) {
+               throw new ActiveMQXAException(XAException.XA_RBTIMEOUT, msg);
+            }
+            else {
+               throw new ActiveMQXAException(XAException.XAER_PROTO, msg);
+            }
          }
          else {
             tx = null;

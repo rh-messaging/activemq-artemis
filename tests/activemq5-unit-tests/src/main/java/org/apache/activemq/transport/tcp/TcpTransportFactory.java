@@ -109,7 +109,6 @@ public class TcpTransportFactory extends TransportFactory {
    }
 
    @Override
-   @SuppressWarnings("rawtypes")
    public Transport compositeConfigure(Transport transport, WireFormat format, Map options) {
 
       TcpTransport tcpTransport = transport.narrow(TcpTransport.class);

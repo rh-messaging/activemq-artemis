@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.proton;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -49,6 +50,8 @@ import static org.proton.plug.context.AMQPConstants.Connection.DEFAULT_MAX_FRAME
  */
 public class ProtonProtocolManager implements ProtocolManager<Interceptor>, NotificationListener {
 
+   private static final List<String> websocketRegistryNames = Arrays.asList("amqp");
+
    private final ActiveMQServer server;
 
    private MessageConverter protonConverter;
@@ -60,6 +63,8 @@ public class ProtonProtocolManager implements ProtocolManager<Interceptor>, Noti
    * the address. This can be changed on the acceptor.
    * */
    private String pubSubPrefix = ActiveMQTopic.JMS_TOPIC_ADDRESS_PREFIX;
+
+   private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
 
    public ProtonProtocolManager(ProtonProtocolManagerFactory factory, ActiveMQServer server) {
       this.factory = factory;
@@ -108,7 +113,7 @@ public class ProtonProtocolManager implements ProtocolManager<Interceptor>, Noti
 
       String id = server.getConfiguration().getName();
       AMQPServerConnectionContext amqpConnection = ProtonServerConnectionContextFactory.getFactory().
-         createConnection(connectionCallback, id, (int) ttl, DEFAULT_MAX_FRAME_SIZE, DEFAULT_CHANNEL_MAX, server.getExecutorFactory().getExecutor(), server.getScheduledPool());
+         createConnection(connectionCallback, id, (int) ttl, getMaxFrameSize(), DEFAULT_CHANNEL_MAX, server.getExecutorFactory().getExecutor(), server.getScheduledPool());
 
       Executor executor = server.getExecutorFactory().getExecutor();
 
@@ -147,6 +152,11 @@ public class ProtonProtocolManager implements ProtocolManager<Interceptor>, Noti
    public void handshake(NettyServerConnection connection, ActiveMQBuffer buffer) {
    }
 
+   @Override
+   public List<String> websocketSubprotocolIdentifiers() {
+      return websocketRegistryNames;
+   }
+
    public String getPubSubPrefix() {
       return pubSubPrefix;
    }
@@ -156,4 +166,11 @@ public class ProtonProtocolManager implements ProtocolManager<Interceptor>, Noti
    }
 
 
+   public int getMaxFrameSize() {
+      return maxFrameSize;
+   }
+
+   public void setMaxFrameSize(int maxFrameSize) {
+      this.maxFrameSize = maxFrameSize;
+   }
 }
