@@ -258,7 +258,11 @@ public final class UUIDGenerator {
       try {
          networkInterfaces = NetworkInterface.getNetworkInterfaces();
 
-         List<NetworkInterface> ifaces = new ArrayList<NetworkInterface>();
+         if (networkInterfaces == null) {
+            return Collections.emptyList();
+         }
+
+         List<NetworkInterface> ifaces = new ArrayList<>();
          while (networkInterfaces.hasMoreElements()) {
             ifaces.add(networkInterfaces.nextElement());
          }
