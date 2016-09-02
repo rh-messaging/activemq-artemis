@@ -215,4 +215,9 @@ public class MQTTConnection implements RemotingConnection {
    public boolean isSupportReconnect() {
       return false;
    }
+
+   @Override
+   public boolean isSupportsFlowControl() {
+      return false;
+   }
 }
