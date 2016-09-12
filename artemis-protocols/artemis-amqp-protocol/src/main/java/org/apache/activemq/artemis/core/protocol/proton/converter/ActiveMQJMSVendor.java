@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.protocol.proton.converter;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
@@ -90,19 +91,29 @@ public class ActiveMQJMSVendor implements JMSVendor {
       try {
          message.setStringProperty("_AMQ_GROUP_ID", s);
       }
-      catch (Exception e) {
-         e.printStackTrace();
-
+      catch (JMSException e) {
+         throw new RuntimeException(e);
       }
    }
 
    @Override
    public void setJMSXGroupSequence(Message message, int i) {
-
+      try {
+         message.setIntProperty("JMSXGroupSeq", i);
+      }
+      catch (JMSException e) {
+         throw new RuntimeException(e);
+      }
    }
 
    @Override
    public void setJMSXDeliveryCount(Message message, long l) {
+      try {
+         message.setLongProperty("JMSXDeliveryCount", l);
+      }
+      catch (JMSException e) {
+         throw new RuntimeException(e);
+      }
    }
 
    public ServerJMSMessage wrapMessage(int messageType, ServerMessage wrapped, int deliveryCount) {
@@ -115,6 +126,8 @@ public class ActiveMQJMSVendor implements JMSVendor {
             return new ServerJMSMapMessage(wrapped, deliveryCount);
          case org.apache.activemq.artemis.api.core.Message.TEXT_TYPE:
             return new ServerJMSTextMessage(wrapped, deliveryCount);
+         case org.apache.activemq.artemis.api.core.Message.OBJECT_TYPE:
+            return new ServerJMSObjectMessage(wrapped, deliveryCount);
          default:
             return new ServerJMSMessage(wrapped, deliveryCount);
       }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.core.server.impl;
+package org.apache.activemq.artemis.core.server.files;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -200,7 +200,7 @@ public class FileMoveManagerTest {
 
       Assert.assertEquals(manager.getMaxFolders(), manager.getNumberOfFolders());
 
-      manager.setMaxFolders(0).checkOldFolders();
+      manager.setMaxFolders(-1).checkOldFolders();
 
       Assert.assertEquals(3, manager.getNumberOfFolders());
 
@@ -255,7 +255,7 @@ public class FileMoveManagerTest {
 
       Assert.assertEquals(manager.getMaxFolders(), manager.getNumberOfFolders());
 
-      manager.setMaxFolders(0).checkOldFolders();
+      manager.setMaxFolders(-1).checkOldFolders();
 
       Assert.assertEquals(3, manager.getNumberOfFolders());
 
@@ -265,6 +265,34 @@ public class FileMoveManagerTest {
 
       Assert.assertEquals(10, manager.getMaxID());
       Assert.assertEquals(10, manager.getMinID());
+   }
+
+   @Test
+   public void testMaxZero() throws Exception {
+      manager.setMaxFolders(0);
+
+      int NUMBER_OF_FOLDERS = 10;
+      int FILES_PER_FOLDER = 10;
+
+      for (int bkp = 1; bkp <= 10; bkp++) {
+         for (int f = 0; f < NUMBER_OF_FOLDERS; f++) {
+            File folderF = new File(dataLocation, "folder" + f);
+            folderF.mkdirs();
+
+            // FILES_PER_FOLDER + f, I'm just creating more files as f grows.
+            // this is just to make each folder unique somehow
+            for (int i = 0; i < FILES_PER_FOLDER + f; i++) {
+               createFile(folderF, i);
+            }
+         }
+
+         manager.doMove();
+
+         // We will always have maximum of 3 folders
+         Assert.assertEquals(0, manager.getNumberOfFolders());
+      }
+
+      Assert.assertEquals(0, manager.getMaxID());
    }
 
    @Test
@@ -286,7 +314,7 @@ public class FileMoveManagerTest {
                new PagingStoreFactoryNIO(storageManager, dataLocation, 100, null,
                   new OrderedExecutorFactory(threadPool), true, null);
 
-            PagingManagerImpl managerImpl = new PagingManagerImpl(storeFactory, addressSettings);
+            PagingManagerImpl managerImpl = new PagingManagerImpl(storeFactory, addressSettings, -1);
 
             managerImpl.start();
 

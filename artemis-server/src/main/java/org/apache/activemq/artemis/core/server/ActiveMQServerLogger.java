@@ -1136,6 +1136,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
       format = Message.Format.MESSAGE_FORMAT)
    void activateSharedStoreSlaveFailed(@Cause Throwable e);
 
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 222190, value = "Deleting old data directory {0} as the max folders is set to 0", format = Message.Format.MESSAGE_FORMAT)
+   void backupDeletingData(String oldPath);
+
+
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222191,
       value = "Could not find any configured role for user {0}.",
@@ -1241,6 +1246,16 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222209, value = "Could not contact group handler coordinator after 10 retries, message being routed without grouping information",
       format = Message.Format.MESSAGE_FORMAT)
    void impossibleToRouteGrouped();
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222210, value = "Storage usage is beyond max-disk-usage. System will start blocking producers.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void diskBeyondCapacity();
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222211, value = "Storage is back to stable now, under max-disk-usage.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void diskCapacityRestored();
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)

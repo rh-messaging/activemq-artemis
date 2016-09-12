@@ -14,31 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.proton.plug;
+package org.apache.blacklist;
 
-import io.netty.buffer.ByteBuf;
+import java.io.Serializable;
 
-public interface AMQPConnectionCallback {
-
-   void close();
-
-   /**
-    * this is called when bytes are available to be sent to the client.
-    * you have to callback {@link org.proton.plug.AMQPConnectionContext#outputDone(int)} after you're done with this buffer
-    *
-    * @param bytes
-    */
-   void onTransport(ByteBuf bytes, AMQPConnectionContext connection);
-
-   AMQPSessionCallback createSessionCallback(AMQPConnectionContext connection);
-
-   void setConnection(AMQPConnectionContext connection);
-
-   AMQPConnectionContext getConnection();
-
-   ServerSASL[] getSASLMechnisms();
-
-   boolean isSupportsAnonymous();
-
-   void sendSASLSupported();
+public class ABadClass implements Serializable {
 }

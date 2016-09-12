@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.core.protocol.proton.converter.message;
 
+import org.apache.activemq.artemis.core.message.impl.MessageInternal;
+import org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSMessage;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
@@ -31,6 +33,7 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.ProtonJMessage;
+import org.jboss.logging.Logger;
 import org.proton.plug.exceptions.ActiveMQAMQPIllegalStateException;
 
 import javax.jms.BytesMessage;
@@ -55,7 +58,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 
 public class JMSMappingOutboundTransformer extends OutboundTransformer {
-
+   private static final Logger logger = Logger.getLogger(JMSMappingOutboundTransformer.class);
    public static final Symbol JMS_DEST_TYPE_MSG_ANNOTATION = Symbol.valueOf("x-opt-jms-dest");
    public static final Symbol JMS_REPLY_TO_TYPE_MSG_ANNOTATION = Symbol.valueOf("x-opt-jms-reply-to");
 
@@ -140,9 +143,22 @@ public class JMSMappingOutboundTransformer extends OutboundTransformer {
       }
 
       if (body == null && msg instanceof org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSMessage) {
-         Object s = ((org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSMessage) msg).getInnerMessage().getBodyBuffer().readNullableSimpleString();
-         if (s != null) {
-            body = new AmqpValue(s.toString());
+
+         MessageInternal internalMessage = ((org.apache.activemq.artemis.core.protocol.proton.converter.jms.ServerJMSMessage) msg).getInnerMessage();
+         if (!internalMessage.containsProperty("AMQP_MESSAGE_FORMAT")) {
+            int readerIndex = internalMessage.getBodyBuffer().readerIndex();
+            try {
+               Object s = internalMessage.getBodyBuffer().readNullableSimpleString();
+               if (s != null) {
+                  body = new AmqpValue(s.toString());
+               }
+            }
+            catch (Throwable ignored) {
+               logger.debug("Exception ignored during conversion, should be ok!", ignored.getMessage(), ignored);
+            }
+            finally {
+               internalMessage.getBodyBuffer().readerIndex(readerIndex);
+            }
          }
       }
 
@@ -208,7 +224,7 @@ public class JMSMappingOutboundTransformer extends OutboundTransformer {
       final Enumeration<String> keys = msg.getPropertyNames();
       while (keys.hasMoreElements()) {
          String key = keys.nextElement();
-         if (key.equals(messageFormatKey) || key.equals(nativeKey)) {
+         if (key.equals(messageFormatKey) || key.equals(nativeKey) || key.equals(ServerJMSMessage.NATIVE_MESSAGE_ID)) {
             // skip..
          }
          else if (key.equals(firstAcquirerKey)) {

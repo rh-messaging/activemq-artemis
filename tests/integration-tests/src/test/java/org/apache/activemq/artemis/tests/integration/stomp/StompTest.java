@@ -33,10 +33,15 @@ import java.util.regex.Pattern;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
+import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
 import org.apache.activemq.artemis.core.protocol.stomp.Stomp;
+import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.integration.IntegrationTestLogger;
 import org.apache.activemq.artemis.tests.integration.mqtt.imported.FuseMQTTClientProvider;
 import org.apache.activemq.artemis.tests.integration.mqtt.imported.MQTTClientProvider;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,6 +97,46 @@ public class StompTest extends StompTestBase {
       }
 
       assertTrue(latch.await(60, TimeUnit.SECONDS));
+   }
+
+   @Test
+   public void testSendOverDiskFull() throws Exception {
+      AssertionLoggerHandler.startCapture();
+      try {
+         MessageConsumer consumer = session.createConsumer(queue);
+
+         String frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n\n" + Stomp.NULL;
+         sendFrame(frame);
+         frame = receiveFrame(10000);
+
+         Assert.assertTrue(frame.startsWith("CONNECTED"));
+         int count = 1000;
+         final CountDownLatch latch = new CountDownLatch(count);
+         consumer.setMessageListener(new MessageListener() {
+
+            @Override
+            public void onMessage(Message arg0) {
+               latch.countDown();
+            }
+         });
+
+         ((ActiveMQServerImpl) server.getActiveMQServer()).getMonitor().setMaxUsage(0).tick();
+
+         frame = "SEND\n" + "destination:" + getQueuePrefix() + getQueueName() + "\n\n" + "Hello World" + Stomp.NULL;
+         for (int i = 1; i <= count; i++) {
+            // Thread.sleep(1);
+            // System.out.println(">>> " + i);
+            sendFrame(frame);
+         }
+
+         // It should encounter the exception on logs
+         AssertionLoggerHandler.findText("AMQ119119");
+      }
+      finally {
+         AssertionLoggerHandler.clear();
+         AssertionLoggerHandler.stopCapture();
+      }
+
    }
 
    @Test
@@ -1237,6 +1282,18 @@ public class StompTest extends StompTestBase {
       Assert.assertTrue(frame.indexOf(getName()) > 0);
 
       assertNotNull(server.getActiveMQServer().getPostOffice().getBinding(new SimpleString(ResourceNames.JMS_QUEUE + nonExistentQueue)));
+
+      final Queue subscription = ((LocalQueueBinding)server.getActiveMQServer().getPostOffice().getBinding(new SimpleString(ResourceNames.JMS_QUEUE + nonExistentQueue))).getQueue();
+
+      assertTrue(Wait.waitFor(new Wait.Condition() {
+         @Override
+         public boolean isSatisfied() throws Exception {
+            if (subscription.getMessageCount() == 0)
+               return true;
+            else
+               return false;
+         }
+      }, 1000, 50));
 
       frame = "UNSUBSCRIBE\n" + "destination:" +
          getQueuePrefix() +

@@ -735,4 +735,8 @@ public final class StompConnection implements RemotingConnection {
       return manager;
    }
 
+   @Override
+   public boolean isSupportsFlowControl() {
+      return false;
+   }
 }
