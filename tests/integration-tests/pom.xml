@@ -377,7 +377,7 @@
       <dependency>
          <groupId>org.apache.activemq.rest</groupId>
          <artifactId>artemis-rest</artifactId>
-         <version>1.4.0-SNAPSHOT</version>
+         <version>1.3.0.amq-700-SNAPSHOT</version>
          <scope>compile</scope>
       </dependency>
 
