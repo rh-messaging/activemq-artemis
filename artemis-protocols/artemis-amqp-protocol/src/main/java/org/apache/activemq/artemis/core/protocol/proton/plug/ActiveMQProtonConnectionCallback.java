@@ -16,26 +16,48 @@
  */
 package org.apache.activemq.artemis.core.protocol.proton.plug;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.protocol.proton.ActiveMQProtonRemotingConnection;
 import org.apache.activemq.artemis.core.protocol.proton.ProtonProtocolManager;
 import org.apache.activemq.artemis.core.protocol.proton.sasl.ActiveMQPlainSASL;
+import org.apache.activemq.artemis.core.remoting.CloseListener;
+import org.apache.activemq.artemis.core.remoting.FailureListener;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.ReusableLatch;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.transport.AmqpError;
+import org.jboss.logging.Logger;
 import org.proton.plug.AMQPConnectionCallback;
 import org.proton.plug.AMQPConnectionContext;
 import org.proton.plug.AMQPSessionCallback;
+import org.proton.plug.SASLResult;
 import org.proton.plug.ServerSASL;
+import org.proton.plug.handler.ExtCapability;
 import org.proton.plug.sasl.AnonymousServerSASL;
 
-public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback {
+import static org.proton.plug.AmqpSupport.CONTAINER_ID;
+import static org.proton.plug.AmqpSupport.INVALID_FIELD;
+import static org.proton.plug.context.AbstractConnectionContext.CONNECTION_OPEN_FAILED;
+
+public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback, FailureListener, CloseListener {
+   private static final List<String> connectedContainers = Collections.synchronizedList(new ArrayList());
+
+   private static final Logger log = Logger.getLogger(ActiveMQProtonConnectionCallback.class);
 
    private final ProtonProtocolManager manager;
 
@@ -49,12 +71,20 @@ public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback 
 
    private final Executor closeExecutor;
 
+   private String remoteContainerId;
+
+   private AtomicBoolean registeredConnectionId = new AtomicBoolean(false);
+
+   private ActiveMQServer server;
+
    public ActiveMQProtonConnectionCallback(ProtonProtocolManager manager,
                                            Connection connection,
-                                           Executor closeExecutor) {
+                                           Executor closeExecutor,
+                                           ActiveMQServer server) {
       this.manager = manager;
       this.connection = connection;
       this.closeExecutor = closeExecutor;
+      this.server = server;
    }
 
    @Override
@@ -86,6 +116,9 @@ public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback 
 
    @Override
    public void close() {
+      if (registeredConnectionId.getAndSet(false)) {
+         server.removeClientConnection(remoteContainerId);
+      }
       connection.close();
       amqpConnection.close();
    }
@@ -114,6 +147,7 @@ public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback 
    }
 
    public void setProtonConnectionDelegate(ActiveMQProtonRemotingConnection protonConnectionDelegate) {
+
       this.protonConnectionDelegate = protonConnectionDelegate;
    }
 
@@ -149,5 +183,39 @@ public class ActiveMQProtonConnectionCallback implements AMQPConnectionCallback 
    @Override
    public void sendSASLSupported() {
       connection.write(ActiveMQBuffers.wrappedBuffer(new byte[]{'A', 'M', 'Q', 'P', 3, 1, 0, 0}));
+   }
+
+   @Override
+   public boolean validateConnection(org.apache.qpid.proton.engine.Connection connection, SASLResult saslResult) {
+      remoteContainerId = connection.getRemoteContainer();
+      boolean idOK = server.addClientConnection(remoteContainerId, ExtCapability.needUniqueConnection(connection));
+      if (!idOK) {
+         //https://issues.apache.org/jira/browse/ARTEMIS-728
+         Map<Symbol, Object> connProp = new HashMap<>();
+         connProp.put(CONNECTION_OPEN_FAILED, "true");
+         connection.setProperties(connProp);
+         connection.getCondition().setCondition(AmqpError.INVALID_FIELD);
+         Map<Symbol, Symbol> info = new HashMap<>();
+         info.put(INVALID_FIELD, CONTAINER_ID);
+         connection.getCondition().setInfo(info);
+         return false;
+      }
+      registeredConnectionId.set(true);
+      return true;
+   }
+
+   @Override
+   public void connectionClosed() {
+      close();
+   }
+
+   @Override
+   public void connectionFailed(ActiveMQException exception, boolean failedOver) {
+      close();
+   }
+
+   @Override
+   public void connectionFailed(ActiveMQException exception, boolean failedOver, String scaleDownTargetNodeID) {
+      close();
    }
 }
