@@ -983,6 +983,7 @@ public class JMSServerControl2Test extends ManagementTestBase {
          Assert.assertEquals(0, queueControl.getConsumerCount());
          Assert.assertEquals(1, queueControl2.getConsumerCount());
 
+         connection.close();
          connection2.close();
       }
       finally {
@@ -1142,6 +1143,7 @@ public class JMSServerControl2Test extends ManagementTestBase {
          Assert.assertEquals(0, queueControl.getConsumerCount());
          Assert.assertEquals(1, queueControl2.getConsumerCount());
 
+         connection.close();
          connection2.close();
       }
       finally {
