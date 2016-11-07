@@ -15,7 +15,7 @@ These are provided as junit rules and can make it easier to embed Messaging func
   <groupId>org.apache.activemq</groupId>
   <artifactId>artemis-junit</artifactId>
   <!-- replace this for the version you are using -->
-  <version>1.5.0.amq-700-SNAPSHOT</version>
+  <version>1.5.0.amq-700002</version>
   <scope>test</scope>
 </dependency>
 ```

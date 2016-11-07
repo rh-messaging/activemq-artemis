@@ -19,7 +19,7 @@
 	<parent>
 		<groupId>org.apache.activemq</groupId>
 		<artifactId>artemis-pom</artifactId>
-		<version>1.5.0.amq-700-SNAPSHOT</version>
+		<version>1.5.0.amq-700002</version>
 	</parent>
 	<artifactId>artemis-features</artifactId>
 	<packaging>pom</packaging>
