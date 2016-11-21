@@ -234,6 +234,7 @@ public class TransportConstants {
       allowableAcceptorKeys.add(TransportConstants.CONNECTIONS_ALLOWED);
       allowableAcceptorKeys.add(ActiveMQDefaultConfiguration.getPropMaskPassword());
       allowableAcceptorKeys.add(ActiveMQDefaultConfiguration.getPropPasswordCodec());
+      allowableAcceptorKeys.add(TransportConstants.BACKLOG_PROP_NAME);
 
       ALLOWABLE_ACCEPTOR_KEYS = Collections.unmodifiableSet(allowableAcceptorKeys);
 
