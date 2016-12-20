@@ -669,6 +669,10 @@ public class PagingStoreImpl implements PagingStore {
          if (maxSize != -1) {
             long newSize = sizeInBytes.addAndGet(size);
 
+            if (newSize < 0) {
+               ActiveMQServerLogger.LOGGER.negativeAddressSize(newSize, address.toString());
+            }
+
             if (newSize <= maxSize) {
                if (!onMemoryFreedRunnables.isEmpty()) {
                   executor.execute(memoryFreedRunnablesExecutor);
@@ -684,6 +688,11 @@ public class PagingStoreImpl implements PagingStore {
       }
       else if (addressFullMessagePolicy == AddressFullMessagePolicy.PAGE) {
          final long addressSize = sizeInBytes.addAndGet(size);
+
+
+         if (addressSize < 0) {
+            ActiveMQServerLogger.LOGGER.negativeAddressSize(addressSize, address.toString());
+         }
 
          if (size > 0) {
             if (maxSize > 0 && addressSize > maxSize) {
