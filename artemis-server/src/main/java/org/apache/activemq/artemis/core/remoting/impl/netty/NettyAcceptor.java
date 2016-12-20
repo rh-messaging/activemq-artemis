@@ -510,8 +510,7 @@ public class NettyAcceptor implements Acceptor {
             notificationService.sendNotification(notification);
          }
          catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.warn("failed to send notification",e.getMessage(),e);
          }
       }
 
