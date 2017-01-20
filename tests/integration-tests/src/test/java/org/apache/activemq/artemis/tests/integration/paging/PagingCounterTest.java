@@ -34,7 +34,6 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
-import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,7 +66,8 @@ public class PagingCounterTest extends ActiveMQTestBase {
          // These are the message errors for the negative size address size
          Assert.assertFalse(AssertionLoggerHandler.findText("222214"));
          Assert.assertFalse(AssertionLoggerHandler.findText("222215"));
-      } finally {
+      }
+      finally {
          AssertionLoggerHandler.stopCapture();
       }
    }
