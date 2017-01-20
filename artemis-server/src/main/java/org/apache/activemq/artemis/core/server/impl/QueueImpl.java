@@ -2404,9 +2404,10 @@ public class QueueImpl implements Queue {
 
          if (bindingList.getBindings().isEmpty()) {
             ActiveMQServerLogger.LOGGER.messageExceededMaxDelivery(ref, deadLetterAddress);
-            if(tx!=null) {
+            if (tx != null) {
                acknowledge(tx, ref, AckReason.KILLED);
-            }else{
+            }
+            else {
                acknowledge(ref, AckReason.KILLED);
             }
          }
@@ -2417,9 +2418,10 @@ public class QueueImpl implements Queue {
       }
       else {
          ActiveMQServerLogger.LOGGER.messageExceededMaxDeliveryNoDLA(name);
-         if(tx!=null) {
+         if (tx != null) {
             acknowledge(tx, ref, AckReason.KILLED);
-         }else{
+         }
+         else {
             acknowledge(ref, AckReason.KILLED);
          }
       }

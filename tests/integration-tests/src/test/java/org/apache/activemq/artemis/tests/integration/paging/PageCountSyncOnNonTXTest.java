@@ -51,7 +51,8 @@ public class PageCountSyncOnNonTXTest extends ActiveMQTestBase {
          // These are the message errors for the negative size address size
          Assert.assertFalse(AssertionLoggerHandler.findText("222214"));
          Assert.assertFalse(AssertionLoggerHandler.findText("222215"));
-      } finally {
+      }
+      finally {
          AssertionLoggerHandler.stopCapture();
       }
    }
