@@ -45,7 +45,7 @@ public class ReplicatedPolicy implements HAPolicy<LiveActivation> {
    private ReplicaPolicy replicaPolicy;
 
    public ReplicatedPolicy() {
-      replicaPolicy = new ReplicaPolicy(clusterName, -1, groupName, this);
+      replicaPolicy = new ReplicaPolicy(this);
    }
 
    public ReplicatedPolicy(boolean checkForLiveServer, String groupName, String clusterName, long initialReplicationSyncTimeout) {
@@ -111,7 +111,13 @@ public class ReplicatedPolicy implements HAPolicy<LiveActivation> {
 
    public ReplicaPolicy getReplicaPolicy() {
       if (replicaPolicy == null) {
-         replicaPolicy = new ReplicaPolicy(clusterName, -1, groupName, this);
+         replicaPolicy = new ReplicaPolicy(this);
+         if (clusterName != null && clusterName.length() > 0) {
+            replicaPolicy.setClusterName(clusterName);
+         }
+         if (groupName != null && groupName.length() > 0) {
+            replicaPolicy.setGroupName(groupName);
+         }
       }
       return replicaPolicy;
    }

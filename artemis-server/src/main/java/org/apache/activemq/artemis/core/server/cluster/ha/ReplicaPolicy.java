@@ -43,6 +43,10 @@ public class ReplicaPolicy extends BackupPolicy {
    public ReplicaPolicy() {
    }
 
+   public ReplicaPolicy(ReplicatedPolicy replicatedPolicy) {
+      this.replicatedPolicy = replicatedPolicy;
+   }
+
    public ReplicaPolicy(String clusterName,
                         int maxSavedReplicatedJournalsSize,
                         String groupName,
