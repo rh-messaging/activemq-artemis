@@ -79,16 +79,8 @@ public class AIOSequentialFile extends AbstractSequentialFile {
    }
 
    @Override
-   public int getAlignment() {
-      // TODO: get the alignment from the file system, but we have to cache this, we can't call it every time
-      /* checkOpened();
-      return aioFile.getBlockSize(); */
-      return 512;
-   }
-
-   @Override
    public int calculateBlockStart(final int position) {
-      int alignment = getAlignment();
+      int alignment = factory.getAlignment();
 
       int pos = (position / alignment + (position % alignment != 0 ? 1 : 0)) * alignment;
 
@@ -138,7 +130,7 @@ public class AIOSequentialFile extends AbstractSequentialFile {
       opened = true;
 
       try {
-         aioFile = aioFactory.libaioContext.openFile(getFile(), true);
+         aioFile = aioFactory.libaioContext.openFile(getFile(), factory.isDatasync());
       } catch (IOException e) {
          factory.onIOError(e, e.getMessage(), this);
          throw new ActiveMQNativeIOError(e.getMessage(), e);
