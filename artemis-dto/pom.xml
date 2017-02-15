@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>1.5.3.jbossorg-002</version>2
+      <version>1.5.3.jbossorg-002</version>
    </parent>
 
    <artifactId>artemis-dto</artifactId>
