@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.protocol.openwire;
 
 import javax.jms.InvalidClientIDException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -34,6 +35,7 @@ import org.apache.activemq.advisory.AdvisorySupport;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.BaseInterceptor;
 import org.apache.activemq.artemis.api.core.Interceptor;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClusterTopologyListener;
 import org.apache.activemq.artemis.api.core.client.TopologyMember;
@@ -43,11 +45,10 @@ import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQSession;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
-import org.apache.activemq.artemis.core.server.RoutingType;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
 import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
+import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
-import org.apache.activemq.artemis.spi.core.protocol.MessageConverter;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManagerFactory;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
@@ -64,6 +65,7 @@ import org.apache.activemq.command.Command;
 import org.apache.activemq.command.ConnectionControl;
 import org.apache.activemq.command.ConnectionInfo;
 import org.apache.activemq.command.ConsumerId;
+import org.apache.activemq.command.DestinationInfo;
 import org.apache.activemq.command.MessageDispatch;
 import org.apache.activemq.command.MessageId;
 import org.apache.activemq.command.ProducerId;
@@ -134,7 +136,6 @@ public class OpenWireProtocolManager implements ProtocolManager<Interceptor>, Cl
 
       final ClusterManager clusterManager = this.server.getClusterManager();
 
-      // TODO-NOW: use a property name for the cluster connection
       ClusterConnection cc = clusterManager.getDefaultConnection(null);
 
       if (cc != null) {
@@ -233,11 +234,6 @@ public class OpenWireProtocolManager implements ProtocolManager<Interceptor>, Cl
    }
 
    @Override
-   public MessageConverter getConverter() {
-      return messageConverter;
-   }
-
-   @Override
    public void removeHandler(String name) {
    }
 
@@ -333,7 +329,7 @@ public class OpenWireProtocolManager implements ProtocolManager<Interceptor>, Cl
    }
 
    public void fireAdvisory(AMQConnectionContext context, ActiveMQTopic topic, Command copy) throws Exception {
-      this.fireAdvisory(context, topic, copy, null);
+      this.fireAdvisory(context, topic, copy, null, null);
    }
 
    public BrokerId getBrokerId() {
@@ -350,8 +346,14 @@ public class OpenWireProtocolManager implements ProtocolManager<Interceptor>, Cl
    public void fireAdvisory(AMQConnectionContext context,
                             ActiveMQTopic topic,
                             Command command,
-                            ConsumerId targetConsumerId) throws Exception {
+                            ConsumerId targetConsumerId,
+                            String originalConnectionId) throws Exception {
       ActiveMQMessage advisoryMessage = new ActiveMQMessage();
+
+      if (originalConnectionId == null) {
+         originalConnectionId = context.getConnectionId().getValue();
+      }
+      advisoryMessage.setStringProperty(MessageUtil.CONNECTION_ID_PROPERTY_NAME.toString(), originalConnectionId);
       advisoryMessage.setStringProperty(AdvisorySupport.MSG_PROPERTY_ORIGIN_BROKER_NAME, getBrokerName());
       String id = getBrokerId() != null ? getBrokerId().getValue() : "NOT_SET";
       advisoryMessage.setStringProperty(AdvisorySupport.MSG_PROPERTY_ORIGIN_BROKER_ID, id);
@@ -580,5 +582,13 @@ public class OpenWireProtocolManager implements ProtocolManager<Interceptor>, Cl
    @Override
    public Map<SimpleString, RoutingType> getPrefixes() {
       return prefixes;
+   }
+
+   public List<DestinationInfo> getTemporaryDestinations() {
+      List<DestinationInfo> total = new ArrayList<>();
+      for (OpenWireConnection connection : connections) {
+         total.addAll(connection.getTemporaryDestinations());
+      }
+      return total;
    }
 }

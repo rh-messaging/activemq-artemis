@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.clustered</groupId>
       <artifactId>broker-features</artifactId>
-      <version>2.0.0.amq-700001</version>
+      <version>2.0.0.amq-700002</version>
    </parent>
 
    <groupId>org.apache.activemq.examples.modules</groupId>
@@ -49,9 +49,7 @@ under the License.
       <profile>
          <id>release</id>
          <modules>
-            <module>aerogear</module>
             <module>artemis-ra-rar</module>
-            <module>vertx</module>
          </modules>
       </profile>
    </profiles>

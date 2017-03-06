@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
+import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
@@ -54,7 +55,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.RouteContextList;
-import org.apache.activemq.artemis.core.server.ServerMessage;
+import org.apache.activemq.artemis.core.server.impl.MessageReferenceImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -637,7 +638,7 @@ public class PagingStoreImpl implements PagingStore {
    // To be used when the memory is oversized either by local settings or global settings on blocking addresses
    private static final class OverSizedRunnable implements Runnable {
 
-      private boolean ran;
+      private final AtomicBoolean ran = new AtomicBoolean(false);
 
       private final Runnable runnable;
 
@@ -646,11 +647,9 @@ public class PagingStoreImpl implements PagingStore {
       }
 
       @Override
-      public synchronized void run() {
-         if (!ran) {
+      public void run() {
+         if (ran.compareAndSet(false, true)) {
             runnable.run();
-
-            ran = true;
          }
       }
    }
@@ -701,7 +700,6 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public void addSize(final int size) {
-
       boolean globalFull = pagingManager.addSize(size).isGlobalFull();
       long newSize = sizeInBytes.addAndGet(size);
 
@@ -749,7 +747,7 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public boolean page(ServerMessage message,
+   public boolean page(Message message,
                        final Transaction tx,
                        RouteContextList listCtx,
                        final ReadLock managerLock) throws Exception {
@@ -808,11 +806,7 @@ public class PagingStoreImpl implements PagingStore {
                return false;
             }
 
-            if (!message.isDurable()) {
-               // The address should never be transient when paging (even for non-persistent messages when paging)
-               // This will force everything to be persisted
-               message.forceAddress(address);
-            }
+            message.setAddress(address);
 
             final long transactionID = tx == null ? -1 : tx.getID();
             PagedMessage pagedMessage = new PagedMessageImpl(message, routeQueues(tx, listCtx), transactionID);
@@ -919,6 +913,40 @@ public class PagingStoreImpl implements PagingStore {
       for (org.apache.activemq.artemis.core.server.Queue q : nonDurableQueues) {
          q.getPageSubscription().getCounter().increment(tx, 1);
       }
+
+   }
+
+   @Override
+   public void durableDown(Message message, int durableCount) {
+   }
+
+   @Override
+   public void durableUp(Message message, int durableCount) {
+   }
+
+   @Override
+   public void nonDurableUp(Message message, int count) {
+      if (count == 1) {
+         this.addSize(message.getMemoryEstimate() + MessageReferenceImpl.getMemoryEstimate());
+      } else {
+         this.addSize(MessageReferenceImpl.getMemoryEstimate());
+      }
+   }
+
+   @Override
+   public void nonDurableDown(Message message, int count) {
+      if (count < 0) {
+         // this could happen on paged messages since they are not routed and incrementRefCount is never called
+         return;
+      }
+
+      if (count == 0) {
+         this.addSize(-message.getMemoryEstimate() - MessageReferenceImpl.getMemoryEstimate());
+
+      } else {
+         this.addSize(-MessageReferenceImpl.getMemoryEstimate());
+      }
+
 
    }
 

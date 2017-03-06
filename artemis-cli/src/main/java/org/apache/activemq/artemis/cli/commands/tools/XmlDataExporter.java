@@ -40,7 +40,9 @@ import io.airlift.airline.Command;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -50,7 +52,7 @@ import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.TransactionFailureCallback;
 import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
-import org.apache.activemq.artemis.core.message.BodyEncoder;
+import org.apache.activemq.artemis.core.message.LargeBodyEncoder;
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStore;
@@ -74,13 +76,10 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.codec.Persisten
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
-import org.apache.activemq.artemis.core.server.RoutingType;
-import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
-import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.OrderedExecutorFactory;
 
@@ -219,7 +218,9 @@ public final class XmlDataExporter extends OptionalLocking {
 
          Object o = DescribeJournal.newObjectEncoding(info, storageManager);
          if (info.getUserRecordType() == JournalRecordIds.ADD_MESSAGE) {
-            messages.put(info.id, ((MessageDescribe) o).getMsg());
+            messages.put(info.id, ((MessageDescribe) o).getMsg().toCore());
+         } else if (info.getUserRecordType() == JournalRecordIds.ADD_MESSAGE_PROTOCOL) {
+            messages.put(info.id, ((MessageDescribe) o).getMsg().toCore());
          } else if (info.getUserRecordType() == JournalRecordIds.ADD_LARGE_MESSAGE) {
             messages.put(info.id, ((MessageDescribe) o).getMsg());
          } else if (info.getUserRecordType() == JournalRecordIds.ADD_REF) {
@@ -360,13 +361,13 @@ public final class XmlDataExporter extends OptionalLocking {
       xmlWriter.writeEndElement(); // end BINDINGS_PARENT
    }
 
-   private void printAllMessagesAsXML() throws XMLStreamException {
+   private void printAllMessagesAsXML() throws Exception {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGES_PARENT);
 
       // Order here is important.  We must process the messages from the journal before we process those from the page
       // files in order to get the messages in the right order.
       for (Map.Entry<Long, Message> messageMapEntry : messages.entrySet()) {
-         printSingleMessageAsXML((ServerMessage) messageMapEntry.getValue(), extractQueueNames(messageRefs.get(messageMapEntry.getKey())));
+         printSingleMessageAsXML(messageMapEntry.getValue().toCore(), extractQueueNames(messageRefs.get(messageMapEntry.getKey())));
       }
 
       printPagedMessagesAsXML();
@@ -438,7 +439,7 @@ public final class XmlDataExporter extends OptionalLocking {
                      }
 
                      if (queueNames.size() > 0 && (message.getTransactionID() == -1 || pgTXs.contains(message.getTransactionID()))) {
-                        printSingleMessageAsXML(message.getMessage(), queueNames);
+                        printSingleMessageAsXML(message.getMessage().toCore(), queueNames);
                      }
 
                      messageId++;
@@ -455,37 +456,33 @@ public final class XmlDataExporter extends OptionalLocking {
       }
    }
 
-   private void printSingleMessageAsXML(ServerMessage message, List<String> queues) throws XMLStreamException {
+   private void printSingleMessageAsXML(ICoreMessage message, List<String> queues) throws Exception {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGES_CHILD);
       printMessageAttributes(message);
       printMessageProperties(message);
       printMessageQueues(queues);
-      printMessageBody(message);
+      printMessageBody(message.toCore());
       xmlWriter.writeEndElement(); // end MESSAGES_CHILD
       messagesPrinted++;
    }
 
-   private void printMessageBody(ServerMessage message) throws XMLStreamException {
+   private void printMessageBody(Message message) throws Exception {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGE_BODY);
 
-      if (message.isLargeMessage()) {
+      if (message.toCore().isLargeMessage()) {
          printLargeMessageBody((LargeServerMessage) message);
       } else {
-         int size = message.getEndOfBodyPosition() - message.getBodyBuffer().readerIndex();
-         byte[] buffer = new byte[size];
-         message.getBodyBuffer().readBytes(buffer);
-
-         xmlWriter.writeCData(encode(buffer));
+         xmlWriter.writeCData(XmlDataExporterUtil.encodeMessageBody(message));
       }
       xmlWriter.writeEndElement(); // end MESSAGE_BODY
    }
 
    private void printLargeMessageBody(LargeServerMessage message) throws XMLStreamException {
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
-      BodyEncoder encoder = null;
+      LargeBodyEncoder encoder = null;
 
       try {
-         encoder = message.getBodyEncoder();
+         encoder = message.toCore().getBodyEncoder();
          encoder.open();
          long totalBytesWritten = 0;
          Long bufferSize;
@@ -499,7 +496,7 @@ public final class XmlDataExporter extends OptionalLocking {
             }
             ActiveMQBuffer buffer = ActiveMQBuffers.fixedBuffer(bufferSize.intValue());
             encoder.encode(buffer, bufferSize.intValue());
-            xmlWriter.writeCData(encode(buffer.toByteBuffer().array()));
+            xmlWriter.writeCData(XmlDataExporterUtil.encode(buffer.toByteBuffer().array()));
             totalBytesWritten += bufferSize;
          }
          encoder.close();
@@ -525,64 +522,29 @@ public final class XmlDataExporter extends OptionalLocking {
       xmlWriter.writeEndElement(); // end QUEUES_PARENT
    }
 
-   private void printMessageProperties(ServerMessage message) throws XMLStreamException {
+   private void printMessageProperties(Message message) throws XMLStreamException {
       xmlWriter.writeStartElement(XmlDataConstants.PROPERTIES_PARENT);
       for (SimpleString key : message.getPropertyNames()) {
          Object value = message.getObjectProperty(key);
          xmlWriter.writeEmptyElement(XmlDataConstants.PROPERTIES_CHILD);
          xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_NAME, key.toString());
-         if (value instanceof byte[]) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, encode((byte[]) value));
-         } else {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, value == null ? XmlDataConstants.NULL : value.toString());
-         }
+         xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, XmlDataExporterUtil.convertProperty(value));
 
-         // if the value is null then we can't really know what it is so just set the type to the most generic thing
-         if (value == null) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BYTES);
-         } else if (value instanceof Boolean) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BOOLEAN);
-         } else if (value instanceof Byte) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BYTE);
-         } else if (value instanceof Short) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_SHORT);
-         } else if (value instanceof Integer) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_INTEGER);
-         } else if (value instanceof Long) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_LONG);
-         } else if (value instanceof Float) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_FLOAT);
-         } else if (value instanceof Double) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_DOUBLE);
-         } else if (value instanceof String) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_STRING);
-         } else if (value instanceof SimpleString) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_SIMPLE_STRING);
-         } else if (value instanceof byte[]) {
-            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BYTES);
+         // Write the property type as an attribute
+         String propertyType = XmlDataExporterUtil.getPropertyType(value);
+         if (propertyType != null) {
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, propertyType);
          }
       }
       xmlWriter.writeEndElement(); // end PROPERTIES_PARENT
    }
 
-   private void printMessageAttributes(ServerMessage message) throws XMLStreamException {
+   private void printMessageAttributes(ICoreMessage message) throws XMLStreamException {
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_ID, Long.toString(message.getMessageID()));
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_PRIORITY, Byte.toString(message.getPriority()));
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_EXPIRATION, Long.toString(message.getExpiration()));
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_TIMESTAMP, Long.toString(message.getTimestamp()));
-      byte rawType = message.getType();
-      String prettyType = XmlDataConstants.DEFAULT_TYPE_PRETTY;
-      if (rawType == Message.BYTES_TYPE) {
-         prettyType = XmlDataConstants.BYTES_TYPE_PRETTY;
-      } else if (rawType == Message.MAP_TYPE) {
-         prettyType = XmlDataConstants.MAP_TYPE_PRETTY;
-      } else if (rawType == Message.OBJECT_TYPE) {
-         prettyType = XmlDataConstants.OBJECT_TYPE_PRETTY;
-      } else if (rawType == Message.STREAM_TYPE) {
-         prettyType = XmlDataConstants.STREAM_TYPE_PRETTY;
-      } else if (rawType == Message.TEXT_TYPE) {
-         prettyType = XmlDataConstants.TEXT_TYPE_PRETTY;
-      }
+      String prettyType = XmlDataExporterUtil.getMessagePrettyType(message.getType());
       xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_TYPE, prettyType);
       if (message.getUserID() != null) {
          xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_USER_ID, message.getUserID().toString());
@@ -595,10 +557,6 @@ public final class XmlDataExporter extends OptionalLocking {
          queues.add(queueBindings.get(ref.refEncoding.queueID).getQueueName().toString());
       }
       return queues;
-   }
-
-   private static String encode(final byte[] data) {
-      return Base64.encodeBytes(data, 0, data.length, Base64.DONT_BREAK_LINES | Base64.URL_SAFE);
    }
 
    // Inner classes -------------------------------------------------

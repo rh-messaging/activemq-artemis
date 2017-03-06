@@ -90,7 +90,8 @@ public final class SpawnedVMSupport {
                                  final String... args) throws Exception {
       ProcessBuilder builder = new ProcessBuilder();
       final String javaPath = Paths.get(System.getProperty("java.home"), "bin", "java").toAbsolutePath().toString();
-      builder.command(javaPath, memoryArg1, memoryArg2, "-cp", System.getProperty("java.class.path"));
+      builder.command(javaPath, memoryArg1, memoryArg2);
+      builder.environment().put("CLASSPATH", System.getProperty("java.class.path"));
 
       List<String> commandList = builder.command();
 
@@ -99,6 +100,10 @@ public final class SpawnedVMSupport {
             commandList.add(arg);
          }
       }
+
+      // The logs will be huge if you don't set this
+      commandList.add("-Djava.util.logging.manager=org.jboss.logmanager.LogManager");
+      commandList.add("-Dlogging.configuration=file:../config/logging.properties");
 
       commandList.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir", "./tmp"));
       commandList.add("-Djava.library.path=" + System.getProperty("java.library.path", "./native/bin"));

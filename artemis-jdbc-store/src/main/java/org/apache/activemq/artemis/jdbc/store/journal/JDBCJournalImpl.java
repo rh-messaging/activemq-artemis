@@ -31,11 +31,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
+import org.apache.activemq.artemis.core.journal.EncoderPersister;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
 import org.apache.activemq.artemis.core.journal.IOCompletion;
 import org.apache.activemq.artemis.core.journal.Journal;
 import org.apache.activemq.artemis.core.journal.JournalLoadInformation;
 import org.apache.activemq.artemis.core.journal.LoaderCallback;
+import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.TransactionFailureCallback;
@@ -198,6 +200,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
             }
          }
       } catch (SQLException e) {
+         logger.warn(e.getMessage(), e);
          executeCallbacks(recordRef, success);
          return 0;
       }
@@ -212,6 +215,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
          connection.commit();
          success = true;
       } catch (SQLException e) {
+         logger.warn(e.getMessage(), e);
          performRollback(recordRef);
       }
 
@@ -276,6 +280,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
             }
          }
       } catch (Exception sqlE) {
+         logger.warn(sqlE.getMessage(), sqlE);
          ActiveMQJournalLogger.LOGGER.error("Error performing rollback", sqlE);
       }
    }
@@ -363,10 +368,10 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    }
 
    @Override
-   public void appendAddRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception {
+   public void appendAddRecord(long id, byte recordType, Persister persister, Object record, boolean sync) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.ADD_RECORD, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setSync(sync);
       appendRecord(r);
    }
@@ -374,12 +379,13 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    @Override
    public void appendAddRecord(long id,
                                byte recordType,
-                               EncodingSupport record,
+                               Persister persister,
+                               Object record,
                                boolean sync,
                                IOCompletion completionCallback) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.ADD_RECORD, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setSync(sync);
       r.setIoCompletion(completionCallback);
       appendRecord(r);
@@ -395,10 +401,10 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    }
 
    @Override
-   public void appendUpdateRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception {
+   public void appendUpdateRecord(long id, byte recordType, Persister persister, Object record, boolean sync) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.UPDATE_RECORD, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setSync(sync);
       appendRecord(r);
    }
@@ -406,12 +412,13 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    @Override
    public void appendUpdateRecord(long id,
                                   byte recordType,
-                                  EncodingSupport record,
+                                  Persister persister,
+                                  Object record,
                                   boolean sync,
                                   IOCompletion completionCallback) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.ADD_RECORD, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setSync(sync);
       r.setIoCompletion(completionCallback);
       appendRecord(r);
@@ -445,10 +452,11 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    public void appendAddRecordTransactional(long txID,
                                             long id,
                                             byte recordType,
-                                            EncodingSupport record) throws Exception {
+                                            Persister persister,
+                                            Object record) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.ADD_RECORD_TX, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setTxId(txID);
       appendRecord(r);
    }
@@ -466,10 +474,11 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    public void appendUpdateRecordTransactional(long txID,
                                                long id,
                                                byte recordType,
-                                               EncodingSupport record) throws Exception {
+                                               Persister persister,
+                                               Object record) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.UPDATE_RECORD_TX, seq.incrementAndGet());
       r.setUserRecordType(recordType);
-      r.setRecord(record);
+      r.setRecord(persister, record);
       r.setTxId(txID);
       appendRecord(r);
    }
@@ -485,7 +494,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    @Override
    public void appendDeleteRecordTransactional(long txID, long id, EncodingSupport record) throws Exception {
       JDBCJournalRecord r = new JDBCJournalRecord(id, JDBCJournalRecord.DELETE_RECORD_TX, seq.incrementAndGet());
-      r.setRecord(record);
+      r.setRecord(EncoderPersister.getInstance(), record);
       r.setTxId(txID);
       appendRecord(r);
    }
@@ -670,6 +679,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
          rs.next();
          count = rs.getInt(1);
       } catch (SQLException e) {
+         logger.warn(e.getMessage(), e);
          return -1;
       }
       return count;
@@ -678,10 +688,6 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    @Override
    public int getUserVersion() {
       return USER_VERSION;
-   }
-
-   @Override
-   public void perfBlast(int pages) {
    }
 
    @Override

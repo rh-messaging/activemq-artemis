@@ -134,6 +134,10 @@ public class AMQPConnectionContext extends ProtonInitializable {
       handler.flush();
    }
 
+   public void flush(boolean wait) {
+      handler.flush(wait);
+   }
+
    public void close(ErrorCondition errorCondition) {
       handler.close(errorCondition);
    }
@@ -309,7 +313,7 @@ public class AMQPConnectionContext extends ProtonInitializable {
          initialise();
 
          /*
-         * This can be null which is in effect an empty map, also we really dont need to check this for in bound connections
+         * This can be null which is in effect an empty map, also we really don't need to check this for in bound connections
          * but its here in case we add support for outbound connections.
          * */
          if (connection.getRemoteProperties() == null || !connection.getRemoteProperties().containsKey(CONNECTION_OPEN_FAILED)) {
@@ -335,11 +339,13 @@ public class AMQPConnectionContext extends ProtonInitializable {
          synchronized (getLock()) {
             connection.close();
             connection.free();
-            for (AMQPSessionContext protonSession : sessions.values()) {
-               protonSession.close();
-            }
-            sessions.clear();
          }
+
+         for (AMQPSessionContext protonSession : sessions.values()) {
+            protonSession.close();
+         }
+         sessions.clear();
+
          // We must force write the channel before we actually destroy the connection
          onTransport(handler.getTransport());
          destroy();

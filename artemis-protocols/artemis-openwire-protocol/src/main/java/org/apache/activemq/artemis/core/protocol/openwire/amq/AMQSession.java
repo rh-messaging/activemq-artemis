@@ -23,23 +23,22 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireMessageConverter;
 import org.apache.activemq.artemis.core.protocol.openwire.OpenWireProtocolManager;
-import org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
-import org.apache.activemq.artemis.core.server.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
-import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.SlowConsumerDetectionListener;
+import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.spi.core.protocol.SessionCallback;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.IDGenerator;
@@ -56,6 +55,8 @@ import org.apache.activemq.command.SessionInfo;
 import org.apache.activemq.openwire.OpenWireFormat;
 import org.apache.activemq.wireformat.WireFormat;
 import org.jboss.logging.Logger;
+
+import static org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil.OPENWIRE_WILDCARD;
 
 public class AMQSession implements SessionCallback {
    private final Logger logger = Logger.getLogger(AMQSession.class);
@@ -152,7 +153,7 @@ public class AMQSession implements SessionCallback {
 
       for (ActiveMQDestination openWireDest : dests) {
          if (openWireDest.isQueue()) {
-            SimpleString queueName = new SimpleString(OpenWireUtil.convertWildcard(openWireDest.getPhysicalName()));
+            SimpleString queueName = new SimpleString(convertWildcard(openWireDest.getPhysicalName()));
 
             if (!checkAutoCreateQueue(queueName, openWireDest.isTemporary())) {
                throw new InvalidDestinationException("Destination doesn't exist: " + queueName);
@@ -229,16 +230,17 @@ public class AMQSession implements SessionCallback {
 
    @Override
    public int sendMessage(MessageReference reference,
-                          ServerMessage message,
+                          org.apache.activemq.artemis.api.core.Message message,
                           ServerConsumer consumer,
                           int deliveryCount) {
       AMQConsumer theConsumer = (AMQConsumer) consumer.getProtocolData();
-      return theConsumer.handleDeliver(reference, message, deliveryCount);
+      // TODO: use encoders and proper conversions here
+      return theConsumer.handleDeliver(reference, message.toCore(), deliveryCount);
    }
 
    @Override
    public int sendLargeMessage(MessageReference reference,
-                               ServerMessage message,
+                               org.apache.activemq.artemis.api.core.Message message,
                                ServerConsumer consumerID,
                                long bodySize,
                                int deliveryCount) {
@@ -294,7 +296,13 @@ public class AMQSession implements SessionCallback {
          actualDestinations = new ActiveMQDestination[]{destination};
       }
 
-      ServerMessage originalCoreMsg = getConverter().inbound(messageSend);
+      org.apache.activemq.artemis.api.core.Message originalCoreMsg = getConverter().inbound(messageSend);
+
+      if (connection.isNoLocal()) {
+         //Note: advisory messages are dealt with in
+         //OpenWireProtocolManager#fireAdvisory
+         originalCoreMsg.putStringProperty(MessageUtil.CONNECTION_ID_PROPERTY_NAME.toString(), this.connection.getState().getInfo().getConnectionId().getValue());
+      }
 
       /* ActiveMQ failover transport will attempt to reconnect after connection failure.  Any sent messages that did
       * not receive acks will be resent.  (ActiveMQ broker handles this by returning a last sequence id received to
@@ -316,7 +324,7 @@ public class AMQSession implements SessionCallback {
       for (int i = 0; i < actualDestinations.length; i++) {
          ActiveMQDestination dest = actualDestinations[i];
          SimpleString address = new SimpleString(dest.getPhysicalName());
-         ServerMessage coreMsg = originalCoreMsg.copy();
+         org.apache.activemq.artemis.api.core.Message coreMsg = originalCoreMsg.copy();
          coreMsg.setAddress(address);
 
          if (actualDestinations[i].isQueue()) {
@@ -405,6 +413,10 @@ public class AMQSession implements SessionCallback {
       }
    }
 
+   public String convertWildcard(String physicalName) {
+      return OPENWIRE_WILDCARD.convert(physicalName, server.getConfiguration().getWildcardConfiguration());
+   }
+
    public ServerSession getCoreSession() {
       return this.coreSession;
    }
@@ -435,5 +447,9 @@ public class AMQSession implements SessionCallback {
 
    public OpenWireConnection getConnection() {
       return connection;
+   }
+
+   public boolean isInternal() {
+      return sessInfo.getSessionId().getValue() == -1;
    }
 }

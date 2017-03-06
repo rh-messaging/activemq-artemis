@@ -18,7 +18,9 @@ package org.apache.activemq.artemis.core.protocol.openwire.util;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
-import org.apache.activemq.artemis.core.server.ServerMessage;
+import org.apache.activemq.artemis.api.core.Message;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
+
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -28,6 +30,16 @@ import org.apache.activemq.command.XATransactionId;
 import org.apache.activemq.util.ByteSequence;
 
 public class OpenWireUtil {
+
+   public static class OpenWireWildcardConfiguration extends WildcardConfiguration {
+      public OpenWireWildcardConfiguration() {
+         setDelimiter('.');
+         setSingleWord('*');
+         setAnyWords('>');
+      }
+   }
+
+   public static final WildcardConfiguration OPENWIRE_WILDCARD = new OpenWireWildcardConfiguration();
 
    public static ActiveMQBuffer toActiveMQBuffer(ByteSequence bytes) {
       ActiveMQBuffer buffer = ActiveMQBuffers.fixedBuffer(bytes.length);
@@ -42,24 +54,19 @@ public class OpenWireUtil {
     * set on publish/send so a divert or wildcard may mean thats its different to the destination subscribed to by the
     * consumer
     */
-   public static ActiveMQDestination toAMQAddress(ServerMessage message, ActiveMQDestination actualDestination) {
-      String address = message.getAddress().toString();
+   public static ActiveMQDestination toAMQAddress(Message message, ActiveMQDestination actualDestination) {
+      String address = message.getAddress();
       String strippedAddress = address;//.replace(JMS_QUEUE_ADDRESS_PREFIX, "").replace(JMS_TEMP_QUEUE_ADDRESS_PREFIX, "").replace(JMS_TOPIC_ADDRESS_PREFIX, "").replace(JMS_TEMP_TOPIC_ADDRESS_PREFIX, "");
+
+      if (address == null) {
+         return actualDestination;
+      }
+
       if (actualDestination.isQueue()) {
          return new ActiveMQQueue(strippedAddress);
       } else {
          return new ActiveMQTopic(strippedAddress);
       }
-   }
-
-   /*
-    *This util converts amq wildcards to compatible core wildcards
-    *The conversion is like this:
-    *AMQ * wildcard --> Core * wildcard (no conversion)
-    *AMQ > wildcard --> Core # wildcard
-    */
-   public static String convertWildcard(String physicalName) {
-      return physicalName.replaceAll("(\\.>)+", ".#");
    }
 
    public static XidImpl toXID(TransactionId xaXid) {

@@ -17,6 +17,7 @@
 
 package org.apache.activemq.artemis.tests.integration.mqtt.imported;
 
+import javax.jms.ConnectionFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTInterceptor;
@@ -57,17 +59,19 @@ import static java.util.Collections.singletonList;
 
 public class MQTTTestSupport extends ActiveMQTestBase {
 
-   private ActiveMQServer server;
+   protected ActiveMQServer server;
 
    private static final Logger LOG = LoggerFactory.getLogger(MQTTTestSupport.class);
 
    protected int port = 1883;
-   protected ActiveMQConnectionFactory cf;
+   protected ConnectionFactory cf;
    protected LinkedList<Throwable> exceptions = new LinkedList<>();
    protected boolean persistent;
    protected String protocolConfig;
    protected String protocolScheme;
    protected boolean useSSL;
+
+   protected static final int NUM_MESSAGES = 250;
 
    public static final int AT_MOST_ONCE = 0;
    public static final int AT_LEAST_ONCE = 1;
@@ -79,7 +83,6 @@ public class MQTTTestSupport extends ActiveMQTestBase {
    public MQTTTestSupport() {
       this.protocolScheme = "mqtt";
       this.useSSL = false;
-      cf = new ActiveMQConnectionFactory(false, new TransportConfiguration(ActiveMQTestBase.NETTY_CONNECTOR_FACTORY));
    }
 
    public File basedir() throws IOException {
@@ -109,6 +112,7 @@ public class MQTTTestSupport extends ActiveMQTestBase {
 
       exceptions.clear();
       startBroker();
+      createJMSConnection();
    }
 
    @Override
@@ -124,7 +128,7 @@ public class MQTTTestSupport extends ActiveMQTestBase {
       super.tearDown();
    }
 
-   public void startBroker() throws Exception {
+   public void configureBroker() throws Exception {
       // TODO Add SSL
       super.setUp();
       server = createServerForMQTT();
@@ -136,12 +140,24 @@ public class MQTTTestSupport extends ActiveMQTestBase {
       addressSettings.setAutoCreateAddresses(true);
 
       server.getAddressSettingsRepository().addMatch("#", addressSettings);
+   }
+
+   public void startBroker() throws Exception {
+      configureBroker();
       server.start();
       server.waitForActivation(10, TimeUnit.SECONDS);
    }
 
+   public void createJMSConnection() throws Exception {
+      cf = new ActiveMQConnectionFactory(false, new TransportConfiguration(ActiveMQTestBase.NETTY_CONNECTOR_FACTORY));
+   }
+
    private ActiveMQServer createServerForMQTT() throws Exception {
       Configuration defaultConfig = createDefaultConfig(true).setIncomingInterceptorClassNames(singletonList(MQTTIncomingInterceptor.class.getName())).setOutgoingInterceptorClassNames(singletonList(MQTTOutoingInterceptor.class.getName()));
+      AddressSettings addressSettings = new AddressSettings();
+      addressSettings.setDeadLetterAddress(SimpleString.toSimpleString("DLA"));
+      addressSettings.setExpiryAddress(SimpleString.toSimpleString("EXPIRY"));
+      defaultConfig.getAddressesSettings().put("#", addressSettings);
       return createServer(true, defaultConfig);
    }
 

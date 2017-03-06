@@ -24,11 +24,11 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
-import org.apache.activemq.artemis.core.server.ServerMessage;
-import org.apache.activemq.artemis.core.server.impl.ServerMessageImpl;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
+import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 
 /**
  * A Utility Class for creating Server Side objects and converting MQTT concepts to/from Artemis.
@@ -43,7 +43,7 @@ public class MQTTUtil {
 
    public static final boolean SESSION_AUTO_COMMIT_SENDS = true;
 
-   public static final boolean SESSION_AUTO_COMMIT_ACKS = false;
+   public static final boolean SESSION_AUTO_COMMIT_ACKS = true;
 
    public static final boolean SESSION_PREACKNOWLEDGE = false;
 
@@ -65,86 +65,61 @@ public class MQTTUtil {
 
    public static final int DEFAULT_KEEP_ALIVE_FREQUENCY = 5000;
 
-   public static String convertMQTTAddressFilterToCore(String filter) {
-      return swapMQTTAndCoreWildCards(filter);
+   public static String convertMQTTAddressFilterToCore(String filter, WildcardConfiguration wildcardConfiguration) {
+      return MQTT_WILDCARD.convert(filter, wildcardConfiguration);
    }
+
+   public static class MQTTWildcardConfiguration extends WildcardConfiguration {
+      public MQTTWildcardConfiguration() {
+         setDelimiter('/');
+         setSingleWord('+');
+         setAnyWords('#');
+      }
+   }
+
+   public static final WildcardConfiguration MQTT_WILDCARD = new MQTTWildcardConfiguration();
 
    private static final MQTTLogger logger = MQTTLogger.LOGGER;
 
-   public static String convertCoreAddressFilterToMQTT(String filter) {
+   public static String convertCoreAddressFilterToMQTT(String filter, WildcardConfiguration wildcardConfiguration) {
       if (filter.startsWith(MQTT_RETAIN_ADDRESS_PREFIX)) {
          filter = filter.substring(MQTT_RETAIN_ADDRESS_PREFIX.length(), filter.length());
       }
-      return swapMQTTAndCoreWildCards(filter);
+      return wildcardConfiguration.convert(filter, MQTT_WILDCARD);
    }
 
-   public static String convertMQTTAddressFilterToCoreRetain(String filter) {
-      return MQTT_RETAIN_ADDRESS_PREFIX + swapMQTTAndCoreWildCards(filter);
+   public static String convertMQTTAddressFilterToCoreRetain(String filter, WildcardConfiguration wildcardConfiguration) {
+      return MQTT_RETAIN_ADDRESS_PREFIX + MQTT_WILDCARD.convert(filter, wildcardConfiguration);
    }
 
-   public static String swapMQTTAndCoreWildCards(String filter) {
-      char[] topicFilter = filter.toCharArray();
-      for (int i = 0; i < topicFilter.length; i++) {
-         switch (topicFilter[i]) {
-            case '/':
-               topicFilter[i] = '.';
-               break;
-            case '.':
-               topicFilter[i] = '/';
-               break;
-            case '*':
-               topicFilter[i] = '+';
-               break;
-            case '+':
-               topicFilter[i] = '*';
-               break;
-            default:
-               break;
-         }
-      }
-      return String.valueOf(topicFilter);
-   }
-
-   private static ServerMessage createServerMessage(MQTTSession session,
+   private static ICoreMessage createServerMessage(MQTTSession session,
                                                     SimpleString address,
                                                     boolean retain,
                                                     int qos) {
       long id = session.getServer().getStorageManager().generateID();
 
-      ServerMessageImpl message = new ServerMessageImpl(id, DEFAULT_SERVER_MESSAGE_BUFFER_SIZE);
+      CoreMessage message = new CoreMessage(id, DEFAULT_SERVER_MESSAGE_BUFFER_SIZE);
       message.setAddress(address);
       message.putBooleanProperty(new SimpleString(MQTT_MESSAGE_RETAIN_KEY), retain);
       message.putIntProperty(new SimpleString(MQTT_QOS_LEVEL_KEY), qos);
-      // For JMS Consumption
       message.setType(Message.BYTES_TYPE);
       return message;
    }
 
-   public static ServerMessage createServerMessageFromByteBuf(MQTTSession session,
+   public static Message createServerMessageFromByteBuf(MQTTSession session,
                                                               String topic,
                                                               boolean retain,
                                                               int qos,
                                                               ByteBuf payload) {
-      String coreAddress = convertMQTTAddressFilterToCore(topic);
-      ServerMessage message = createServerMessage(session, new SimpleString(coreAddress), retain, qos);
+      String coreAddress = convertMQTTAddressFilterToCore(topic, session.getWildcardConfiguration());
+      ICoreMessage message = createServerMessage(session, new SimpleString(coreAddress), retain, qos);
 
-      // FIXME does this involve a copy?
-      message.getBodyBuffer().writeBytes(new ChannelBufferWrapper(payload), payload.readableBytes());
+      message.getBodyBuffer().writeBytes(payload, 0, payload.readableBytes());
       return message;
    }
 
-   public static ServerMessage createServerMessageFromString(MQTTSession session,
-                                                             String payload,
-                                                             String topic,
-                                                             int qos,
-                                                             boolean retain) {
-      ServerMessage message = createServerMessage(session, new SimpleString(topic), retain, qos);
-      message.getBodyBuffer().writeString(payload);
-      return message;
-   }
-
-   public static ServerMessage createPubRelMessage(MQTTSession session, SimpleString address, int messageId) {
-      ServerMessage message = createServerMessage(session, address, false, 1);
+   public static Message createPubRelMessage(MQTTSession session, SimpleString address, int messageId) {
+      Message message = createServerMessage(session, address, false, 1);
       message.putIntProperty(new SimpleString(MQTTUtil.MQTT_MESSAGE_ID_KEY), messageId);
       message.putIntProperty(new SimpleString(MQTTUtil.MQTT_MESSAGE_TYPE_KEY), MqttMessageType.PUBREL.value());
       return message;

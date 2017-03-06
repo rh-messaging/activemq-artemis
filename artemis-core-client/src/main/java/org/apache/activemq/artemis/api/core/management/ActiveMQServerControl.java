@@ -213,7 +213,7 @@ public interface ActiveMQServerControl {
    /**
     * Returns whether the bindings directory is created on this server startup.
     */
-   @Attribute(desc = "whether the bindings directory is created on this server startu")
+   @Attribute(desc = "whether the bindings directory is created on this server startup")
    boolean isCreateBindingsDir();
 
    /**
@@ -999,7 +999,7 @@ public interface ActiveMQServerControl {
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
                      @Parameter(name = "forwardingAddress", desc = "Forwarding address") String forwardingAddress,
-                     @Parameter(name = "filterString", desc = "Filter of the brdige") String filterString,
+                     @Parameter(name = "filterString", desc = "Filter of the bridge") String filterString,
                      @Parameter(name = "transformerClassName", desc = "Class name of the bridge transformer") String transformerClassName,
                      @Parameter(name = "retryInterval", desc = "Connection retry interval") long retryInterval,
                      @Parameter(name = "retryIntervalMultiplier", desc = "Connection retry interval multiplier") double retryIntervalMultiplier,
@@ -1019,7 +1019,7 @@ public interface ActiveMQServerControl {
    void createBridge(@Parameter(name = "name", desc = "Name of the bridge") String name,
                      @Parameter(name = "queueName", desc = "Name of the source queue") String queueName,
                      @Parameter(name = "forwardingAddress", desc = "Forwarding address") String forwardingAddress,
-                     @Parameter(name = "filterString", desc = "Filter of the brdige") String filterString,
+                     @Parameter(name = "filterString", desc = "Filter of the bridge") String filterString,
                      @Parameter(name = "transformerClassName", desc = "Class name of the bridge transformer") String transformerClassName,
                      @Parameter(name = "retryInterval", desc = "Connection retry interval") long retryInterval,
                      @Parameter(name = "retryIntervalMultiplier", desc = "Connection retry interval multiplier") double retryIntervalMultiplier,
@@ -1060,10 +1060,10 @@ public interface ActiveMQServerControl {
    String listNetworkTopology() throws Exception;
 
    @Operation(desc = "Get the selected address", impact = MBeanOperationInfo.INFO)
-   String getAddressInfo(String address) throws ActiveMQAddressDoesNotExistException;
+   String getAddressInfo(@Parameter(name = "address", desc = "The address") String address) throws ActiveMQAddressDoesNotExistException;
 
    @Operation(desc = "Get a list of bindings associated with an address", impact = MBeanOperationInfo.INFO)
-   String listBindingsForAddress(String address) throws Exception;
+   String listBindingsForAddress(@Parameter(name = "address", desc = "The address") String address) throws Exception;
 
    @Operation(desc = "List Addresses on the broker", impact = MBeanOperationInfo.INFO)
    String listAddresses(@Parameter(name = "separator", desc = "Separator used on the string listing") String separator) throws Exception;

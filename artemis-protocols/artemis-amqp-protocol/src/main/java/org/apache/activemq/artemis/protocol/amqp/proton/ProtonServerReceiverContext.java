@@ -18,7 +18,7 @@ package org.apache.activemq.artemis.protocol.amqp.proton;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPException;
@@ -134,6 +134,7 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
    @Override
    public void onMessage(Delivery delivery) throws ActiveMQAMQPException {
       Receiver receiver;
+      ByteBuf buffer = null;
       try {
          receiver = ((Receiver) delivery.getLink());
 
@@ -144,26 +145,30 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
          if (delivery.isPartial()) {
             return;
          }
+         // This should be used if getDataLength was avilable
+//         byte[] data = new byte[delivery.getDataLength()];
 
-         ByteBuf buffer = PooledByteBufAllocator.DEFAULT.heapBuffer(10 * 1024);
-         try {
-            synchronized (connection.getLock()) {
-               DeliveryUtil.readDelivery(receiver, buffer);
+         buffer = PooledByteBufAllocator.DEFAULT.heapBuffer(10 * 1024);
+         Transaction tx = null;
 
-               receiver.advance();
+         synchronized (connection.getLock()) {
+            DeliveryUtil.readDelivery(receiver, buffer);
+            receiver.advance();
+         }
 
-               Transaction tx = null;
-               if (delivery.getRemoteState() instanceof TransactionalState) {
+         byte[] data = new byte[buffer.writerIndex()];
+         buffer.readBytes(data);
 
-                  TransactionalState txState = (TransactionalState) delivery.getRemoteState();
-                  tx = this.sessionSPI.getTransaction(txState.getTxnId());
-               }
-               sessionSPI.serverSend(tx, receiver, delivery, address, delivery.getMessageFormat(), buffer);
+         if (delivery.getRemoteState() instanceof TransactionalState) {
 
-               flow(maxCreditAllocation, minCreditRefresh);
-            }
-         } finally {
-            buffer.release();
+            TransactionalState txState = (TransactionalState) delivery.getRemoteState();
+            tx = this.sessionSPI.getTransaction(txState.getTxnId());
+         }
+
+         sessionSPI.serverSend(tx, receiver, delivery, address, delivery.getMessageFormat(), data);
+
+         synchronized (connection.getLock()) {
+            flow(maxCreditAllocation, minCreditRefresh);
          }
       } catch (Exception e) {
          log.warn(e.getMessage(), e);
@@ -174,6 +179,10 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
          rejected.setError(condition);
          delivery.disposition(rejected);
          delivery.settle();
+      } finally {
+         if (buffer != null) {
+            buffer.release();
+         }
       }
    }
 

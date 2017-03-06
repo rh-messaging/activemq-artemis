@@ -28,12 +28,17 @@ import io.netty.buffer.UnpooledByteBufAllocator;
  */
 public class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
-   private static final ByteBufAllocator POOLED = new PooledByteBufAllocator(false);
+   private static final ByteBufAllocator POOLED = PooledByteBufAllocator.DEFAULT;
    private static final ByteBufAllocator UNPOOLED = new UnpooledByteBufAllocator(false);
 
    public static final PartialPooledByteBufAllocator INSTANCE = new PartialPooledByteBufAllocator();
 
    private PartialPooledByteBufAllocator() {
+   }
+
+   @Override
+   public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
+      return POOLED.calculateNewCapacity(minNewCapacity, maxCapacity);
    }
 
    @Override

@@ -32,20 +32,37 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.MessageReference;
 
 public final class OpenTypeSupport {
 
-   private static MessageOpenTypeFactory FACTORY = new MessageOpenTypeFactory();
+   private static MessageOpenTypeFactory TEXT_FACTORY = new TextMessageOpenTypeFactory();
+   private static MessageOpenTypeFactory BYTES_FACTORY = new BytesMessageOpenTypeFactory();
 
    private OpenTypeSupport() {
    }
 
    public static CompositeData convert(MessageReference ref) throws OpenDataException {
-      CompositeType ct = FACTORY.getCompositeType();
-      Map<String, Object> fields = FACTORY.getFields(ref);
+      CompositeType ct;
+
+      ICoreMessage message = ref.getMessage().toCore();
+
+      Map<String, Object> fields;
+      byte type = message.getType();
+
+      switch(type) {
+         case Message.TEXT_TYPE:
+            ct = TEXT_FACTORY.getCompositeType();
+            fields = TEXT_FACTORY.getFields(ref);
+            break;
+         default:
+            ct = BYTES_FACTORY.getCompositeType();
+            fields = BYTES_FACTORY.getFields(ref);
+            break;
+      }
       return new CompositeDataSupport(ct, fields);
    }
 
@@ -64,8 +81,6 @@ public final class OpenTypeSupport {
       protected TabularType longPropertyTabularType;
       protected TabularType floatPropertyTabularType;
       protected TabularType doublePropertyTabularType;
-
-      protected ArrayType body;
 
       protected String getTypeName() {
          return Message.class.getName();
@@ -103,10 +118,6 @@ public final class OpenTypeSupport {
          floatPropertyTabularType = createTabularType(Float.class, SimpleType.FLOAT);
          doublePropertyTabularType = createTabularType(Double.class, SimpleType.DOUBLE);
 
-         body = new ArrayType(SimpleType.BYTE, true);
-
-         addItem(CompositeDataConstants.BODY, CompositeDataConstants.BODY_DESCRIPTION, body);
-
          addItem(CompositeDataConstants.STRING_PROPERTIES, CompositeDataConstants.STRING_PROPERTIES_DESCRIPTION, stringPropertyTabularType);
          addItem(CompositeDataConstants.BOOLEAN_PROPERTIES, CompositeDataConstants.BOOLEAN_PROPERTIES_DESCRIPTION, booleanPropertyTabularType);
          addItem(CompositeDataConstants.BYTE_PROPERTIES, CompositeDataConstants.BYTE_PROPERTIES_DESCRIPTION, bytePropertyTabularType);
@@ -119,7 +130,7 @@ public final class OpenTypeSupport {
 
       public Map<String, Object> getFields(MessageReference ref) throws OpenDataException {
          Map<String, Object> rc = new HashMap<>();
-         Message m = ref.getMessage();
+         ICoreMessage m = ref.getMessage().toCore();
          rc.put(CompositeDataConstants.MESSAGE_ID, "" + m.getMessageID());
          if (m.getUserID() != null) {
             rc.put(CompositeDataConstants.USER_ID, "ID:" + m.getUserID().toString());
@@ -134,7 +145,7 @@ public final class OpenTypeSupport {
          rc.put(CompositeDataConstants.PRIORITY, m.getPriority());
          rc.put(CompositeDataConstants.REDELIVERED, ref.getDeliveryCount() > 1);
 
-         ActiveMQBuffer bodyCopy = m.getBodyBufferDuplicate();
+         ActiveMQBuffer bodyCopy = m.getReadOnlyBodyBuffer();
          byte[] bytes = new byte[bodyCopy.readableBytes()];
          bodyCopy.readBytes(bytes);
          rc.put(CompositeDataConstants.BODY, bytes);
@@ -246,4 +257,45 @@ public final class OpenTypeSupport {
       }
    }
 
+
+   static class BytesMessageOpenTypeFactory extends MessageOpenTypeFactory {
+      protected ArrayType body;
+
+      @Override
+      protected void init() throws OpenDataException {
+         super.init();
+         body = new ArrayType(SimpleType.BYTE, true);
+         addItem(CompositeDataConstants.BODY, CompositeDataConstants.BODY_DESCRIPTION, body);
+      }
+
+      @Override
+      public Map<String, Object> getFields(MessageReference ref) throws OpenDataException {
+         Map<String, Object> rc = super.getFields(ref);
+         ICoreMessage m = ref.getMessage().toCore();
+         ActiveMQBuffer bodyCopy = m.getReadOnlyBodyBuffer();
+         byte[] bytes = new byte[bodyCopy.readableBytes()];
+         bodyCopy.readBytes(bytes);
+         rc.put(CompositeDataConstants.BODY, bytes);
+         return rc;
+      }
+   }
+
+   static class TextMessageOpenTypeFactory extends MessageOpenTypeFactory {
+      protected SimpleType text;
+
+      @Override
+      protected void init() throws OpenDataException {
+         super.init();
+         addItem(CompositeDataConstants.TEXT_BODY, CompositeDataConstants.TEXT_BODY, SimpleType.STRING);
+      }
+
+      @Override
+      public Map<String, Object> getFields(MessageReference ref) throws OpenDataException {
+         Map<String, Object> rc = super.getFields(ref);
+         ICoreMessage m = ref.getMessage().toCore();
+         SimpleString text = m.getReadOnlyBodyBuffer().readNullableSimpleString();
+         rc.put(CompositeDataConstants.TEXT_BODY, text != null ? text.toString() : "");
+         return rc;
+      }
+   }
 }

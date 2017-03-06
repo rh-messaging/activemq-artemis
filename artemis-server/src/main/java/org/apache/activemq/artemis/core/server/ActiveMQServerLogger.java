@@ -195,7 +195,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.INFO)
    @Message(
       id = 221026,
-      value = "Bridge {0} connected to fowardingAddress={1}. {2} does not have any bindings. Messages will be ignored until a binding is created.",
+      value = "Bridge {0} connected to forwardingAddress={1}. {2} does not have any bindings. Messages will be ignored until a binding is created.",
       format = Message.Format.MESSAGE_FORMAT)
    void bridgeNoBindings(SimpleString name, SimpleString forwardingAddress, SimpleString address);
 
@@ -577,12 +577,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void ioErrorAddingReferences(Integer errorCode, String errorMessage);
 
    @LogMessage(level = Logger.Level.WARN)
-   @Message(id = 222058, value = "Duplicate message detected through the bridge - message will not be routed. Message information:\n{0}", format = Message.Format.MESSAGE_FORMAT)
-   void duplicateMessageDetectedThruBridge(ServerMessage message);
-
-   @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222059, value = "Duplicate message detected - message will not be routed. Message information:\n{0}", format = Message.Format.MESSAGE_FORMAT)
-   void duplicateMessageDetected(ServerMessage message);
+   void duplicateMessageDetected(org.apache.activemq.artemis.api.core.Message message);
 
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222060, value = "Error while confirming large message completion on rollback for recordID={0}", format = Message.Format.MESSAGE_FORMAT)
@@ -621,7 +617,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void stompTXAckNorSupported();
 
    @LogMessage(level = Logger.Level.WARN)
-   @Message(id = 222071, value = "Interrupted while waiting for stomp heart beate to die", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 222071, value = "Interrupted while waiting for stomp heartbeat to die", format = Message.Format.MESSAGE_FORMAT)
    void errorOnStompHeartBeat(@Cause InterruptedException e);
 
    @LogMessage(level = Logger.Level.WARN)
@@ -783,7 +779,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222110, value = "no queue IDs defined!,  originalMessage  = {0}, copiedMessage = {1}, props={2}",
       format = Message.Format.MESSAGE_FORMAT)
-   void noQueueIdDefined(ServerMessage message, ServerMessage messageCopy, SimpleString idsHeaderName);
+   void noQueueIdDefined(org.apache.activemq.artemis.api.core.Message message, org.apache.activemq.artemis.api.core.Message messageCopy, SimpleString idsHeaderName);
 
    @LogMessage(level = Logger.Level.TRACE)
    @Message(id = 222111, value = "exception while invoking {0} on {1}",
@@ -1125,7 +1121,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
 
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222187,
-      value = "Failed to activate replicata",
+      value = "Failed to activate replicated backup",
       format = Message.Format.MESSAGE_FORMAT)
    void activateReplicatedBackupFailed(@Cause Throwable e);
 
@@ -1171,7 +1167,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
 
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222195,
-      value = "Large message {0} wasn't found when dealing with add pending large message",
+      value = "Large message {0} wasn''t found when dealing with add pending large message",
       format = Message.Format.MESSAGE_FORMAT)
    void largeMessageNotFound(long id);
 
@@ -1287,6 +1283,10 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222216, value = "Security problem while creating session: {0}", format = Message.Format.MESSAGE_FORMAT)
    void securityProblemWhileCreatingSession(String message);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222217, value = "Cannot find connector-ref {0}. The cluster-connection {1} will not be deployed.", format = Message.Format.MESSAGE_FORMAT)
+   void connectorRefNotFound(String connectorRef, String clusterConnection);
+
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
@@ -1385,7 +1385,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void errorWritingToInvmConnector(@Cause Exception e, Runnable runnable);
 
    @LogMessage(level = Logger.Level.ERROR)
-   @Message(id = 224028, value = "Failed to stop accepto {0}r", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 224028, value = "Failed to stop acceptor {0}", format = Message.Format.MESSAGE_FORMAT)
    void errorStoppingAcceptor(String name);
 
    @LogMessage(level = Logger.Level.ERROR)

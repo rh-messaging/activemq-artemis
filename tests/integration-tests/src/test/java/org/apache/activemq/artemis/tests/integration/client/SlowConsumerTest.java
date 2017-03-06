@@ -39,7 +39,7 @@ import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
 import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
@@ -358,7 +358,7 @@ public class SlowConsumerTest extends ActiveMQTestBase {
 
    /**
     * This test creates 3 consumers on one queue. A producer sends
-    * messages at a rate of 2 mesages per second. Each consumer
+    * messages at a rate of 2 messages per second. Each consumer
     * consumes messages at rate of 1 message per second. The slow
     * consumer threshold is 1 message per second.
     * Based on the above settings, at least one of the consumers

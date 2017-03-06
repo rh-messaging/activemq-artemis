@@ -253,10 +253,6 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
                      }
                   }
 
-                  if (m != null) {
-                     session.workDone();
-                  }
-
                   try {
                      wait(toWait);
                   } catch (InterruptedException e) {
@@ -573,7 +569,7 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
 
    private void handleRegularMessage(ClientMessageInternal message) {
       if (message.getAddress() == null) {
-         message.setAddressTransient(queueInfo.getAddress());
+         message.setAddress(queueInfo.getAddress());
       }
 
       message.onReceipt(this);
@@ -629,7 +625,7 @@ public final class ClientConsumerImpl implements ClientConsumerInternal {
       currentLargeMessageController.setLocal(true);
 
       //sets the packet
-      ActiveMQBuffer qbuff = clMessage.getBodyBuffer();
+      ActiveMQBuffer qbuff = clMessage.toCore().getBodyBuffer();
       int bytesToRead = qbuff.writerIndex() - qbuff.readerIndex();
       final byte[] body = ByteUtil.getActiveArray(qbuff.readBytes(bytesToRead).toByteBuffer());
 
