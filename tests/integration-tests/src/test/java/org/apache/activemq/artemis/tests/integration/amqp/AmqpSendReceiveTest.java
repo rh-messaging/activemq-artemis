@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
@@ -73,6 +73,32 @@ public class AmqpSendReceiveTest extends AmqpClientTestSupport {
       receiver.close();
       connection.close();
    }
+
+   @Test(timeout = 60000)
+   public void testAcceptWithoutSettling() throws Exception {
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = addConnection(client.connect());
+      AmqpSession session = connection.createSession();
+
+      AmqpReceiver receiver = session.createReceiver(getTestName());
+
+      sendMessages(getTestName(), 10);
+
+      for (int i = 0; i < 10; i++) {
+         receiver.flow(1);
+         AmqpMessage receive = receiver.receive();
+         receive.accept(false);
+         receive.settle();
+      }
+
+      receiver.close();
+      connection.close();
+
+      Queue queue = getProxyToQueue(getTestName());
+      assertNotNull(queue);
+      assertEquals(0, queue.getMessageCount());
+   }
+
 
    @Test(timeout = 60000)
    public void testCreateQueueReceiverWithJMSSelector() throws Exception {
@@ -727,7 +753,7 @@ public class AmqpSendReceiveTest extends AmqpClientTestSupport {
       LOG.info("*** Attempting to read remaining messages with both receivers");
       int splitCredit = (MSG_COUNT - 4) / 2;
 
-      LOG.info("**** Receiver #1 granting creadit[{}] for its block of messages", splitCredit);
+      LOG.info("**** Receiver #1 granting credit[{}] for its block of messages", splitCredit);
       receiver1.flow(splitCredit);
       for (int i = 0; i < splitCredit; i++) {
          AmqpMessage message = receiver1.receive(10, TimeUnit.SECONDS);
@@ -736,7 +762,7 @@ public class AmqpSendReceiveTest extends AmqpClientTestSupport {
          message.accept();
       }
 
-      LOG.info("**** Receiver #2 granting creadit[{}] for its block of messages", splitCredit);
+      LOG.info("**** Receiver #2 granting credit[{}] for its block of messages", splitCredit);
       receiver2.flow(splitCredit);
       for (int i = 0; i < splitCredit; i++) {
          AmqpMessage message = receiver2.receive(10, TimeUnit.SECONDS);

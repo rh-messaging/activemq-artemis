@@ -43,6 +43,12 @@ public class EmbeddedJMSResourceSingleFileConfigurationTest {
    static final String ASSERT_PUSHED_FORMAT = "Message should have been pushed a message to %s";
    static final String ASSERT_COUNT_FORMAT = "Unexpected message count in destination %s";
 
+   static {
+      ThreadLeakCheckRule.addKownThread("MemoryPoolMXBean notification dispatcher");
+      ThreadLeakCheckRule.addKownThread("threadDeathWatcher");
+      ThreadLeakCheckRule.addKownThread("SeedGenerator Thread");
+   }
+
    public EmbeddedJMSResource jmsServer = new EmbeddedJMSResource("embedded-artemis-jms-server.xml");
 
    @Rule
@@ -58,7 +64,7 @@ public class EmbeddedJMSResourceSingleFileConfigurationTest {
       connectionFactory = new ActiveMQConnectionFactory(jmsServer.getVmURL());
       connection = connectionFactory.createConnection();
       session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      consumer = (ActiveMQMessageConsumer) session.createConsumer(ActiveMQDestination.createDestination(TEST_TOPIC, ActiveMQDestination.TOPIC_TYPE));
+      consumer = (ActiveMQMessageConsumer) session.createConsumer(ActiveMQDestination.createDestination(TEST_TOPIC, ActiveMQDestination.TYPE.TOPIC));
       connection.start();
    }
 

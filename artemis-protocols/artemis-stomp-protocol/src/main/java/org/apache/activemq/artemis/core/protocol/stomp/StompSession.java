@@ -35,7 +35,7 @@ import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
@@ -177,7 +177,7 @@ public class StompSession implements SessionCallback {
                final long consumerID = consumer.getID();
 
                // this will be called after the delivery is complete
-               // we can't call sesison.ack within the delivery
+               // we can't call session.ack within the delivery
                // as it could dead lock.
                afterDeliveryTasks.offer(new PendingTask() {
                   @Override

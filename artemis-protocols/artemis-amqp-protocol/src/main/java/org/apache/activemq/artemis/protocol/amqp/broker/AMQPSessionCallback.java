@@ -32,7 +32,7 @@ import org.apache.activemq.artemis.core.server.AddressQueryResult;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.ServerSession;
@@ -443,8 +443,10 @@ public class AMQPSessionCallback implements SessionCallback {
                                    final Receiver receiver) {
       try {
          if (address == null) {
-            receiver.flow(credits);
-            connection.flush();
+            synchronized (connection.getLock()) {
+               receiver.flow(credits);
+               connection.flush();
+            }
             return;
          }
          final PagingStore store = manager.getServer().getPagingManager().getPageStore(new SimpleString(address));

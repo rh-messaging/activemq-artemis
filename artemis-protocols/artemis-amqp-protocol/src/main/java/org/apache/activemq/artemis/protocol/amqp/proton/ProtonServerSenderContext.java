@@ -27,7 +27,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.postoffice.impl.CompositeAddress;
 import org.apache.activemq.artemis.core.server.AddressQueryResult;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnection;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
@@ -507,6 +507,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                }
             }
          } else if (remoteState instanceof Accepted) {
+            //this can happen in the twice ack mode, that is the receiver accepts and settles separately
+            //acking again would show an exception but would have no negative effect but best to handle anyway.
+            if (delivery.isSettled()) {
+               return;
+            }
             // we have to individual ack as we can't guarantee we will get the delivery updates
             // (including acks) in order
             // from dealer, a perf hit but a must

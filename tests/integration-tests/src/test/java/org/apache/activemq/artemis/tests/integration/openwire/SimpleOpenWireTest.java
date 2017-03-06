@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.tests.integration.openwire;
 
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -26,11 +27,20 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
+import javax.jms.QueueReceiver;
+import javax.jms.QueueSender;
+import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.StreamMessage;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
 import javax.jms.XAConnection;
 import javax.jms.XASession;
 import javax.transaction.xa.XAResource;
@@ -43,13 +53,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.ActiveMQSession;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
@@ -151,6 +162,53 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
          message.acknowledge();
       }
+   }
+
+   @Test
+   public void testSendEmptyMessages() throws Exception {
+      Queue dest = new ActiveMQQueue(queueName);
+
+      QueueSession defaultQueueSession =  connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+      QueueSender defaultSender = defaultQueueSession.createSender(dest);
+      defaultSender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+      connection.start();
+
+      Message msg = defaultQueueSession.createMessage();
+      msg.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(msg);
+
+      QueueReceiver queueReceiver = defaultQueueSession.createReceiver(dest);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
+
+      //bytes
+      BytesMessage bytesMessage = defaultQueueSession.createBytesMessage();
+      bytesMessage.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(bytesMessage);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
+
+      //map
+      MapMessage mapMessage = defaultQueueSession.createMapMessage();
+      mapMessage.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(mapMessage);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
+
+      //object
+      ObjectMessage objMessage = defaultQueueSession.createObjectMessage();
+      objMessage.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(objMessage);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
+
+      //stream
+      StreamMessage streamMessage = defaultQueueSession.createStreamMessage();
+      streamMessage.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(streamMessage);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
+
+      //text
+      TextMessage textMessage = defaultQueueSession.createTextMessage();
+      textMessage.setStringProperty("testName", "testSendEmptyMessages");
+      defaultSender.send(textMessage);
+      assertNotNull("Didn't receive message", queueReceiver.receive(1000));
    }
 
    @Test
@@ -353,6 +411,215 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
       assertNull(consumer2.receive(500));
       session.close();
+   }
+
+   @Test
+   public void testTopicNoLocal() throws Exception {
+      connection.start();
+      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+      System.out.println("creating queue: " + topicName);
+      Destination dest = new ActiveMQTopic(topicName);
+
+      MessageConsumer nolocalConsumer = session.createConsumer(dest, null, true);
+      MessageConsumer consumer = session.createConsumer(dest, null, false);
+      MessageConsumer selectorConsumer  = session.createConsumer(dest,"TESTKEY = 'test'", false);
+
+      MessageProducer producer = session.createProducer(dest);
+
+      final String body1 = "MfromAMQ-1";
+      final String body2 = "MfromAMQ-2";
+      TextMessage msg = session.createTextMessage(body1);
+      producer.send(msg);
+
+      msg = session.createTextMessage(body2);
+      msg.setStringProperty("TESTKEY", "test");
+      producer.send(msg);
+
+      //receive nolocal
+      TextMessage receivedMsg = (TextMessage) nolocalConsumer.receive(1000);
+      assertNull("nolocal consumer got: " + receivedMsg, receivedMsg);
+
+      //receive normal consumer
+      receivedMsg = (TextMessage) consumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body1, receivedMsg.getText());
+
+      receivedMsg = (TextMessage) consumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body2, receivedMsg.getText());
+
+      assertNull(consumer.receiveNoWait());
+
+      //selector should only receive one
+      receivedMsg = (TextMessage) selectorConsumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body2, receivedMsg.getText());
+      assertEquals("test", receivedMsg.getStringProperty("TESTKEY"));
+
+      assertNull(selectorConsumer.receiveNoWait());
+
+      //send from another connection
+      Connection anotherConn = this.factory.createConnection();
+      try {
+         anotherConn.start();
+
+         Session anotherSession = anotherConn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         MessageProducer anotherProducer = anotherSession.createProducer(dest);
+         TextMessage anotherMsg = anotherSession.createTextMessage(body1);
+         anotherProducer.send(anotherMsg);
+
+         assertNotNull(consumer.receive(1000));
+         assertNull(selectorConsumer.receive(1000));
+         assertNotNull(nolocalConsumer.receive(1000));
+      } finally {
+         anotherConn.close();
+      }
+
+      session.close();
+   }
+
+   @Test
+   public void testTopicNoLocalDurable() throws Exception {
+      connection.setClientID("forNoLocal-1");
+      connection.start();
+      TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+
+      System.out.println("creating queue: " + topicName);
+      Topic dest = new ActiveMQTopic(topicName);
+
+      MessageConsumer nolocalConsumer = session.createDurableSubscriber(dest, "nolocal-subscriber1", "", true);
+      MessageConsumer consumer = session.createDurableSubscriber(dest, "normal-subscriber", null, false);
+      MessageConsumer selectorConsumer = session.createDurableSubscriber(dest, "selector-subscriber", "TESTKEY = 'test'", false);
+
+      MessageProducer producer = session.createProducer(dest);
+
+      final String body1 = "MfromAMQ-1";
+      final String body2 = "MfromAMQ-2";
+      TextMessage msg = session.createTextMessage(body1);
+      producer.send(msg);
+
+      msg = session.createTextMessage(body2);
+      msg.setStringProperty("TESTKEY", "test");
+      producer.send(msg);
+
+      //receive nolocal
+      TextMessage receivedMsg = (TextMessage) nolocalConsumer.receive(1000);
+      assertNull("nolocal consumer got: " + receivedMsg, receivedMsg);
+
+      //receive normal consumer
+      receivedMsg = (TextMessage) consumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body1, receivedMsg.getText());
+
+      receivedMsg = (TextMessage) consumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body2, receivedMsg.getText());
+
+      assertNull(consumer.receiveNoWait());
+
+      //selector should only receive one
+      receivedMsg = (TextMessage) selectorConsumer.receive(1000);
+      assertNotNull(receivedMsg);
+      assertEquals(body2, receivedMsg.getText());
+      assertEquals("test", receivedMsg.getStringProperty("TESTKEY"));
+
+      assertNull(selectorConsumer.receiveNoWait());
+
+      //send from another connection
+      Connection anotherConn = this.factory.createConnection();
+      try {
+         anotherConn.start();
+
+         Session anotherSession = anotherConn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         MessageProducer anotherProducer = anotherSession.createProducer(dest);
+         TextMessage anotherMsg = anotherSession.createTextMessage(body1);
+         anotherProducer.send(anotherMsg);
+
+         assertNotNull(consumer.receive(1000));
+         assertNull(selectorConsumer.receive(1000));
+         assertNotNull(nolocalConsumer.receive(1000));
+      } finally {
+         anotherConn.close();
+      }
+
+      session.close();
+   }
+
+   @Test
+   public void testTempTopicDelete() throws Exception {
+      connection.start();
+      TopicSession topicSession = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+
+      TemporaryTopic tempTopic = topicSession.createTemporaryTopic();
+
+      ActiveMQConnection newConn = (ActiveMQConnection) factory.createConnection();
+
+      try {
+         TopicSession newTopicSession = newConn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+         TopicPublisher publisher = newTopicSession.createPublisher(tempTopic);
+
+         TextMessage msg = newTopicSession.createTextMessage("Test Message");
+
+         publisher.publish(msg);
+
+         try {
+            TopicSubscriber consumer = newTopicSession.createSubscriber(tempTopic);
+            fail("should have gotten exception but got consumer: " + consumer);
+         } catch (JMSException ex) {
+            //correct
+         }
+
+         connection.close();
+
+         try {
+            Message newMsg = newTopicSession.createMessage();
+            publisher.publish(newMsg);
+         } catch (JMSException e) {
+            //ok
+         }
+
+      } finally {
+         newConn.close();
+      }
+   }
+
+   @Test
+   public void testTempQueueDelete() throws Exception {
+      connection.start();
+      QueueSession queueSession = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+
+      TemporaryQueue tempQueue = queueSession.createTemporaryQueue();
+
+      ActiveMQConnection newConn = (ActiveMQConnection) factory.createConnection();
+      try {
+         QueueSession newQueueSession = newConn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+         QueueSender queueSender = newQueueSession.createSender(tempQueue);
+
+         Message msg = queueSession.createMessage();
+         queueSender.send(msg);
+
+         try {
+            QueueReceiver consumer = newQueueSession.createReceiver(tempQueue);
+            fail("should have gotten exception but got consumer: " + consumer);
+         } catch (JMSException ex) {
+            //correct
+         }
+
+         connection.close();
+
+         try {
+            Message newMsg = newQueueSession.createMessage();
+            queueSender.send(newMsg);
+         } catch (JMSException e) {
+            //ok
+         }
+
+      } finally {
+         newConn.close();
+      }
    }
 
    @Test

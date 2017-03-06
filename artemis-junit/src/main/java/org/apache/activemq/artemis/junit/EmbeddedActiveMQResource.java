@@ -39,7 +39,7 @@ import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
@@ -207,9 +207,9 @@ public class EmbeddedActiveMQResource extends ExternalResource {
    protected void after() {
       log.info("Stopping {}: {}", this.getClass().getSimpleName(), getServerName());
 
-      super.after();
-
       this.stop();
+
+      super.after();
    }
 
    public boolean isUseDurableMessage() {

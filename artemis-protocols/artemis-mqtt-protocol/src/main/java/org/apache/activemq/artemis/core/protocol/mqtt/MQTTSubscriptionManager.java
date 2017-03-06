@@ -31,7 +31,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 
@@ -68,24 +68,18 @@ public class MQTTSubscriptionManager {
 
    synchronized void start() throws Exception {
       for (MqttTopicSubscription subscription : session.getSessionState().getSubscriptions()) {
-         String coreAddress = MQTTUtil.convertMQTTAddressFilterToCore(subscription.topicName());
+         String coreAddress = MQTTUtil.convertMQTTAddressFilterToCore(subscription.topicName(), session.getWildcardConfiguration());
          Queue q = createQueueForSubscription(coreAddress, subscription.qualityOfService().value());
          createConsumerForSubscriptionQueue(q, subscription.topicName(), subscription.qualityOfService().value());
       }
    }
 
-   synchronized void stop(boolean clean) throws Exception {
+   synchronized void stop() throws Exception {
       for (ServerConsumer consumer : consumers.values()) {
          consumer.setStarted(false);
          consumer.disconnect();
          consumer.getQueue().removeConsumer(consumer);
          consumer.close(false);
-      }
-
-      if (clean) {
-         for (ServerConsumer consumer : consumers.values()) {
-            session.getServer().destroyQueue(consumer.getQueue().getName());
-         }
       }
    }
 
@@ -170,9 +164,9 @@ public class MQTTSubscriptionManager {
       int qos = subscription.qualityOfService().value();
       String topic = subscription.topicName();
 
-      String coreAddress = MQTTUtil.convertMQTTAddressFilterToCore(topic);
+      String coreAddress = MQTTUtil.convertMQTTAddressFilterToCore(topic, session.getWildcardConfiguration());
 
-      session.getSessionState().addSubscription(subscription);
+      session.getSessionState().addSubscription(subscription, session.getWildcardConfiguration());
 
       Queue q = createQueueForSubscription(coreAddress, qos);
 
@@ -192,15 +186,21 @@ public class MQTTSubscriptionManager {
 
    // FIXME: Do we need this synchronzied?
    private synchronized void removeSubscription(String address) throws Exception {
-      ServerConsumer consumer = consumers.get(address);
-      String internalAddress = MQTTUtil.convertMQTTAddressFilterToCore(address);
-      SimpleString internalQueueName = getQueueNameForTopic(internalAddress);
+      String internalAddress = MQTTUtil.convertMQTTAddressFilterToCore(address, session.getWildcardConfiguration());
 
-      Queue queue = session.getServer().locateQueue(internalQueueName);
-      queue.deleteQueue(true);
+      SimpleString internalQueueName = getQueueNameForTopic(internalAddress);
       session.getSessionState().removeSubscription(address);
+
+      ServerConsumer consumer = consumers.get(address);
       consumers.remove(address);
-      consumerQoSLevels.remove(consumer.getID());
+      if (consumer != null) {
+         consumer.removeItself();
+         consumerQoSLevels.remove(consumer.getID());
+      }
+
+      if (session.getServerSession().executeQueueQuery(internalQueueName).isExists()) {
+         session.getServerSession().deleteQueue(internalQueueName);
+      }
    }
 
    private SimpleString getQueueNameForTopic(String topic) {
@@ -228,4 +228,9 @@ public class MQTTSubscriptionManager {
       return consumerQoSLevels;
    }
 
+   void clean() throws Exception {
+      for (MqttTopicSubscription mqttTopicSubscription : session.getSessionState().getSubscriptions()) {
+         removeSubscription(mqttTopicSubscription.topicName());
+      }
+   }
 }

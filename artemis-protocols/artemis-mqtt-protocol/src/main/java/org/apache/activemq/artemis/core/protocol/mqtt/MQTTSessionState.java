@@ -28,50 +28,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.apache.activemq.artemis.api.core.Pair;
-import org.apache.activemq.artemis.core.server.ServerMessage;
+import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 
 public class MQTTSessionState {
 
    private String clientId;
 
-   private ServerMessage willMessage;
-
    private final ConcurrentMap<String, MqttTopicSubscription> subscriptions = new ConcurrentHashMap<>();
 
    // Used to store Packet ID of Publish QoS1 and QoS2 message.  See spec: 4.3.3 QoS 2: Exactly once delivery.  Method B.
-   private Map<Integer, MQTTMessageInfo> messageRefStore;
+   private final Map<Integer, MQTTMessageInfo> messageRefStore = new ConcurrentHashMap<>();
 
-   private ConcurrentMap<String, Map<Long, Integer>> addressMessageMap;
+   private final ConcurrentMap<String, Map<Long, Integer>> addressMessageMap = new ConcurrentHashMap<>();
 
-   private Set<Integer> pubRec;
-
-   private Set<Integer> pub;
+   private final Set<Integer>  pubRec = new HashSet<>();
 
    private boolean attached = false;
-
-   // Objects track the Outbound message references
-   private Map<Integer, Pair<String, Long>> outboundMessageReferenceStore;
-
-   private ConcurrentMap<String, ConcurrentMap<Long, Integer>> reverseOutboundReferenceStore;
-
-   private final Object outboundLock = new Object();
-
-   // FIXME We should use a better mechanism for creating packet IDs.
-   private AtomicInteger lastId = new AtomicInteger(0);
 
    private final OutboundStore outboundStore = new OutboundStore();
 
    public MQTTSessionState(String clientId) {
       this.clientId = clientId;
+   }
 
-      pubRec = new HashSet<>();
-      pub = new HashSet<>();
-
-      outboundMessageReferenceStore = new ConcurrentHashMap<>();
-      reverseOutboundReferenceStore = new ConcurrentHashMap<>();
-
-      messageRefStore = new ConcurrentHashMap<>();
-      addressMessageMap = new ConcurrentHashMap<>();
+   public synchronized void clear() {
+      subscriptions.clear();
+      messageRefStore.clear();
+      addressMessageMap.clear();
+      pubRec.clear();
+      outboundStore.clear();
    }
 
    OutboundStore getOutboundStore() {
@@ -90,29 +75,13 @@ public class MQTTSessionState {
       this.attached = attached;
    }
 
-   boolean isWill() {
-      return willMessage != null;
-   }
-
-   ServerMessage getWillMessage() {
-      return willMessage;
-   }
-
-   void setWillMessage(ServerMessage willMessage) {
-      this.willMessage = willMessage;
-   }
-
-   void deleteWillMessage() {
-      willMessage = null;
-   }
-
    Collection<MqttTopicSubscription> getSubscriptions() {
       return subscriptions.values();
    }
 
-   boolean addSubscription(MqttTopicSubscription subscription) {
+   boolean addSubscription(MqttTopicSubscription subscription, WildcardConfiguration wildcardConfiguration) {
       synchronized (subscriptions) {
-         addressMessageMap.putIfAbsent(MQTTUtil.convertMQTTAddressFilterToCore(subscription.topicName()), new ConcurrentHashMap<Long, Integer>());
+         addressMessageMap.putIfAbsent(MQTTUtil.convertMQTTAddressFilterToCore(subscription.topicName(), wildcardConfiguration), new ConcurrentHashMap<Long, Integer>());
 
          MqttTopicSubscription existingSubscription = subscriptions.get(subscription.topicName());
          if (existingSubscription != null) {
@@ -159,9 +128,9 @@ public class MQTTSessionState {
 
    public class OutboundStore {
 
-      private final HashMap<String, Integer> artemisToMqttMessageMap = new HashMap<>();
+      private HashMap<String, Integer> artemisToMqttMessageMap = new HashMap<>();
 
-      private final HashMap<Integer, Pair<Long, Long>> mqttToServerIds = new HashMap<>();
+      private HashMap<Integer, Pair<Long, Long>> mqttToServerIds = new HashMap<>();
 
       private final Object dataStoreLock = new Object();
 
@@ -201,6 +170,14 @@ public class MQTTSessionState {
 
       public Pair<Long, Long> publishComplete(int mqtt) {
          return publishAckd(mqtt);
+      }
+
+      public void clear() {
+         synchronized (dataStoreLock) {
+            artemisToMqttMessageMap.clear();
+            mqttToServerIds.clear();
+            ids.set(0);
+         }
       }
    }
 }

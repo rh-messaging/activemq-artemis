@@ -53,7 +53,8 @@ import org.apache.activemq.artemis.core.remoting.impl.invm.TransportConstants;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
@@ -200,7 +201,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -226,7 +227,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -251,7 +252,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -285,7 +286,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString(), true, true);
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
       checkNoResource(ObjectNameBuilder.DEFAULT.getAddressObjectName(address));
    }
 
@@ -297,7 +298,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       ActiveMQServerControl serverControl = createManagementControl();
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
       serverControl.createAddress(address.toString(), "ANYCAST");
       serverControl.createQueue(address.toString(), "ANYCAST", name.toString(), null, durable, -1, false, false);
 
@@ -318,7 +319,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       }, 1000, 100);
       Assert.assertTrue(consumer.isClosed());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -344,7 +345,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -370,7 +371,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name, RoutingType.ANYCAST));
    }
 
    @Test
@@ -408,6 +409,29 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       Assert.assertTrue(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
 
       serverControl.destroyQueue(name.toString());
+      Assert.assertFalse(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
+   }
+
+   @Test
+   public void testGetAddressDeletedFromJournal() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      // due to replication, there can be another queue created for replicating
+      // management operations
+
+      Assert.assertFalse(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
+      serverControl.createAddress(address.toString(), "ANYCAST");
+      Assert.assertTrue(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
+
+      restartServer();
+
+      serverControl.deleteAddress(address.toString());
+
+      restartServer();
+
       Assert.assertFalse(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
    }
 
@@ -995,6 +1019,12 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       producer2.send(message);
 
       session.commit();
+
+      // flush executors on queues so we can get precise number of messages
+      Queue queue1 = server.locateQueue(SimpleString.toSimpleString(random1));
+      queue1.flushExecutor();
+      Queue queue2 = server.locateQueue(SimpleString.toSimpleString(random1));
+      queue2.flushExecutor();
 
       assertEquals(2, serverControl.getTotalMessageCount());
 

@@ -62,7 +62,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.BindingQueryResult;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.SlowConsumerDetectionListener;
@@ -155,6 +155,8 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    private final Map<SessionId, AMQSession> sessions = new ConcurrentHashMap<>();
 
    private ConnectionState state;
+
+   private volatile boolean noLocal;
 
    /**
     * Openwire doesn't sen transactions associated with any sessions.
@@ -287,7 +289,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
             if (responseRequired) {
                if (response == null) {
                   response = new Response();
-                  response.setCorrelationId(command.getCommandId());
+                  response.setCorrelationId(commandId);
                }
             }
 
@@ -337,6 +339,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    public void sendException(Exception e) {
       Response resp = convertException(e);
+      if (context != null) {
+         Command command = context.getLastCommand();
+         if (command != null) {
+            resp.setCorrelationId(command.getCommandId());
+         }
+      }
       try {
          dispatch(resp);
       } catch (IOException e2) {
@@ -729,6 +737,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
          }
       }
 
+      if (dest.isTemporary()) {
+         //Openwire needs to store the DestinationInfo in order to send
+         //Advisory messages to clients
+         this.state.addTempDestination(info);
+      }
+
       if (!AdvisorySupport.isAdvisoryTopic(dest)) {
          AMQConnectionContext context = getContext();
          DestinationInfo advInfo = new DestinationInfo(context.getConnectionId(), DestinationInfo.ADD_OPERATION_TYPE, dest);
@@ -771,6 +785,19 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
          this.addConsumerBrokerExchange(info.getConsumerId(), amqSession, consumersList);
          ss.addConsumer(info);
          amqSession.start();
+
+         if (AdvisorySupport.isAdvisoryTopic(info.getDestination())) {
+            //advisory for temp destinations
+            if (AdvisorySupport.isTempDestinationAdvisoryTopic(info.getDestination())) {
+               // Replay the temporary destinations.
+               List<DestinationInfo> tmpDests = this.protocolManager.getTemporaryDestinations();
+               for (DestinationInfo di : tmpDests) {
+                  ActiveMQTopic topic = AdvisorySupport.getDestinationAdvisoryTopic(di.getDestination());
+                  String originalConnectionId = di.getConnectionId().getValue();
+                  protocolManager.fireAdvisory(context, topic, di, info.getConsumerId(), originalConnectionId);
+               }
+            }
+         }
       }
    }
 
@@ -814,6 +841,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    @Override
    public void tempQueueDeleted(SimpleString bindingName) {
       ActiveMQDestination dest = new ActiveMQTempQueue(bindingName.toString());
+      state.removeTempDestination(dest);
 
       if (!AdvisorySupport.isAdvisoryTopic(dest)) {
          AMQConnectionContext context = getContext();
@@ -836,6 +864,18 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       disableTtl.set(false);
    }
 
+   public boolean isNoLocal() {
+      return noLocal;
+   }
+
+   public void setNoLocal(boolean noLocal) {
+      this.noLocal = noLocal;
+   }
+
+   public List<DestinationInfo> getTemporaryDestinations() {
+      return state.getTempDestinations();
+   }
+
    class SlowConsumerDetection implements SlowConsumerDetectionListener {
 
       @Override
@@ -846,7 +886,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
             ActiveMQMessage advisoryMessage = new ActiveMQMessage();
             try {
                advisoryMessage.setStringProperty(AdvisorySupport.MSG_PROPERTY_CONSUMER_ID, amqConsumer.getId().toString());
-               protocolManager.fireAdvisory(context, topic, advisoryMessage, amqConsumer.getId());
+               protocolManager.fireAdvisory(context, topic, advisoryMessage, amqConsumer.getId(), null);
             } catch (Exception e) {
                ActiveMQServerLogger.LOGGER.warn("Error during method invocation", e);
             }
@@ -1401,6 +1441,9 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
       @Override
       public Response processRemoveConsumer(ConsumerId id, long lastDeliveredSequenceId) throws Exception {
+         if (destroyed) {
+            return null;
+         }
          SessionId sessionId = id.getParentId();
          SessionState ss = state.getSessionState(sessionId);
          if (ss == null) {

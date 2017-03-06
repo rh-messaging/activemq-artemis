@@ -56,7 +56,7 @@ import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueConfig;
 import org.apache.activemq.artemis.core.server.QueueFactory;
-import org.apache.activemq.artemis.core.server.RoutingType;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerMessage;
 import org.apache.activemq.artemis.core.server.group.GroupingHandler;
 import org.apache.activemq.artemis.core.server.group.impl.GroupBinding;
@@ -178,6 +178,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
          addressBindingInfosMap.put(addressBindingInfo.getId(), addressBindingInfo);
 
          AddressInfo addressInfo = new AddressInfo(addressBindingInfo.getName()).setRoutingTypes(addressBindingInfo.getRoutingTypes());
+         addressInfo.setId(addressBindingInfo.getId());
          postOffice.addAddressInfo(addressInfo);
       }
    }
