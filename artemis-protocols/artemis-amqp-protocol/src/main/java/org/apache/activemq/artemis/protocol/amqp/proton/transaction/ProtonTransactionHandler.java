@@ -16,14 +16,11 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.proton.transaction;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPException;
-import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolMessageBundle;
+import org.apache.activemq.artemis.protocol.amqp.proton.AMQPConnectionContext;
 import org.apache.activemq.artemis.protocol.amqp.proton.ProtonDeliveryHandler;
 import org.apache.activemq.artemis.protocol.amqp.util.DeliveryUtil;
-import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -45,16 +42,19 @@ public class ProtonTransactionHandler implements ProtonDeliveryHandler {
 
    private static final Logger log = Logger.getLogger(ProtonTransactionHandler.class);
 
-   final AMQPSessionCallback sessionSPI;
+   public static final int DEFAULT_COORDINATOR_CREDIT = 100;
+   public static final int CREDIT_LOW_WATERMARK = 30;
 
-   public ProtonTransactionHandler(AMQPSessionCallback sessionSPI) {
+   final AMQPSessionCallback sessionSPI;
+   final AMQPConnectionContext connection;
+
+   public ProtonTransactionHandler(AMQPSessionCallback sessionSPI, AMQPConnectionContext connection) {
       this.sessionSPI = sessionSPI;
+      this.connection = connection;
    }
 
    @Override
    public void onMessage(Delivery delivery) throws ActiveMQAMQPException {
-      ByteBuf buffer = PooledByteBufAllocator.DEFAULT.heapBuffer(1024);
-
       final Receiver receiver;
       try {
          receiver = ((Receiver) delivery.getLink());
@@ -63,9 +63,21 @@ public class ProtonTransactionHandler implements ProtonDeliveryHandler {
             return;
          }
 
-         receiver.recv(new NettyWritable(buffer));
+         byte[] buffer;
 
-         receiver.advance();
+         synchronized (connection.getLock()) {
+            // Replenish coordinator receiver credit on exhaustion so sender can continue
+            // transaction declare and discahrge operations.
+            if (receiver.getCredit() < CREDIT_LOW_WATERMARK) {
+               receiver.flow(DEFAULT_COORDINATOR_CREDIT);
+            }
+
+            buffer = new byte[delivery.available()];
+            receiver.recv(buffer, 0, buffer.length);
+            receiver.advance();
+         }
+
+
 
          MessageImpl msg = DeliveryUtil.decodeMessageImpl(buffer);
 
@@ -75,38 +87,47 @@ public class ProtonTransactionHandler implements ProtonDeliveryHandler {
             Binary txID = sessionSPI.newTransaction();
             Declared declared = new Declared();
             declared.setTxnId(txID);
-            delivery.disposition(declared);
+            synchronized (connection.getLock()) {
+               delivery.disposition(declared);
+            }
          } else if (action instanceof Discharge) {
             Discharge discharge = (Discharge) action;
 
             Binary txID = discharge.getTxnId();
-            sessionSPI.dischargeTx(txID);
+            ProtonTransactionImpl tx = (ProtonTransactionImpl)sessionSPI.getTransaction(txID, true);
+            tx.discharge();
+
             if (discharge.getFail()) {
-               try {
-                  sessionSPI.rollbackTX(txID, true);
+               tx.rollback();
+               synchronized (connection.getLock()) {
                   delivery.disposition(new Accepted());
-               } catch (Exception e) {
-                  throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.errorRollingbackCoordinator(e.getMessage());
                }
+               connection.flush();
             } else {
-               try {
-                  sessionSPI.commitTX(txID);
+               tx.commit();
+               synchronized (connection.getLock()) {
                   delivery.disposition(new Accepted());
-               } catch (ActiveMQAMQPException amqpE) {
-                  throw amqpE;
-               } catch (Exception e) {
-                  throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.errorCommittingCoordinator(e.getMessage());
                }
+               connection.flush();
             }
          }
       } catch (ActiveMQAMQPException amqpE) {
-         delivery.disposition(createRejected(amqpE.getAmqpError(), amqpE.getMessage()));
-      } catch (Exception e) {
+         log.warn(amqpE.getMessage(), amqpE);
+         synchronized (connection.getLock()) {
+            delivery.disposition(createRejected(amqpE.getAmqpError(), amqpE.getMessage()));
+         }
+         connection.flush();
+      } catch (Throwable e) {
          log.warn(e.getMessage(), e);
-         delivery.disposition(createRejected(Symbol.getSymbol("failed"), e.getMessage()));
+         synchronized (connection.getLock()) {
+            delivery.disposition(createRejected(Symbol.getSymbol("failed"), e.getMessage()));
+         }
+         connection.flush();
       } finally {
-         delivery.settle();
-         buffer.release();
+         synchronized (connection.getLock()) {
+            delivery.settle();
+         }
+         connection.flush();
       }
    }
 

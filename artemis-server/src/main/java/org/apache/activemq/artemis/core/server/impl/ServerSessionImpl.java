@@ -38,6 +38,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQIllegalStateException;
 import org.apache.activemq.artemis.api.core.ActiveMQNonExistentQueueException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
@@ -69,9 +70,7 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.RoutingContext;
-import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
-
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.TempQueueObserver;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
@@ -1286,10 +1285,10 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    @Override
-   public RoutingStatus send(Transaction tx,
-                             final Message message,
-                             final boolean direct,
-                             boolean noAutoCreateQueue) throws Exception {
+   public synchronized RoutingStatus send(Transaction tx,
+                                          final Message message,
+                                          final boolean direct,
+                                          boolean noAutoCreateQueue) throws Exception {
 
       // If the protocol doesn't support flow control, we have no choice other than fail the communication
       if (!this.getRemotingConnection().isSupportsFlowControl() && pagingManager.isDiskFull()) {
@@ -1311,14 +1310,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          message.putStringProperty(Message.HDR_VALIDATED_USER, SimpleString.toSimpleString(validatedUser));
       }
 
-      SimpleString originalAddress = message.getAddressSimpleString();
-
-      SimpleString address = removePrefix(message.getAddressSimpleString());
-
-      // In case the prefix was removed, we also need to update the message
-      if (address != message.getAddressSimpleString()) {
-         message.setAddress(address);
-      }
+      SimpleString address = message.getAddressSimpleString();
 
       if (defaultAddress == null && address != null) {
          defaultAddress = address;
@@ -1343,7 +1335,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
          handleManagementMessage(tx, message, direct);
       } else {
-         result = doSend(tx, message, originalAddress, direct, noAutoCreateQueue);
+         result = doSend(tx, message, address, direct, noAutoCreateQueue);
       }
       return result;
    }
@@ -1619,23 +1611,24 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    @Override
-   public RoutingStatus doSend(final Transaction tx,
-                               final Message msg,
-                               final SimpleString originalAddress,
-                               final boolean direct,
-                               final boolean noAutoCreateQueue) throws Exception {
+   public synchronized RoutingStatus doSend(final Transaction tx,
+                                            final Message msg,
+                                            final SimpleString originalAddress,
+                                            final boolean direct,
+                                            final boolean noAutoCreateQueue) throws Exception {
+
       RoutingStatus result = RoutingStatus.OK;
 
       RoutingType routingType = msg.getRouteType();
 
-      /* TODO-now: How to address here with AMQP?
-      if (originalAddress != null) {
-         if (originalAddress.toString().startsWith("anycast:")) {
-            routingType = RoutingType.ANYCAST;
-         } else if (originalAddress.toString().startsWith("multicast:")) {
-            routingType = RoutingType.MULTICAST;
-         }
-      } */
+         /* TODO-now: How to address here with AMQP?
+         if (originalAddress != null) {
+            if (originalAddress.toString().startsWith("anycast:")) {
+               routingType = RoutingType.ANYCAST;
+            } else if (originalAddress.toString().startsWith("multicast:")) {
+               routingType = RoutingType.MULTICAST;
+            }
+         } */
 
       Pair<SimpleString, RoutingType> art = getAddressAndRoutingType(msg.getAddressSimpleString(), routingType);
 
@@ -1700,7 +1693,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public Pair<SimpleString, RoutingType> getAddressAndRoutingType(SimpleString address,
-                                                                    RoutingType defaultRoutingType) {
+                                                                   RoutingType defaultRoutingType) {
       if (prefixEnabled) {
          return PrefixUtil.getAddressAndRoutingType(address, defaultRoutingType, prefixes);
       }
@@ -1709,7 +1702,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public Pair<SimpleString, Set<RoutingType>> getAddressAndRoutingTypes(SimpleString address,
-                                                                          Set<RoutingType> defaultRoutingTypes) {
+                                                                         Set<RoutingType> defaultRoutingTypes) {
       if (prefixEnabled) {
          return PrefixUtil.getAddressAndRoutingTypes(address, defaultRoutingTypes, prefixes);
       }

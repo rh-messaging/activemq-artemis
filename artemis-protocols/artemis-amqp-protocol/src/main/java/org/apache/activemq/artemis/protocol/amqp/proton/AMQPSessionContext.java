@@ -142,13 +142,13 @@ public class AMQPSessionContext extends ProtonInitializable {
    }
 
    public void addTransactionHandler(Coordinator coordinator, Receiver receiver) {
-      ProtonTransactionHandler transactionHandler = new ProtonTransactionHandler(sessionSPI);
+      ProtonTransactionHandler transactionHandler = new ProtonTransactionHandler(sessionSPI, connection);
 
       coordinator.setCapabilities(Symbol.getSymbol("amqp:local-transactions"), Symbol.getSymbol("amqp:multi-txns-per-ssn"), Symbol.getSymbol("amqp:multi-ssns-per-txn"));
 
       receiver.setContext(transactionHandler);
       receiver.open();
-      receiver.flow(100);
+      receiver.flow(ProtonTransactionHandler.DEFAULT_COORDINATOR_CREDIT);
    }
 
    public void addSender(Sender sender) throws Exception {

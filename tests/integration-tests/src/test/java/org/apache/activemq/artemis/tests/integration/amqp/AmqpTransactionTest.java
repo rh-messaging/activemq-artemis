@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,9 +17,21 @@
 
 package org.apache.activemq.artemis.tests.integration.amqp;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.DeliveryMode;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
+import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
@@ -27,12 +39,23 @@ import org.apache.activemq.transport.amqp.client.AmqpMessage;
 import org.apache.activemq.transport.amqp.client.AmqpReceiver;
 import org.apache.activemq.transport.amqp.client.AmqpSender;
 import org.apache.activemq.transport.amqp.client.AmqpSession;
+import org.apache.activemq.transport.amqp.client.AmqpValidator;
+import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.transaction.TransactionalState;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
+import org.apache.qpid.proton.engine.Delivery;
+import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test various aspects of Transaction support.
  */
 public class AmqpTransactionTest extends AmqpClientTestSupport {
+
+   private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionTest.class);
 
    @Test(timeout = 30000)
    public void testBeginAndCommitTransaction() throws Exception {
@@ -44,6 +67,61 @@ public class AmqpTransactionTest extends AmqpClientTestSupport {
       session.begin();
       assertTrue(session.isInTransaction());
       session.commit();
+
+      connection.close();
+   }
+
+   @Test(timeout = 30000)
+   public void testCoordinatorReplenishesCredit() throws Exception {
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = addConnection(client.connect());
+      AmqpSession session = connection.createSession();
+      assertNotNull(session);
+
+      for (int i = 0; i < 1000; ++i) {
+         session.begin();
+         assertTrue(session.isInTransaction());
+         session.commit();
+      }
+
+      connection.close();
+   }
+
+   @Test(timeout = 30000)
+   public void testSentTransactionalMessageIsSettleWithTransactionalDisposition() throws Exception {
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = addConnection(client.connect());
+      AmqpSession session = connection.createSession();
+      assertNotNull(session);
+
+      AmqpSender sender = session.createSender(getTestName());
+      sender.setStateInspector(new AmqpValidator() {
+
+         @Override
+         public void inspectDeliveryUpdate(Delivery delivery) {
+            if (delivery.remotelySettled()) {
+               DeliveryState state = delivery.getRemoteState();
+               if (state instanceof TransactionalState) {
+                  LOG.debug("Remote settled with TX state: {}", state);
+               } else {
+                  LOG.warn("Remote settled with non-TX state: {}", state);
+                  markAsInvalid("Remote did not settled with TransactionState.");
+               }
+            }
+         }
+      });
+
+      session.begin();
+
+      assertTrue(session.isInTransaction());
+
+      AmqpMessage message = new AmqpMessage();
+      message.setText("Test-Message");
+      sender.send(message);
+
+      session.commit();
+
+      sender.getStateInspector().assertValid();
 
       connection.close();
    }
@@ -769,6 +847,145 @@ public class AmqpTransactionTest extends AmqpClientTestSupport {
       // Should be nothing left.
       receiver.flow(1);
       assertNull(receiver.receive(1, TimeUnit.SECONDS));
+
+      connection.close();
+   }
+
+   @Test(timeout = 120000)
+   public void testSendPersistentTX() throws Exception {
+      int MESSAGE_COUNT = 100000;
+      AtomicInteger errors = new AtomicInteger(0);
+      server.createQueue(SimpleString.toSimpleString("q1"), RoutingType.ANYCAST, SimpleString.toSimpleString("q1"), null, true, false, 1, false, true);
+      ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:61616");
+      Connection sendConnection = factory.createConnection();
+      Connection consumerConnection = factory.createConnection();
+      try {
+
+         Thread receiverThread = new Thread() {
+            @Override
+            public void run() {
+               try {
+                  consumerConnection.start();
+                  Session consumerSession = consumerConnection.createSession(true, Session.SESSION_TRANSACTED);
+                  javax.jms.Queue q1 = consumerSession.createQueue("q1");
+
+                  MessageConsumer consumer = consumerSession.createConsumer(q1);
+
+                  for (int i = 1; i <= MESSAGE_COUNT; i++) {
+                     Message message = consumer.receive(5000);
+                     if (message == null) {
+                        throw new IOException("No message read in time.");
+                     }
+
+                     if (i % 100 == 0) {
+                        if (i % 1000 == 0) System.out.println("Read message " + i);
+                        consumerSession.commit();
+                     }
+                  }
+
+                  // Assure that all messages are consumed
+                  consumerSession.commit();
+               } catch (Exception e) {
+                  e.printStackTrace();
+                  errors.incrementAndGet();
+               }
+
+            }
+         };
+
+         receiverThread.start();
+
+         Session sendingSession = sendConnection.createSession(true, Session.SESSION_TRANSACTED);
+
+         javax.jms.Queue q1 = sendingSession.createQueue("q1");
+         MessageProducer producer = sendingSession.createProducer(q1);
+         producer.setDeliveryDelay(DeliveryMode.NON_PERSISTENT);
+         for (int i = 0; i < MESSAGE_COUNT; i++) {
+            producer.send(sendingSession.createTextMessage("message " + i), DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            if (i % 100 == 0) {
+               if (i % 1000 == 0) System.out.println("Sending " + i);
+               sendingSession.commit();
+            }
+         }
+
+         sendingSession.commit();
+
+         receiverThread.join(50000);
+         Assert.assertFalse(receiverThread.isAlive());
+
+         Assert.assertEquals(0, errors.get());
+
+      } catch (Exception e) {
+         e.printStackTrace();
+      } finally {
+         sendConnection.close();
+         consumerConnection.close();
+      }
+   }
+
+   @Test(timeout = 30000)
+   public void testUnsettledTXMessageGetTransactedDispostion() throws Exception {
+      AmqpClient client = createAmqpClient();
+      AmqpConnection connection = addConnection(client.connect());
+      AmqpSession session = connection.createSession();
+      assertNotNull(session);
+
+      AmqpSender sender = session.createSender(getTestName());
+      AmqpMessage message = new AmqpMessage();
+      message.setText("Test-Message");
+      sender.send(message);
+
+      AmqpReceiver receiver = session.createReceiver(getTestName());
+      receiver.setStateInspector(new AmqpValidator() {
+
+         @Override
+         public void inspectDeliveryUpdate(Delivery delivery) {
+            if (delivery.remotelySettled()) {
+               LOG.info("Receiver got delivery update for: {}", delivery);
+               if (!(delivery.getRemoteState() instanceof TransactionalState)) {
+                  markAsInvalid("Transactionally acquire work no tagged as being in a transaction.");
+               } else {
+                  TransactionalState txState = (TransactionalState) delivery.getRemoteState();
+                  if (!(txState.getOutcome() instanceof Accepted)) {
+                     markAsInvalid("Transaction state lacks any outcome");
+                  } else if (txState.getTxnId() == null) {
+                     markAsInvalid("Transaction state lacks any TX Id");
+                  }
+               }
+
+               if (!(delivery.getLocalState() instanceof TransactionalState)) {
+                  markAsInvalid("Transactionally acquire work no tagged as being in a transaction.");
+               } else {
+                  TransactionalState txState = (TransactionalState) delivery.getLocalState();
+                  if (!(txState.getOutcome() instanceof Accepted)) {
+                     markAsInvalid("Transaction state lacks any outcome");
+                  } else if (txState.getTxnId() == null) {
+                     markAsInvalid("Transaction state lacks any TX Id");
+                  }
+               }
+
+               TransactionalState localTxState = (TransactionalState) delivery.getLocalState();
+               TransactionalState remoteTxState = (TransactionalState) delivery.getRemoteState();
+
+               if (!localTxState.getTxnId().equals(remoteTxState)) {
+                  markAsInvalid("Message not enrolled in expected transaction");
+               }
+            }
+         }
+      });
+
+      session.begin();
+
+      assertTrue(session.isInTransaction());
+
+      receiver.flow(1);
+      AmqpMessage received = receiver.receive(2, TimeUnit.SECONDS);
+      assertNotNull(received);
+      received.accept(false);
+
+      session.commit();
+
+      sender.getStateInspector().assertValid();
 
       connection.close();
    }

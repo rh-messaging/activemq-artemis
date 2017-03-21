@@ -18,14 +18,12 @@ package org.apache.activemq.artemis.protocol.amqp.broker;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQPropertyConversionException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
@@ -40,7 +38,10 @@ import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
 import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.utils.DataConstants;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.proton.amqp.UnsignedShort;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Header;
@@ -52,25 +53,30 @@ import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.impl.MessageImpl;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+
 // see https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-message-format
 public class AMQPMessage extends RefCountMessage {
 
    final long messageFormat;
    ByteBuf data;
    boolean bufferValid;
-   byte type;
+   boolean durable;
    long messageID;
    String address;
    MessageImpl protonMessage;
    private volatile int memoryEstimate = -1;
    private long expiration = 0;
    // this is to store where to start sending bytes, ignoring header and delivery annotations.
-   private int sendFrom = -1;
+   private int sendFrom = 0;
    private boolean parsedHeaders = false;
    private Header _header;
    private DeliveryAnnotations _deliveryAnnotations;
    private MessageAnnotations _messageAnnotations;
    private Properties _properties;
+   private int appLocation = -1;
    private ApplicationProperties applicationProperties;
    private long scheduledTime = -1;
    private String connectionID;
@@ -79,6 +85,7 @@ public class AMQPMessage extends RefCountMessage {
       this.data = Unpooled.wrappedBuffer(data);
       this.messageFormat = messageFormat;
       this.bufferValid = true;
+      parseHeaders();
 
    }
 
@@ -91,7 +98,8 @@ public class AMQPMessage extends RefCountMessage {
 
    public AMQPMessage(long messageFormat, Message message) {
       this.messageFormat = messageFormat;
-      this.protonMessage = (MessageImpl)message;
+      this.protonMessage = (MessageImpl) message;
+      this.bufferValid = false;
 
    }
 
@@ -117,12 +125,12 @@ public class AMQPMessage extends RefCountMessage {
    private void initalizeObjects() {
       if (protonMessage == null) {
          if (data == null) {
-            this.sendFrom = -1;
+            this.sendFrom = 0;
             _header = new Header();
             _deliveryAnnotations = new DeliveryAnnotations(new HashMap<>());
             _properties = new Properties();
             this.applicationProperties = new ApplicationProperties(new HashMap<>());
-            this.protonMessage = (MessageImpl)Message.Factory.create();
+            this.protonMessage = (MessageImpl) Message.Factory.create();
             this.protonMessage.setApplicationProperties(applicationProperties);
             this.protonMessage.setDeliveryAnnotations(_deliveryAnnotations);
          }
@@ -146,6 +154,20 @@ public class AMQPMessage extends RefCountMessage {
 
    private ApplicationProperties getApplicationProperties() {
       parseHeaders();
+
+      if (applicationProperties == null && appLocation >= 0) {
+         ByteBuffer buffer = getBuffer().nioBuffer();
+         buffer.position(appLocation);
+         TLSEncode.getDecoder().setByteBuffer(buffer);
+         Object section = TLSEncode.getDecoder().readObject();
+         if (section instanceof ApplicationProperties) {
+            this.applicationProperties = (ApplicationProperties) section;
+         }
+         this.appLocation = -1;
+         TLSEncode.getDecoder().setByteBuffer(null);
+
+      }
+
       return applicationProperties;
    }
 
@@ -159,6 +181,7 @@ public class AMQPMessage extends RefCountMessage {
          parsedHeaders = true;
       }
    }
+
    @Override
    public org.apache.activemq.artemis.api.core.Message setConnectionID(String connectionID) {
       this.connectionID = connectionID;
@@ -169,7 +192,6 @@ public class AMQPMessage extends RefCountMessage {
    public String getConnectionID() {
       return connectionID;
    }
-
 
    public MessageAnnotations getMessageAnnotations() {
       parseHeaders();
@@ -200,6 +222,16 @@ public class AMQPMessage extends RefCountMessage {
       return null;
    }
 
+   private Object removeSymbol(Symbol symbol) {
+      MessageAnnotations annotations = getMessageAnnotations();
+      Map mapAnnotations = annotations != null ? annotations.getValue() : null;
+      if (mapAnnotations != null) {
+         return mapAnnotations.remove(symbol);
+      }
+
+      return null;
+   }
+
 
    private void setSymbol(String symbol, Object value) {
       setSymbol(Symbol.getSymbol(symbol), value);
@@ -207,6 +239,10 @@ public class AMQPMessage extends RefCountMessage {
 
    private void setSymbol(Symbol symbol, Object value) {
       MessageAnnotations annotations = getMessageAnnotations();
+      if (annotations == null) {
+         _messageAnnotations = new MessageAnnotations(new HashMap<>());
+         annotations = _messageAnnotations;
+      }
       Map mapAnnotations = annotations != null ? annotations.getValue() : null;
       if (mapAnnotations != null) {
          mapAnnotations.put(symbol, value);
@@ -229,10 +265,8 @@ public class AMQPMessage extends RefCountMessage {
             return null;
       } */
 
-
       return null;
    }
-
 
    @Override
    public SimpleString getGroupID() {
@@ -244,7 +278,6 @@ public class AMQPMessage extends RefCountMessage {
          return null;
       }
    }
-
 
    @Override
    public Long getScheduledDeliveryTime() {
@@ -320,7 +353,6 @@ public class AMQPMessage extends RefCountMessage {
             } else {
                section = null;
             }
-
          }
          if (section instanceof MessageAnnotations) {
             _messageAnnotations = (MessageAnnotations) section;
@@ -330,20 +362,27 @@ public class AMQPMessage extends RefCountMessage {
             } else {
                section = null;
             }
-
          }
          if (section instanceof Properties) {
             _properties = (Properties) section;
 
-            if (buffer.hasRemaining()) {
-               section = (Section) decoder.readObject();
-            } else {
-               section = null;
+            if (_properties.getAbsoluteExpiryTime() != null) {
+               this.expiration = _properties.getAbsoluteExpiryTime().getTime();
             }
+
+            // We don't read the next section on purpose, as we will parse ApplicationProperties
+            // lazily
+            section = null;
          }
 
          if (section instanceof ApplicationProperties) {
             applicationProperties = (ApplicationProperties) section;
+         } else {
+            if (buffer.hasRemaining()) {
+               this.appLocation = buffer.position();
+            } else {
+               this.appLocation = -1;
+            }
          }
       } finally {
          decoder.setByteBuffer(null);
@@ -386,7 +425,14 @@ public class AMQPMessage extends RefCountMessage {
    @Override
    public org.apache.activemq.artemis.api.core.Message copy() {
       checkBuffer();
-      AMQPMessage newEncode = new AMQPMessage(this.messageFormat, data.array());
+
+      byte[] origin = data.array();
+      byte[] newData = new byte[data.array().length - sendFrom];
+      for (int i = 0; i < newData.length; i++) {
+         newData[i] = origin[i + sendFrom];
+      }
+      AMQPMessage newEncode = new AMQPMessage(this.messageFormat, newData);
+      newEncode.setDurable(isDurable());
       return newEncode;
    }
 
@@ -414,6 +460,16 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public AMQPMessage setExpiration(long expiration) {
+
+      Properties properties = getProperties();
+
+      if (properties != null) {
+         if (expiration <= 0) {
+            properties.setAbsoluteExpiryTime(null);
+         } else {
+            properties.setAbsoluteExpiryTime(new Date(expiration));
+         }
+      }
       this.expiration = expiration;
       return this;
    }
@@ -438,20 +494,19 @@ public class AMQPMessage extends RefCountMessage {
       if (getHeader() != null && getHeader().getDurable() != null) {
          return getHeader().getDurable().booleanValue();
       } else {
-         return false;
+         return durable;
       }
    }
-
 
    @Override
    public Object getDuplicateProperty() {
       return null;
    }
 
-
    @Override
    public org.apache.activemq.artemis.api.core.Message setDurable(boolean durable) {
-      return null;
+      this.durable = durable;
+      return this;
    }
 
    @Override
@@ -459,7 +514,7 @@ public class AMQPMessage extends RefCountMessage {
       if (address == null) {
          Properties properties = getProtonMessage().getProperties();
          if (properties != null) {
-            return  properties.getTo();
+            return properties.getTo();
          } else {
             return null;
          }
@@ -524,18 +579,26 @@ public class AMQPMessage extends RefCountMessage {
    }
 
    @Override
+   public int getEncodeSize() {
+      checkBuffer();
+      // + 20checkBuffer is an estimate for the Header with the deliveryCount
+      return data.array().length - sendFrom + 20;
+   }
+
+   @Override
    public void sendBuffer(ByteBuf buffer, int deliveryCount) {
       checkBuffer();
       Header header = getHeader();
       if (header == null && deliveryCount > 0) {
          header = new Header();
+         header.setDurable(durable);
       }
       if (header != null) {
          synchronized (header) {
             header.setDeliveryCount(UnsignedInteger.valueOf(deliveryCount - 1));
             TLSEncode.getEncoder().setByteBuffer(new NettyWritable(buffer));
             TLSEncode.getEncoder().writeObject(header);
-            TLSEncode.getEncoder().setByteBuffer((WritableBuffer)null);
+            TLSEncode.getEncoder().setByteBuffer((WritableBuffer) null);
          }
       }
       buffer.writeBytes(data, sendFrom, data.writerIndex() - sendFrom);
@@ -672,27 +735,27 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public Boolean getBooleanProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Boolean)getApplicationPropertiesMap().get(key);
+      return (Boolean) getApplicationPropertiesMap().get(key);
    }
 
    @Override
    public Byte getByteProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Byte)getApplicationPropertiesMap().get(key);
+      return (Byte) getApplicationPropertiesMap().get(key);
    }
 
    @Override
    public Double getDoubleProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Double)getApplicationPropertiesMap().get(key);
+      return (Double) getApplicationPropertiesMap().get(key);
    }
 
    @Override
    public Integer getIntProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Integer)getApplicationPropertiesMap().get(key);
+      return (Integer) getApplicationPropertiesMap().get(key);
    }
 
    @Override
    public Long getLongProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Long)getApplicationPropertiesMap().get(key);
+      return (Long) getApplicationPropertiesMap().get(key);
    }
 
    @Override
@@ -702,18 +765,26 @@ public class AMQPMessage extends RefCountMessage {
       } else if (key.equals(MessageUtil.CONNECTION_ID_PROPERTY_NAME.toString())) {
          return getConnectionID();
       } else {
-         return getApplicationPropertiesMap().get(key);
+         Object value = getApplicationPropertiesMap().get(key);
+         if (value instanceof UnsignedInteger ||
+             value instanceof UnsignedByte ||
+             value instanceof UnsignedLong ||
+             value instanceof UnsignedShort) {
+            return ((Number)value).longValue();
+         } else {
+            return value;
+         }
       }
    }
 
    @Override
    public Short getShortProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Short)getApplicationPropertiesMap().get(key);
+      return (Short) getApplicationPropertiesMap().get(key);
    }
 
    @Override
    public Float getFloatProperty(String key) throws ActiveMQPropertyConversionException {
-      return (Float)getApplicationPropertiesMap().get(key);
+      return (Float) getApplicationPropertiesMap().get(key);
    }
 
    @Override
@@ -723,27 +794,42 @@ public class AMQPMessage extends RefCountMessage {
       } else if (key.equals(MessageUtil.CONNECTION_ID_PROPERTY_NAME.toString())) {
          return getConnectionID();
       } else {
-         return (String)getApplicationPropertiesMap().get(key);
+         return (String) getApplicationPropertiesMap().get(key);
       }
    }
 
    @Override
-   public Object removeDeliveryAnnotationProperty(SimpleString key) {
-      parseHeaders();
-      if (_deliveryAnnotations == null || _deliveryAnnotations.getValue() == null) {
-         return null;
-      }
-      return _deliveryAnnotations.getValue().remove(key.toString());
+   public Object removeAnnotation(SimpleString key) {
+      return removeSymbol(Symbol.getSymbol(key.toString()));
    }
 
    @Override
-   public Object getDeliveryAnnotationProperty(SimpleString key) {
-      return null;
+   public Object getAnnotation(SimpleString key) {
+      return getSymbol(key.toString());
    }
+
+   @Override
+   public AMQPMessage setAnnotation(SimpleString key, Object value) {
+      setSymbol(key.toString(), value);
+      return this;
+   }
+
+
+   @Override
+   public void reencode() {
+      if (_deliveryAnnotations != null) getProtonMessage().setDeliveryAnnotations(_deliveryAnnotations);
+      if (_messageAnnotations != null) getProtonMessage().setMessageAnnotations(_messageAnnotations);
+      if (applicationProperties != null) getProtonMessage().setApplicationProperties(applicationProperties);
+      if (_properties != null) getProtonMessage().setProperties(this._properties);
+      bufferValid = false;
+      checkBuffer();
+   }
+
+
 
    @Override
    public SimpleString getSimpleStringProperty(String key) throws ActiveMQPropertyConversionException {
-      return SimpleString.toSimpleString((String)getApplicationPropertiesMap().get(key));
+      return SimpleString.toSimpleString((String) getApplicationPropertiesMap().get(key));
    }
 
    @Override
@@ -822,11 +908,6 @@ public class AMQPMessage extends RefCountMessage {
    }
 
    @Override
-   public int getEncodeSize() {
-      return 0;
-   }
-
-   @Override
    public Set<SimpleString> getPropertyNames() {
       HashSet<SimpleString> values = new HashSet<>();
       for (Object k : getApplicationPropertiesMap().keySet()) {
@@ -838,8 +919,7 @@ public class AMQPMessage extends RefCountMessage {
    @Override
    public int getMemoryEstimate() {
       if (memoryEstimate == -1) {
-         memoryEstimate = memoryOffset +
-            (data != null ? data.capacity() : 0);
+         memoryEstimate = memoryOffset + (data != null ? data.capacity() : 0);
       }
 
       return memoryEstimate;
@@ -853,7 +933,6 @@ public class AMQPMessage extends RefCountMessage {
          throw new RuntimeException(e.getMessage(), e);
       }
    }
-
 
    @Override
    public SimpleString getReplyTo() {
@@ -873,18 +952,21 @@ public class AMQPMessage extends RefCountMessage {
       return this;
    }
 
-
    @Override
    public int getPersistSize() {
       checkBuffer();
-      return data.array().length + DataConstants.SIZE_INT;
+      return DataConstants.SIZE_INT + internalPersistSize();
+   }
+
+   private int internalPersistSize() {
+      return data.array().length - sendFrom;
    }
 
    @Override
    public void persist(ActiveMQBuffer targetRecord) {
       checkBuffer();
-      targetRecord.writeInt(data.array().length);
-      targetRecord.writeBytes(data.array());
+      targetRecord.writeInt(internalPersistSize());
+      targetRecord.writeBytes(data.array(), sendFrom, data.array().length - sendFrom);
    }
 
    @Override
@@ -892,7 +974,10 @@ public class AMQPMessage extends RefCountMessage {
       int size = record.readInt();
       byte[] recordArray = new byte[size];
       record.readBytes(recordArray);
+      this.sendFrom = 0; // whatever was persisted will be sent
       this.data = Unpooled.wrappedBuffer(recordArray);
       this.bufferValid = true;
+      this.durable = true; // it's coming from the journal, so it's durable
+      parseHeaders();
    }
 }

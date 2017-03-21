@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.broker;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,10 +31,13 @@ import io.netty.channel.ChannelFutureListener;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
+import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.FailureListener;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
+import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPException;
@@ -58,7 +62,7 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
 
    private static final Logger logger = Logger.getLogger(AMQPConnectionCallback.class);
 
-   private ConcurrentMap<XidImpl, Transaction> transactions = new ConcurrentHashMap<>();
+   private ConcurrentMap<Binary, Transaction> transactions = new ConcurrentHashMap<>();
 
    private final ProtonProtocolManager manager;
 
@@ -220,25 +224,32 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
 
    public Binary newTransaction() {
       XidImpl xid = newXID();
+      Binary binary = new Binary(xid.getGlobalTransactionId());
       Transaction transaction = new ProtonTransactionImpl(xid, server.getStorageManager(), -1);
-      transactions.put(xid, transaction);
-      return new Binary(xid.getGlobalTransactionId());
+      transactions.put(binary, transaction);
+      return binary;
    }
 
-   public Transaction getTransaction(Binary txid) throws ActiveMQAMQPException {
-      XidImpl xid = newXID(txid.getArray());
-      Transaction tx = transactions.get(xid);
+   public Transaction getTransaction(Binary txid, boolean remove) throws ActiveMQAMQPException {
+      Transaction tx;
+
+      if (remove) {
+         tx = transactions.remove(txid);
+      } else {
+         tx = transactions.get(txid);
+      }
 
       if (tx == null) {
-         throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.txNotFound(xid.toString());
+         logger.warn("Couldn't find txid = " + txid);
+         throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.txNotFound(txid.toString());
       }
 
       return tx;
    }
 
-   public void removeTransaction(Binary txid) {
+   public Transaction removeTransaction(Binary txid) {
       XidImpl xid = newXID(txid.getArray());
-      transactions.remove(xid);
+      return transactions.remove(xid);
    }
 
    protected XidImpl newXID() {
@@ -249,4 +260,13 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
       return new XidImpl("amqp".getBytes(), 1, bytes);
    }
 
+   public URI getFailoverList() {
+      ClusterManager clusterManager = server.getClusterManager();
+      ClusterConnection clusterConnection = clusterManager.getDefaultConnection(null);
+      if (clusterConnection != null) {
+         TopologyMemberImpl member = clusterConnection.getTopology().getMember(server.getNodeID().toString());
+         return member.toBackupURI();
+      }
+      return null;
+   }
 }

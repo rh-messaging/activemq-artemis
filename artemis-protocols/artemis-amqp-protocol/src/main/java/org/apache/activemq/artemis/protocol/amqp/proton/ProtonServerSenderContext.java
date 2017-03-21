@@ -42,7 +42,6 @@ import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPNotFound
 import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPResourceLimitExceededException;
 import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolMessageBundle;
 import org.apache.activemq.artemis.protocol.amqp.proton.transaction.ProtonTransactionImpl;
-import org.apache.activemq.artemis.protocol.amqp.util.CreditsSemaphore;
 import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.selector.filter.FilterException;
 import org.apache.activemq.artemis.selector.impl.SelectorParser;
@@ -89,11 +88,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
    private boolean multicast;
    //todo get this from somewhere
    private RoutingType defaultRoutingType = RoutingType.ANYCAST;
-   protected CreditsSemaphore creditsSemaphore = new CreditsSemaphore(0);
    private RoutingType routingTypeToUse = defaultRoutingType;
    private boolean shared = false;
    private boolean global = false;
    private boolean isVolatile = false;
+   private String tempQueueName;
 
    public ProtonServerSenderContext(AMQPConnectionContext connection, Sender sender, AMQPSessionContext protonSession, AMQPSessionCallback server) {
       super();
@@ -109,7 +108,6 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
 
    @Override
    public void onFlow(int currentCredits, boolean drain) {
-      this.creditsSemaphore.setCredits(currentCredits);
       sessionSPI.onFlowConsumer(brokerConsumer, currentCredits, drain);
    }
 
@@ -223,6 +221,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          // if dynamic we have to create the node (queue) and set the address on the target, the
          // node is temporary and  will be deleted on closing of the session
          queue = java.util.UUID.randomUUID().toString();
+         tempQueueName = queue;
          try {
             sessionSPI.createTemporaryQueue(queue, RoutingType.ANYCAST);
             // protonSession.getServerSession().createQueue(queue, queue, null, true, false);
@@ -342,6 +341,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                   }
                } else {
                   queue = java.util.UUID.randomUUID().toString();
+                  tempQueueName = queue;
                   try {
                      sessionSPI.createTemporaryQueue(source.getAddress(), queue, RoutingType.MULTICAST, selector);
                   } catch (Exception e) {
@@ -445,16 +445,20 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                if (result.isExists() && source.getDynamic()) {
                   sessionSPI.deleteQueue(queueName);
                } else {
-                  String clientId = getClientId();
-                  String pubId = sender.getName();
-                  if (pubId.contains("|")) {
-                     pubId = pubId.split("\\|")[0];
-                  }
-                  String queue = createQueueName(clientId, pubId, shared, global, isVolatile);
-                  result = sessionSPI.queueQuery(queue, multicast ? RoutingType.MULTICAST : RoutingType.ANYCAST, false);
-                  //only delete if it isn't volatile and has no consumers
-                  if (result.isExists() && !isVolatile && result.getConsumerCount() == 0) {
-                     sessionSPI.deleteQueue(queue);
+                  if (source.getDurable() == TerminusDurability.NONE && tempQueueName != null && (source.getExpiryPolicy() == TerminusExpiryPolicy.LINK_DETACH || source.getExpiryPolicy() == TerminusExpiryPolicy.SESSION_END)) {
+                     sessionSPI.removeTemporaryQueue(tempQueueName);
+                  } else {
+                     String clientId = getClientId();
+                     String pubId = sender.getName();
+                     if (pubId.contains("|")) {
+                        pubId = pubId.split("\\|")[0];
+                     }
+                     String queue = createQueueName(clientId, pubId, shared, global, isVolatile);
+                     result = sessionSPI.queueQuery(queue, multicast ? RoutingType.MULTICAST : RoutingType.ANYCAST, false);
+                     //only delete if it isn't volatile and has no consumers
+                     if (result.isExists() && !isVolatile && result.getConsumerCount() == 0) {
+                        sessionSPI.deleteQueue(queue);
+                     }
                   }
                }
             } else if (source != null && source.getDynamic() && (source.getExpiryPolicy() == TerminusExpiryPolicy.LINK_DETACH || source.getExpiryPolicy() == TerminusExpiryPolicy.SESSION_END)) {
@@ -489,7 +493,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          if (remoteState instanceof TransactionalState) {
 
             TransactionalState txState = (TransactionalState) remoteState;
-            ProtonTransactionImpl tx = (ProtonTransactionImpl) this.sessionSPI.getTransaction(txState.getTxnId());
+            ProtonTransactionImpl tx = (ProtonTransactionImpl) this.sessionSPI.getTransaction(txState.getTxnId(), false);
 
             if (txState.getOutcome() != null) {
                settleImmediate = false;
@@ -583,16 +587,6 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          return 0;
       }
 
-      if (!creditsSemaphore.tryAcquire()) {
-         try {
-            creditsSemaphore.acquire();
-         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            // nothing to be done here.. we just keep going
-            throw new IllegalStateException(e.getMessage(), e);
-         }
-      }
-
       // presettle means we can settle the message on the dealer side before we send it, i.e.
       // for browsers
       boolean preSettle = sender.getRemoteSenderSettleMode() == SenderSettleMode.SETTLED;
@@ -600,7 +594,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
       // we only need a tag if we are going to settle later
       byte[] tag = preSettle ? new byte[0] : protonSession.getTag();
 
-      ByteBuf nettyBuffer = PooledByteBufAllocator.DEFAULT.heapBuffer(1024);
+      ByteBuf nettyBuffer = PooledByteBufAllocator.DEFAULT.heapBuffer(message.getEncodeSize());
       try {
          message.sendBuffer(nettyBuffer, deliveryCount);
 
