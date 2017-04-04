@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.PagingStore;
@@ -176,16 +177,20 @@ public class AMQSession implements SessionCallback {
          BindingQueryResult bindingQuery = server.bindingQuery(queueName);
          QueueQueryResult queueBinding = server.queueQuery(queueName);
 
-         boolean isAutoCreate = bindingQuery.isExists() ? true : bindingQuery.isAutoCreateQueues();
-
-         if (!queueBinding.isExists()) {
-            if (isAutoCreate) {
-               server.createQueue(queueName, RoutingType.ANYCAST, queueName, null, true, isTemporary);
-               connection.addKnownDestination(queueName);
-            } else {
-               hasQueue = false;
+         try {
+            if (!queueBinding.isExists()) {
+               if (bindingQuery.isAutoCreateQueues()) {
+                  server.createQueue(queueName, RoutingType.ANYCAST, queueName, null, true, isTemporary);
+                  connection.addKnownDestination(queueName);
+               } else {
+                  hasQueue = false;
+               }
             }
+         } catch (ActiveMQQueueExistsException e) {
+            // In case another thread created the queue before us but after we did the binding query
+            hasQueue = true;
          }
+
       }
       return hasQueue;
    }
@@ -329,9 +334,9 @@ public class AMQSession implements SessionCallback {
 
          if (actualDestinations[i].isQueue()) {
             checkAutoCreateQueue(new SimpleString(actualDestinations[i].getPhysicalName()), actualDestinations[i].isTemporary());
-            coreMsg.putByteProperty(org.apache.activemq.artemis.api.core.Message.HDR_ROUTING_TYPE, RoutingType.ANYCAST.getType());
+            coreMsg.setRoutingType(RoutingType.ANYCAST);
          } else {
-            coreMsg.putByteProperty(org.apache.activemq.artemis.api.core.Message.HDR_ROUTING_TYPE, RoutingType.MULTICAST.getType());
+            coreMsg.setRoutingType(RoutingType.MULTICAST);
          }
          PagingStore store = server.getPagingManager().getPageStore(address);
 

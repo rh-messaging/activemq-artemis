@@ -168,7 +168,13 @@ public interface Message {
       // only on core
    }
 
-   RoutingType getRouteType();
+   default RoutingType getRoutingType() {
+      return null;
+   }
+
+   default Message setRoutingType(RoutingType routingType) {
+      return this;
+   }
 
    default SimpleString getLastValueProperty() {
       return null;
@@ -244,6 +250,13 @@ public interface Message {
 
    /** It will generate a new instance of the message encode, being a deep copy, new properties, new everything */
    Message copy(long newID);
+
+   default boolean acceptsConsumer(long uniqueConsumerID) {
+      return true;
+   }
+
+   default void rejectConsumer(long uniqueConsumerID) {
+   }
 
    /**
     * Returns the messageID.

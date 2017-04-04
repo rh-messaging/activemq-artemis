@@ -198,7 +198,9 @@ public class ClusterController implements ActiveMQComponent {
     * @param listener
     */
    public void addClusterTopologyListenerForReplication(ClusterTopologyListener listener) {
-      replicationLocator.addClusterTopologyListener(listener);
+      if (replicationLocator != null) {
+         replicationLocator.addClusterTopologyListener(listener);
+      }
    }
 
    /**

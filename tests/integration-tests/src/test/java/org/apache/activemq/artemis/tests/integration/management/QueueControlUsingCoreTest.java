@@ -172,6 +172,11 @@ public class QueueControlUsingCoreTest extends QueueControlTest {
          }
 
          @Override
+         public String getRoutingType() {
+            return (String) proxy.retrieveAttributeValue("routingType");
+         }
+
+         @Override
          public boolean isTemporary() {
             return (Boolean) proxy.retrieveAttributeValue("temporary");
          }

@@ -176,6 +176,19 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    }
 
    @Override
+   public String getRoutingType() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return queue.getRoutingType().toString();
+      } finally {
+         blockOnIO();
+      }
+
+   }
+
+   @Override
    public boolean isTemporary() {
       checkStarted();
 

@@ -19,8 +19,8 @@ package org.apache.activemq.artemis.protocol.amqp.proton.handler;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.buffer.ByteBuf;
@@ -54,20 +54,9 @@ public class ProtonHandler extends ProtonInitializable {
 
    private final Collector collector = Proton.collector();
 
-   private final Executor dispatchExecutor;
-
-   private final Runnable dispatchRunnable = new Runnable() {
-      @Override
-      public void run() {
-         dispatch();
-      }
-   };
-
-   private ArrayList<EventHandler> handlers = new ArrayList<>();
+   private List<EventHandler> handlers = new ArrayList<>();
 
    private Sasl serverSasl;
-
-   private Sasl clientSasl;
 
    private final Object lock = new Object();
 
@@ -81,33 +70,37 @@ public class ProtonHandler extends ProtonInitializable {
 
    protected boolean receivedFirstPacket = false;
 
-   private int offset = 0;
+   boolean inDispatch = false;
 
-   public ProtonHandler(Executor dispatchExecutor) {
-      this.dispatchExecutor = dispatchExecutor;
+   public ProtonHandler() {
       this.creationTime = System.currentTimeMillis();
       transport.bind(connection);
       connection.collect(collector);
    }
 
    public long tick(boolean firstTick) {
-      synchronized (lock) {
-         if (!firstTick) {
-            try {
-               if (connection.getLocalState() != EndpointState.CLOSED) {
-                  long rescheduleAt = transport.tick(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()));
-                  if (transport.isClosed()) {
-                     throw new IllegalStateException("Channel was inactive for to long");
+      try {
+         synchronized (lock) {
+            if (!firstTick) {
+               try {
+                  if (connection.getLocalState() != EndpointState.CLOSED) {
+                     long rescheduleAt = transport.tick(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()));
+                     if (transport.isClosed()) {
+                        throw new IllegalStateException("Channel was inactive for to long");
+                     }
+                     return rescheduleAt;
                   }
-                  return rescheduleAt;
+               } catch (Exception e) {
+                  log.warn(e.getMessage(), e);
+                  transport.close();
+                  connection.setCondition(new ErrorCondition());
                }
-            } catch (Exception e) {
-               transport.close();
-               connection.setCondition(new ErrorCondition());
+               return 0;
             }
-            return 0;
+            return transport.tick(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()));
          }
-         return transport.tick(TimeUnit.NANOSECONDS.toMillis(System.nanoTime()));
+      } finally {
+         flushBytes();
       }
    }
 
@@ -148,6 +141,30 @@ public class ProtonHandler extends ProtonInitializable {
 
    }
 
+   public void flushBytes() {
+      synchronized (lock) {
+         while (true) {
+            int pending = transport.pending();
+
+            if (pending <= 0) {
+               break;
+            }
+
+            // We allocated a Pooled Direct Buffer, that will be sent down the stream
+            ByteBuf buffer = PooledByteBufAllocator.DEFAULT.directBuffer(pending);
+            ByteBuffer head = transport.head();
+            buffer.writeBytes(head);
+
+            for (EventHandler handler : handlers) {
+               handler.pushBytes(buffer);
+            }
+
+            transport.pop(pending);
+         }
+      }
+   }
+
+
    public SASLResult getSASLResult() {
       return saslResult;
    }
@@ -169,7 +186,7 @@ public class ProtonHandler extends ProtonInitializable {
                      capacity = transport.capacity();
                   }
                } catch (Throwable e) {
-                  log.debug(e.getMessage(), e);
+                  log.warn(e.getMessage(), e);
                }
 
                receivedFirstPacket = true;
@@ -206,67 +223,13 @@ public class ProtonHandler extends ProtonInitializable {
       return creationTime;
    }
 
-   public void outputDone(int bytes) {
-      synchronized (lock) {
-         transport.pop(bytes);
-         offset -= bytes;
-
-         if (offset < 0) {
-            throw new IllegalStateException("You called outputDone for more bytes than you actually received. numberOfBytes=" + bytes +
-                                               ", outcome result=" + offset);
-         }
-      }
-
-      flush();
-   }
-
-   public ByteBuf outputBuffer() {
-
-      synchronized (lock) {
-         int pending = transport.pending();
-
-         if (pending < 0) {
-            return null;//throw new IllegalStateException("xxx need to close the connection");
-         }
-
-         int size = pending - offset;
-
-         if (size < 0) {
-            throw new IllegalStateException("negative size: " + pending);
-         }
-
-         if (size == 0) {
-            return null;
-         }
-
-         // For returning PooledBytes
-         ByteBuf buffer = PooledByteBufAllocator.DEFAULT.directBuffer(size);
-         ByteBuffer head = transport.head();
-         head.position(offset);
-         head.limit(offset + size);
-         buffer.writeBytes(head);
-         offset += size; // incrementing offset for future calls
-         return buffer;
-      }
-   }
-
    public void flush() {
-      flush(false);
-   }
-
-   public void flush(boolean wait) {
       synchronized (lock) {
          transport.process();
-
          checkServerSASL();
-
       }
 
-      if (wait) {
-         dispatch();
-      } else {
-         dispatchExecutor.execute(dispatchRunnable);
-      }
+      dispatch();
    }
 
    public void close(ErrorCondition errorCondition) {
@@ -276,7 +239,8 @@ public class ProtonHandler extends ProtonInitializable {
          }
          connection.close();
       }
-      flush(true);
+
+      flush();
    }
 
    protected void checkServerSASL() {
@@ -310,20 +274,6 @@ public class ProtonHandler extends ProtonInitializable {
       }
    }
 
-   private Event popEvent() {
-      synchronized (lock) {
-         Event ev = collector.peek();
-         if (ev != null) {
-            // pop will invalidate the event
-            // for that reason we make a new one
-            // Events are reused inside the collector, so we need to make a new one here
-            ev = ev.copy();
-            collector.pop();
-         }
-         return ev;
-      }
-   }
-
    private void dispatchAuth(boolean sasl) {
       for (EventHandler h : handlers) {
          h.onAuthInit(this, getConnection(), sasl);
@@ -332,33 +282,36 @@ public class ProtonHandler extends ProtonInitializable {
 
    private void dispatch() {
       Event ev;
-      // We don't hold a lock on the entire event processing
-      // because we could have a distributed deadlock
-      // while processing events (for instance onTransport)
-      // while a client is also trying to write here
-      while ((ev = popEvent()) != null) {
-         for (EventHandler h : handlers) {
-            if (log.isTraceEnabled()) {
-               log.trace("Handling " + ev + " towards " + h);
-            }
-            try {
-               Events.dispatch(ev, h);
-            } catch (Exception e) {
-               log.warn(e.getMessage(), e);
-               connection.setCondition(new ErrorCondition());
-            }
-         }
-      }
 
-      for (EventHandler h : handlers) {
+      synchronized (lock) {
+         if (inDispatch) {
+            // Avoid recursion from events
+            return;
+         }
          try {
-            h.onTransport(transport);
-         } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-            connection.setCondition(new ErrorCondition());
+            inDispatch = true;
+            while ((ev = collector.peek()) != null) {
+               for (EventHandler h : handlers) {
+                  if (log.isTraceEnabled()) {
+                     log.trace("Handling " + ev + " towards " + h);
+                  }
+                  try {
+                     Events.dispatch(ev, h);
+                  } catch (Exception e) {
+                     log.warn(e.getMessage(), e);
+                     connection.setCondition(new ErrorCondition());
+                  }
+               }
+
+               collector.pop();
+            }
+
+         } finally {
+            inDispatch = false;
          }
       }
 
+      flushBytes();
    }
 
    public void open(String containerId, Map<Symbol, Object> connectionProperties) {

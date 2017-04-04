@@ -41,7 +41,6 @@ import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,11 +73,11 @@ import org.apache.activemq.artemis.protocol.amqp.client.AMQPClientConnectionFact
 import org.apache.activemq.artemis.protocol.amqp.client.ProtonClientConnectionManager;
 import org.apache.activemq.artemis.protocol.amqp.client.ProtonClientProtocolManager;
 import org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport;
-import org.apache.activemq.artemis.protocol.amqp.proton.ProtonServerReceiverContext;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.TimeUtils;
+import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.VersionLoader;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
@@ -127,6 +126,7 @@ public class ProtonTest extends ProtonTestBase {
       return Arrays.asList(new Object[][]{{"AMQP", 0}, {"AMQP_ANONYMOUS", 3}});
    }
 
+
    ConnectionFactory factory;
 
    private final int protocol;
@@ -144,6 +144,14 @@ public class ProtonTest extends ProtonTestBase {
    private final String coreAddress;
    private final String address;
    private Connection connection;
+
+
+   @Override
+   protected ActiveMQServer createAMQPServer(int port) throws Exception {
+      ActiveMQServer server = super.createAMQPServer(port);
+      server.getConfiguration().addAcceptorConfiguration("flow", "tcp://localhost:" + (8 + port) + "?protocols=AMQP;useEpoll=false;amqpCredits=1;amqpMinCredits=1");
+      return server;
+   }
 
    @Override
    @Before
@@ -417,14 +425,9 @@ public class ProtonTest extends ProtonTestBase {
 
    @Test
    public void testCreditsAreAllocatedOnlyOnceOnLinkCreate() throws Exception {
-      // Only allow 1 credit to be submitted at a time.
-      Field maxCreditAllocation = ProtonServerReceiverContext.class.getDeclaredField("maxCreditAllocation");
-      maxCreditAllocation.setAccessible(true);
-      int originalMaxCreditAllocation = maxCreditAllocation.getInt(null);
-      maxCreditAllocation.setInt(null, 1);
 
       String destinationAddress = address + 1;
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
+      AmqpClient client = new AmqpClient(new URI("tcp://localhost:5680"), userName, password);
       AmqpConnection amqpConnection = client.connect();
       try {
          AmqpSession session = amqpConnection.createSession();
@@ -432,7 +435,6 @@ public class ProtonTest extends ProtonTestBase {
          assertTrue(sender.getSender().getCredit() == 1);
       } finally {
          amqpConnection.close();
-         maxCreditAllocation.setInt(null, originalMaxCreditAllocation);
       }
    }
 
@@ -608,18 +610,13 @@ public class ProtonTest extends ProtonTestBase {
       assertTrue(addressSize >= maxSizeBytesRejectThreshold);
    }
 
-   @Test
+   @Test(timeout = 10000)
    public void testCreditsAreNotAllocatedWhenAddressIsFull() throws Exception {
       setAddressFullBlockPolicy();
 
-      // Only allow 1 credit to be submitted at a time.
-      Field maxCreditAllocation = ProtonServerReceiverContext.class.getDeclaredField("maxCreditAllocation");
-      maxCreditAllocation.setAccessible(true);
-      int originalMaxCreditAllocation = maxCreditAllocation.getInt(null);
-      maxCreditAllocation.setInt(null, 1);
 
       String destinationAddress = address + 1;
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
+      AmqpClient client = new AmqpClient(new URI("tcp://localhost:5680"), userName, password);
       AmqpConnection amqpConnection = client.connect();
       try {
          AmqpSession session = amqpConnection.createSession();
@@ -636,7 +633,6 @@ public class ProtonTest extends ProtonTestBase {
          assertTrue(addressSize >= maxSizeBytes && addressSize <= maxSizeBytesRejectThreshold);
       } finally {
          amqpConnection.close();
-         maxCreditAllocation.setInt(null, originalMaxCreditAllocation);
       }
    }
 
@@ -770,6 +766,7 @@ public class ProtonTest extends ProtonTestBase {
             try {
                for (int i = 0; i < maxMessages; i++) {
                   sender.send(message);
+                  System.out.println("Sent " + i);
                   sentMessages.getAndIncrement();
                }
                timeout.countDown();
@@ -780,13 +777,20 @@ public class ProtonTest extends ProtonTestBase {
       };
 
       Thread t = new Thread(sendMessages);
-      t.start();
 
-      timeout.await(5, TimeUnit.SECONDS);
+      try {
+         t.start();
 
-      messagesSent = sentMessages.get();
-      if (errors[0] != null) {
-         throw errors[0];
+         timeout.await(1, TimeUnit.SECONDS);
+
+         messagesSent = sentMessages.get();
+         if (errors[0] != null) {
+            throw errors[0];
+         }
+      } finally {
+         t.interrupt();
+         t.join(1000);
+         Assert.assertFalse(t.isAlive());
       }
    }
 
@@ -1852,6 +1856,50 @@ public class ProtonTest extends ProtonTestBase {
 
       public int getCount() {
          return count;
+      }
+   }
+
+   /**
+    * If we have an address configured with both ANYCAST and MULTICAST routing types enabled, we must ensure that any
+    * messages sent specifically to MULTICAST (e.g. JMS TopicProducer) are only delivered to MULTICAST queues (e.g.
+    * i.e. subscription queues) and **NOT** to ANYCAST queues (e.g. JMS Queue).
+    *
+    * @throws Exception
+    */
+   @Test
+   public void testRoutingExclusivity() throws Exception {
+
+      // Create Address with both ANYCAST and MULTICAST enabled
+      String testAddress = "testRoutingExclusivity";
+      SimpleString ssTestAddress = new SimpleString(testAddress);
+
+      AddressInfo addressInfo = new AddressInfo(ssTestAddress);
+      addressInfo.addRoutingType(RoutingType.MULTICAST);
+      addressInfo.addRoutingType(RoutingType.ANYCAST);
+
+      server.addAddressInfo(addressInfo);
+      server.createQueue(ssTestAddress, RoutingType.ANYCAST, ssTestAddress, null, true, false);
+
+      Connection connection = createConnection(UUIDGenerator.getInstance().generateStringUUID());
+
+      try {
+
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         Topic topic = session.createTopic(testAddress);
+         javax.jms.Queue queue = session.createQueue(testAddress);
+
+         MessageProducer producer = session.createProducer(topic);
+
+         MessageConsumer queueConsumer = session.createConsumer(queue);
+         MessageConsumer topicConsumer = session.createConsumer(topic);
+
+         producer.send(session.createTextMessage("testMessage"));
+
+         assertNotNull(topicConsumer.receive(1000));
+         assertNull(queueConsumer.receive(1000));
+      } finally {
+         connection.close();
       }
    }
 

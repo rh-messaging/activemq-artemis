@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.tests.integration.client;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
@@ -236,7 +235,7 @@ public class RoutingTest extends ActiveMQTestBase {
       sendSession.createQueue(addressA, RoutingType.MULTICAST, queueC);
       ClientProducer p = sendSession.createProducer(addressA);
       ClientMessage message = sendSession.createMessage(false);
-      message.putByteProperty(Message.HDR_ROUTING_TYPE, RoutingType.ANYCAST.getType());
+      message.setRoutingType(RoutingType.ANYCAST);
       p.send(message);
       sendSession.close();
       assertEquals(1, server.locateQueue(queueA).getMessageCount() + server.locateQueue(queueB).getMessageCount());
@@ -255,7 +254,7 @@ public class RoutingTest extends ActiveMQTestBase {
       sendSession.createQueue(addressA, RoutingType.MULTICAST, queueC);
       ClientProducer p = sendSession.createProducer(addressA);
       ClientMessage message = sendSession.createMessage(false);
-      message.putByteProperty(Message.HDR_ROUTING_TYPE, RoutingType.MULTICAST.getType());
+      message.setRoutingType(RoutingType.MULTICAST);
       p.send(message);
       sendSession.close();
       assertEquals(0, server.locateQueue(queueA).getMessageCount());

@@ -58,6 +58,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -214,9 +217,11 @@ public class NettyConnector extends AbstractConnector {
 
    private String servletPath;
 
-   private int nioRemotingThreads;
+   private boolean useEpoll;
 
-   private boolean useNioGlobalWorkerPool;
+   private int remotingThreads;
+
+   private boolean useGlobalWorkerPool;
 
    private ScheduledExecutorService scheduledThreadPool;
 
@@ -284,9 +289,13 @@ public class NettyConnector extends AbstractConnector {
 
       httpUpgradeEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.HTTP_UPGRADE_ENABLED_PROP_NAME, TransportConstants.DEFAULT_HTTP_UPGRADE_ENABLED, configuration);
 
-      nioRemotingThreads = ConfigurationHelper.getIntProperty(TransportConstants.NIO_REMOTING_THREADS_PROPNAME, -1, configuration);
+      remotingThreads = ConfigurationHelper.getIntProperty(TransportConstants.NIO_REMOTING_THREADS_PROPNAME, -1, configuration);
+      remotingThreads = ConfigurationHelper.getIntProperty(TransportConstants.REMOTING_THREADS_PROPNAME, remotingThreads, configuration);
 
-      useNioGlobalWorkerPool = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_NIO_GLOBAL_WORKER_POOL_PROP_NAME, TransportConstants.DEFAULT_USE_NIO_GLOBAL_WORKER_POOL, configuration);
+      useGlobalWorkerPool = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_NIO_GLOBAL_WORKER_POOL_PROP_NAME, TransportConstants.DEFAULT_USE_GLOBAL_WORKER_POOL, configuration);
+      useGlobalWorkerPool = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_GLOBAL_WORKER_POOL_PROP_NAME, useGlobalWorkerPool, configuration);
+
+      useEpoll = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_EPOLL_PROP_NAME, TransportConstants.DEFAULT_USE_EPOLL, configuration);
 
       useServlet = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_SERVLET_PROP_NAME, TransportConstants.DEFAULT_USE_SERVLET, configuration);
       host = ConfigurationHelper.getStringProperty(TransportConstants.HOST_PROP_NAME, TransportConstants.DEFAULT_HOST, configuration);
@@ -299,13 +308,13 @@ public class NettyConnector extends AbstractConnector {
 
          keyStorePath = ConfigurationHelper.getStringProperty(TransportConstants.KEYSTORE_PATH_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_PATH, configuration);
 
-         keyStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropMaskPassword());
+         keyStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_KEYSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
 
          trustStoreProvider = ConfigurationHelper.getStringProperty(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PROVIDER, configuration);
 
          trustStorePath = ConfigurationHelper.getStringProperty(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PATH, configuration);
 
-         trustStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropMaskPassword());
+         trustStorePassword = ConfigurationHelper.getPasswordProperty(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, TransportConstants.DEFAULT_TRUSTSTORE_PASSWORD, configuration, ActiveMQDefaultConfiguration.getPropMaskPassword(), ActiveMQDefaultConfiguration.getPropPasswordCodec());
 
          enabledCipherSuites = ConfigurationHelper.getStringProperty(TransportConstants.ENABLED_CIPHER_SUITES_PROP_NAME, TransportConstants.DEFAULT_ENABLED_CIPHER_SUITES, configuration);
 
@@ -371,22 +380,31 @@ public class NettyConnector extends AbstractConnector {
          return;
       }
 
-      int threadsToUse;
-
-      if (nioRemotingThreads == -1) {
+      if (remotingThreads == -1) {
          // Default to number of cores * 3
-
-         threadsToUse = Runtime.getRuntime().availableProcessors() * 3;
-      } else {
-         threadsToUse = this.nioRemotingThreads;
+         remotingThreads = Runtime.getRuntime().availableProcessors() * 3;
       }
 
-      if (useNioGlobalWorkerPool) {
-         channelClazz = NioSocketChannel.class;
-         group = SharedNioEventLoopGroup.getInstance(threadsToUse);
+      if (useEpoll && Epoll.isAvailable()) {
+         if (useGlobalWorkerPool) {
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new EpollEventLoopGroup(remotingThreads, threadFactory)));
+         } else {
+            group = new EpollEventLoopGroup(remotingThreads);
+         }
+
+         channelClazz = EpollSocketChannel.class;
+         logger.debug("Connector " + this + " using native epoll");
       } else {
+         if (useGlobalWorkerPool) {
+            channelClazz = NioSocketChannel.class;
+            group = SharedEventLoopGroup.getInstance((threadFactory -> new NioEventLoopGroup(remotingThreads, threadFactory)));
+         } else {
+            channelClazz = NioSocketChannel.class;
+            group = new NioEventLoopGroup(remotingThreads);
+         }
+
          channelClazz = NioSocketChannel.class;
-         group = new NioEventLoopGroup(threadsToUse);
+         logger.debug("Connector + " + this + " using nio");
       }
       // if we are a servlet wrap the socketChannelFactory
 
@@ -407,7 +425,6 @@ public class NettyConnector extends AbstractConnector {
       }
       bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
       bootstrap.option(ChannelOption.SO_REUSEADDR, true);
-      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
       channelGroup = new DefaultChannelGroup("activemq-connector", GlobalEventExecutor.INSTANCE);
 
       final SSLContext context;
@@ -1054,7 +1071,7 @@ public class NettyConnector extends AbstractConnector {
    }
 
    public static void clearThreadPools() {
-      SharedNioEventLoopGroup.forceShutdown();
+      SharedEventLoopGroup.forceShutdown();
    }
 
    private static ClassLoader getThisClassLoader() {

@@ -81,6 +81,8 @@ public class AMQPMessage extends RefCountMessage {
    private long scheduledTime = -1;
    private String connectionID;
 
+   Set<Object> rejectedConsumers;
+
    public AMQPMessage(long messageFormat, byte[] data) {
       this.data = Unpooled.wrappedBuffer(data);
       this.messageFormat = messageFormat;
@@ -137,9 +139,10 @@ public class AMQPMessage extends RefCountMessage {
       }
    }
 
-   private Map getApplicationPropertiesMap() {
+   @SuppressWarnings("unchecked")
+   private Map<String, Object> getApplicationPropertiesMap() {
       ApplicationProperties appMap = getApplicationProperties();
-      Map map = null;
+      Map<String, Object> map = null;
 
       if (appMap != null) {
          map = appMap.getValue();
@@ -214,7 +217,7 @@ public class AMQPMessage extends RefCountMessage {
 
    private Object getSymbol(Symbol symbol) {
       MessageAnnotations annotations = getMessageAnnotations();
-      Map mapAnnotations = annotations != null ? annotations.getValue() : null;
+      Map<Symbol, Object> mapAnnotations = annotations != null ? annotations.getValue() : null;
       if (mapAnnotations != null) {
          return mapAnnotations.get(symbol);
       }
@@ -224,7 +227,7 @@ public class AMQPMessage extends RefCountMessage {
 
    private Object removeSymbol(Symbol symbol) {
       MessageAnnotations annotations = getMessageAnnotations();
-      Map mapAnnotations = annotations != null ? annotations.getValue() : null;
+      Map<Symbol, Object> mapAnnotations = annotations != null ? annotations.getValue() : null;
       if (mapAnnotations != null) {
          return mapAnnotations.remove(symbol);
       }
@@ -243,29 +246,42 @@ public class AMQPMessage extends RefCountMessage {
          _messageAnnotations = new MessageAnnotations(new HashMap<>());
          annotations = _messageAnnotations;
       }
-      Map mapAnnotations = annotations != null ? annotations.getValue() : null;
+      Map<Symbol, Object> mapAnnotations = annotations != null ? annotations.getValue() : null;
       if (mapAnnotations != null) {
          mapAnnotations.put(symbol, value);
       }
    }
 
    @Override
-   public RoutingType getRouteType() {
+   public RoutingType getRoutingType() {
+      Object routingType = getSymbol(AMQPMessageSupport.ROUTING_TYPE);
 
-      /* TODO-now How to use this properly
-      switch (((Byte)type).byteValue()) {
-         case AMQPMessageSupport.QUEUE_TYPE:
-         case AMQPMessageSupport.TEMP_QUEUE_TYPE:
-            return RoutingType.ANYCAST;
-
-         case AMQPMessageSupport.TOPIC_TYPE:
-         case AMQPMessageSupport.TEMP_TOPIC_TYPE:
-            return RoutingType.MULTICAST;
-         default:
+      if (routingType != null) {
+         return RoutingType.getType((byte) routingType);
+      } else {
+         routingType = getSymbol(AMQPMessageSupport.JMS_DEST_TYPE_MSG_ANNOTATION);
+         if (routingType != null) {
+            if (AMQPMessageSupport.QUEUE_TYPE == (byte) routingType || AMQPMessageSupport.TEMP_QUEUE_TYPE == (byte) routingType) {
+               return RoutingType.ANYCAST;
+            } else if (AMQPMessageSupport.TOPIC_TYPE == (byte) routingType || AMQPMessageSupport.TEMP_TOPIC_TYPE == (byte) routingType) {
+               return RoutingType.MULTICAST;
+            }
+         } else {
             return null;
-      } */
+         }
 
-      return null;
+         return null;
+      }
+   }
+
+   @Override
+   public org.apache.activemq.artemis.api.core.Message setRoutingType(RoutingType routingType) {
+      parseHeaders();
+      if (routingType == null) {
+         removeSymbol(AMQPMessageSupport.ROUTING_TYPE);
+      }
+      setSymbol(AMQPMessageSupport.ROUTING_TYPE, routingType.getType());
+      return this;
    }
 
    @Override
@@ -309,6 +325,26 @@ public class AMQPMessage extends RefCountMessage {
    public Persister<org.apache.activemq.artemis.api.core.Message> getPersister() {
       return AMQPMessagePersister.getInstance();
    }
+
+   @Override
+   public synchronized boolean acceptsConsumer(long consumer) {
+
+      if (rejectedConsumers == null) {
+         return true;
+      } else {
+         return !rejectedConsumers.contains(consumer);
+      }
+   }
+
+   @Override
+   public synchronized void rejectConsumer(long consumer) {
+      if (rejectedConsumers == null) {
+         rejectedConsumers = new HashSet<>();
+      }
+
+      rejectedConsumers.add(consumer);
+   }
+
 
    private synchronized void partialDecode(ByteBuffer buffer) {
       DecoderImpl decoder = TLSEncode.getDecoder();
@@ -366,7 +402,7 @@ public class AMQPMessage extends RefCountMessage {
          if (section instanceof Properties) {
             _properties = (Properties) section;
 
-            if (_properties.getAbsoluteExpiryTime() != null) {
+            if (_properties.getAbsoluteExpiryTime() != null && _properties.getAbsoluteExpiryTime().getTime() > 0) {
                this.expiration = _properties.getAbsoluteExpiryTime().getTime();
             }
 
@@ -665,7 +701,7 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public org.apache.activemq.artemis.api.core.Message putBooleanProperty(SimpleString key, boolean value) {
-      getApplicationPropertiesMap().put(key, Boolean.valueOf(value));
+      getApplicationPropertiesMap().put(key.toString(), Boolean.valueOf(value));
       return this;
    }
 

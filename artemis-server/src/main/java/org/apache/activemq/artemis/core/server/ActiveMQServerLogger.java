@@ -47,7 +47,6 @@ import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.SequentialFile;
-import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.paging.cursor.PagePosition;
 import org.apache.activemq.artemis.core.paging.cursor.PageSubscription;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
@@ -169,8 +168,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void journalUnreferencedMessage(Long messageID);
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 221020, value = "Started Acceptor at {0}:{1,number,#} for protocols [{2}]", format = Message.Format.MESSAGE_FORMAT)
-   void startedAcceptor(String host, Integer port, String enabledProtocols);
+   @Message(id = 221020, value = "Started {0} Acceptor at {1}:{2,number,#} for protocols [{3}]", format = Message.Format.MESSAGE_FORMAT)
+   void startedAcceptor(String acceptorType, String host, Integer port, String enabledProtocols);
 
    @LogMessage(level = Logger.Level.INFO)
    @Message(id = 221021, value = "failed to remove connection", format = Message.Format.MESSAGE_FORMAT)
@@ -189,8 +188,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void backupServerSynched(ActiveMQServerImpl server);
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 221025, value = "Replication: sending {0} (size={1}) to backup. {2}", format = Message.Format.MESSAGE_FORMAT)
-   void journalSynch(JournalFile jf, Long size, SequentialFile file);
+   @Message(id = 221025, value = "Replication: sending {0} (size={1}) to replica.", format = Message.Format.MESSAGE_FORMAT)
+   void replicaSyncFile(SequentialFile jf, Long size);
 
    @LogMessage(level = Logger.Level.INFO)
    @Message(
@@ -1287,6 +1286,10 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222217, value = "Cannot find connector-ref {0}. The cluster-connection {1} will not be deployed.", format = Message.Format.MESSAGE_FORMAT)
    void connectorRefNotFound(String connectorRef, String clusterConnection);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222218, value = "Server disconnecting: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void disconnectCritical(String reason, @Cause Exception e);
+
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
@@ -1569,7 +1572,4 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224075, value = "Cannot find pageTX id = {0}", format = Message.Format.MESSAGE_FORMAT)
    void journalCannotFindPageTX(Long id);
-
-
-
 }

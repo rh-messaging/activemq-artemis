@@ -188,6 +188,12 @@ public class Create extends InputAbstract {
    @Option(name = "--require-login", description = "This will configure security to require user / password, opposite of --allow-anonymous")
    Boolean requireLogin = null;
 
+   @Option(name = "--paging", description = "Page messages to disk when address becomes full, opposite of --blocking (Default: true)")
+   Boolean paging;
+
+   @Option(name = "--blocking", description = "Block producers when address becomes full, opposite of --paging (Default: false)")
+   Boolean blocking;
+
    @Option(name = "--no-autotune", description = "Disable auto tuning on the journal.")
    boolean noAutoTune;
 
@@ -203,10 +209,10 @@ public class Create extends InputAbstract {
    @Option(name = "--password", description = "The user's password (Default: input)")
    String password;
 
-   @Option(name = "--role", description = "The name for the role created (Default: input)")
-   String role;
+   @Option(name = "--role", description = "The name for the role created (Default: amq)")
+   String role = "amq";
 
-   @Option(name = "--no-web", description = "This will remove the web server definition from bootstrap.xml")
+   @Option(name = "--no-web", description = "remove the web-server definition from bootstrap.xml")
    boolean noWeb;
 
    @Option(name = "--queues", description = "comma separated list of queues.")
@@ -244,6 +250,9 @@ public class Create extends InputAbstract {
 
    @Option(name = "--no-fsync", description = "Disable usage of fdatasync (channel.force(false) from java nio) on the journal")
    boolean noJournalSync;
+
+   @Option(name = "--global-max-size", description = "Maximum amount of memory which message data may consume (Default: 100Mb)")
+   String globalMaxSize = "100Mb";
 
    boolean IS_WINDOWS;
 
@@ -452,14 +461,17 @@ public class Create extends InputAbstract {
 
    public boolean isAllowAnonymous() {
       if (allowAnonymous == null) {
-         String value = input("--allow-anonymous | --require-login", "Allow anonymous access? (Y/N):", "Y");
-         allowAnonymous = Boolean.valueOf(value.toLowerCase().equals("y"));
+         allowAnonymous = inputBoolean("--allow-anonymous | --require-login", "Allow anonymous access?", true);
       }
-      return allowAnonymous.booleanValue();
+      return allowAnonymous;
    }
 
-   public void setAllowAnonymous(boolean allowGuest) {
-      this.allowAnonymous = Boolean.valueOf(allowGuest);
+   public boolean isPaging() {
+      return paging;
+   }
+
+   public void setAllowAnonymous(boolean allowAnonymous) {
+      this.allowAnonymous = Boolean.valueOf(allowAnonymous);
    }
 
    public Boolean getRequireLogin() {
@@ -500,14 +512,18 @@ public class Create extends InputAbstract {
    }
 
    public String getRole() {
-      if (role == null) {
-         role = input("--role", "Please provide the default role:", "amq");
-      }
       return role;
    }
 
    public void setRole(String role) {
       this.role = role;
+   }
+
+   public String getGlobalMaxSize() {
+      return globalMaxSize;
+   }
+   public void setGlobalMaxSize(String globalMaxSize) {
+      this.globalMaxSize = globalMaxSize;
    }
 
    public boolean isSlave() {
@@ -577,7 +593,7 @@ public class Create extends InputAbstract {
 
       setupJournalType();
 
-      // requireLogin should set alloAnonymous=false, to avoid user's questions
+      // requireLogin should set allowAnonymous=false, to avoid user's questions
       if (requireLogin != null && requireLogin.booleanValue()) {
          allowAnonymous = Boolean.FALSE;
       }
@@ -644,7 +660,8 @@ public class Create extends InputAbstract {
       filters.put("${message-load-balancing}", messageLoadBalancing.toString());
       filters.put("${user}", getUser());
       filters.put("${password}", getPassword());
-      filters.put("${role}", getRole());
+      filters.put("${role}", role);
+      filters.put("${global-max-size}", globalMaxSize);
 
       if (clustered) {
          filters.put("${host}", getHostForClustered());
@@ -755,7 +772,11 @@ public class Create extends InputAbstract {
          filters.put("${hornetq-acceptor}", applyFilters(readTextFile(ETC_HORNETQ_ACCEPTOR_TXT), filters));
       }
 
-      if (disablePersistence) {
+      if (paging == null && blocking == null) {
+         filters.put("${full-policy}", "PAGE");
+      } else if (paging != null && paging) {
+         filters.put("${full-policy}", "PAGE");
+      } else if (blocking != null && blocking) {
          filters.put("${full-policy}", "BLOCK");
       } else {
          filters.put("${full-policy}", "PAGE");

@@ -52,11 +52,11 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
    /*
     The maximum number of credits we will allocate to clients.
     This number is also used by the broker when refresh client credits.
-     */
-   private static int maxCreditAllocation = 100;
+    */
+   private final int amqpCredits;
 
    // Used by the broker to decide when to refresh clients credit.  This is not used when client requests credit.
-   private static int minCreditRefresh = 30;
+   private final int minCreditRefresh;
    private TerminusExpiryPolicy expiryPolicy;
 
    public ProtonServerReceiverContext(AMQPSessionCallback sessionSPI,
@@ -67,11 +67,13 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
       this.protonSession = protonSession;
       this.receiver = receiver;
       this.sessionSPI = sessionSPI;
+      this.amqpCredits = connection.getAmqpCredits();
+      this.minCreditRefresh = connection.getAmqpLowCredits();
    }
 
    @Override
    public void onFlow(int credits, boolean drain) {
-      flow(Math.min(credits, maxCreditAllocation), maxCreditAllocation);
+      flow(Math.min(credits, amqpCredits), amqpCredits);
    }
 
    @Override
@@ -86,7 +88,7 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
             address = sessionSPI.tempQueueName();
 
             try {
-               sessionSPI.createTemporaryQueue(address, RoutingType.ANYCAST);
+               sessionSPI.createTemporaryQueue(address, getRoutingType(target.getCapabilities()));
             } catch (Exception e) {
                throw new ActiveMQAMQPInternalErrorException(e.getMessage(), e);
             }
@@ -119,7 +121,19 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
             }
          }
       }
-      flow(maxCreditAllocation, minCreditRefresh);
+      flow(amqpCredits, minCreditRefresh);
+   }
+
+   private RoutingType getRoutingType(Symbol[] symbols) {
+      for (Symbol symbol : symbols) {
+         if (AmqpSupport.TEMP_TOPIC_CAPABILITY.equals(symbol) || AmqpSupport.TOPIC_CAPABILITY.equals(symbol)) {
+            return RoutingType.MULTICAST;
+         } else if (AmqpSupport.TEMP_QUEUE_CAPABILITY.equals(symbol) || AmqpSupport.QUEUE_CAPABILITY.equals(symbol)) {
+            return RoutingType.ANYCAST;
+         }
+      }
+
+      return sessionSPI.getDefaultRoutingType(address);
    }
 
    /*
@@ -132,25 +146,22 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
    public void onMessage(Delivery delivery) throws ActiveMQAMQPException {
       Receiver receiver;
       try {
-         receiver = ((Receiver) delivery.getLink());
 
          if (!delivery.isReadable()) {
             return;
          }
-
          if (delivery.isPartial()) {
             return;
          }
+         receiver = ((Receiver) delivery.getLink());
 
          Transaction tx = null;
 
          byte[] data;
 
-         synchronized (connection.getLock()) {
-            data = new byte[delivery.available()];
-            receiver.recv(data, 0, data.length);
-            receiver.advance();
-         }
+         data = new byte[delivery.available()];
+         receiver.recv(data, 0, data.length);
+         receiver.advance();
 
          if (delivery.getRemoteState() instanceof TransactionalState) {
 
@@ -160,9 +171,7 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
 
          sessionSPI.serverSend(tx, receiver, delivery, address, delivery.getMessageFormat(), data);
 
-         synchronized (connection.getLock()) {
-            flow(maxCreditAllocation, minCreditRefresh);
-         }
+         flow(amqpCredits, minCreditRefresh);
       } catch (Exception e) {
          log.warn(e.getMessage(), e);
          Rejected rejected = new Rejected();
@@ -170,8 +179,10 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
          condition.setCondition(Symbol.valueOf("failed"));
          condition.setDescription(e.getMessage());
          rejected.setError(condition);
-         delivery.disposition(rejected);
-         delivery.settle();
+         synchronized (connection.getLock()) {
+            delivery.disposition(rejected);
+            delivery.settle();
+         }
       }
    }
 
@@ -204,7 +215,6 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
          }
          connection.flush();
       }
-
    }
 
    public void drain(int credits) {
@@ -221,5 +231,4 @@ public class ProtonServerReceiverContext extends ProtonInitializable implements 
    public boolean isDraining() {
       return receiver.draining();
    }
-
 }
