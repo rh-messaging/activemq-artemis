@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.AddressControl;
@@ -291,14 +292,20 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
             }
          });
          CoreMessage message = new CoreMessage(storageManager.generateID(), 50);
-         for (String header : headers.keySet()) {
-            message.putStringProperty(new SimpleString(header), new SimpleString(headers.get(header)));
+         if (headers != null) {
+            for (String header : headers.keySet()) {
+               message.putStringProperty(new SimpleString(header), new SimpleString(headers.get(header)));
+            }
          }
          message.setType((byte) type);
          message.setDurable(durable);
          message.setTimestamp(System.currentTimeMillis());
          if (body != null) {
-            message.getBodyBuffer().writeBytes(Base64.decode(body));
+            if (type == Message.TEXT_TYPE) {
+               message.getBodyBuffer().writeNullableSimpleString(new SimpleString(body));
+            } else {
+               message.getBodyBuffer().writeBytes(Base64.decode(body));
+            }
          }
          message.setAddress(addressInfo.getName());
          postOffice.route(message, true);
@@ -341,7 +348,7 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
             QueueControl coreQueueControl = (QueueControl) managementService.getResource(ResourceNames.QUEUE + queue);
 
             // Ignore the "special" subscription
-            if (coreQueueControl != null && !coreQueueControl.getName().equals(getAddress())) {
+            if (coreQueueControl != null) {
                if (durability == DurabilityType.ALL || durability == DurabilityType.DURABLE && coreQueueControl.isDurable() ||
                      durability == DurabilityType.NON_DURABLE && !coreQueueControl.isDurable()) {
                   matchingQueues.add(coreQueueControl);

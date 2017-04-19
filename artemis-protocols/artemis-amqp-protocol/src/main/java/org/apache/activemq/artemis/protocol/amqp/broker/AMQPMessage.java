@@ -60,6 +60,9 @@ import io.netty.buffer.Unpooled;
 // see https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-message-format
 public class AMQPMessage extends RefCountMessage {
 
+   private static final int DEFAULT_MESSAGE_PRIORITY = 4;
+   private static final int MAX_MESSAGE_PRIORITY = 9;
+
    final long messageFormat;
    ByteBuf data;
    boolean bufferValid;
@@ -582,22 +585,32 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public long getTimestamp() {
-      return 0;
+      if (getHeader() != null && getHeader().getTtl() != null) {
+         return getHeader().getTtl().longValue();
+      } else {
+         return 0L;
+      }
    }
 
    @Override
    public org.apache.activemq.artemis.api.core.Message setTimestamp(long timestamp) {
-      return null;
+      getHeader().setTtl(UnsignedInteger.valueOf(timestamp));
+      return this;
    }
 
    @Override
    public byte getPriority() {
-      return 0;
+      if (getHeader() != null && getHeader().getPriority() != null) {
+         return (byte) Math.min(getHeader().getPriority().intValue(), MAX_MESSAGE_PRIORITY);
+      } else {
+         return DEFAULT_MESSAGE_PRIORITY;
+      }
    }
 
    @Override
    public org.apache.activemq.artemis.api.core.Message setPriority(byte priority) {
-      return null;
+      getHeader().setPriority(UnsignedByte.valueOf(priority));
+      return this;
    }
 
    @Override
@@ -1000,14 +1013,14 @@ public class AMQPMessage extends RefCountMessage {
    }
 
    private int internalPersistSize() {
-      return data.array().length - sendFrom;
+      return data.array().length;
    }
 
    @Override
    public void persist(ActiveMQBuffer targetRecord) {
       checkBuffer();
       targetRecord.writeInt(internalPersistSize());
-      targetRecord.writeBytes(data.array(), sendFrom, data.array().length - sendFrom);
+      targetRecord.writeBytes(data.array(), 0, data.array().length );
    }
 
    @Override

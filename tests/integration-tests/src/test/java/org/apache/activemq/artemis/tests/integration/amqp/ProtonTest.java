@@ -16,6 +16,22 @@
  */
 package org.apache.activemq.artemis.tests.integration.amqp;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -39,25 +55,12 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
+import org.apache.activemq.artemis.api.core.management.AddressControl;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.remoting.CloseListener;
@@ -74,21 +77,21 @@ import org.apache.activemq.artemis.protocol.amqp.client.ProtonClientConnectionMa
 import org.apache.activemq.artemis.protocol.amqp.client.ProtonClientProtocolManager;
 import org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
+import org.apache.activemq.artemis.tests.integration.management.ManagementControlHelper;
 import org.apache.activemq.artemis.tests.util.Wait;
+import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.ByteUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.TimeUtils;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.apache.activemq.artemis.utils.VersionLoader;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
 import org.apache.activemq.transport.amqp.client.AmqpMessage;
 import org.apache.activemq.transport.amqp.client.AmqpReceiver;
 import org.apache.activemq.transport.amqp.client.AmqpSender;
 import org.apache.activemq.transport.amqp.client.AmqpSession;
-import org.apache.activemq.transport.amqp.client.AmqpValidator;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.junit.After;
@@ -98,22 +101,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.DELAYED_DELIVERY;
-import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.PRODUCT;
-import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.VERSION;
-import static org.apache.activemq.artemis.protocol.amqp.proton.AmqpSupport.contains;
-
 @RunWith(Parameterized.class)
 public class ProtonTest extends ProtonTestBase {
 
    private static final String amqpConnectionUri = "amqp://localhost:5672";
 
    private static final String tcpAmqpConnectionUri = "tcp://localhost:5672";
-   private static final String brokerName = "my-broker";
 
    private static final long maxSizeBytes = 1 * 1024 * 1024;
 
    private static final long maxSizeBytesRejectThreshold = 2 * 1024 * 1024;
+
+   private MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
 
    private int messagesSent = 0;
 
@@ -150,6 +149,8 @@ public class ProtonTest extends ProtonTestBase {
    protected ActiveMQServer createAMQPServer(int port) throws Exception {
       ActiveMQServer server = super.createAMQPServer(port);
       server.getConfiguration().addAcceptorConfiguration("flow", "tcp://localhost:" + (8 + port) + "?protocols=AMQP;useEpoll=false;amqpCredits=1;amqpMinCredits=1");
+      server.setMBeanServer(mBeanServer);
+      server.getConfiguration().setJMXManagementEnabled(true);
       return server;
    }
 
@@ -246,6 +247,69 @@ public class ProtonTest extends ProtonTestBase {
    }
 
    @Test
+   public void testAddressControlSendMessage() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      server.createQueue(address, RoutingType.ANYCAST, address, null, true, false);
+
+      AddressControl addressControl = ManagementControlHelper.createAddressControl(address, mBeanServer);
+      Assert.assertEquals(1, addressControl.getQueueNames().length);
+      addressControl.sendMessage(null, org.apache.activemq.artemis.api.core.Message.BYTES_TYPE, Base64.encodeBytes("test".getBytes()), false, userName, password);
+
+      Wait.waitFor(() -> addressControl.getMessageCount() == 1);
+
+      Assert.assertEquals(1, addressControl.getMessageCount());
+
+      Connection connection = createConnection("myClientId");
+      try {
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         javax.jms.Queue queue = session.createQueue(address.toString());
+         MessageConsumer consumer = session.createConsumer(queue);
+         Message message = consumer.receive(500);
+         assertNotNull(message);
+         byte[] buffer = new byte[(int)((BytesMessage)message).getBodyLength()];
+         ((BytesMessage)message).readBytes(buffer);
+         assertEquals("test", new String(buffer));
+         session.close();
+         connection.close();
+      } finally {
+         if (connection != null) {
+            connection.close();
+         }
+      }
+   }
+
+   @Test
+   public void testAddressControlSendMessageWithText() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      server.createQueue(address, RoutingType.ANYCAST, address, null, true, false);
+
+      AddressControl addressControl = ManagementControlHelper.createAddressControl(address, mBeanServer);
+      Assert.assertEquals(1, addressControl.getQueueNames().length);
+      addressControl.sendMessage(null, org.apache.activemq.artemis.api.core.Message.TEXT_TYPE, "test", false, userName, password);
+
+      Wait.waitFor(() -> addressControl.getMessageCount() == 1);
+
+      Assert.assertEquals(1, addressControl.getMessageCount());
+
+      Connection connection = createConnection("myClientId");
+      try {
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         javax.jms.Queue queue = session.createQueue(address.toString());
+         MessageConsumer consumer = session.createConsumer(queue);
+         Message message = consumer.receive(500);
+         assertNotNull(message);
+         String text = ((TextMessage) message).getText();
+         assertEquals("test", text);
+         session.close();
+         connection.close();
+      } finally {
+         if (connection != null) {
+            connection.close();
+         }
+      }
+   }
+
+   @Test
    public void testDurableSubscriptionUnsubscribe() throws Exception {
       Connection connection = createConnection("myClientId");
       try {
@@ -294,132 +358,6 @@ public class ProtonTest extends ProtonTestBase {
          if (connection != null) {
             connection.close();
          }
-      }
-   }
-
-   @Test
-   public void testBrokerContainerId() throws Exception {
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection amqpConnection = client.connect();
-      try {
-         assertTrue(brokerName.equals(amqpConnection.getEndpoint().getRemoteContainer()));
-      } finally {
-         amqpConnection.close();
-      }
-   }
-
-   @Test
-   public void testBrokerConnectionProperties() throws Exception {
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection amqpConnection = client.connect();
-      try {
-         Map<Symbol, Object> properties = amqpConnection.getEndpoint().getRemoteProperties();
-         assertTrue(properties != null);
-         if (properties != null) {
-            assertTrue("apache-activemq-artemis".equals(properties.get(Symbol.valueOf("product"))));
-            assertTrue(VersionLoader.getVersion().getFullVersion().equals(properties.get(Symbol.valueOf("version"))));
-         }
-      } finally {
-         amqpConnection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testConnectionCarriesExpectedCapabilities() throws Exception {
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      assertNotNull(client);
-
-      client.setValidator(new AmqpValidator() {
-
-         @Override
-         public void inspectOpenedResource(org.apache.qpid.proton.engine.Connection connection) {
-
-            Symbol[] offered = connection.getRemoteOfferedCapabilities();
-
-            if (!contains(offered, DELAYED_DELIVERY)) {
-               markAsInvalid("Broker did not indicate it support delayed message delivery");
-               return;
-            }
-
-            Map<Symbol, Object> properties = connection.getRemoteProperties();
-            if (!properties.containsKey(PRODUCT)) {
-               markAsInvalid("Broker did not send a queue product name value");
-               return;
-            }
-
-            if (!properties.containsKey(VERSION)) {
-               markAsInvalid("Broker did not send a queue version value");
-               return;
-            }
-         }
-      });
-
-      AmqpConnection connection = client.connect();
-      try {
-         assertNotNull(connection);
-         connection.getStateInspector().assertValid();
-      } finally {
-         connection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testSendWithDeliveryTimeHoldsMessage() throws Exception {
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      assertNotNull(client);
-
-      AmqpConnection connection = client.connect();
-      try {
-         AmqpSession session = connection.createSession();
-
-         AmqpSender sender = session.createSender(address);
-         AmqpReceiver receiver = session.createReceiver(address);
-
-         AmqpMessage message = new AmqpMessage();
-         long deliveryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
-         message.setMessageAnnotation("x-opt-delivery-time", deliveryTime);
-         message.setText("Test-Message");
-         sender.send(message);
-
-         // Now try and get the message
-         receiver.flow(1);
-
-         // Shouldn't get this since we delayed the message.
-         assertNull(receiver.receive(1, TimeUnit.SECONDS));
-      } finally {
-         connection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testSendWithDeliveryTimeDeliversMessageAfterDelay() throws Exception {
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      assertNotNull(client);
-
-      AmqpConnection connection = client.connect();
-      try {
-         AmqpSession session = connection.createSession();
-
-         AmqpSender sender = session.createSender(address);
-         AmqpReceiver receiver = session.createReceiver(address);
-
-         AmqpMessage message = new AmqpMessage();
-         long deliveryTime = System.currentTimeMillis() + 2000;
-         message.setMessageAnnotation("x-opt-delivery-time", deliveryTime);
-         message.setText("Test-Message");
-         sender.send(message);
-
-         // Now try and get the message
-         receiver.flow(1);
-
-         AmqpMessage received = receiver.receive(10, TimeUnit.SECONDS);
-         assertNotNull(received);
-         received.accept();
-         Long msgDeliveryTime = (Long) received.getMessageAnnotation("x-opt-delivery-time");
-         assertNotNull(msgDeliveryTime);
-         assertEquals(deliveryTime, msgDeliveryTime.longValue());
-      } finally {
-         connection.close();
       }
    }
 
@@ -908,41 +846,6 @@ public class ProtonTest extends ProtonTestBase {
       AmqpMessage receivedMessage = receiver.receive(5000, TimeUnit.MILLISECONDS);
       assertNotNull(receivedMessage);
       amqpConnection.close();
-   }
-
-   @Test
-   public void testManagementQueryOverAMQP() throws Throwable {
-
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection amqpConnection = client.connect();
-      try {
-         String destinationAddress = address + 1;
-         AmqpSession session = amqpConnection.createSession();
-         AmqpSender sender = session.createSender("activemq.management");
-         AmqpReceiver receiver = session.createReceiver(destinationAddress);
-         receiver.flow(10);
-
-         //create request message for getQueueNames query
-         AmqpMessage request = new AmqpMessage();
-         request.setApplicationProperty("_AMQ_ResourceName", ResourceNames.BROKER);
-         request.setApplicationProperty("_AMQ_OperationName", "getQueueNames");
-         request.setReplyToAddress(destinationAddress);
-         request.setText("[]");
-
-         sender.send(request);
-         AmqpMessage response = receiver.receive(5, TimeUnit.SECONDS);
-         Assert.assertNotNull(response);
-         assertNotNull(response);
-         Object section = response.getWrappedMessage().getBody();
-         assertTrue(section instanceof AmqpValue);
-         Object value = ((AmqpValue) section).getValue();
-         assertTrue(value instanceof String);
-         assertTrue(((String) value).length() > 0);
-         assertTrue(((String) value).contains(destinationAddress));
-         response.accept();
-      } finally {
-         amqpConnection.close();
-      }
    }
 
    @Test
@@ -1512,6 +1415,45 @@ public class ProtonTest extends ProtonTestBase {
    }
 
    @Test
+   public void testTimedOutWaitingForWriteLogOnConsumer() throws Throwable {
+      String name = "exampleQueue1";
+
+      int numMessages = 50;
+
+      System.out.println("1. Send messages into queue");
+      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      javax.jms.Queue queue = session.createQueue(name);
+      MessageProducer p = session.createProducer(queue);
+      for (int i = 0; i < numMessages; i++) {
+         TextMessage message = session.createTextMessage();
+         message.setText("Message temporary");
+         p.send(message);
+      }
+      p.close();
+      session.close();
+
+      System.out.println("2. Receive one by one, each in its own session");
+      for (int i = 0; i < numMessages; i++) {
+         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         queue = session.createQueue(name);
+         MessageConsumer c = session.createConsumer(queue);
+         Message m = c.receive(1000);
+         p.close();
+         session.close();
+      }
+
+      System.out.println("3. Try to receive 10 in the same session");
+      session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      queue = session.createQueue(name);
+      MessageConsumer c = session.createConsumer(queue);
+      for (int i = 0; i < numMessages; i++) {
+         Message m = c.receive(1000);
+      }
+      p.close();
+      session.close();
+   }
+
+   @Test
    public void testSimpleObject() throws Throwable {
       final int numMessages = 1;
       long time = System.currentTimeMillis();
@@ -1674,93 +1616,6 @@ public class ProtonTest extends ProtonTestBase {
             assertNotNull(tm);
             assertEquals("message for " + targetName, tm.getText());
             consumer.close();
-         }
-      } finally {
-         connection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testSendMessageOnAnonymousRelayLinkUsingMessageTo() throws Exception {
-
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection connection = client.connect();
-
-      try {
-         AmqpSession session = connection.createSession();
-
-         AmqpSender sender = session.createAnonymousSender();
-         AmqpMessage message = new AmqpMessage();
-
-         message.setAddress(address);
-         message.setMessageId("msg" + 1);
-         message.setText("Test-Message");
-
-         sender.send(message);
-         sender.close();
-
-         AmqpReceiver receiver = session.createReceiver(address);
-         receiver.flow(1);
-         AmqpMessage received = receiver.receive(10, TimeUnit.SECONDS);
-         assertNotNull("Should have read message", received);
-         assertEquals("msg1", received.getMessageId());
-         received.accept();
-
-         receiver.close();
-      } finally {
-         connection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testSendMessageFailsOnAnonymousRelayLinkWhenNoToValueSet() throws Exception {
-
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection connection = client.connect();
-      try {
-         AmqpSession session = connection.createSession();
-
-         AmqpSender sender = session.createAnonymousSender();
-         AmqpMessage message = new AmqpMessage();
-
-         message.setMessageId("msg" + 1);
-         message.setText("Test-Message");
-
-         try {
-            sender.send(message);
-            fail("Should not be able to send, message should be rejected");
-         } catch (Exception ex) {
-            ex.printStackTrace();
-         } finally {
-            sender.close();
-         }
-      } finally {
-         connection.close();
-      }
-   }
-
-   @Test(timeout = 60000)
-   public void testSendMessageFailsOnAnonymousRelayWhenToFieldHasNonExistingAddress() throws Exception {
-
-      AmqpClient client = new AmqpClient(new URI(tcpAmqpConnectionUri), userName, password);
-      AmqpConnection connection = client.connect();
-      try {
-         AmqpSession session = connection.createSession();
-
-         AmqpSender sender = session.createAnonymousSender();
-         AmqpMessage message = new AmqpMessage();
-
-         message.setAddress(address + "-not-in-service");
-         message.setMessageId("msg" + 1);
-         message.setText("Test-Message");
-
-         try {
-            sender.send(message);
-            fail("Should not be able to send, message should be rejected");
-         } catch (Exception ex) {
-            ex.printStackTrace();
-         } finally {
-            sender.close();
          }
       } finally {
          connection.close();
