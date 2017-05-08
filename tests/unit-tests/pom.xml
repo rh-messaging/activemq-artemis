@@ -19,7 +19,7 @@
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>1.5.4.jbossorg-003</version>
+      <version>1.5.4.jbossorg-004</version>
    </parent>
 
    <artifactId>unit-tests</artifactId>

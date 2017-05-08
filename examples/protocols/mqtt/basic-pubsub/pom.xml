@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.mqtt</groupId>
       <artifactId>mqtt-examples</artifactId>
-      <version>1.5.4.jbossorg-003</version>
+      <version>1.5.4.jbossorg-004</version>
    </parent>
 
    <artifactId>artemis-mqtt-publish-example</artifactId>
