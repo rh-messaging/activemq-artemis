@@ -423,7 +423,7 @@ public class AMQPSessionCallback implements SessionCallback {
       try {
 
          message.setConnectionID(receiver.getSession().getConnection().getRemoteContainer());
-
+         invokeIncoming((AMQPMessage) message, (ActiveMQProtonRemotingConnection) transportConnection.getProtocolConnection());
          serverSession.send(transaction, message, false, false);
 
          manager.getServer().getStorageManager().afterCompleteOperations(new IOCallback() {
@@ -529,6 +529,7 @@ public class AMQPSessionCallback implements SessionCallback {
       ProtonServerSenderContext plugSender = (ProtonServerSenderContext) consumer.getProtocolContext();
 
       try {
+         invokeOutgoing((AMQPMessage) message, (ActiveMQProtonRemotingConnection) transportConnection.getProtocolConnection());
          return plugSender.deliverMessage(ref, deliveryCount);
       } catch (Exception e) {
          connection.lock();
@@ -617,5 +618,13 @@ public class AMQPSessionCallback implements SessionCallback {
 
    public RoutingType getDefaultRoutingType(String address) {
       return manager.getServer().getAddressSettingsRepository().getMatch(address).getDefaultQueueRoutingType();
+   }
+
+   public void invokeIncoming(AMQPMessage message, ActiveMQProtonRemotingConnection connection) {
+      protonSPI.invokeIncomingInterceptors(message, connection);
+   }
+
+   public void invokeOutgoing(AMQPMessage message, ActiveMQProtonRemotingConnection connection) {
+      protonSPI.invokeOutgoingInterceptors(message, connection);
    }
 }
