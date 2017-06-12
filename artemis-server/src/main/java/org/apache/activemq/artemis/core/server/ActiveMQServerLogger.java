@@ -333,6 +333,15 @@ public interface ActiveMQServerLogger extends BasicLogger {
       format = Message.Format.MESSAGE_FORMAT)
    void reloadingConfiguration(String module);
 
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 221057, value = "Global Max Size is being adjusted to 1/2 of the JVM max size (-Xmx). being defined as {0}",
+      format = Message.Format.MESSAGE_FORMAT)
+   void usingDefaultPaging(long bytes);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 221058, value = "resetting Journal File size from {0} to {1} to fit with alignment of {2}", format = Message.Format.MESSAGE_FORMAT)
+   void invalidJournalFileSize(int journalFileSize, int fileSize, int alignment);
+
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222000, value = "ActiveMQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope",
       format = Message.Format.MESSAGE_FORMAT)
