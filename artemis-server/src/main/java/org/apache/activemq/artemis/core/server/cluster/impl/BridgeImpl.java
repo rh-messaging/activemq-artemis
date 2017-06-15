@@ -47,7 +47,7 @@ import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.message.impl.MessageImpl;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.HandleStatus;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
@@ -156,8 +156,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private boolean keepConnecting = true;
 
-   private ActiveMQServer server;
-
    public BridgeImpl(final ServerLocatorInternal serverLocator,
                      final int initialConnectAttempts,
                      final int reconnectAttempts,
@@ -176,7 +174,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                      final boolean useDuplicateDetection,
                      final String user,
                      final String password,
-                     final ActiveMQServer server) {
+                     final StorageManager storageManager) {
 
       this.reconnectAttempts = reconnectAttempts;
 
@@ -213,8 +211,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       this.user = user;
 
       this.password = password;
-
-      this.server = server;
    }
 
    public static final byte[] getDuplicateBytes(final UUID nodeUUID, final long messageID) {
@@ -598,9 +594,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    }
 
    public void connectionFailed(final ActiveMQException me, boolean failedOver, String scaleDownTargetNodeID) {
-      if (server.isStarted()) {
-         ActiveMQServerLogger.LOGGER.bridgeConnectionFailed(failedOver);
-      }
+      ActiveMQServerLogger.LOGGER.bridgeConnectionFailed(failedOver);
 
       synchronized (connectionGuard) {
          keepConnecting = true;
