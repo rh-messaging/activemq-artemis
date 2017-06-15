@@ -115,7 +115,6 @@ public class ActiveMQJMSVendor extends JMSVendor {
          default:
             return new ServerJMSMessage(wrapped, deliveryCount);
       }
-
    }
 
    @Override

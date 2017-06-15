@@ -206,7 +206,7 @@ public class JmsQueueBrowserTest extends BasicOpenWireTest {
          {
             System.out.println("Columns: " + cdata.getCompositeType().keySet());
          }
-         messageIDs[i] = (String) cdata.get("JMSMessageID");
+         messageIDs[i] = (String) cdata.prepareGet("JMSMessageID");
          System.out.println("message " + i + " : " + cdata.values());
       }
 
@@ -245,7 +245,7 @@ public class JmsQueueBrowserTest extends BasicOpenWireTest {
          {
             System.out.println("Columns: " + cdata.getCompositeType().keySet());
          }
-         messageIDs[i] = (String) cdata.get("JMSMessageID");
+         messageIDs[i] = (String) cdata.prepareGet("JMSMessageID");
          System.out.println("message " + i + " : " + cdata.values());
       }
 

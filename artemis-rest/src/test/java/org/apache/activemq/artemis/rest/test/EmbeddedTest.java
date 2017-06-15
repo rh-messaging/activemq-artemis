@@ -47,7 +47,7 @@ public class EmbeddedTest {
 
    @BeforeClass
    public static void startEmbedded() throws Exception {
-      server = new EmbeddedRestActiveMQJMS();
+      server = new EmbeddedRestActiveMQJMS(null);
       server.getManager().setConfigResourcePath("activemq-rest.xml");
       FileSecurityConfiguration securityConfiguration = new FileSecurityConfiguration("artemis-users.properties", "artemis-roles.properties", "guest", false, null);
       securityConfiguration.start();
