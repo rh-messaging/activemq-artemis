@@ -134,7 +134,7 @@ public class Run extends LockAbstract {
             if (file.exists()) {
                try {
                   try {
-                     server.exit();
+                     server.stop(true);
                   } catch (Exception e) {
                      e.printStackTrace();
                   }
@@ -155,7 +155,7 @@ public class Run extends LockAbstract {
          @Override
          public void run() {
             try {
-               server.exit();
+               server.stop(true);
             } catch (Exception e) {
                e.printStackTrace();
             }
