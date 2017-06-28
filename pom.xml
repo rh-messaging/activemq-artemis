@@ -20,7 +20,7 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-pom</artifactId>
    <packaging>pom</packaging>
-   <version>1.5.5.jbossorg-003</version>
+   <version>1.5.5.jbossorg-004</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -57,7 +57,6 @@
       <module>integration/activemq-vertx-integration</module>
       <module>artemis-distribution</module>
       <module>tests</module>
-      <module>artemis-features</module>
    </modules>
 
    <name>ActiveMQ Artemis Parent</name>
@@ -144,7 +143,7 @@
 
 
        For profiling add this line and use jmc (Java Mission Control) to evaluate the results:
-           -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=delay=30s,duration=120s,filename=/tmp/myrecording.jfr
+           -XX:+UnlockCommercial -XX:+FlightRecorder -XX:StartFlightRecording=delay=30s,duration=120s,filename=/tmp/myrecording.jfr
 
       -->
 
