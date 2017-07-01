@@ -353,15 +353,16 @@ public final class ReplicationManager implements ActiveMQComponent {
       }
 
       if (enabled) {
-         pendingTokens.add(repliToken);
          if (useExecutor) {
             replicationStream.execute(() -> {
                if (enabled) {
+                  pendingTokens.add(repliToken);
                   flowControl(packet.expectedEncodeSize());
                   replicatingChannel.send(packet);
                }
             });
          } else {
+            pendingTokens.add(repliToken);
             flowControl(packet.expectedEncodeSize());
             replicatingChannel.send(packet);
          }
@@ -408,9 +409,9 @@ public final class ReplicationManager implements ActiveMQComponent {
       OperationContext ctx = pendingTokens.poll();
 
       if (ctx == null) {
-         throw new IllegalStateException("Missing replication token on the queue.");
+         logger.warn("Missing replication token on queue");
+         return;
       }
-
       ctx.replicationDone();
    }
 
