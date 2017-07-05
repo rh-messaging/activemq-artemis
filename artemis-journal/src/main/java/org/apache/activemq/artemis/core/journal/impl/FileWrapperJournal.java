@@ -97,7 +97,7 @@ public final class FileWrapperJournal extends JournalBase {
                                IOCompletion callback) throws Exception {
       JournalInternalRecord addRecord = new JournalAddRecord(true, id, recordType, persister, record);
 
-      writeRecord(addRecord, sync, callback);
+      writeRecord(addRecord, false, -1, false, callback);
    }
 
    @Override
@@ -108,7 +108,9 @@ public final class FileWrapperJournal extends JournalBase {
     * Write the record to the current file.
     */
    private void writeRecord(JournalInternalRecord encoder,
-                            final boolean sync,
+                            final boolean tx,
+                            final long txID,
+                            final boolean removeTX,
                             final IOCompletion callback) throws Exception {
 
       lockAppend.lock();
@@ -116,30 +118,54 @@ public final class FileWrapperJournal extends JournalBase {
          if (callback != null) {
             callback.storeLineUp();
          }
-         currentFile = journal.switchFileIfNecessary(encoder.getEncodeSize());
+         testSwitchFiles(encoder);
+         if (txID >= 0) {
+            if (tx) {
+               AtomicInteger value;
+               if (removeTX) {
+                  value = transactions.remove(txID);
+               } else {
+                  value = transactions.get(txID);
+               }
+               if (value != null) {
+                  encoder.setNumberOfRecords(value.get());
+               }
+            } else {
+               count(txID);
+            }
+         }
          encoder.setFileID(currentFile.getRecordID());
 
          if (callback != null) {
-            currentFile.getFile().write(encoder, sync, callback);
+            currentFile.getFile().write(encoder, false, callback);
          } else {
-            currentFile.getFile().write(encoder, sync);
+            currentFile.getFile().write(encoder, false);
          }
       } finally {
          lockAppend.unlock();
       }
    }
 
+   private void testSwitchFiles(JournalInternalRecord encoder) throws Exception {
+      JournalFile oldFile = currentFile;
+      currentFile = journal.switchFileIfNecessary(encoder.getEncodeSize());
+      if (oldFile != currentFile) {
+         for (AtomicInteger value : transactions.values()) {
+            value.set(0);
+         }
+      }
+   }
+
    @Override
    public void appendDeleteRecord(long id, boolean sync, IOCompletion callback) throws Exception {
       JournalInternalRecord deleteRecord = new JournalDeleteRecord(id);
-      writeRecord(deleteRecord, sync, callback);
+      writeRecord(deleteRecord, false, -1, false, callback);
    }
 
    @Override
    public void appendDeleteRecordTransactional(long txID, long id, EncodingSupport record) throws Exception {
-      count(txID);
       JournalInternalRecord deleteRecordTX = new JournalDeleteRecordTX(txID, id, record);
-      writeRecord(deleteRecordTX, false, null);
+      writeRecord(deleteRecordTX, false, txID, false, null);
    }
 
    @Override
@@ -148,9 +174,8 @@ public final class FileWrapperJournal extends JournalBase {
                                             byte recordType,
                                             Persister persister,
                                             Object record) throws Exception {
-      count(txID);
       JournalInternalRecord addRecord = new JournalAddRecordTX(true, txID, id, recordType, persister, record);
-      writeRecord(addRecord, false, null);
+      writeRecord(addRecord, false, txID, false, null);
    }
 
    @Override
@@ -161,7 +186,7 @@ public final class FileWrapperJournal extends JournalBase {
                                   boolean sync,
                                   IOCompletion callback) throws Exception {
       JournalInternalRecord updateRecord = new JournalAddRecord(false, id, recordType, persister, record);
-      writeRecord(updateRecord, sync, callback);
+      writeRecord(updateRecord, false, -1, false, callback);
    }
 
    @Override
@@ -170,9 +195,8 @@ public final class FileWrapperJournal extends JournalBase {
                                                byte recordType,
                                                Persister persister,
                                                Object record) throws Exception {
-      count(txID);
       JournalInternalRecord updateRecordTX = new JournalAddRecordTX(false, txID, id, recordType, persister, record);
-      writeRecord(updateRecordTX, false, null);
+      writeRecord(updateRecordTX, false, txID, false, null);
    }
 
    @Override
@@ -186,7 +210,7 @@ public final class FileWrapperJournal extends JournalBase {
          commitRecord.setNumberOfRecords(value.get());
       }
 
-      writeRecord(commitRecord, true, callback);
+      writeRecord(commitRecord, true, txID, true, callback);
    }
 
    @Override
@@ -206,9 +230,11 @@ public final class FileWrapperJournal extends JournalBase {
       AtomicInteger defaultValue = new AtomicInteger(1);
       AtomicInteger count = transactions.putIfAbsent(Long.valueOf(txID), defaultValue);
       if (count != null) {
-         return count.incrementAndGet();
+         count.incrementAndGet();
+      } else {
+         count = defaultValue;
       }
-      return defaultValue.get();
+      return count.intValue();
    }
 
    @Override
@@ -219,11 +245,7 @@ public final class FileWrapperJournal extends JournalBase {
    @Override
    public void appendRollbackRecord(long txID, boolean sync, IOCompletion callback) throws Exception {
       JournalInternalRecord rollbackRecord = new JournalRollbackRecordTX(txID);
-      AtomicInteger value = transactions.remove(Long.valueOf(txID));
-      if (value != null) {
-         rollbackRecord.setNumberOfRecords(value.get());
-      }
-      writeRecord(rollbackRecord, sync, callback);
+      writeRecord(rollbackRecord, true, txID, true, callback);
    }
 
    // UNSUPPORTED STUFF
