@@ -255,6 +255,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    private long globalMaxSize = ActiveMQDefaultConfiguration.getDefaultMaxGlobalSize();
 
+   private boolean amqpUseCoreSubscriptionNaming = ActiveMQDefaultConfiguration.getDefaultAmqpUseCoreSubscriptionNaming();
+
    private int maxDiskUsage = ActiveMQDefaultConfiguration.getDefaultMaxDiskUsage();
 
    private int diskScanPeriod = ActiveMQDefaultConfiguration.getDefaultDiskScanPeriod();
@@ -439,6 +441,18 @@ public class ConfigurationImpl implements Configuration, Serializable {
       connectionTTLOverride = ttl;
       return this;
    }
+
+   @Override
+   public boolean isAmqpUseCoreSubscriptionNaming() {
+      return amqpUseCoreSubscriptionNaming;
+   }
+
+   @Override
+   public Configuration setAmqpUseCoreSubscriptionNaming(boolean amqpUseCoreSubscriptionNaming) {
+      this.amqpUseCoreSubscriptionNaming = amqpUseCoreSubscriptionNaming;
+      return this;
+   }
+
 
    @Override
    public boolean isAsyncConnectionExecutionEnabled() {

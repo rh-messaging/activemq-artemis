@@ -366,7 +366,7 @@ public interface ActiveMQServer extends ServiceComponent {
     */
    boolean isAddressBound(String address) throws Exception;
 
-   void stop(boolean failoverOnServerShutdown) throws Exception;
+   void fail(boolean failoverOnServerShutdown) throws Exception;
 
    Queue updateQueue(String name,
                      RoutingType routingType,

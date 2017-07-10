@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.server;
+package org.apache.activemq.artemis.utils.collections;
+
+import java.util.Set;
 
 /**
- * A Component that needs to know the stop reason.
+ * A ConcurrentSet
+ *
+ * @param <E> The generic class
  */
-public interface ServiceComponent extends ActiveMQComponent {
+public interface ConcurrentSet<E> extends Set<E> {
 
-   //called by shutdown hooks before exit the VM
-   void stop(boolean shutdown) throws Exception;
+   boolean addIfAbsent(E o);
 }

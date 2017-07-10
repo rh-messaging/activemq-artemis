@@ -47,6 +47,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQDeleteAddressException;
@@ -149,6 +150,7 @@ import org.apache.activemq.artemis.core.server.reload.ReloadManager;
 import org.apache.activemq.artemis.core.server.reload.ReloadManagerImpl;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.settings.impl.DeletionPolicy;
 import org.apache.activemq.artemis.core.settings.impl.HierarchicalObjectRepository;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 import org.apache.activemq.artemis.core.transaction.ResourceManager;
@@ -337,7 +339,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       @Override
       public void stop() throws Exception {
-         internalStop(false);
+         ActiveMQServerImpl.this.stop(false);
       }
 
       @Override
@@ -670,20 +672,16 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
-   public void exit() throws Exception {
-      internalStop(true);
+   public void stop() throws Exception {
+      stop(true);
    }
 
    @Override
-   public final void stop() throws Exception {
-      internalStop(false);
-   }
-
-   private void internalStop(boolean isExit) throws Exception {
+   public void stop(boolean isShutdown)  throws Exception {
       try {
-         stop(false, isExit);
+         stop(false, isShutdown);
       } finally {
-         networkHealthCheck.stop();
+         if (isShutdown) networkHealthCheck.stop();
       }
    }
 
@@ -823,7 +821,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
-   public final void stop(boolean failoverOnServerShutdown) throws Exception {
+   public final void fail(boolean failoverOnServerShutdown) throws Exception {
       stop(failoverOnServerShutdown, false, false, false);
    }
 
@@ -857,7 +855,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     *
     * @param criticalIOError whether we have encountered an IO error with the journal etc
     */
-   void stop(boolean failoverOnServerShutdown, final boolean criticalIOError, boolean restarting, boolean isExit) {
+   void stop(boolean failoverOnServerShutdown, final boolean criticalIOError, boolean restarting, boolean isShutdown) {
 
       synchronized (this) {
          if (state == SERVER_STATE.STOPPED || state == SERVER_STATE.STOPPING) {
@@ -1046,8 +1044,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       for (ActiveMQComponent externalComponent : externalComponents) {
          try {
-            if (isExit && externalComponent instanceof ServiceComponent) {
-               ((ServiceComponent)externalComponent).exit();
+            if (externalComponent instanceof ServiceComponent) {
+               ((ServiceComponent)externalComponent).stop(isShutdown);
             } else {
                externalComponent.stop();
             }
@@ -2188,6 +2186,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       // Deploy any predefined queues
       deployQueuesFromConfiguration();
 
+      // Undeploy any addresses and queues not in config
+      undeployAddressesAndQueueNotInConfiguration();
+
       // We need to call this here, this gives any dependent server a chance to deploy its own addresses
       // this needs to be done before clustering is fully activated
       callActivateCallbacks();
@@ -2261,6 +2262,53 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       for (SecuritySettingPlugin securitySettingPlugin : configuration.getSecuritySettingPlugins()) {
          securitySettingPlugin.setSecurityRepository(securityRepository);
       }
+   }
+
+   private void undeployAddressesAndQueueNotInConfiguration() throws Exception {
+      undeployAddressesAndQueueNotInConfiguration(configuration);
+   }
+
+   private void undeployAddressesAndQueueNotInConfiguration(Configuration configuration) throws Exception {
+      Set<String> addressesInConfig = configuration.getAddressConfigurations().stream()
+                                                   .map(CoreAddressConfiguration::getName)
+                                                   .collect(Collectors.toSet());
+
+      Set<String> queuesInConfig = configuration.getAddressConfigurations().stream()
+                                                .map(CoreAddressConfiguration::getQueueConfigurations)
+                                                .flatMap(List::stream).map(CoreQueueConfiguration::getName)
+                                                .collect(Collectors.toSet());
+
+      for (SimpleString addressName : listAddressNames()) {
+         AddressSettings addressSettings = getAddressSettingsRepository().getMatch(addressName.toString());
+
+         if (!addressesInConfig.contains(addressName.toString()) && addressSettings.getConfigDeleteAddresses() == DeletionPolicy.FORCE) {
+            for (Queue queue : listQueues(addressName)) {
+               ActiveMQServerLogger.LOGGER.undeployQueue(queue.getName());
+               queue.deleteQueue(true);
+            }
+            ActiveMQServerLogger.LOGGER.undeployAddress(addressName);
+            removeAddressInfo(addressName, null);
+         } else if (addressSettings.getConfigDeleteQueues() == DeletionPolicy.FORCE) {
+            for (Queue queue : listConfiguredQueues(addressName)) {
+               if (!queuesInConfig.contains(queue.getName().toString())) {
+                  ActiveMQServerLogger.LOGGER.undeployQueue(queue.getName());
+                  queue.deleteQueue(true);
+               }
+            }
+         }
+      }
+   }
+
+   private Set<SimpleString> listAddressNames() {
+      return postOffice.getAddresses();
+   }
+
+   private List<Queue> listConfiguredQueues(SimpleString address) throws Exception {
+      return listQueues(address).stream().filter(queue -> !queue.isAutoCreated() && !queue.isInternalQueue()).collect(Collectors.toList());
+   }
+
+   private List<Queue> listQueues(SimpleString address) throws Exception {
+      return postOffice.listQueuesForAddress(address);
    }
 
    private void deployAddressesFromConfiguration() throws Exception {
@@ -2764,6 +2812,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("addresses");
          deployAddressesFromConfiguration(config);
+         undeployAddressesAndQueueNotInConfiguration(config);
       }
    }
 }

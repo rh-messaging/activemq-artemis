@@ -27,6 +27,8 @@ import org.apache.activemq.artemis.api.core.ActiveMQInternalErrorException;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueMaxConsumerLimitReached;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.core.exception.ActiveMQXAException;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
@@ -322,7 +324,23 @@ public class ServerSessionPacketHandler implements ChannelHandler {
                case SESS_BINDINGQUERY: {
                   requiresResponse = true;
                   SessionBindingQueryMessage request = (SessionBindingQueryMessage) packet;
-                  BindingQueryResult result = session.executeBindingQuery(request.getAddress(remotingConnection.getClientVersion()));
+                  final int clientVersion = remotingConnection.getClientVersion();
+                  BindingQueryResult result = session.executeBindingQuery(request.getAddress(clientVersion));
+
+                  /* if the session is JMS and it's from an older client then we need to add the old prefix to the queue
+                   * names otherwise the older client won't realize the queue exists and will try to create it and receive
+                   * an error
+                   */
+                  if (clientVersion < PacketImpl.ADDRESSING_CHANGE_VERSION && session.getMetaData(ClientSession.JMS_SESSION_IDENTIFIER_PROPERTY) != null) {
+                     final List<SimpleString> queueNames = result.getQueueNames();
+                     if (!queueNames.isEmpty()) {
+                        final List<SimpleString> convertedQueueNames = request.convertQueueNames(clientVersion, queueNames);
+                        if (convertedQueueNames != queueNames) {
+                           result = new BindingQueryResult(result.isExists(), convertedQueueNames, result.isAutoCreateQueues(), result.isAutoCreateAddresses(), result.isDefaultPurgeOnNoConsumers(), result.getDefaultMaxConsumers());
+                        }
+                     }
+                  }
+
                   if (channel.supports(PacketImpl.SESS_BINDINGQUERY_RESP_V4)) {
                      response = new SessionBindingQueryResponseMessage_V4(result.isExists(), result.getQueueNames(), result.isAutoCreateQueues(), result.isAutoCreateAddresses(), result.isDefaultPurgeOnNoConsumers(), result.getDefaultMaxConsumers());
                   } else if (channel.supports(PacketImpl.SESS_BINDINGQUERY_RESP_V3)) {

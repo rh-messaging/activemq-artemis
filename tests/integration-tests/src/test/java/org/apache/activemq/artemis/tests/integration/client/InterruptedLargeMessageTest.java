@@ -128,7 +128,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
 //         ((ServerSessionImpl) srvSession).clearLargeMessage();
 //      }
 
-      server.stop(false);
+      server.fail(false);
 
       ActiveMQTestBase.forceGC();
 
@@ -306,7 +306,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
          session.rollback();
       }
 
-      server.stop(false);
+      server.fail(false);
       server.start();
 
       server.stop();
@@ -384,7 +384,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
          sf.close();
       }
 
-      server.stop(false);
+      server.fail(false);
       server.start();
 
       validateNoFilesOnLargeDir();
@@ -442,7 +442,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
       session.close();
       sf.close();
 
-      server.stop(false);
+      server.fail(false);
       server.start();
 
       for (int start = 0; start < 2; start++) {
@@ -633,7 +633,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
       }
 
       ((ActiveMQServerImpl) server).replaceQueueFactory(original);
-      server.stop(false);
+      server.fail(false);
       server.start();
 
       server.stop();
@@ -696,7 +696,7 @@ public class InterruptedLargeMessageTest extends LargeMessageTestBase {
       }
 
       ((ActiveMQServerImpl) server).replaceQueueFactory(original);
-      server.stop(false);
+      server.fail(false);
       server.start();
 
       server.stop();

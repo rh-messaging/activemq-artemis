@@ -14,13 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.server;
+package org.apache.activemq.artemis.core.settings.impl;
 
-/**
- * A Component that needs to know the stop reason.
- */
-public interface ServiceComponent extends ActiveMQComponent {
-
-   //called by shutdown hooks before exit the VM
-   void stop(boolean shutdown) throws Exception;
+public enum DeletionPolicy {
+   OFF, FORCE;
 }
