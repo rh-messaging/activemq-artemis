@@ -205,10 +205,6 @@ public final class FileWrapperJournal extends JournalBase {
                                   IOCompletion callback,
                                   boolean lineUpContext) throws Exception {
       JournalInternalRecord commitRecord = new JournalCompleteRecordTX(TX_RECORD_TYPE.COMMIT, txID, null);
-      AtomicInteger value = transactions.remove(Long.valueOf(txID));
-      if (value != null) {
-         commitRecord.setNumberOfRecords(value.get());
-      }
 
       writeRecord(commitRecord, true, txID, true, callback);
    }
@@ -219,16 +215,12 @@ public final class FileWrapperJournal extends JournalBase {
                                    boolean sync,
                                    IOCompletion callback) throws Exception {
       JournalInternalRecord prepareRecord = new JournalCompleteRecordTX(TX_RECORD_TYPE.PREPARE, txID, transactionData);
-      AtomicInteger value = transactions.get(Long.valueOf(txID));
-      if (value != null) {
-         prepareRecord.setNumberOfRecords(value.get());
-      }
-      writeRecord(prepareRecord, sync, callback);
+      writeRecord(prepareRecord, true, txID, false, callback);
    }
 
    private int count(long txID) throws ActiveMQException {
       AtomicInteger defaultValue = new AtomicInteger(1);
-      AtomicInteger count = transactions.putIfAbsent(Long.valueOf(txID), defaultValue);
+      AtomicInteger count = transactions.putIfAbsent(txID, defaultValue);
       if (count != null) {
          count.incrementAndGet();
       } else {
