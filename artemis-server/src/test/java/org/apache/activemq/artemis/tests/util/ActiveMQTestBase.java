@@ -137,7 +137,7 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.FileUtil;
-import org.apache.activemq.artemis.utils.OrderedExecutorFactory;
+import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.ThreadLeakCheckRule;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
@@ -529,7 +529,11 @@ public abstract class ActiveMQTestBase extends Assert {
       for (String c : connectors) {
          connectors0.add(c);
       }
-      ClusterConnectionConfiguration clusterConnectionConfiguration = new ClusterConnectionConfiguration().setName("cluster1").setAddress("jms").setConnectorName(connectorName).setRetryInterval(1000).setDuplicateDetection(false).setMaxHops(1).setConfirmationWindowSize(1).setMessageLoadBalancingType(MessageLoadBalancingType.STRICT).setStaticConnectors(connectors0);
+      ClusterConnectionConfiguration clusterConnectionConfiguration = new ClusterConnectionConfiguration().
+         setName("cluster1").setAddress("jms").setConnectorName(connectorName).
+         setRetryInterval(1000).setDuplicateDetection(false).setMaxHops(1).
+         setConfirmationWindowSize(1).setMessageLoadBalancingType(MessageLoadBalancingType.STRICT).
+         setStaticConnectors(connectors0);
 
       return clusterConnectionConfiguration;
    }

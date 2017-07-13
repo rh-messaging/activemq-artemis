@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
@@ -81,6 +79,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.cluster.qourum.SharedNothingBackupQuorum;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.core.server.impl.SharedNothingBackupActivation;
+import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.jboss.logging.Logger;
 
 /**
@@ -204,13 +203,24 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
             ActiveMQServerLogger.LOGGER.invalidPacketForReplication(packet);
          }
       } catch (ActiveMQException e) {
+         logger.warn(e.getMessage(), e);
          ActiveMQServerLogger.LOGGER.errorHandlingReplicationPacket(e, packet);
          response = new ActiveMQExceptionMessage(e);
       } catch (Exception e) {
+         logger.warn(e.getMessage(), e);
          ActiveMQServerLogger.LOGGER.errorHandlingReplicationPacket(e, packet);
          response = new ActiveMQExceptionMessage(ActiveMQMessageBundle.BUNDLE.replicationUnhandledError(e));
       }
-      channel.send(response);
+
+      if (response != null) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("Returning " + response);
+         }
+
+         channel.send(response);
+      } else {
+         logger.trace("Response is null, ignoring response");
+      }
    }
 
    /**
@@ -269,6 +279,12 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
          return;
       }
 
+      logger.trace("Stopping endpoint");
+
+      started = false;
+
+      OrderedExecutorFactory.flushExecutor(executor);
+
       // Channel may be null if there isn't a connection to a live server
       if (channel != null) {
          channel.close();
@@ -306,15 +322,6 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
       pageManager.stop();
 
       pageIndex.clear();
-      final CountDownLatch latch = new CountDownLatch(1);
-      executor.execute(new Runnable() {
-
-         @Override
-         public void run() {
-            latch.countDown();
-         }
-      });
-      latch.await(30, TimeUnit.SECONDS);
 
       // Storage needs to be the last to stop
       storageManager.stop();
@@ -332,34 +339,68 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
 
    private void finishSynchronization(String liveID) throws Exception {
       if (logger.isTraceEnabled()) {
-         logger.trace("finishSynchronization::" + liveID);
+         logger.trace("BACKUP-SYNC-START: finishSynchronization::" + liveID);
       }
       for (JournalContent jc : EnumSet.allOf(JournalContent.class)) {
          Journal journal = journalsHolder.remove(jc);
+         if (logger.isTraceEnabled()) {
+            logger.trace("getting lock on " + jc + ", journal = " + journal);
+         }
+         registerJournal(jc.typeByte, journal);
          journal.synchronizationLock();
          try {
+            if (logger.isTraceEnabled()) {
+               logger.trace("lock acquired on " + jc);
+            }
             // files should be already in place.
             filesReservedForSync.remove(jc);
-            registerJournal(jc.typeByte, journal);
+            if (logger.isTraceEnabled()) {
+               logger.trace("stopping journal for " + jc);
+            }
             journal.stop();
+            if (logger.isTraceEnabled()) {
+               logger.trace("starting journal for " + jc);
+            }
             journal.start();
+            if (logger.isTraceEnabled()) {
+               logger.trace("loadAndSync " + jc);
+            }
             journal.loadSyncOnly(JournalState.SYNCING_UP_TO_DATE);
          } finally {
+            if (logger.isTraceEnabled()) {
+               logger.trace("unlocking " + jc);
+            }
             journal.synchronizationUnlock();
          }
+      }
+
+      if (logger.isTraceEnabled()) {
+         logger.trace("Sync on large messages...");
       }
       ByteBuffer buffer = ByteBuffer.allocate(4 * 1024);
       for (Entry<Long, ReplicatedLargeMessage> entry : largeMessages.entrySet()) {
          ReplicatedLargeMessage lm = entry.getValue();
          if (lm instanceof LargeServerMessageInSync) {
             LargeServerMessageInSync lmSync = (LargeServerMessageInSync) lm;
+            if (logger.isTraceEnabled()) {
+               logger.trace("lmSync on " + lmSync.toString());
+            }
             lmSync.joinSyncedData(buffer);
          }
+      }
+
+      if (logger.isTraceEnabled()) {
+         logger.trace("setRemoteBackupUpToDate and liveIDSet for " + liveID);
       }
 
       journalsHolder = null;
       backupQuorum.liveIDSet(liveID);
       activation.setRemoteBackupUpToDate();
+
+      if (logger.isTraceEnabled()) {
+         logger.trace("Backup is synchronized / BACKUP-SYNC-DONE");
+      }
+
       ActiveMQServerLogger.LOGGER.backupServerSynched(server);
       return;
    }

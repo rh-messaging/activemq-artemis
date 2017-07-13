@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -405,6 +406,8 @@ public interface ActiveMQServer extends ServiceComponent {
    boolean addClientConnection(String clientId, boolean unique);
 
    void removeClientConnection(String clientId);
+
+   Executor getThreadPool();
 
    AddressInfo getAddressInfo(SimpleString address);
 
