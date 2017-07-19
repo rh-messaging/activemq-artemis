@@ -72,7 +72,7 @@ public class AmqpPurgeOnNoConsumersTest extends AmqpClientTestSupport {
 
       receiver.flow(5);
 
-      sendMessages(queue, 5);
+      sendMessages(5, queue);
 
       t.join(5000);
 
