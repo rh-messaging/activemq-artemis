@@ -18,26 +18,25 @@ package org.apache.activemq.artemis.core.io.buffer;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.netty.buffer.Unpooled;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
-import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
+import org.apache.activemq.artemis.core.buffers.impl.ChannelBufferWrapper;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
-import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncoding;
 import org.apache.activemq.artemis.journal.ActiveMQJournalLogger;
 
-public class TimedBuffer {
+public final class TimedBuffer {
    // Constants -----------------------------------------------------
 
    // The number of tries on sleep before switching to spin
-   public static final int MAX_CHECKS_ON_SLEEP = 20;
+   private static final int MAX_CHECKS_ON_SLEEP = 20;
 
    // Attributes ----------------------------------------------------
 
@@ -48,7 +47,7 @@ public class TimedBuffer {
    // prevent that
    private final Semaphore spinLimiter = new Semaphore(1);
 
-   private CheckTimer timerRunnable = new CheckTimer();
+   private CheckTimer timerRunnable;
 
    private final int bufferSize;
 
@@ -58,7 +57,7 @@ public class TimedBuffer {
 
    private List<IOCallback> callbacks;
 
-   private volatile int timeout;
+   private final int timeout;
 
    // used to measure sync requests. When a sync is requested, it shouldn't take more than timeout to happen
    private volatile boolean pendingSync = false;
@@ -84,6 +83,7 @@ public class TimedBuffer {
 
    private TimerTask logRatesTimerTask;
 
+   //used only in the timerThread do not synchronization
    private boolean useSleep = true;
 
    // no need to be volatile as every access is synchronized
@@ -105,7 +105,11 @@ public class TimedBuffer {
       }
       // Setting the interval for nano-sleeps
 
-      buffer = ActiveMQBuffers.fixedBuffer(bufferSize);
+      //prefer off heap buffer to allow further humongous allocations and reduce GC overhead
+      //NOTE: it is used ByteBuffer::allocateDirect instead of Unpooled::directBuffer, because the latter could allocate
+      //direct ByteBuffers with no Cleaner!
+      buffer = new ChannelBufferWrapper(Unpooled.wrappedBuffer(ByteBuffer.allocateDirect(size)));
+
 
       buffer.clear();
 
@@ -114,15 +118,6 @@ public class TimedBuffer {
       callbacks = new ArrayList<>();
 
       this.timeout = timeout;
-   }
-
-   // for Debug purposes
-   public synchronized boolean isUseSleep() {
-      return useSleep;
-   }
-
-   public synchronized void setUseSleep(boolean useSleep) {
-      this.useSleep = useSleep;
    }
 
    public synchronized void start() {
@@ -232,7 +227,25 @@ public class TimedBuffer {
    }
 
    public synchronized void addBytes(final ActiveMQBuffer bytes, final boolean sync, final IOCallback callback) {
-      addBytes(new ByteArrayEncoding(bytes.toByteBuffer().array()), sync, callback);
+      if (!started) {
+         throw new IllegalStateException("TimedBuffer is not started");
+      }
+
+      delayFlush = false;
+
+      //it doesn't modify the reader index of bytes as in the original version
+      final int readableBytes = bytes.readableBytes();
+      final int writerIndex = buffer.writerIndex();
+      buffer.setBytes(writerIndex, bytes, bytes.readerIndex(), readableBytes);
+      buffer.writerIndex(writerIndex + readableBytes);
+
+      callbacks.add(callback);
+
+      if (sync) {
+         pendingSync = true;
+
+         startSpin();
+      }
    }
 
    public synchronized void addBytes(final EncodingSupport bytes, final boolean sync, final IOCallback callback) {
@@ -275,13 +288,12 @@ public class TimedBuffer {
                bytesFlushed.addAndGet(pos);
             }
 
-            ByteBuffer bufferToFlush = bufferObserver.newBuffer(bufferSize, pos);
+            final ByteBuffer bufferToFlush = bufferObserver.newBuffer(bufferSize, pos);
+            //bufferObserver::newBuffer doesn't necessary return a buffer with limit == pos or limit == bufferSize!!
+            bufferToFlush.limit(pos);
+            //perform memcpy under the hood due to the off heap buffer
+            buffer.getBytes(0, bufferToFlush);
 
-            // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
-            // Using bufferToFlush.put(buffer) would make several append calls for each byte
-            // We also transfer the content of this buffer to the native file's buffer
-
-            bufferToFlush.put(buffer.toByteBuffer().array(), 0, pos);
 
             bufferObserver.flushBuffer(bufferToFlush, pendingSync, callbacks);
 
@@ -290,7 +302,7 @@ public class TimedBuffer {
             pendingSync = false;
 
             // swap the instance as the previous callback list is being used asynchronously
-            callbacks = new LinkedList<>();
+            callbacks = new ArrayList<>();
 
             buffer.clear();
 
@@ -372,7 +384,7 @@ public class TimedBuffer {
             // On the timeout verification, notice that we ignore the timeout check if we are using sleep
 
             if (pendingSync) {
-               if (isUseSleep()) {
+               if (useSleep) {
                   // if using sleep, we will always flush
                   flush();
                   lastFlushTime = System.nanoTime();
@@ -404,7 +416,7 @@ public class TimedBuffer {
        * if more than 50% of the checks have failed we will cancel the sleep and just use regular spin
        */
       private void sleepIfPossible() {
-         if (isUseSleep()) {
+         if (useSleep) {
             if (checks < MAX_CHECKS_ON_SLEEP) {
                timeBefore = System.nanoTime();
             }
@@ -414,7 +426,7 @@ public class TimedBuffer {
             } catch (InterruptedException e) {
                throw new ActiveMQInterruptedException(e);
             } catch (Exception e) {
-               setUseSleep(false);
+               useSleep = false;
                ActiveMQJournalLogger.LOGGER.warn(e.getMessage() + ", disabling sleep on TimedBuffer, using spin now", e);
             }
 
@@ -429,7 +441,7 @@ public class TimedBuffer {
                if (++checks >= MAX_CHECKS_ON_SLEEP) {
                   if (failedChecks > MAX_CHECKS_ON_SLEEP * 0.5) {
                      ActiveMQJournalLogger.LOGGER.debug("Thread.sleep with nano seconds is not working as expected, Your kernel possibly doesn't support real time. the Journal TimedBuffer will spin for timeouts");
-                     setUseSleep(false);
+                     useSleep = false;
                   }
                }
             }
