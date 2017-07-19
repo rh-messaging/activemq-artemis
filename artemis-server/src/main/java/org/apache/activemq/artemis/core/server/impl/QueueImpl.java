@@ -220,6 +220,8 @@ public class QueueImpl implements Queue {
 
    private volatile boolean directDeliver = true;
 
+   private volatile boolean supportsDirectDeliver = true;
+
    private AddressSettingsRepositoryListener addressSettingsRepositoryListener;
 
    private final ExpiryScanner expiryScanner = new ExpiryScanner();
@@ -611,7 +613,7 @@ public class QueueImpl implements Queue {
          // The checkDirect flag is periodically set to true, if the delivery is specified as direct then this causes the
          // directDeliver flag to be re-computed resulting in direct delivery if the queue is empty
          // We don't recompute it on every delivery since executing isEmpty is expensive for a ConcurrentQueue
-         if (!directDeliver &&
+         if (supportsDirectDeliver && !directDeliver &&
             direct &&
             System.currentTimeMillis() - lastDirectDeliveryCheck > CHECK_QUEUE_SIZE_PERIOD) {
             lastDirectDeliveryCheck = System.currentTimeMillis();
@@ -624,13 +626,13 @@ public class QueueImpl implements Queue {
                // deliveries
                if (flushExecutor() && flushDeliveriesInTransit()) {
                   // Go into direct delivery mode
-                  directDeliver = true;
+                  directDeliver = supportsDirectDeliver;
                }
             }
          }
       }
 
-      if (direct && directDeliver && deliveriesInTransit.getCount() == 0 && deliverDirect(ref)) {
+      if (direct && supportsDirectDeliver && directDeliver && deliveriesInTransit.getCount() == 0 && deliverDirect(ref)) {
          return;
       }
 
@@ -784,6 +786,10 @@ public class QueueImpl implements Queue {
 
          consumersChanged = true;
 
+         if (!consumer.supportsDirectDelivery()) {
+            this.supportsDirectDeliver = false;
+         }
+
          cancelRedistributor();
 
          consumerList.add(new ConsumerHolder(consumer));
@@ -813,6 +819,8 @@ public class QueueImpl implements Queue {
                break;
             }
          }
+
+         this.supportsDirectDeliver = checkConsumerDirectDeliver();
 
          if (pos > 0 && pos >= consumerList.size()) {
             pos = consumerList.size() - 1;
@@ -846,6 +854,16 @@ public class QueueImpl implements Queue {
 
          noConsumers.decrementAndGet();
       }
+   }
+
+   private boolean checkConsumerDirectDeliver() {
+      boolean supports = true;
+      for (ConsumerHolder consumerCheck: consumerList) {
+         if (!consumerCheck.consumer.supportsDirectDelivery()) {
+            supports = false;
+         }
+      }
+      return supports;
    }
 
    @Override
@@ -2564,6 +2582,12 @@ public class QueueImpl implements Queue {
     */
    private boolean deliverDirect(final MessageReference ref) {
       synchronized (this) {
+         if (!supportsDirectDeliver) {
+            // this should never happen, but who knows?
+            // if someone ever change add and removeConsumer,
+            // this would protect any eventual bug
+            return false;
+         }
          if (paused || consumerList.isEmpty()) {
             return false;
          }
