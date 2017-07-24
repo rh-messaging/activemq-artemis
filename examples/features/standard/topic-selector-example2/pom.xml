@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.broker</groupId>
       <artifactId>jms-examples</artifactId>
-      <version>2.0.0.amq-700009</version>
+      <version>2.0.0.amq-700010</version>
    </parent>
 
    <artifactId>topic-selector2</artifactId>
