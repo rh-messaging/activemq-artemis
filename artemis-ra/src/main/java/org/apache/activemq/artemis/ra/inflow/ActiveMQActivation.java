@@ -58,6 +58,7 @@ import org.apache.activemq.artemis.ra.ActiveMQResourceAdapter;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.XARecoveryConfig;
 import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.SensitiveDataCodec;
+import org.jboss.logging.Logger;
 
 /**
  * The activation.
@@ -65,11 +66,6 @@ import org.apache.activemq.artemis.utils.SensitiveDataCodec;
 public class ActiveMQActivation {
 
    private static final Logger logger = Logger.getLogger(ActiveMQActivation.class);
-
-   /**
-    * Trace enabled
-    */
-   private static boolean trace = ActiveMQRALogger.LOGGER.isTraceEnabled();
 
    /**
     * The onMessage method
@@ -148,8 +144,8 @@ public class ActiveMQActivation {
                              final ActiveMQActivationSpec spec) throws ResourceException {
       spec.validate();
 
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("constructor(" + ra + ", " + endpointFactory + ", " + spec + ")");
+      if (logger.isTraceEnabled()) {
+         logger.trace("constructor(" + ra + ", " + endpointFactory + ", " + spec + ")");
       }
 
       if (ra.isUseMaskedPassword()) {
@@ -181,8 +177,8 @@ public class ActiveMQActivation {
     * @return The value
     */
    public ActiveMQActivationSpec getActivationSpec() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("getActivationSpec()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("getActivationSpec()");
       }
 
       return spec;
@@ -194,8 +190,8 @@ public class ActiveMQActivation {
     * @return The value
     */
    public MessageEndpointFactory getMessageEndpointFactory() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("getMessageEndpointFactory()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("getMessageEndpointFactory()");
       }
 
       return endpointFactory;
@@ -207,8 +203,8 @@ public class ActiveMQActivation {
     * @return The value
     */
    public boolean isDeliveryTransacted() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("isDeliveryTransacted()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("isDeliveryTransacted()");
       }
 
       return isDeliveryTransacted;
@@ -220,8 +216,8 @@ public class ActiveMQActivation {
     * @return The value
     */
    public WorkManager getWorkManager() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("getWorkManager()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("getWorkManager()");
       }
 
       return ra.getWorkManager();
@@ -233,8 +229,8 @@ public class ActiveMQActivation {
     * @return The value
     */
    public boolean isTopic() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("isTopic()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("isTopic()");
       }
 
       return isTopic;
@@ -246,8 +242,8 @@ public class ActiveMQActivation {
     * @throws ResourceException Thrown if an error occurs
     */
    public void start() throws ResourceException {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("start()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("start()");
       }
       deliveryActive.set(true);
       ra.getWorkManager().scheduleWork(new SetupActivation());
@@ -285,8 +281,8 @@ public class ActiveMQActivation {
     * Stop the activation
     */
    public void stop() {
-      if (ActiveMQActivation.trace) {
-         ActiveMQRALogger.LOGGER.trace("stop()");
+      if (logger.isTraceEnabled()) {
+         logger.trace("stop()");
       }
 
       deliveryActive.set(false);
@@ -499,7 +495,7 @@ public class ActiveMQActivation {
                result.close();
             }
          } catch (Exception e) {
-            ActiveMQRALogger.LOGGER.trace("Ignored error closing connection", e);
+            logger.trace("Ignored error closing connection", e);
          }
          if (t instanceof Exception) {
             throw (Exception) t;
@@ -605,8 +601,8 @@ public class ActiveMQActivation {
    }
 
    public void startReconnectThread(final String threadName) {
-      if (trace) {
-         ActiveMQRALogger.LOGGER.trace("Starting reconnect Thread " + threadName + " on MDB activation " + this);
+      if (logger.isTraceEnabled()) {
+         logger.trace("Starting reconnect Thread " + threadName + " on MDB activation " + this);
       }
       Runnable runnable = new Runnable() {
          @Override
@@ -624,8 +620,8 @@ public class ActiveMQActivation {
     * @param failure if reconnecting in the event of a failure
     */
    public void reconnect(Throwable failure) {
-      if (trace) {
-         ActiveMQRALogger.LOGGER.trace("reconnecting activation " + this);
+      if (logger.isTraceEnabled()) {
+         logger.trace("reconnecting activation " + this);
       }
       if (failure != null) {
          if (failure instanceof ActiveMQException && ((ActiveMQException) failure).getType() == ActiveMQExceptionType.QUEUE_DOES_NOT_EXIST) {
