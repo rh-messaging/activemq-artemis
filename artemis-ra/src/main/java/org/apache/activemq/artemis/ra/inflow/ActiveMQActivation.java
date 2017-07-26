@@ -64,6 +64,8 @@ import org.apache.activemq.artemis.utils.SensitiveDataCodec;
  */
 public class ActiveMQActivation {
 
+   private static final Logger logger = Logger.getLogger(ActiveMQActivation.class);
+
    /**
     * Trace enabled
     */
@@ -297,7 +299,7 @@ public class ActiveMQActivation {
     * @throws Exception Thrown if an error occurs
     */
    protected synchronized void setup() throws Exception {
-      ActiveMQRALogger.LOGGER.debug("Setting up " + spec);
+      logger.debug("Setting up " + spec);
 
       setupCF();
 
@@ -348,14 +350,14 @@ public class ActiveMQActivation {
          factory.getServerLocator().addClusterTopologyListener(new RebalancingListener());
       }
 
-      ActiveMQRALogger.LOGGER.debug("Setup complete " + this);
+      logger.debug("Setup complete " + this);
    }
 
    /**
     * Teardown the activation
     */
    protected synchronized void teardown() {
-      ActiveMQRALogger.LOGGER.debug("Tearing down " + spec);
+      logger.debug("Tearing down " + spec);
 
       long timeout = factory == null ? ActiveMQClient.DEFAULT_CALL_TIMEOUT : factory.getCallTimeout();
 
@@ -444,7 +446,7 @@ public class ActiveMQActivation {
       nodes.clear();
       lastReceived = false;
 
-      ActiveMQRALogger.LOGGER.debug("Tearing down complete " + this);
+      logger.debug("Tearing down complete " + this);
    }
 
    protected void setupCF() throws Exception {
@@ -488,7 +490,7 @@ public class ActiveMQActivation {
             result.addMetaData(ClientSession.JMS_SESSION_CLIENT_ID_PROPERTY, clientID);
          }
 
-         ActiveMQRALogger.LOGGER.debug("Using queue connection " + result);
+         logger.debug("Using queue connection " + result);
 
          return result;
       } catch (Throwable t) {
@@ -521,14 +523,15 @@ public class ActiveMQActivation {
          } else {
             ctx = new InitialContext(spec.getParsedJndiParams());
          }
-         ActiveMQRALogger.LOGGER.debug("Using context " + ctx.getEnvironment() + " for " + spec);
-         if (ActiveMQActivation.trace) {
-            ActiveMQRALogger.LOGGER.trace("setupDestination(" + ctx + ")");
+
+         logger.debug("Using context " + ctx.getEnvironment() + " for " + spec);
+         if (logger.isTraceEnabled()) {
+            logger.trace("setupDestination(" + ctx + ")");
          }
 
          String destinationTypeString = spec.getDestinationType();
          if (destinationTypeString != null && !destinationTypeString.trim().equals("")) {
-            ActiveMQRALogger.LOGGER.debug("Destination type defined as " + destinationTypeString);
+            logger.debug("Destination type defined as " + destinationTypeString);
 
             Class<?> destinationType;
             if (Topic.class.getName().equals(destinationTypeString)) {
@@ -538,7 +541,7 @@ public class ActiveMQActivation {
                destinationType = Queue.class;
             }
 
-            ActiveMQRALogger.LOGGER.debug("Retrieving " + destinationType.getName() + " \"" + destinationName + "\" from JNDI");
+            logger.debug("Retrieving " + destinationType.getName() + " \"" + destinationName + "\" from JNDI");
 
             try {
                destination = (ActiveMQDestination) ActiveMQRaUtils.lookup(ctx, destinationName, destinationType);
@@ -549,7 +552,7 @@ public class ActiveMQActivation {
 
                String calculatedDestinationName = destinationName.substring(destinationName.lastIndexOf('/') + 1);
 
-               ActiveMQRALogger.LOGGER.debug("Unable to retrieve " + destinationName +
+               logger.debug("Unable to retrieve " + destinationName +
                                                 " from JNDI. Creating a new " + destinationType.getName() +
                                                 " named " + calculatedDestinationName + " to be used by the MDB.");
 
@@ -561,8 +564,8 @@ public class ActiveMQActivation {
                }
             }
          } else {
-            ActiveMQRALogger.LOGGER.debug("Destination type not defined in MDB activation configuration.");
-            ActiveMQRALogger.LOGGER.debug("Retrieving " + Destination.class.getName() + " \"" + destinationName + "\" from JNDI");
+            logger.debug("Destination type not defined in MDB activation configuration.");
+            logger.debug("Retrieving " + Destination.class.getName() + " \"" + destinationName + "\" from JNDI");
 
             destination = (ActiveMQDestination) ActiveMQRaUtils.lookup(ctx, destinationName, Destination.class);
             if (destination instanceof Topic) {
@@ -648,7 +651,7 @@ public class ActiveMQActivation {
             try {
                Thread.sleep(setupInterval);
             } catch (InterruptedException e) {
-               ActiveMQRALogger.LOGGER.debug("Interrupted trying to reconnect " + spec, e);
+               logger.debug("Interrupted trying to reconnect " + spec, e);
                break;
             }
 
