@@ -44,7 +44,7 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
 
    private final JournalStorageManager storageManager;
 
-   private long pendingRecordID = -1;
+   private long pendingRecordID = NO_PENDING_ID;
 
    private boolean paged;
 
@@ -295,7 +295,10 @@ public final class LargeServerMessageImpl extends ServerMessageImpl implements L
             byte[] bufferToWrite;
             if (bytesRead <= 0) {
                break;
-            } else if (bytesRead == bufferBytes.length) {
+            } else if (bytesRead == bufferBytes.length && !this.storageManager.isReplicated()) {
+               // ARTEMIS-1220: We cannot reuse the same buffer if it's replicated
+               // otherwise there could be another thread still using the buffer on a
+               // replication.
                bufferToWrite = bufferBytes;
             } else {
                bufferToWrite = new byte[bytesRead];
