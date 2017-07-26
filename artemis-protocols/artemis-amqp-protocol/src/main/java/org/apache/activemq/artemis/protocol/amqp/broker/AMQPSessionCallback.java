@@ -88,7 +88,7 @@ public class AMQPSessionCallback implements SessionCallback {
 
    private AMQPSessionContext protonSession;
 
-   private final Executor closeExecutor;
+   private final Executor sessionExecutor;
 
    private final AtomicBoolean draining = new AtomicBoolean(false);
 
@@ -102,7 +102,7 @@ public class AMQPSessionCallback implements SessionCallback {
       this.manager = manager;
       this.connection = connection;
       this.transportConnection = transportConnection;
-      this.closeExecutor = executor;
+      this.sessionExecutor = executor;
       this.operationContext = operationContext;
    }
 
@@ -137,6 +137,11 @@ public class AMQPSessionCallback implements SessionCallback {
    @Override
    public void browserFinished(ServerConsumer consumer) {
 
+   }
+
+   @Override
+   public boolean supportsDirectDelivery() {
+      return false;
    }
 
    public void init(AMQPSessionContext protonSession, SASLResult saslResult) throws Exception {

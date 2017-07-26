@@ -22,6 +22,10 @@ import org.apache.activemq.artemis.core.filter.Filter;
 
 public interface Consumer {
 
+   default boolean supportsDirectDelivery() {
+      return true;
+   }
+
    /**
     * There was a change on semantic during 2.3 here.<br>
     * We now first accept the message, and the actual deliver is done as part of
