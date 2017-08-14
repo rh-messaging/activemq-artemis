@@ -1520,4 +1520,13 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       //unsupported
    }
 
+   @Override
+   public String getProtocolName() {
+      return OpenWireProtocolManagerFactory.OPENWIRE_PROTOCOL_NAME;
+   }
+
+   @Override
+   public String getClientID() {
+      return context.getClientId();
+   }
 }
