@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -379,6 +380,11 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       assertEquals(1234567, conf.getGlobalMaxSize());
       assertEquals(37, conf.getMaxDiskUsage());
       assertEquals(123, conf.getDiskScanPeriod());
+
+      assertEquals(333, conf.getCriticalAnalyzerCheckPeriod());
+      assertEquals(777, conf.getCriticalAnalyzerTimeout());
+      assertEquals(false, conf.isCriticalAnalyzer());
+      assertEquals(CriticalAnalyzerPolicy.HALT, conf.getCriticalAnalyzerPolicy());
 
       assertEquals(false, conf.isJournalDatasync());
    }
