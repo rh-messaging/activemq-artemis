@@ -16,7 +16,6 @@
  */
 package org.apache.activemq.artemis.spi.core.protocol;
 
-import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
