@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
@@ -59,9 +59,10 @@ public class JDBCSequentialFileFactoryTest {
 
    private JDBCSequentialFileFactory factory;
 
+   private ThreadPoolExecutor executor;
    @Before
    public void setup() throws Exception {
-      Executor executor = Executors.newSingleThreadExecutor(ActiveMQThreadFactory.defaultThreadFactory());
+      executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), ActiveMQThreadFactory.defaultThreadFactory());
 
       String connectionUrl = "jdbc:derby:target/data;create=true";
       String tableName = "FILES";
@@ -75,7 +76,12 @@ public class JDBCSequentialFileFactoryTest {
 
    @After
    public void tearDown() throws Exception {
-      factory.destroy();
+      try {
+         factory.stop();
+         factory.destroy();
+      } finally {
+         executor.shutdownNow();
+      }
    }
 
    @After
@@ -195,6 +201,7 @@ public class JDBCSequentialFileFactoryTest {
 
       try {
          // Create a new pointer to the test file and ensure file.size() returns the correct value.
+         Thread.sleep(1000);
          SequentialFile file2 = factory.createSequentialFile(fileName);
          assertEquals(testFileSize, file2.size());
       } catch (Throwable t) {
