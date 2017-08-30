@@ -174,13 +174,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private final ScheduledDeliveryHandler scheduledDeliveryHandler;
 
-   private long messagesAdded;
+   private AtomicLong messagesAdded = new AtomicLong(0);
 
-   private long messagesAcknowledged;
+   private AtomicLong messagesAcknowledged = new AtomicLong(0);
 
-   private long messagesExpired;
+   private AtomicLong messagesExpired = new AtomicLong(0);
 
-   private long messagesKilled;
+   private AtomicLong messagesKilled = new AtomicLong(0);
 
    protected final AtomicInteger deliveringCount = new AtomicInteger(0);
 
@@ -628,7 +628,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       directDeliver = false;
 
       if (!ref.isPaged()) {
-         messagesAdded++;
+         messagesAdded.incrementAndGet();
       }
    }
 
@@ -692,7 +692,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (scheduledDeliveryHandler.checkAndSchedule(ref, true)) {
          synchronized (this) {
             if (!ref.isPaged()) {
-               messagesAdded++;
+               messagesAdded.incrementAndGet();
             }
          }
 
@@ -1120,11 +1120,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
 
       if (reason == AckReason.EXPIRED) {
-         messagesExpired++;
+         messagesExpired.incrementAndGet();
       } else if (reason == AckReason.KILLED) {
-         messagesKilled++;
+         messagesKilled.incrementAndGet();
       } else {
-         messagesAcknowledged++;
+         messagesAcknowledged.incrementAndGet();
       }
 
    }
@@ -1155,11 +1155,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
 
       if (reason == AckReason.EXPIRED) {
-         messagesExpired++;
+         messagesExpired.incrementAndGet();
       } else if (reason == AckReason.KILLED) {
-         messagesKilled++;
+         messagesKilled.incrementAndGet();
       } else {
-         messagesAcknowledged++;
+         messagesAcknowledged.incrementAndGet();
       }
    }
 
@@ -1176,7 +1176,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       // https://issues.jboss.org/browse/HORNETQ-609
       incDelivering();
 
-      messagesAcknowledged++;
+      messagesAcknowledged.incrementAndGet();
    }
 
    private RefsOperation getRefsOperation(final Transaction tx) {
@@ -1290,7 +1290,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public void incrementMesssagesAdded() {
-      messagesAdded++;
+      messagesAdded.incrementAndGet();
    }
 
    @Override
@@ -1308,25 +1308,25 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public long getMessagesAdded() {
       if (pageSubscription != null) {
-         return messagesAdded + pageSubscription.getCounter().getValueAdded();
+         return messagesAdded.get() + pageSubscription.getCounter().getValueAdded();
       } else {
-         return messagesAdded;
+         return messagesAdded.get();
       }
    }
 
    @Override
    public long getMessagesAcknowledged() {
-      return messagesAcknowledged;
+      return messagesAcknowledged.get();
    }
 
    @Override
    public long getMessagesExpired() {
-      return messagesExpired;
+      return messagesExpired.get();
    }
 
    @Override
    public long getMessagesKilled() {
-      return messagesKilled;
+      return messagesKilled.get();
    }
 
    @Override
@@ -2007,7 +2007,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          internalAddTail(ref);
 
          if (!ref.isPaged()) {
-            messagesAdded++;
+            messagesAdded.incrementAndGet();
          }
 
          if (added++ > MAX_DELIVERIES_IN_LOOP) {
@@ -2690,7 +2690,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   groups.put(groupID, consumer);
                }
 
-               messagesAdded++;
+               messagesAdded.incrementAndGet();
 
                deliveriesInTransit.countUp();
                proceedDeliver(consumer, ref);
@@ -2867,22 +2867,22 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public synchronized void resetMessagesAdded() {
-      messagesAdded = 0;
+      messagesAdded.set(0);
    }
 
    @Override
    public synchronized void resetMessagesAcknowledged() {
-      messagesAcknowledged = 0;
+      messagesAcknowledged.set(0);
    }
 
    @Override
    public synchronized void resetMessagesExpired() {
-      messagesExpired = 0;
+      messagesExpired.set(0);
    }
 
    @Override
    public synchronized void resetMessagesKilled() {
-      messagesKilled = 0;
+      messagesKilled.set(0);
    }
 
    @Override
