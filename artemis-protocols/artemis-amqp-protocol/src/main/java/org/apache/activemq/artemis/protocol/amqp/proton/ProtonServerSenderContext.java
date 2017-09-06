@@ -303,8 +303,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
             }
 
             if (queueNameToUse != null) {
-               SimpleString matchingAnycastQueue = sessionSPI.getMatchingQueue(addressToUse, queueNameToUse, RoutingType.MULTICAST);
-               queue = matchingAnycastQueue.toString();
+               SimpleString matchingQueue = sessionSPI.getMatchingQueue(addressToUse, queueNameToUse, RoutingType.MULTICAST);
+               if (matchingQueue == null) {
+                  throw new ActiveMQAMQPNotFoundException("Queue: '" + queueNameToUse + "' does not exist");
+               }
+               queue = matchingQueue.toString();
             }
             //if the address specifies a broker configured queue then we always use this, treat it as a queue
             if (queue != null) {
