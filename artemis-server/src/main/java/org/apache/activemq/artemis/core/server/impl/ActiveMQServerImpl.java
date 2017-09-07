@@ -2440,16 +2440,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
 
       //after the postOffice call, updatedAddressInfo could change further (concurrently)!
-      final AddressInfo updatedAddressInfo = postOffice.updateAddressInfo(address, routingTypes);
-      //it change the address info without any lock!
-      final long txID = storageManager.generateID();
-      try {
-         storageManager.deleteAddressBinding(txID, updatedAddressInfo.getId());
-         storageManager.addAddressBinding(txID, updatedAddressInfo);
-      } finally {
-         storageManager.commitBindings(txID);
-      }
-
+      postOffice.updateAddressInfo(address, routingTypes);
       return true;
    }
 
@@ -2457,13 +2448,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    public boolean addAddressInfo(AddressInfo addressInfo) throws Exception {
       boolean result = postOffice.addAddressInfo(addressInfo);
 
-      if (result) {
-         long txID = storageManager.generateID();
-         storageManager.addAddressBinding(txID, addressInfo);
-         storageManager.commitBindings(txID);
-      } else {
-         result = false;
-      }
 
       return result;
    }
@@ -2612,20 +2596,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                             RoutingType routingType,
                             Integer maxConsumers,
                             Boolean purgeOnNoConsumers) throws Exception {
+
       final QueueBinding queueBinding = this.postOffice.updateQueue(new SimpleString(name), routingType, maxConsumers, purgeOnNoConsumers);
       if (queueBinding != null) {
          final Queue queue = queueBinding.getQueue();
-         if (queue.isDurable()) {
-            final long txID = storageManager.generateID();
-            try {
-               storageManager.deleteQueueBinding(txID, queueBinding.getID());
-               storageManager.addQueueBinding(txID, queueBinding);
-               storageManager.commitBindings(txID);
-            } catch (Throwable throwable) {
-               storageManager.rollbackBindings(txID);
-               throw throwable;
-            }
-         }
          return queue;
       } else {
          return null;

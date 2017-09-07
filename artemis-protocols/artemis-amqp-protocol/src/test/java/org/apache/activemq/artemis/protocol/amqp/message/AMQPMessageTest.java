@@ -19,8 +19,15 @@ package org.apache.activemq.artemis.protocol.amqp.message;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
+import org.apache.activemq.artemis.api.core.ICoreMessage;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessage;
+import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessagePersisterV2;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
+import org.apache.activemq.artemis.spi.core.protocol.EmbedMessageUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
@@ -57,7 +64,51 @@ public class AMQPMessageTest {
       Assert.assertEquals(7, encode.getHeader().getDeliveryCount().intValue());
       Assert.assertEquals(true, encode.getHeader().getDurable());
       Assert.assertEquals("someNiceLocal", encode.getAddress());
+   }
 
+   @Test
+   public void testExtraProperty() {
+      MessageImpl protonMessage = (MessageImpl) Message.Factory.create();
 
+      byte[] original = RandomUtil.randomBytes();
+      SimpleString name = SimpleString.toSimpleString("myProperty");
+      AMQPMessage decoded = encodeAndDecodeMessage(protonMessage);
+      decoded.setAddress("someAddress");
+      decoded.setMessageID(33);
+      decoded.putExtraBytesProperty(name, original);
+
+      ICoreMessage coreMessage = decoded.toCore();
+      Assert.assertEquals(original, coreMessage.getBytesProperty(name));
+
+      ActiveMQBuffer buffer = ActiveMQBuffers.pooledBuffer(10 * 1024);
+      try {
+         decoded.getPersister().encode(buffer, decoded);
+         Assert.assertEquals(AMQPMessagePersisterV2.getInstance().getID(), buffer.readByte()); // the journal reader will read 1 byte to find the persister
+         AMQPMessage readMessage = (AMQPMessage)decoded.getPersister().decode(buffer, null);
+         Assert.assertEquals(33, readMessage.getMessageID());
+         Assert.assertEquals("someAddress", readMessage.getAddress());
+         Assert.assertArrayEquals(original, readMessage.getExtraBytesProperty(name));
+      } finally {
+         buffer.release();
+      }
+
+      {
+         ICoreMessage embeddedMessage = EmbedMessageUtil.embedAsCoreMessage(decoded);
+         AMQPMessage readMessage = (AMQPMessage) EmbedMessageUtil.extractEmbedded(embeddedMessage);
+         Assert.assertEquals(33, readMessage.getMessageID());
+         Assert.assertEquals("someAddress", readMessage.getAddress());
+         Assert.assertArrayEquals(original, readMessage.getExtraBytesProperty(name));
+      }
+
+   }
+
+   private AMQPMessage encodeAndDecodeMessage(MessageImpl message) {
+      ByteBuf nettyBuffer = Unpooled.buffer(1500);
+
+      message.encode(new NettyWritable(nettyBuffer));
+      byte[] bytes = new byte[nettyBuffer.writerIndex()];
+      nettyBuffer.readBytes(bytes);
+
+      return new AMQPMessage(0, bytes);
    }
 }
