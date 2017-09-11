@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.ActiveMQDeleteAddressException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -172,6 +173,10 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.SecurityFormatter;
 import org.apache.activemq.artemis.utils.TimeUtils;
 import org.apache.activemq.artemis.utils.VersionLoader;
+import org.apache.activemq.artemis.utils.critical.CriticalAction;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerImpl;
+import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
 import org.jboss.logging.Logger;
 
 /**
@@ -316,6 +321,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private final ActiveMQServer parentServer;
 
+   private final CriticalAnalyzer analyzer;
+
    //todo think about moving this to the activation
    private final List<SimpleString> scaledDownNodeIDs = new ArrayList<>();
 
@@ -426,6 +433,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       this.parentServer = parentServer;
 
       this.serviceRegistry = serviceRegistry == null ? new ServiceRegistryImpl() : serviceRegistry;
+
+      if (configuration.isCriticalAnalyzer()) {
+         this.analyzer = new CriticalAnalyzerImpl();
+      } else {
+         this.analyzer = EmptyCriticalAnalyzer.getInstance();
+      }
    }
 
    @Override
@@ -481,11 +494,77 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
    }
 
+   @Override
+   public CriticalAnalyzer getCriticalAnalyzer() {
+      return this.analyzer;
+   }
+
    private void internalStart() throws Exception {
       if (state != SERVER_STATE.STOPPED) {
          logger.debug("Server already started!");
          return;
       }
+
+      /** Calling this for cases where the server was stopped and now is being restarted... failback, etc...*/
+      this.analyzer.clear();
+
+      this.getCriticalAnalyzer().setCheckTime(configuration.getCriticalAnalyzerCheckPeriod()).setTimeout(configuration.getCriticalAnalyzerTimeout());
+
+      if (configuration.isCriticalAnalyzer()) {
+         this.getCriticalAnalyzer().start();
+      }
+
+      CriticalAction criticalAction = null;
+      final CriticalAnalyzerPolicy criticalAnalyzerPolicy = configuration.getCriticalAnalyzerPolicy();
+      switch (criticalAnalyzerPolicy) {
+
+         case HALT:
+            criticalAction = criticalComponent -> {
+
+               ActiveMQServerLogger.LOGGER.criticalSystemHalt(criticalComponent);
+
+               threadDump();
+
+               // on the case of a critical failure, -1 cannot simply means forever.
+               // in case graceful is -1, we will set it to 30 seconds
+               long timeout = configuration.getGracefulShutdownTimeout() < 0 ? 30000 : configuration.getGracefulShutdownTimeout();
+
+               Runtime.getRuntime().halt(70); // Linux systems will have /usr/include/sysexits.h showing 70 as internal software error
+
+            };
+            break;
+         case SHUTDOWN:
+            criticalAction = criticalComponent -> {
+
+               ActiveMQServerLogger.LOGGER.criticalSystemShutdown(criticalComponent);
+
+               threadDump();
+
+               // on the case of a critical failure, -1 cannot simply means forever.
+               // in case graceful is -1, we will set it to 30 seconds
+               long timeout = configuration.getGracefulShutdownTimeout() < 0 ? 30000 : configuration.getGracefulShutdownTimeout();
+
+               // you can't stop from the check thread,
+               // nor can use an executor
+               Thread stopThread = new Thread() {
+                  @Override
+                  public void run() {
+                     try {
+                        ActiveMQServerImpl.this.stop();
+                     } catch (Throwable e) {
+                        logger.warn(e.getMessage(), e);
+                     }
+                  }
+               };
+               stopThread.start();
+            };
+            break;
+         case LOG:
+            criticalAction = ActiveMQServerLogger.LOGGER::criticalSystemLog;
+            break;
+      }
+
+      this.getCriticalAnalyzer().addAction(criticalAction);
 
       configuration.parseSystemProperties();
 
@@ -1053,6 +1132,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.errorStoppingComponent(e, externalComponent.getClass().getName());
          }
+      }
+
+      try {
+         this.getCriticalAnalyzer().stop();
+      } catch (Exception e) {
+         logger.warn(e.getMessage(), e);
       }
 
       if (identity != null) {
@@ -1728,9 +1813,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          if (queue.isDurable()) {
             // make sure the user has privileges to delete this queue
-            securityStore.check(address, CheckType.DELETE_DURABLE_QUEUE, session);
+            securityStore.check(address, queueName, CheckType.DELETE_DURABLE_QUEUE, session);
          } else {
-            securityStore.check(address, CheckType.DELETE_NON_DURABLE_QUEUE, session);
+            securityStore.check(address, queueName, CheckType.DELETE_NON_DURABLE_QUEUE, session);
          }
       }
 
@@ -1959,10 +2044,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private StorageManager createStorageManager() {
       if (configuration.isPersistenceEnabled()) {
          if (configuration.getStoreConfiguration() != null && configuration.getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.DATABASE) {
-            return new JDBCJournalStorageManager(configuration, getScheduledPool(), executorFactory, ioExecutorFactory, shutdownOnCriticalIO);
+            JDBCJournalStorageManager journal = new JDBCJournalStorageManager(configuration, getCriticalAnalyzer(), getScheduledPool(), executorFactory, ioExecutorFactory, shutdownOnCriticalIO);
+            this.getCriticalAnalyzer().add(journal);
+            return journal;
          } else {
             // Default to File Based Storage Manager, (Legacy default configuration).
-            return new JournalStorageManager(configuration, executorFactory, scheduledPool, ioExecutorFactory, shutdownOnCriticalIO);
+            JournalStorageManager journal = new JournalStorageManager(configuration, getCriticalAnalyzer(), executorFactory, scheduledPool, ioExecutorFactory, shutdownOnCriticalIO);
+            this.getCriticalAnalyzer().add(journal);
+            return journal;
          }
       }
       return new NullStorageManager();
@@ -2107,7 +2196,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       securityStore = new SecurityStoreImpl(securityRepository, securityManager, configuration.getSecurityInvalidationInterval(), configuration.isSecurityEnabled(), configuration.getClusterUser(), configuration.getClusterPassword(), managementService);
 
-      queueFactory = new QueueFactoryImpl(executorFactory, scheduledPool, addressSettingsRepository, storageManager);
+      queueFactory = new QueueFactoryImpl(executorFactory, scheduledPool, addressSettingsRepository, storageManager, this);
 
       pagingManager = createPagingManager();
 
@@ -2328,10 +2417,20 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private void deployQueuesFromListCoreQueueConfiguration(List<CoreQueueConfiguration> queues) throws Exception {
       for (CoreQueueConfiguration config : queues) {
-         ActiveMQServerLogger.LOGGER.deployQueue(SimpleString.toSimpleString(config.getName()));
-
-         createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(), SimpleString.toSimpleString(config.getName()), SimpleString.toSimpleString(config.getFilterString()), null, config.isDurable(), false, true, false, false, config.getMaxConsumers(), config.getPurgeOnNoConsumers(), true);
+         addOrUpdateQueue(config);
       }
+   }
+
+   private Queue addOrUpdateQueue(CoreQueueConfiguration config) throws Exception {
+      SimpleString queueName = SimpleString.toSimpleString(config.getName());
+      ActiveMQServerLogger.LOGGER.deployQueue(queueName);
+      Queue queue = updateQueue(config.getName(), config.getRoutingType(), config.getMaxConsumers(), config.getPurgeOnNoConsumers());
+      if (queue == null) {
+         queue = createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(),
+            queueName, SimpleString.toSimpleString(config.getFilterString()), null,
+            config.isDurable(), false, true, false, false, config.getMaxConsumers(), config.getPurgeOnNoConsumers(), true);
+      }
+      return queue;
    }
 
    private void deployQueuesFromConfiguration() throws Exception {

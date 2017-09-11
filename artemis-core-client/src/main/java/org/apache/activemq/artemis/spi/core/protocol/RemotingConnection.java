@@ -206,4 +206,22 @@ public interface RemotingConnection extends BufferHandler {
     * @return
     */
    boolean isSupportsFlowControl();
+
+   /**
+    * Returns the name of the protocol for this Remoting Connection
+    * @return
+    */
+   String getProtocolName();
+
+   /**
+    * Sets the client ID associated with this connection
+    * @return
+    */
+   void setClientID(String cID);
+
+   /**
+    * Returns the Client ID associated with this connection
+    * @return
+    */
+   String getClientID();
 }

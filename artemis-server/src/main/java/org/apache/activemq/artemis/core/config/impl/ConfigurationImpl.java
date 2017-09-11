@@ -40,6 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -278,6 +279,14 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private String networkCheckPing6Command = NetworkHealthCheck.IPV6_DEFAULT_COMMAND;
 
    private String internalNamingPrefix = ActiveMQDefaultConfiguration.getInternalNamingPrefix();
+
+   private boolean criticalAnalyzer = ActiveMQDefaultConfiguration.getCriticalAnalyzer();
+
+   private CriticalAnalyzerPolicy criticalAnalyzerPolicy = ActiveMQDefaultConfiguration.getCriticalAnalyzerPolicy();
+
+   private long criticalAnalyzerTimeout = ActiveMQDefaultConfiguration.getCriticalAnalyzerTimeout();
+
+   private long criticalAnalyzerCheckPeriod = 0; // non set
 
    /**
     * Parent folder for all data folders.
@@ -1994,6 +2003,53 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public Configuration setNetworkCheckPing6Command(String command) {
       this.networkCheckPing6Command = command;
+      return this;
+   }
+
+   @Override
+   public boolean isCriticalAnalyzer() {
+      return criticalAnalyzer;
+   }
+
+   @Override
+   public Configuration setCriticalAnalyzer(boolean CriticalAnalyzer) {
+      this.criticalAnalyzer = CriticalAnalyzer;
+      return this;
+   }
+
+   @Override
+   public long getCriticalAnalyzerTimeout() {
+      return criticalAnalyzerTimeout;
+   }
+
+   @Override
+   public Configuration setCriticalAnalyzerTimeout(long timeout) {
+      this.criticalAnalyzerTimeout = timeout;
+      return this;
+   }
+
+   @Override
+   public long getCriticalAnalyzerCheckPeriod() {
+      if (criticalAnalyzerCheckPeriod <= 0) {
+         this.criticalAnalyzerCheckPeriod = ActiveMQDefaultConfiguration.getCriticalAnalyzerCheckPeriod(criticalAnalyzerTimeout);
+      }
+      return criticalAnalyzerCheckPeriod;
+   }
+
+   @Override
+   public Configuration setCriticalAnalyzerCheckPeriod(long checkPeriod) {
+      this.criticalAnalyzerCheckPeriod = checkPeriod;
+      return this;
+   }
+
+   @Override
+   public CriticalAnalyzerPolicy getCriticalAnalyzerPolicy() {
+      return criticalAnalyzerPolicy;
+   }
+
+   @Override
+   public Configuration setCriticalAnalyzerPolicy(CriticalAnalyzerPolicy policy) {
+      this.criticalAnalyzerPolicy = policy;
       return this;
    }
 

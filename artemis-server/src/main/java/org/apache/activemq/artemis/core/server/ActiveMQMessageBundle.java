@@ -386,6 +386,9 @@ public interface ActiveMQMessageBundle {
    @Message(id = 119119, value = "Disk Capacity is Low, cannot produce more messages.")
    ActiveMQIOErrorException diskBeyondLimit();
 
+   @Message(id = 119120, value = "connection with ID {0} closed by management", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQInternalErrorException connectionWithIDClosedByManagement(String ID);
+
    @Message(id = 119200, value = "Maximum Consumer Limit Reached on Queue:(address={0},queue={1})", format = Message.Format.MESSAGE_FORMAT)
    ActiveMQQueueMaxConsumerLimitReached maxConsumerLimitReachedForQueue(SimpleString address, SimpleString queueName);
 
@@ -429,5 +432,8 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 119212, value = "Invalid deletion policy type {0}", format = Message.Format.MESSAGE_FORMAT)
    IllegalArgumentException invalidDeletionPolicyType(String val);
+
+   @Message(id = 119213, value = "User: {0} does not have permission=''{1}'' for queue {2} on address {3}", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQSecurityException userNoPermissionsQueue(String username, CheckType checkType, String squeue, String saddress);
 
 }

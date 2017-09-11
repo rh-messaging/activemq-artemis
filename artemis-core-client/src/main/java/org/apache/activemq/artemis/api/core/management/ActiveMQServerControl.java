@@ -773,6 +773,24 @@ public interface ActiveMQServerControl {
    boolean closeConnectionsForUser(@Parameter(desc = "a user name", name = "userName") String address) throws Exception;
 
    /**
+    * Closes the connection with the given id.
+    */
+   @Operation(desc = "Closes all the connection with the id", impact = MBeanOperationInfo.INFO)
+   boolean closeConnectionWithID(@Parameter(desc = "The connection ID", name = "ID") String ID) throws Exception;
+
+   /**
+    * Closes the session with the given id.
+    */
+   @Operation(desc = "Closes the session with the id", impact = MBeanOperationInfo.INFO)
+   boolean closeSessionWithID(String connectionID, String ID) throws Exception;
+
+   /**
+    * Closes the consumer with the given id.
+    */
+   @Operation(desc = "Closes the consumer with the id", impact = MBeanOperationInfo.INFO)
+   boolean closeConsumerWithID(String sessionID, String ID) throws Exception;
+
+   /**
     * Lists all the IDs of the connections connected to this server.
     */
    @Operation(desc = "List all the connection IDs", impact = MBeanOperationInfo.INFO)
@@ -1075,5 +1093,35 @@ public interface ActiveMQServerControl {
 
    @Operation(desc = "List Addresses on the broker", impact = MBeanOperationInfo.INFO)
    String listAddresses(@Parameter(name = "separator", desc = "Separator used on the string listing") String separator) throws Exception;
+
+   @Operation(desc = "Search for Connections", impact = MBeanOperationInfo.INFO)
+   String listConnections(@Parameter(name = "Options") String options,
+                          @Parameter(name = "Page Number") int page,
+                          @Parameter(name = "Page Size") int pageSize) throws Exception;
+
+   @Operation(desc = "Search for Sessions", impact = MBeanOperationInfo.INFO)
+   String listSessions(@Parameter(name = "Options") String options,
+                       @Parameter(name = "Page Number") int page,
+                       @Parameter(name = "Page Size") int pageSize) throws Exception;
+
+   @Operation(desc = "Search for Consumers", impact = MBeanOperationInfo.INFO)
+   String listConsumers(@Parameter(name = "Options") String options,
+                       @Parameter(name = "Page Number") int page,
+                       @Parameter(name = "Page Size") int pageSize) throws Exception;
+
+   @Operation(desc = "Search for Consumers", impact = MBeanOperationInfo.INFO)
+   String listProducers(@Parameter(name = "Options") String options,
+                        @Parameter(name = "Page Number") int page,
+                        @Parameter(name = "Page Size") int pageSize) throws Exception;
+
+   @Operation(desc = "Search for Addresses", impact = MBeanOperationInfo.INFO)
+   String listAddresses(@Parameter(name = "Options") String options,
+                        @Parameter(name = "Page Number") int page,
+                        @Parameter(name = "Page Size") int pageSize) throws Exception;
+
+   @Operation(desc = "Search for Queues", impact = MBeanOperationInfo.INFO)
+   String listQueues(@Parameter(name = "Options") String options,
+                     @Parameter(name = "Page Number") int page,
+                     @Parameter(name = "Page Size") int pageSize) throws Exception;
 }
 

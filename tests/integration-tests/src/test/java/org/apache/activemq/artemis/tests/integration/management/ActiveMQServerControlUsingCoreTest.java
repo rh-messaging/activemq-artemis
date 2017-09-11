@@ -89,6 +89,21 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          }
 
          @Override
+         public boolean closeConnectionWithID(String ID) throws Exception {
+            return (Boolean) proxy.invokeOperation("closeConnectionWithID", ID);
+         }
+
+         @Override
+         public boolean closeSessionWithID(String connectionID, String ID) throws Exception {
+            return (Boolean) proxy.invokeOperation("closeSessionWithID", connectionID, ID);
+         }
+
+         @Override
+         public boolean closeConsumerWithID(String sessionID, String ID) throws Exception {
+            return (Boolean) proxy.invokeOperation("closeConsumerWithID", sessionID, ID);
+         }
+
+         @Override
          public boolean commitPreparedTransaction(final String transactionAsBase64) throws Exception {
             return (Boolean) proxy.invokeOperation("commitPreparedTransaction", transactionAsBase64);
          }
@@ -881,6 +896,47 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          @Override
          public String listAddresses(@Parameter(name = "separator", desc = "Separator used on the string listing") String separator) throws Exception {
             return (String) proxy.invokeOperation("listAddresses", separator);
+         }
+
+         @Override
+         public String listConnections(String filter, int page, int pageSize) throws Exception {
+            return (String) proxy.invokeOperation("listAddresses", filter, page, pageSize);
+         }
+
+         @Override
+         public String listSessions(@Parameter(name = "Filter String") String filter,
+                                    @Parameter(name = "Page Number") int page,
+                                    @Parameter(name = "Page Size") int pageSize) throws Exception {
+            return null;
+         }
+
+         @Override
+         public String listConsumers(@Parameter(name = "Options") String options,
+                                     @Parameter(name = "Page Number") int page,
+                                     @Parameter(name = "Page Size") int pageSize) throws Exception {
+            return null;
+         }
+
+
+         @Override
+         public String listProducers(@Parameter(name = "Options") String options,
+                                     @Parameter(name = "Page Number") int page,
+                                     @Parameter(name = "Page Size") int pageSize) throws Exception {
+            return null;
+         }
+
+         @Override
+         public String listAddresses(@Parameter(name = "Options") String options,
+                                     @Parameter(name = "Page Number") int page,
+                                     @Parameter(name = "Page Size") int pageSize) throws Exception {
+            return null;
+         }
+
+         @Override
+         public String listQueues(@Parameter(name = "Options") String options,
+                                  @Parameter(name = "Page Number") int page,
+                                  @Parameter(name = "Page Size") int pageSize) throws Exception {
+            return null;
          }
       };
    }
