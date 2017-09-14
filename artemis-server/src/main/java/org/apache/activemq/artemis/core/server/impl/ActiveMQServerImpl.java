@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.ActiveMQDeleteAddressException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -506,7 +507,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       /** Calling this for cases where the server was stopped and now is being restarted... failback, etc...*/
       this.analyzer.clear();
 
-      this.getCriticalAnalyzer().setCheckTime(configuration.getCriticalAnalyzerCheckPeriod()).setTimeout(configuration.getCriticalAnalyzerTimeout());
+      this.getCriticalAnalyzer().setCheckTime(configuration.getCriticalAnalyzerCheckPeriod(), TimeUnit.MILLISECONDS).setTimeout(configuration.getCriticalAnalyzerTimeout(), TimeUnit.MILLISECONDS);
 
       if (configuration.isCriticalAnalyzer()) {
          this.getCriticalAnalyzer().start();
@@ -1437,7 +1438,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       checkSessionLimit(validatedUser);
 
       callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.beforeCreateSession(name, username, minLargeMessageSize, connection,
-            autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, context, prefixes) : null);
+                                                                                  autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, context, prefixes) : null);
 
       final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes);
 
@@ -1699,9 +1700,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                             boolean temporary,
                             boolean autoCreated,
                             Integer maxConsumers,
-                            Boolean deleteOnNoConsumers,
+                            Boolean purgeOnNoConsumers,
                             boolean autoCreateAddress) throws Exception {
-      return createQueue(address, routingType, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, deleteOnNoConsumers, autoCreateAddress);
+      return createQueue(address, routingType, queueName, filter, user, durable, temporary, false, false, autoCreated, maxConsumers, purgeOnNoConsumers, autoCreateAddress);
    }
 
    @Deprecated
@@ -1838,7 +1839,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
 
       callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.beforeDestroyQueue(queueName, session, checkConsumerCount,
-            removeConsumers, autoDeleteAddress) : null);
+                                                                                 removeConsumers, autoDeleteAddress) : null);
 
       addressSettingsRepository.clearCache();
 
@@ -1882,7 +1883,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       callPostQueueDeletionCallbacks(address, queueName);
 
       callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.afterDestroyQueue(queue, address, session, checkConsumerCount,
-            removeConsumers, autoDeleteAddress) : null);
+                                                                                removeConsumers, autoDeleteAddress) : null);
    }
 
    @Override
@@ -2413,7 +2414,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
 
       try {
-         injectMonitor(new FileStoreMonitor(getScheduledPool(), executorFactory.getExecutor(), configuration.getDiskScanPeriod(), TimeUnit.MILLISECONDS, configuration.getMaxDiskUsage() / 100f));
+         injectMonitor(new FileStoreMonitor(getScheduledPool(), executorFactory.getExecutor(), configuration.getDiskScanPeriod(), TimeUnit.MILLISECONDS, configuration.getMaxDiskUsage() / 100f, shutdownOnCriticalIO));
       } catch (Exception e) {
          logger.warn(e.getMessage(), e);
       }
@@ -2456,13 +2457,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private void undeployAddressesAndQueueNotInConfiguration(Configuration configuration) throws Exception {
       Set<String> addressesInConfig = configuration.getAddressConfigurations().stream()
-                                                   .map(CoreAddressConfiguration::getName)
-                                                   .collect(Collectors.toSet());
+         .map(CoreAddressConfiguration::getName)
+         .collect(Collectors.toSet());
 
       Set<String> queuesInConfig = configuration.getAddressConfigurations().stream()
-                                                .map(CoreAddressConfiguration::getQueueConfigurations)
-                                                .flatMap(List::stream).map(CoreQueueConfiguration::getName)
-                                                .collect(Collectors.toSet());
+         .map(CoreAddressConfiguration::getQueueConfigurations)
+         .flatMap(List::stream).map(CoreQueueConfiguration::getName)
+         .collect(Collectors.toSet());
 
       for (SimpleString addressName : listAddressNames()) {
          AddressSettings addressSettings = getAddressSettingsRepository().getMatch(addressName.toString());
@@ -2511,20 +2512,24 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private void deployQueuesFromListCoreQueueConfiguration(List<CoreQueueConfiguration> queues) throws Exception {
       for (CoreQueueConfiguration config : queues) {
-         addOrUpdateQueue(config);
-      }
-   }
+         SimpleString queueName = SimpleString.toSimpleString(config.getName());
+         ActiveMQServerLogger.LOGGER.deployQueue(config.getName(), config.getAddress());
 
-   private Queue addOrUpdateQueue(CoreQueueConfiguration config) throws Exception {
-      SimpleString queueName = SimpleString.toSimpleString(config.getName());
-      ActiveMQServerLogger.LOGGER.deployQueue(queueName);
-      Queue queue = updateQueue(config.getName(), config.getRoutingType(), config.getMaxConsumers(), config.getPurgeOnNoConsumers());
-      if (queue == null) {
-         queue = createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(),
-            queueName, SimpleString.toSimpleString(config.getFilterString()), null,
-            config.isDurable(), false, true, false, false, config.getMaxConsumers(), config.getPurgeOnNoConsumers(), true);
+         // determine if there is an address::queue match; update it if so
+         if (locateQueue(queueName) != null && locateQueue(queueName).getAddress().toString().equals(config.getAddress())) {
+            updateQueue(config.getName(), config.getRoutingType(), config.getMaxConsumers(), config.getPurgeOnNoConsumers());
+         } else {
+            // if the address::queue doesn't exist then create it
+            try {
+               createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(),
+                           queueName, SimpleString.toSimpleString(config.getFilterString()),null,
+                           config.isDurable(),false,false,false,false,config.getMaxConsumers(),config.getPurgeOnNoConsumers(),true);
+            } catch (ActiveMQQueueExistsException e) {
+               // the queue may exist on a *different* address
+               ActiveMQServerLogger.LOGGER.warn(e.getMessage());
+            }
+         }
       }
-      return queue;
    }
 
    private void deployQueuesFromConfiguration() throws Exception {
@@ -2701,7 +2706,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          if (ignoreIfExists) {
             return binding.getQueue();
          } else {
-            throw ActiveMQMessageBundle.BUNDLE.queueAlreadyExists(queueName);
+            throw ActiveMQMessageBundle.BUNDLE.queueAlreadyExists(queueName, binding.getAddress());
          }
       }
 
