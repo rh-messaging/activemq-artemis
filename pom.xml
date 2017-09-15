@@ -155,7 +155,7 @@
            -XX:+UnlockCommercialFeatures -XX:+FlightRecorder -XX:StartFlightRecording=delay=30s,duration=120s,filename=/tmp/myrecording.jfr
 
       -->
-      
+
       <activemq-surefire-argline>-Djava.util.logging.manager=org.jboss.logmanager.LogManager
          -Dlogging.configuration="file:${activemq.basedir}/tests/config/logging.properties"
          -Djava.library.path="${activemq.basedir}/artemis-native/bin" -Djgroups.bind_addr=localhost -Dorg.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory.localBindAddress=localhost
@@ -1538,7 +1538,7 @@
                   <exclude>**/node_modules/**</exclude>
                   <exclude>**/package.json</exclude>
                   <exclude>**/npm-shrinkwrap.json</exclude>
-                  
+
                   <!-- Build time overlay folder -->
                   <exclude>**/overlays/**</exclude>
 
