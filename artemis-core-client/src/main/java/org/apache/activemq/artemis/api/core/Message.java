@@ -51,6 +51,7 @@ import org.apache.activemq.artemis.utils.UUID;
  */
 public interface Message {
 
+   SimpleString HDR_ROUTE_TO_IDS = new SimpleString("_AMQ_ROUTE_TO");
    /**
     * the actual time the message was expired.
     * * *
@@ -101,6 +102,11 @@ public interface Message {
     * To be used with Last value queues.
     */
    SimpleString HDR_LAST_VALUE_NAME = new SimpleString("_AMQ_LVQ_NAME");
+
+   /**
+    * The Routing Type for this message.  Ensures that this message is only routed to queues with matching routing type.
+    */
+   SimpleString HDR_ROUTING_TYPE = new SimpleString("_AMQ_ROUTING_TYPE");
 
    /**
     * To define the mime-type of body messages. Mainly for stomp but it could be informed on any message for user purposes.
