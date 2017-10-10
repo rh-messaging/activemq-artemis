@@ -51,6 +51,8 @@ import org.apache.activemq.artemis.utils.UUID;
  */
 public interface Message {
 
+   SimpleString HDR_ROUTE_TO_IDS = new SimpleString("_AMQ_ROUTE_TO");
+
    SimpleString HDR_ACTUAL_EXPIRY_TIME = new SimpleString("_AMQ_ACTUAL_EXPIRY");
 
    SimpleString HDR_ORIGINAL_ADDRESS = new SimpleString("_AMQ_ORIG_ADDRESS");
@@ -70,6 +72,11 @@ public interface Message {
    SimpleString HDR_DUPLICATE_DETECTION_ID = new SimpleString("_AMQ_DUPL_ID");
 
    SimpleString HDR_LAST_VALUE_NAME = new SimpleString("_AMQ_LVQ_NAME");
+
+   /**
+    * The Routing Type for this message.  Ensures that this message is only routed to queues with matching routing type.
+    */
+   SimpleString HDR_ROUTING_TYPE = new SimpleString("_AMQ_ROUTING_TYPE");
 
    byte DEFAULT_TYPE = 0;
 
