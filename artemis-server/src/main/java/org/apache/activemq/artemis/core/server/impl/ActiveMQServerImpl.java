@@ -136,7 +136,7 @@ import org.apache.activemq.artemis.core.server.ServiceComponent;
 import org.apache.activemq.artemis.core.server.ServiceRegistry;
 import org.apache.activemq.artemis.core.server.cluster.BackupManager;
 import org.apache.activemq.artemis.core.server.cluster.ClusterManager;
-import org.apache.activemq.artemis.core.server.cluster.Transformer;
+import org.apache.activemq.artemis.core.server.transformer.Transformer;
 import org.apache.activemq.artemis.core.server.cluster.ha.HAPolicy;
 import org.apache.activemq.artemis.core.server.files.FileMoveManager;
 import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
@@ -176,6 +176,7 @@ import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.critical.CriticalAction;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerImpl;
+import org.apache.activemq.artemis.utils.critical.CriticalComponent;
 import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
 import org.jboss.logging.Logger;
 
@@ -247,9 +248,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private volatile ExecutorService threadPool;
 
-   private volatile ScheduledExecutorService scheduledPool;
+   protected volatile ScheduledExecutorService scheduledPool;
 
-   private volatile ExecutorFactory executorFactory;
+   protected volatile ExecutorFactory executorFactory;
 
    private volatile ExecutorService ioExecutorPool;
 
@@ -257,7 +258,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * This is a thread pool for io tasks only.
     * We can't use the same global executor to avoid starvations.
     */
-   private volatile ExecutorFactory ioExecutorFactory;
+   protected volatile ExecutorFactory ioExecutorFactory;
 
    private final NetworkHealthCheck networkHealthCheck = new NetworkHealthCheck(ActiveMQDefaultConfiguration.getDefaultNetworkCheckNic(), ActiveMQDefaultConfiguration.getDefaultNetworkCheckPeriod(), ActiveMQDefaultConfiguration.getDefaultNetworkCheckTimeout());
 
@@ -317,12 +318,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private final Map<String, Object> activationParams = new HashMap<>();
 
-   private final ShutdownOnCriticalErrorListener shutdownOnCriticalIO = new ShutdownOnCriticalErrorListener();
+   protected final ShutdownOnCriticalErrorListener shutdownOnCriticalIO = new ShutdownOnCriticalErrorListener();
 
    private final ActiveMQServer parentServer;
 
-
-   private final CriticalAnalyzer analyzer;
+   private CriticalAnalyzer analyzer;
 
    //todo think about moving this to the activation
    private final List<SimpleString> scaledDownNodeIDs = new ArrayList<>();
@@ -423,23 +423,17 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       this.securityManager = securityManager;
 
-      addressSettingsRepository = new HierarchicalObjectRepository<>();
+      addressSettingsRepository = new HierarchicalObjectRepository<>(configuration.getWildcardConfiguration());
 
       addressSettingsRepository.setDefault(new AddressSettings());
 
-      securityRepository = new HierarchicalObjectRepository<>();
+      securityRepository = new HierarchicalObjectRepository<>(configuration.getWildcardConfiguration());
 
       securityRepository.setDefault(new HashSet<Role>());
 
       this.parentServer = parentServer;
 
       this.serviceRegistry = serviceRegistry == null ? new ServiceRegistryImpl() : serviceRegistry;
-
-      if (configuration.isCriticalAnalyzer()) {
-         this.analyzer = new CriticalAnalyzerImpl();
-      } else {
-         this.analyzer = EmptyCriticalAnalyzer.getInstance();
-      }
    }
 
    @Override
@@ -504,106 +498,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          return;
       }
 
-      /** Calling this for cases where the server was stopped and now is being restarted... failback, etc...*/
-      this.analyzer.clear();
-
-      this.getCriticalAnalyzer().setCheckTime(configuration.getCriticalAnalyzerCheckPeriod(), TimeUnit.MILLISECONDS).setTimeout(configuration.getCriticalAnalyzerTimeout(), TimeUnit.MILLISECONDS);
-
-      if (configuration.isCriticalAnalyzer()) {
-         this.getCriticalAnalyzer().start();
-      }
-
-      CriticalAction criticalAction = null;
-      final CriticalAnalyzerPolicy criticalAnalyzerPolicy = configuration.getCriticalAnalyzerPolicy();
-      switch (criticalAnalyzerPolicy) {
-
-         case HALT:
-            criticalAction = criticalComponent -> {
-
-               ActiveMQServerLogger.LOGGER.criticalSystemHalt(criticalComponent);
-
-               threadDump();
-
-               // on the case of a critical failure, -1 cannot simply means forever.
-               // in case graceful is -1, we will set it to 30 seconds
-               long timeout = configuration.getGracefulShutdownTimeout() < 0 ? 30000 : configuration.getGracefulShutdownTimeout();
-
-               Thread notificationSender = new Thread() {
-                  @Override
-                  public void run() {
-                     try {
-                        callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.criticalFailure(criticalComponent) : null);
-                     } catch (Throwable e) {
-                        logger.warn(e.getMessage(), e);
-                     }
-                  }
-               };
-
-               // I'm using a different thread here as we need to manage timeouts
-               notificationSender.start();
-
-               try {
-                  notificationSender.join(timeout);
-               } catch (InterruptedException ignored) {
-               }
-
-               Runtime.getRuntime().halt(70); // Linux systems will have /usr/include/sysexits.h showing 70 as internal software error
-
-            };
-            break;
-         case SHUTDOWN:
-            criticalAction = criticalComponent -> {
-
-               ActiveMQServerLogger.LOGGER.criticalSystemShutdown(criticalComponent);
-
-               threadDump();
-
-               // on the case of a critical failure, -1 cannot simply means forever.
-               // in case graceful is -1, we will set it to 30 seconds
-               long timeout = configuration.getGracefulShutdownTimeout() < 0 ? 30000 : configuration.getGracefulShutdownTimeout();
-
-               Thread notificationSender = new Thread() {
-                  @Override
-                  public void run() {
-                     try {
-                        callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.criticalFailure(criticalComponent) : null);
-                     } catch (Throwable e) {
-                        logger.warn(e.getMessage(), e);
-                     }
-                  }
-               };
-
-               // I'm using a different thread here as we need to manage timeouts
-               notificationSender.start();
-
-               try {
-                  notificationSender.join(timeout);
-               } catch (InterruptedException ignored) {
-               }
-
-               // you can't stop from the check thread,
-               // nor can use an executor
-               Thread stopThread = new Thread() {
-                  @Override
-                  public void run() {
-                     try {
-                        ActiveMQServerImpl.this.stop();
-                     } catch (Throwable e) {
-                        logger.warn(e.getMessage(), e);
-                     }
-                  }
-               };
-               stopThread.start();
-            };
-            break;
-         case LOG:
-            criticalAction = ActiveMQServerLogger.LOGGER::criticalSystemLog;
-            break;
-      }
-
-      this.getCriticalAnalyzer().addAction(criticalAction);
-
       configuration.parseSystemProperties();
+
+      initializeCriticalAnalyzer();
 
       startDate = new Date();
 
@@ -668,6 +565,103 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
    }
 
+   private void initializeCriticalAnalyzer() throws Exception {
+      if (analyzer == null) {
+         if (configuration.isCriticalAnalyzer()) {
+            this.analyzer = new CriticalAnalyzerImpl();
+         } else {
+            this.analyzer = EmptyCriticalAnalyzer.getInstance();
+         }
+      }
+
+      /** Calling this for cases where the server was stopped and now is being restarted... failback, etc...*/
+      this.analyzer.clear();
+
+      this.getCriticalAnalyzer().setCheckTime(configuration.getCriticalAnalyzerCheckPeriod(), TimeUnit.MILLISECONDS).setTimeout(configuration.getCriticalAnalyzerTimeout(), TimeUnit.MILLISECONDS);
+
+      if (configuration.isCriticalAnalyzer()) {
+         this.getCriticalAnalyzer().start();
+      }
+
+      CriticalAction criticalAction = null;
+      final CriticalAnalyzerPolicy criticalAnalyzerPolicy = configuration.getCriticalAnalyzerPolicy();
+      switch (criticalAnalyzerPolicy) {
+
+         case HALT:
+            criticalAction = criticalComponent -> {
+
+               ActiveMQServerLogger.LOGGER.criticalSystemHalt(criticalComponent);
+
+               threadDump();
+               sendCriticalNotification(criticalComponent);
+
+               Runtime.getRuntime().halt(70); // Linux systems will have /usr/include/sysexits.h showing 70 as internal software error
+
+            };
+            break;
+         case SHUTDOWN:
+            criticalAction = criticalComponent -> {
+
+               ActiveMQServerLogger.LOGGER.criticalSystemShutdown(criticalComponent);
+
+               threadDump();
+
+               // on the case of a critical failure, -1 cannot simply means forever.
+               // in case graceful is -1, we will set it to 30 seconds
+               sendCriticalNotification(criticalComponent);
+
+               // you can't stop from the check thread,
+               // nor can use an executor
+               Thread stopThread = new Thread() {
+                  @Override
+                  public void run() {
+                     try {
+                        ActiveMQServerImpl.this.stop();
+                     } catch (Throwable e) {
+                        logger.warn(e.getMessage(), e);
+                     }
+                  }
+               };
+               stopThread.start();
+            };
+            break;
+         case LOG:
+            criticalAction = criticalComponent -> {
+               ActiveMQServerLogger.LOGGER.criticalSystemLog(criticalComponent);
+               threadDump();
+               sendCriticalNotification(criticalComponent);
+            };
+            break;
+      }
+
+      this.getCriticalAnalyzer().addAction(criticalAction);
+   }
+
+   private void sendCriticalNotification(final CriticalComponent criticalComponent) {
+      // on the case of a critical failure, -1 cannot simply means forever.
+      // in case graceful is -1, we will set it to 30 seconds
+      long timeout = configuration.getGracefulShutdownTimeout() < 0 ? 30000 : configuration.getGracefulShutdownTimeout();
+
+      Thread notificationSender = new Thread() {
+         @Override
+         public void run() {
+            try {
+               callBrokerPlugins(hasBrokerPlugins() ? plugin -> plugin.criticalFailure(criticalComponent) : null);
+            } catch (Throwable e) {
+               logger.warn(e.getMessage(), e);
+            }
+         }
+      };
+
+      // I'm using a different thread here as we need to manage timeouts
+      notificationSender.start();
+
+      try {
+         notificationSender.join(timeout);
+      } catch (InterruptedException ignored) {
+      }
+   }
+
    @Override
    public ReplicationEndpoint getReplicationEndpoint() {
       if (activation instanceof SharedNothingBackupActivation) {
@@ -686,7 +680,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       try {
          activationLock.acquire();
       } catch (Exception e) {
-         logger.warn(e.getMessage(), e);
+         ActiveMQServerLogger.LOGGER.unableToAcquireLock(e);
       }
    }
 
@@ -947,7 +941,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public final void fail(boolean failoverOnServerShutdown) throws Exception {
-      stop(failoverOnServerShutdown, false, false, false);
+      stop(failoverOnServerShutdown, false, false, true);
    }
 
    public final void stop(boolean failoverOnServerShutdown, boolean isExit) throws Exception {
@@ -1312,7 +1306,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                   sessions.remove(session.getName());
                }
             } catch (Throwable e) {
-               ActiveMQServerLogger.LOGGER.warn(e.getMessage(), e);
+               ActiveMQServerLogger.LOGGER.unableDestroyConnectionWithSessionMetadata(e);
             }
          }
 
@@ -1325,7 +1319,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          return operationsExecuted.toString();
       } finally {
          // This operation is critical for the knowledge of the admin, so we need to add info logs for later knowledge
-         ActiveMQServerLogger.LOGGER.info(operationsExecuted.toString());
+         ActiveMQServerLogger.LOGGER.onDestroyConnectionWithSessionMetadata(operationsExecuted.toString());
       }
 
    }
@@ -2057,7 +2051,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       SimpleString sAddress = new SimpleString(config.getAddress());
 
-      Transformer transformer = getServiceRegistry().getDivertTransformer(config.getName(), config.getTransformerClassName());
+      Transformer transformer = getServiceRegistry().getDivertTransformer(config.getName(), config.getTransformerConfiguration());
 
       Filter filter = FilterImpl.createFilter(config.getFilterString());
 
@@ -2171,7 +2165,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          } catch (Throwable e) {
             // https://bugzilla.redhat.com/show_bug.cgi?id=1009530:
             // we won't interrupt the shutdown sequence because of a failed callback here
-            ActiveMQServerLogger.LOGGER.warn(e.getMessage(), e);
+            ActiveMQServerLogger.LOGGER.unableToDeactiveCallback(e);
          }
       }
    }
@@ -2416,7 +2410,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       try {
          injectMonitor(new FileStoreMonitor(getScheduledPool(), executorFactory.getExecutor(), configuration.getDiskScanPeriod(), TimeUnit.MILLISECONDS, configuration.getMaxDiskUsage() / 100f, shutdownOnCriticalIO));
       } catch (Exception e) {
-         logger.warn(e.getMessage(), e);
+         ActiveMQServerLogger.LOGGER.unableToInjectMonitor(e);
       }
    }
 
