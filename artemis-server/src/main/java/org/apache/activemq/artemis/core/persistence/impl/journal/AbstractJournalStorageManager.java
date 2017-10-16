@@ -228,6 +228,13 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, this);
    }
 
+
+   @Override
+   public long getMaxRecordSize() {
+      return messageJournal.getMaxRecordSize();
+   }
+
+
    /**
     * Called during initialization.  Used by implementations to setup Journals, Stores etc...
     *
@@ -1437,12 +1444,12 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                queueBindingEncoding.addQueueStatusEncoding(statusEncoding);
             } else {
                // unlikely to happen, so I didn't bother about the Logger method
-               logger.info("There is no queue with ID " + statusEncoding.queueID + ", deleting record " + statusEncoding.getId());
+               ActiveMQServerLogger.LOGGER.infoNoQueueWithID(statusEncoding.queueID, statusEncoding.getId());
                this.deleteQueueStatus(statusEncoding.getId());
             }
          } else {
             // unlikely to happen
-            logger.warn("Invalid record type " + rec, new Exception("invalid record type " + rec));
+            ActiveMQServerLogger.LOGGER.invalidRecordType(rec, new Exception("invalid record type " + rec));
          }
       }
 

@@ -18,13 +18,15 @@ package org.apache.activemq.artemis.protocol.amqp.broker;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQPropertyConversionException;
 import org.apache.activemq.artemis.api.core.ICoreMessage;
@@ -33,6 +35,7 @@ import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPConverter;
+import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageIdHelper;
 import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
@@ -55,10 +58,6 @@ import org.apache.qpid.proton.codec.DecoderImpl;
 import org.apache.qpid.proton.codec.WritableBuffer;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.impl.MessageImpl;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
 
 // see https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-messaging-v1.0-os.html#section-message-format
 public class AMQPMessage extends RefCountMessage {
@@ -163,10 +162,11 @@ public class AMQPMessage extends RefCountMessage {
       }
 
       if (map == null) {
-         return Collections.emptyMap();
-      } else {
-         return map;
+         map = new HashMap<>();
+         this.applicationProperties = new ApplicationProperties(map);
       }
+
+      return map;
    }
 
    private ApplicationProperties getApplicationProperties() {
@@ -557,7 +557,6 @@ public class AMQPMessage extends RefCountMessage {
       }
    }
 
-
    @Override
    public org.apache.activemq.artemis.api.core.Message setUserID(Object userID) {
       return null;
@@ -725,7 +724,6 @@ public class AMQPMessage extends RefCountMessage {
       return this;
    }
 
-
    @Override
    public byte[] getExtraBytesProperty(SimpleString key) throws ActiveMQPropertyConversionException {
       if (extraProperties == null) {
@@ -735,7 +733,6 @@ public class AMQPMessage extends RefCountMessage {
       }
    }
 
-
    @Override
    public byte[] removeExtraBytesProperty(SimpleString key) throws ActiveMQPropertyConversionException {
       if (extraProperties == null) {
@@ -744,8 +741,6 @@ public class AMQPMessage extends RefCountMessage {
          return (byte[])extraProperties.removeProperty(key);
       }
    }
-
-
 
    @Override
    public org.apache.activemq.artemis.api.core.Message putBooleanProperty(String key, boolean value) {
@@ -904,9 +899,19 @@ public class AMQPMessage extends RefCountMessage {
    @Override
    public Object getObjectProperty(String key) {
       if (key.equals(MessageUtil.TYPE_HEADER_NAME.toString())) {
-         return getProperties().getSubject();
+         if (getProperties() != null) {
+            return getProperties().getSubject();
+         }
       } else if (key.equals(MessageUtil.CONNECTION_ID_PROPERTY_NAME.toString())) {
          return getConnectionID();
+      } else if (key.equals(MessageUtil.JMSXGROUPID)) {
+         return getGroupID();
+      } else if (key.equals(MessageUtil.JMSXUSERID)) {
+         return getAMQPUserID();
+      } else if (key.equals(MessageUtil.CORRELATIONID_HEADER_NAME.toString())) {
+         if (getProperties() != null && getProperties().getCorrelationId() != null) {
+            return AMQPMessageIdHelper.INSTANCE.toCorrelationIdString(getProperties().getCorrelationId());
+         }
       } else {
          Object value = getApplicationPropertiesMap().get(key);
          if (value instanceof UnsignedInteger ||
@@ -918,6 +923,8 @@ public class AMQPMessage extends RefCountMessage {
             return value;
          }
       }
+
+      return null;
    }
 
    @Override

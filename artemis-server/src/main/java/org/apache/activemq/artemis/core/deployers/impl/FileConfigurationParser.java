@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.apache.activemq.artemis.ArtemisConstants;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.BroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
@@ -551,7 +552,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setJournalFileSize(getTextBytesAsIntBytes(e, "journal-file-size", config.getJournalFileSize(), Validators.GT_ZERO));
 
-      int journalBufferTimeout = getInteger(e, "journal-buffer-timeout", config.getJournalType() == JournalType.ASYNCIO ? ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO : ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO, Validators.GT_ZERO);
+      int journalBufferTimeout = getInteger(e, "journal-buffer-timeout", config.getJournalType() == JournalType.ASYNCIO ? ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO : ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO, Validators.GE_ZERO);
 
       int journalBufferSize = getTextBytesAsIntBytes(e, "journal-buffer-size", config.getJournalType() == JournalType.ASYNCIO ? ArtemisConstants.DEFAULT_JOURNAL_BUFFER_SIZE_AIO : ArtemisConstants.DEFAULT_JOURNAL_BUFFER_SIZE_NIO, Validators.GT_ZERO);
 
@@ -1626,6 +1627,27 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       mainConfiguration.setGroupingHandlerConfiguration(new GroupingHandlerConfiguration().setName(new SimpleString(name)).setType(type.equals(GroupingHandlerConfiguration.TYPE.LOCAL.getType()) ? GroupingHandlerConfiguration.TYPE.LOCAL : GroupingHandlerConfiguration.TYPE.REMOTE).setAddress(new SimpleString(address)).setTimeout(timeout).setGroupTimeout(groupTimeout).setReaperPeriod(reaperPeriod));
    }
 
+   private TransformerConfiguration getTransformerConfiguration(final Node node) {
+      Element element = (Element) node;
+      String className = getString(element, "class-name", null, Validators.NO_CHECK);
+
+      Map<String, String> properties = new HashMap<>();
+      NodeList children = element.getChildNodes();
+      for (int j = 0; j < children.getLength(); j++) {
+         Node child = children.item(j);
+         if (child.getNodeName().equals("property")) {
+            String key = getAttributeValue(child, "key");
+            String value = getAttributeValue(child, "value");
+            properties.put(key, value);
+         }
+      }
+      return new TransformerConfiguration(className).setProperties(properties);
+   }
+
+   private TransformerConfiguration getTransformerConfiguration(final String transformerClassName) {
+      return new TransformerConfiguration(transformerClassName).setProperties(Collections.EMPTY_MAP);
+   }
+
    private void parseBridgeConfiguration(final Element brNode, final Configuration mainConfig) throws Exception {
       String name = brNode.getAttribute("name");
 
@@ -1684,6 +1706,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       boolean ha = getBoolean(brNode, "ha", false);
 
+      TransformerConfiguration transformerConfiguration = null;
+
       String filterString = null;
 
       List<String> staticConnectorNames = new ArrayList<>();
@@ -1701,10 +1725,16 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
          } else if (child.getNodeName().equals("static-connectors")) {
             getStaticConnectors(staticConnectorNames, child);
+         } else if (child.getNodeName().equals("transformer")) {
+            transformerConfiguration = getTransformerConfiguration(child);
          }
       }
 
-      BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerClassName(transformerClassName).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setMaxRetryInterval(maxRetryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setReconnectAttemptsOnSameNode(reconnectAttemptsSameNode).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setHA(ha).setUser(user).setPassword(password);
+      if (transformerConfiguration == null && transformerClassName != null) {
+         transformerConfiguration = getTransformerConfiguration(transformerClassName);
+      }
+
+      BridgeConfiguration config = new BridgeConfiguration().setName(name).setQueueName(queueName).setForwardingAddress(forwardingAddress).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setMinLargeMessageSize(minLargeMessageSize).setClientFailureCheckPeriod(clientFailureCheckPeriod).setConnectionTTL(connectionTTL).setRetryInterval(retryInterval).setMaxRetryInterval(maxRetryInterval).setRetryIntervalMultiplier(retryIntervalMultiplier).setInitialConnectAttempts(initialConnectAttempts).setReconnectAttempts(reconnectAttempts).setReconnectAttemptsOnSameNode(reconnectAttemptsSameNode).setUseDuplicateDetection(useDuplicateDetection).setConfirmationWindowSize(confirmationWindowSize).setProducerWindowSize(producerWindowSize).setHA(ha).setUser(user).setPassword(password);
 
       if (!staticConnectorNames.isEmpty()) {
          config.setStaticConnectors(staticConnectorNames);
@@ -1742,6 +1772,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       DivertConfigurationRoutingType routingType = DivertConfigurationRoutingType.valueOf(getString(e, "routing-type", ActiveMQDefaultConfiguration.getDefaultDivertRoutingType(), Validators.DIVERT_ROUTING_TYPE));
 
+      TransformerConfiguration transformerConfiguration = null;
+
       String filterString = null;
 
       NodeList children = e.getChildNodes();
@@ -1751,27 +1783,32 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
          if (child.getNodeName().equals("filter")) {
             filterString = getAttributeValue(child, "string");
+         } else if (child.getNodeName().equals("transformer")) {
+            transformerConfiguration = getTransformerConfiguration(child);
          }
       }
 
-      DivertConfiguration config = new DivertConfiguration().setName(name).setRoutingName(routingName).setAddress(address).setForwardingAddress(forwardingAddress).setExclusive(exclusive).setFilterString(filterString).setTransformerClassName(transformerClassName).setRoutingType(routingType);
+      if (transformerConfiguration == null && transformerClassName != null) {
+         transformerConfiguration = getTransformerConfiguration(transformerClassName);
+      }
+
+      DivertConfiguration config = new DivertConfiguration().setName(name).setRoutingName(routingName).setAddress(address).setForwardingAddress(forwardingAddress).setExclusive(exclusive).setFilterString(filterString).setTransformerConfiguration(transformerConfiguration).setRoutingType(routingType);
 
       mainConfig.getDivertConfigurations().add(config);
    }
 
    /**
-    * @param node
+    * @param e
     * @return
     */
    protected void parseWildcardConfiguration(final Element e, final Configuration mainConfig) {
-      WildcardConfiguration conf = new WildcardConfiguration();
+      WildcardConfiguration conf = mainConfig.getWildcardConfiguration();
 
       conf.setDelimiter(getString(e, "delimiter", Character.toString(conf.getDelimiter()), Validators.NO_CHECK).charAt(0));
       conf.setAnyWords(getString(e, "any-words", Character.toString(conf.getAnyWords()), Validators.NO_CHECK).charAt(0));
       conf.setSingleWord(getString(e, "single-word", Character.toString(conf.getSingleWord()), Validators.NO_CHECK).charAt(0));
-      conf.setEnabled(getBoolean(e, "enabled", conf.isEnabled()));
-
-      mainConfig.setWildCardConfiguration(conf);
+      conf.setRoutingEnabled(getBoolean(e, "enabled", conf.isRoutingEnabled()));
+      conf.setRoutingEnabled(getBoolean(e, "routing-enabled", conf.isRoutingEnabled()));
    }
 
    private ConnectorServiceConfiguration parseConnectorService(final Element e) {
