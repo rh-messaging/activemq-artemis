@@ -37,6 +37,8 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
    private static final Logger logger = Logger.getLogger(ActiveMQScheduledComponent.class);
    private ScheduledExecutorService scheduledExecutorService;
    private boolean startedOwnScheduler;
+
+   /** initialDelay < 0 would mean no initial delay, use the period instead */
    private long initialDelay;
    private long period;
    private long millisecondsPeriod;
@@ -90,7 +92,7 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
                                      long checkPeriod,
                                      TimeUnit timeUnit,
                                      boolean onDemand) {
-      this(scheduledExecutorService, executor, checkPeriod, checkPeriod, timeUnit, onDemand);
+      this(scheduledExecutorService, executor, -1, checkPeriod, timeUnit, onDemand);
    }
 
    /**
@@ -144,7 +146,7 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
       this.millisecondsPeriod = timeUnit.convert(period, TimeUnit.MILLISECONDS);
 
       if (period >= 0) {
-         future = scheduledExecutorService.scheduleWithFixedDelay(runForScheduler, initialDelay, period, timeUnit);
+         future = scheduledExecutorService.scheduleWithFixedDelay(runForScheduler, initialDelay >= 0 ? initialDelay : period, period, timeUnit);
       } else {
          logger.tracef("did not start scheduled executor on %s because period was configured as %d", this, period);
       }
@@ -182,6 +184,13 @@ public abstract class ActiveMQScheduledComponent implements ActiveMQComponent, R
 
    public synchronized ActiveMQScheduledComponent setPeriod(long period) {
       this.period = period;
+      restartIfNeeded();
+      return this;
+   }
+
+   public synchronized ActiveMQScheduledComponent setPeriod(long period, TimeUnit unit) {
+      this.period = period;
+      this.timeUnit = unit;
       restartIfNeeded();
       return this;
    }
