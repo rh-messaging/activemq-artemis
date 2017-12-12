@@ -578,6 +578,7 @@ public interface ActiveMQServerControl {
     * @return a textual summary of the queue
     * @throws Exception
     */
+   @Operation(desc = "Create a queue", impact = MBeanOperationInfo.ACTION)
    String createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "routingType", desc = "The routing type used for this address, MULTICAST or ANYCAST") String routingType,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
@@ -782,13 +783,15 @@ public interface ActiveMQServerControl {
     * Closes the session with the given id.
     */
    @Operation(desc = "Closes the session with the id", impact = MBeanOperationInfo.INFO)
-   boolean closeSessionWithID(String connectionID, String ID) throws Exception;
+   boolean closeSessionWithID(@Parameter(desc = "The connection ID", name = "connectionID") String connectionID,
+                              @Parameter(desc = "The session ID", name = "ID") String ID) throws Exception;
 
    /**
     * Closes the consumer with the given id.
     */
    @Operation(desc = "Closes the consumer with the id", impact = MBeanOperationInfo.INFO)
-   boolean closeConsumerWithID(String sessionID, String ID) throws Exception;
+   boolean closeConsumerWithID(@Parameter(desc = "The session ID", name = "sessionID") String sessionID,
+                               @Parameter(desc = "The consumer ID", name = "ID") String ID) throws Exception;
 
    /**
     * Lists all the IDs of the connections connected to this server.
@@ -796,6 +799,7 @@ public interface ActiveMQServerControl {
    @Operation(desc = "List all the connection IDs", impact = MBeanOperationInfo.INFO)
    String[] listConnectionIDs() throws Exception;
 
+   @Operation(desc = "List all producers", impact = MBeanOperationInfo.INFO)
    String listProducersInfoAsJSON() throws Exception;
 
    /**
@@ -835,7 +839,7 @@ public interface ActiveMQServerControl {
     * </pre>
     */
    @Operation(desc = "List all consumers associated with a connection as a JSON string")
-   String listConsumersAsJSON(String connectionID) throws Exception;
+   String listConsumersAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 
    /**
     * Lists all the consumers connected to this server.
@@ -985,7 +989,8 @@ public interface ActiveMQServerControl {
                            @Parameter(desc = "allow topics to be created automatically", name = "autoCreateAddresses") boolean autoCreateAddresses,
                            @Parameter(desc = "allow auto-created topics to be deleted automatically", name = "autoDeleteAddresses") boolean autoDeleteAddresses) throws Exception;
 
-   void removeAddressSettings(String addressMatch) throws Exception;
+   @Operation(desc = "Remove address settings", impact = MBeanOperationInfo.ACTION)
+   void removeAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;
 
    /**
     * returns the address settings as a JSON string
@@ -995,6 +1000,15 @@ public interface ActiveMQServerControl {
 
    @Attribute(desc = "names of the diverts deployed on this server")
    String[] getDivertNames();
+
+   /**
+    * Jon plugin doesn't recognize an Operation whose name is in
+    * form getXXXX(), so add this one.
+    */
+   @Operation(desc = "names of the diverts deployed on this server", impact = MBeanOperationInfo.INFO)
+   default String[] listDivertNames() {
+      return getDivertNames();
+   }
 
    @Operation(desc = "Create a Divert", impact = MBeanOperationInfo.ACTION)
    void createDivert(@Parameter(name = "name", desc = "Name of the divert") String name,
