@@ -58,6 +58,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.jboss.logging.Logger;
 
 public class LDAPLoginModule implements LoginModule {
@@ -83,6 +84,9 @@ public class LDAPLoginModule implements LoginModule {
    private static final String SASL_LOGIN_CONFIG_SCOPE = "saslLoginConfigScope";
    private static final String AUTHENTICATE_USER = "authenticateUser";
 
+   private static final String MASK_PASSWORD = "maskPassword";
+   private static final String PASSWORD_CODEC = "passwordCodec";
+
    protected DirContext context;
 
    private Subject subject;
@@ -95,6 +99,8 @@ public class LDAPLoginModule implements LoginModule {
    private Subject brokerGssapiIdentity = null;
    private boolean isRoleAttributeSet = false;
    private String roleAttributeName = null;
+
+   private String codecClass = null;
 
    @Override
    public void initialize(Subject subject,
@@ -110,6 +116,15 @@ public class LDAPLoginModule implements LoginModule {
       }
       isRoleAttributeSet = isLoginPropertySet(ROLE_NAME);
       roleAttributeName = getLDAPPropertyValue(ROLE_NAME);
+      codecClass = (String) options.get(PASSWORD_CODEC);
+   }
+
+   private String getPlainPassword(String password) {
+      try {
+         return PasswordMaskingUtil.resolveMask(null, password, codecClass);
+      } catch (Exception e) {
+         throw new IllegalArgumentException("Failed to decode password", e);
+      }
    }
 
    @Override
@@ -510,7 +525,7 @@ public class LDAPLoginModule implements LoginModule {
          context.removeFromEnvironment(Context.SECURITY_PRINCIPAL);
       }
       if (isLoginPropertySet(CONNECTION_PASSWORD)) {
-         context.addToEnvironment(Context.SECURITY_CREDENTIALS, getLDAPPropertyValue(CONNECTION_PASSWORD));
+         context.addToEnvironment(Context.SECURITY_CREDENTIALS, getPlainPassword(getLDAPPropertyValue(CONNECTION_PASSWORD)));
       } else {
          context.removeFromEnvironment(Context.SECURITY_CREDENTIALS);
       }
@@ -562,7 +577,7 @@ public class LDAPLoginModule implements LoginModule {
                }
 
                if (isLoginPropertySet(CONNECTION_PASSWORD)) {
-                  env.put(Context.SECURITY_CREDENTIALS, getLDAPPropertyValue(CONNECTION_PASSWORD));
+                  env.put(Context.SECURITY_CREDENTIALS, getPlainPassword(getLDAPPropertyValue(CONNECTION_PASSWORD)));
                } else {
                   throw new NamingException("Empty password is not allowed");
                }
