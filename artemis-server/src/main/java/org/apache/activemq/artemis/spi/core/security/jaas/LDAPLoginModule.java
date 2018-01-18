@@ -53,6 +53,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.jboss.logging.Logger;
 
 public class LDAPLoginModule implements LoginModule {
@@ -75,6 +76,8 @@ public class LDAPLoginModule implements LoginModule {
    private static final String USER_ROLE_NAME = "userRoleName";
    private static final String EXPAND_ROLES = "expandRoles";
    private static final String EXPAND_ROLES_MATCHING = "expandRolesMatching";
+   private static final String MASK_PASSWORD = "maskPassword";
+   private static final String PASSWORD_CODEC = "passwordCodec";
 
    protected DirContext context;
 
@@ -83,6 +86,8 @@ public class LDAPLoginModule implements LoginModule {
    private LDAPLoginProperty[] config;
    private String username;
    private final Set<RolePrincipal> groups = new HashSet<>();
+
+   private String codecClass = null;
 
    @Override
    public void initialize(Subject subject,
@@ -93,6 +98,15 @@ public class LDAPLoginModule implements LoginModule {
       this.handler = callbackHandler;
 
       config = new LDAPLoginProperty[]{new LDAPLoginProperty(INITIAL_CONTEXT_FACTORY, (String) options.get(INITIAL_CONTEXT_FACTORY)), new LDAPLoginProperty(CONNECTION_URL, (String) options.get(CONNECTION_URL)), new LDAPLoginProperty(CONNECTION_USERNAME, (String) options.get(CONNECTION_USERNAME)), new LDAPLoginProperty(CONNECTION_PASSWORD, (String) options.get(CONNECTION_PASSWORD)), new LDAPLoginProperty(CONNECTION_PROTOCOL, (String) options.get(CONNECTION_PROTOCOL)), new LDAPLoginProperty(AUTHENTICATION, (String) options.get(AUTHENTICATION)), new LDAPLoginProperty(USER_BASE, (String) options.get(USER_BASE)), new LDAPLoginProperty(USER_SEARCH_MATCHING, (String) options.get(USER_SEARCH_MATCHING)), new LDAPLoginProperty(USER_SEARCH_SUBTREE, (String) options.get(USER_SEARCH_SUBTREE)), new LDAPLoginProperty(ROLE_BASE, (String) options.get(ROLE_BASE)), new LDAPLoginProperty(ROLE_NAME, (String) options.get(ROLE_NAME)), new LDAPLoginProperty(ROLE_SEARCH_MATCHING, (String) options.get(ROLE_SEARCH_MATCHING)), new LDAPLoginProperty(ROLE_SEARCH_SUBTREE, (String) options.get(ROLE_SEARCH_SUBTREE)), new LDAPLoginProperty(USER_ROLE_NAME, (String) options.get(USER_ROLE_NAME)), new LDAPLoginProperty(EXPAND_ROLES, (String) options.get(EXPAND_ROLES)), new LDAPLoginProperty(EXPAND_ROLES_MATCHING, (String) options.get(EXPAND_ROLES_MATCHING))};
+      codecClass = (String) options.get(PASSWORD_CODEC);
+   }
+
+   private String getPlainPassword(String password) {
+      try {
+         return PasswordMaskingUtil.resolveMask(null, password, codecClass);
+      } catch (Exception e) {
+         throw new IllegalArgumentException("Failed to decode password", e);
+      }
    }
 
    @Override
@@ -413,7 +427,7 @@ public class LDAPLoginModule implements LoginModule {
          context.removeFromEnvironment(Context.SECURITY_PRINCIPAL);
       }
       if (isLoginPropertySet(CONNECTION_PASSWORD)) {
-         context.addToEnvironment(Context.SECURITY_CREDENTIALS, getLDAPPropertyValue(CONNECTION_PASSWORD));
+         context.addToEnvironment(Context.SECURITY_CREDENTIALS, getPlainPassword(getLDAPPropertyValue(CONNECTION_PASSWORD)));
       } else {
          context.removeFromEnvironment(Context.SECURITY_CREDENTIALS);
       }
@@ -455,7 +469,7 @@ public class LDAPLoginModule implements LoginModule {
             }
 
             if (isLoginPropertySet(CONNECTION_PASSWORD)) {
-               env.put(Context.SECURITY_CREDENTIALS, getLDAPPropertyValue(CONNECTION_PASSWORD));
+               env.put(Context.SECURITY_CREDENTIALS, getPlainPassword(getLDAPPropertyValue(CONNECTION_PASSWORD)));
             } else {
                throw new NamingException("Empty password is not allowed");
             }
