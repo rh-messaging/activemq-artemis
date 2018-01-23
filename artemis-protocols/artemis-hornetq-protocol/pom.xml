@@ -55,6 +55,15 @@
          <artifactId>artemis-hqclient-protocol</artifactId>
          <version>${project.version}</version>
       </dependency>
+
+      <dependency>
+         <groupId>org.osgi</groupId>
+         <artifactId>org.osgi.core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.osgi</groupId>
+         <artifactId>osgi.cmpn</artifactId>
+      </dependency>
    </dependencies>
 
 </project>

@@ -17,12 +17,12 @@
       <version>2.4.0.amq-710004</version>
    </parent>
 
-   <artifactId>artemis-server-osgi</artifactId>
+   <artifactId>artemis-core-client-osgi</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis Server OSGi</name>
+   <name>ActiveMQ Artemis Client OSGi</name>
 
    <description>
-      Combines the commons, core-client and server jars as they contain too many duplicate packages
+      Combines the commons and core-client as they contain too many duplicate packages
       to be deployed separately.
    </description>
 
@@ -41,42 +41,6 @@
          <artifactId>artemis-core-client</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-server</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-jms-client</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-jms-server</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-jdbc-store</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-journal</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-selector</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-service-extensions</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-
       <dependency>
          <groupId>org.jboss.modules</groupId>
          <artifactId>jboss-modules</artifactId>
@@ -97,33 +61,31 @@
          <optional>true</optional>
       </dependency>
       <dependency>
+         <groupId>org.jboss.logging</groupId>
+         <artifactId>jboss-logging-annotations</artifactId>
+         <scope>provided</scope>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.logging</groupId>
+         <artifactId>jboss-logging</artifactId>
+      </dependency>
+      <dependency>
          <groupId>xalan</groupId>
          <artifactId>xalan</artifactId>
          <version>2.7.2</version>
          <optional>true</optional>
          <scope>provided</scope>
       </dependency>
-
-      <dependency>
-         <groupId>junit</groupId>
-         <artifactId>junit</artifactId>
-         <version>4.11</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.easymock</groupId>
-         <artifactId>easymock</artifactId>
-         <version>3.2</version>
-         <scope>test</scope>
-      </dependency>
-
       <dependency>
          <groupId>org.osgi</groupId>
          <artifactId>org.osgi.core</artifactId>
+         <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.osgi</groupId>
          <artifactId>osgi.cmpn</artifactId>
+         <scope>provided</scope>
       </dependency>
    </dependencies>
 
@@ -132,13 +94,11 @@
          <plugin>
             <groupId>org.apache.felix</groupId>
             <artifactId>maven-bundle-plugin</artifactId>
-            <version>3.3.0</version>
             <extensions>true</extensions>
             <configuration>
                <instructions>
                   <Embed-Dependency>*;scope=compile|runtime;groupId=org.apache.activemq</Embed-Dependency>
                   <Import-Package>
-                     org.postgresql*;resolution:=optional,
                      io.netty.buffer;io.netty.*;version="[4.1,5)",
                      org.apache.johnzon.core,
                      *
