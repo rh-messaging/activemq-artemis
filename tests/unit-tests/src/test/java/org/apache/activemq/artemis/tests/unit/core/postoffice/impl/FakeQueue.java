@@ -441,6 +441,12 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public boolean isDurableMessage() {
+      // no-op
+      return false;
+   }
+
+   @Override
    public boolean isDurable() {
       // no-op
       return false;
@@ -606,7 +612,7 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public int deleteMatchingReferences(int flushLImit, Filter filter) throws Exception {
+   public int deleteMatchingReferences(int flushLImit, Filter filter, AckReason reason) throws Exception {
       return 0;
    }
 
