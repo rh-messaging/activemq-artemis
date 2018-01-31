@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,12 +17,16 @@
 
 package org.apache.activemq.artemis.core.protocol.hornetq.client;
 
+import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.protocol.core.Channel;
 import org.apache.activemq.artemis.core.protocol.core.Packet;
 import org.apache.activemq.artemis.core.protocol.core.impl.ActiveMQClientProtocolManager;
+import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessageV2;
+import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
 import org.apache.activemq.artemis.core.version.Version;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
@@ -64,4 +68,26 @@ public class HornetQClientProtocolManager extends ActiveMQClientProtocolManager 
       getChannel0().send(new SubscribeClusterTopologyUpdatesMessageV2(isServer, VERSION_PLAYED));
    }
 
+   @Override
+   public boolean checkForFailover(String liveNodeID) throws ActiveMQException {
+      //HornetQ doesn't support CheckFailoverMessage packet
+      return true;
+   }
+
+
+   @Override
+   protected ClusterTopologyChangeMessage updateTransportConfiguration(final ClusterTopologyChangeMessage topMessage) {
+      updateTransportConfiguration(topMessage.getPair().getA());
+      updateTransportConfiguration(topMessage.getPair().getB());
+      return super.updateTransportConfiguration(topMessage);
+   }
+
+   private void updateTransportConfiguration(TransportConfiguration connector) {
+      if (connector != null) {
+         String factoryClassName = connector.getFactoryClassName();
+         if ("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory".equals(factoryClassName)) {
+            connector.setFactoryClassName(NettyConnectorFactory.class.getName());
+         }
+      }
+   }
 }
