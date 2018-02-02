@@ -1023,7 +1023,9 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       Map<String, Object> params = configurations.get(0).getParams();
 
-      params.put(ActiveMQDefaultConfiguration.getPropMaskPassword(), mainConfig.isMaskPassword());
+      if (mainConfig.isMaskPassword() != null) {
+         params.put(ActiveMQDefaultConfiguration.getPropMaskPassword(), mainConfig.isMaskPassword());
+      }
 
       if (mainConfig.getPasswordCodec() != null) {
          params.put(ActiveMQDefaultConfiguration.getPropPasswordCodec(), mainConfig.getPasswordCodec());
@@ -1044,7 +1046,9 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       Map<String, Object> params = configurations.get(0).getParams();
 
-      params.put(ActiveMQDefaultConfiguration.getPropMaskPassword(), mainConfig.isMaskPassword());
+      if (mainConfig.isMaskPassword() != null) {
+         params.put(ActiveMQDefaultConfiguration.getPropMaskPassword(), mainConfig.isMaskPassword());
+      }
 
       if (mainConfig.getPasswordCodec() != null) {
          params.put(ActiveMQDefaultConfiguration.getPropPasswordCodec(), mainConfig.getPasswordCodec());
