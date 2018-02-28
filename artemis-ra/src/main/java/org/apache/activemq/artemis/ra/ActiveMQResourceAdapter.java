@@ -59,7 +59,6 @@ import org.apache.activemq.artemis.ra.inflow.ActiveMQActivationSpec;
 import org.apache.activemq.artemis.ra.recovery.RecoveryManager;
 import org.apache.activemq.artemis.service.extensions.ServiceUtils;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.XARecoveryConfig;
-import org.apache.activemq.artemis.utils.SensitiveDataCodec;
 import org.jgroups.JChannel;
 
 /**
@@ -2025,8 +2024,8 @@ public class ActiveMQResourceAdapter implements ResourceAdapter, Serializable {
       managedConnectionFactories.add(activeMQRAManagedConnectionFactory);
    }
 
-   public SensitiveDataCodec<String> getCodecInstance() {
-      return raProperties.getCodecInstance();
+   public String getCodec() {
+      return raProperties.getCodec();
    }
 
    public synchronized void closeConnectionFactory(ConnectionFactoryProperties properties) {

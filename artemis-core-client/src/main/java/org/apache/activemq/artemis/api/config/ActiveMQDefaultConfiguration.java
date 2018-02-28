@@ -177,7 +177,7 @@ public final class ActiveMQDefaultConfiguration {
    private static String DEFAULT_CLUSTER_PASSWORD = "CHANGE ME!!";
 
    // This option controls whether passwords in server configuration need be masked. If set to "true" the passwords are masked.
-   private static boolean DEFAULT_MASK_PASSWORD = false;
+   private static Boolean DEFAULT_MASK_PASSWORD = null;
 
    // true means that the management API is available via JMX
    private static boolean DEFAULT_JMX_MANAGEMENT_ENABLED = true;
@@ -597,7 +597,7 @@ public final class ActiveMQDefaultConfiguration {
    /**
     * This option controls whether passwords in server configuration need be masked. If set to "true" the passwords are masked.
     */
-   public static boolean isDefaultMaskPassword() {
+   public static Boolean isDefaultMaskPassword() {
       return DEFAULT_MASK_PASSWORD;
    }
 

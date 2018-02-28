@@ -49,6 +49,13 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>artemis-commons</artifactId>
+         <version>${project.version}</version>
+         <classifier>tests</classifier>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>org.eclipse.jetty.aggregate</groupId>
          <artifactId>jetty-all</artifactId>
          <type>jar</type>
