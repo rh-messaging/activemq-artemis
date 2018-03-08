@@ -24,7 +24,7 @@
    </parent>
 
    <artifactId>artemis-server</artifactId>
-   <packaging>bundle</packaging>
+   <packaging>jar</packaging>
    <name>ActiveMQ Artemis Server</name>
 
    <properties>
@@ -177,5 +177,4 @@
          </plugin>
       </plugins>
    </build>
-
 </project>
