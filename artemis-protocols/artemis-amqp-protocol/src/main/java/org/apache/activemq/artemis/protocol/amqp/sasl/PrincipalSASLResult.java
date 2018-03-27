@@ -1,10 +1,3 @@
-package meshTest
-
-import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
-import org.apache.activemq.artemis.tests.compatibility.GroovyRun
-
-import javax.jms.*
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
@@ -21,26 +14,38 @@ import javax.jms.*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.activemq.artemis.protocol.amqp.sasl;
+
+import javax.security.auth.Subject;
+import java.security.Principal;
+
+public class PrincipalSASLResult implements SASLResult {
+
+   private final boolean success;
+   private final Subject identity = new Subject();
+   private String user;
 
 
-ConnectionFactory cf = new ActiveMQConnectionFactory();
-Connection connection = cf.createConnection();
-Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-Queue queue = session.createQueue("myQueue");
+   public PrincipalSASLResult(boolean success, Principal peer) {
+      this.success = success;
+      if (success) {
+         this.identity.getPrivateCredentials().add(peer);
+         this.user = peer.getName();
+      }
+   }
 
-MessageConsumer consumer = session.createConsumer(queue)
-connection.start()
-for (int i = 0; i < 500; i++) {
-    BytesMessage bytesMessage = (BytesMessage) consumer.receive(5000);
-    GroovyRun.assertNotNull(bytesMessage)
-    if (i % 100) {
-        session.commit();
-    }
+   @Override
+   public String getUser() {
+      return user;
+   }
+
+   @Override
+   public Subject getSubject() {
+      return identity;
+   }
+
+   @Override
+   public boolean isSuccess() {
+      return success;
+   }
 }
-session.commit();
-
-// Defined on AddressConfigTest.java at the test with setVariable
-latch.countDown();
-
-
-

@@ -1581,6 +1581,10 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222270, value = "Unable to create management notification address: {0}", format = Message.Format.MESSAGE_FORMAT)
    void unableToCreateManagementNotificationAddress(SimpleString addressName, @Cause Exception e);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 22272, value = "Message ack in prepared tx for queue {0} which does not exist. This ack will be ignored.", format = Message.Format.MESSAGE_FORMAT)
+   void journalMessageAckMissingQueueInPreparedTX(Long queueID);
+
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
    void initializationError(@Cause Throwable e);
@@ -1923,4 +1927,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224090, value = "This node is not configured for Quorum Voting, all nodes must be configured for HA", format = Message.Format.MESSAGE_FORMAT)
    void noVoteHandlerConfigured();
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224091, value = "Bridge {0} is unable to connect to destination. Retrying", format = Message.Format.MESSAGE_FORMAT)
+   void errorConnectingBridgeRetry(Bridge bridge);
 }

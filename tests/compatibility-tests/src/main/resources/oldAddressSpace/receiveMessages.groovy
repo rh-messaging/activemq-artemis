@@ -1,4 +1,4 @@
-package meshTest
+package oldAddressSpace
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.activemq.artemis.tests.compatibility.GroovyRun
@@ -22,16 +22,42 @@ import javax.jms.*
  * limitations under the License.
  */
 
-
 ConnectionFactory cf = new ActiveMQConnectionFactory();
 Connection connection = cf.createConnection();
-Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-Queue queue = session.createQueue("myQueue");
+connection.setClientID("myClientId");
 
-MessageConsumer consumer = session.createConsumer(queue)
+Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+String clientType = arg[0];
+
+Queue queue;
+Topic topic;
+
+if (clientType.startsWith("ARTEMIS-1") || clientType.startsWith("HORNETQ")) {
+    queue = session.createQueue("myQueue");
+    topic = session.createTopic("myTopic");
+} else {
+    queue = session.createQueue("jms.queue.myQueue");
+    topic = session.createTopic("jms.topic.myTopic");
+}
+
+MessageConsumer topicConsumer = session.createDurableSubscriber(topic, "myDurableSub")
+MessageConsumer queueConsumer = session.createConsumer(queue)
+
+subscriptionCreated.countDown();
+
 connection.start()
 for (int i = 0; i < 500; i++) {
-    BytesMessage bytesMessage = (BytesMessage) consumer.receive(5000);
+    BytesMessage bytesMessage = (BytesMessage) queueConsumer.receive(5000);
+    GroovyRun.assertNotNull(bytesMessage)
+    if (i % 100) {
+        session.commit();
+    }
+}
+session.commit();
+
+for (int i = 0; i < 500; i++) {
+    BytesMessage bytesMessage = (BytesMessage) topicConsumer.receive(5000);
     GroovyRun.assertNotNull(bytesMessage)
     if (i % 100) {
         session.commit();
@@ -40,6 +66,7 @@ for (int i = 0; i < 500; i++) {
 session.commit();
 
 // Defined on AddressConfigTest.java at the test with setVariable
+
 latch.countDown();
 
 
