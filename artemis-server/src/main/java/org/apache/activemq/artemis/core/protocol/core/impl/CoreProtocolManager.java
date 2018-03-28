@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.core.protocol.core.impl;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +51,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.SubscribeC
 import org.apache.activemq.artemis.core.remoting.CloseListener;
 import org.apache.activemq.artemis.core.remoting.impl.netty.ActiveMQFrameDecoder2;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyServerConnection;
+import org.apache.activemq.artemis.core.remoting.impl.netty.TransportConstantsV2;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.spi.core.protocol.MessageConverter;
@@ -259,9 +261,13 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor> {
                            if (channel0.supports(PacketImpl.CLUSTER_TOPOLOGY_V3)) {
                               channel0.send(new ClusterTopologyChangeMessage_V3(topologyMember.getUniqueEventID(), nodeID, topologyMember.getBackupGroupName(), topologyMember.getScaleDownGroupName(), connectorPair, last));
                            } else if (channel0.supports(PacketImpl.CLUSTER_TOPOLOGY_V2)) {
-                              channel0.send(new ClusterTopologyChangeMessage_V2(topologyMember.getUniqueEventID(), nodeID, topologyMember.getBackupGroupName(), connectorPair, last));
+                              // version 3 started to use different notation in parameter names, so it needs to be converted back
+                              Pair<TransportConfiguration, TransportConfiguration> convertedPair = convertTransportPair(connectorPair);
+                              channel0.send(new ClusterTopologyChangeMessage_V2(topologyMember.getUniqueEventID(), nodeID, topologyMember.getBackupGroupName(), convertedPair, last));
                            } else {
-                              channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last));
+                              // version 3 started to use different notation in parameter names, so it needs to be converted back
+                              Pair<TransportConfiguration, TransportConfiguration> convertedPair = convertTransportPair(connectorPair);
+                              channel0.send(new ClusterTopologyChangeMessage(nodeID, convertedPair, last));
                            }
                         }
                      });
@@ -335,5 +341,32 @@ public class CoreProtocolManager implements ProtocolManager<Interceptor> {
          }
          return new Pair<>(conn, null);
       }
+   }
+
+   private static Pair<TransportConfiguration, TransportConfiguration> convertTransportPair(
+           Pair<TransportConfiguration, TransportConfiguration> pair) {
+      if (pair == null) {
+         return null;
+      }
+      return new Pair<>(convertTransportToV2(pair.getA()), convertTransportToV2(pair.getB()));
+   }
+
+   private static Map<String, Object> convertParamsToV2(Map<String, Object> params) {
+      if (params == null) {
+         return null;
+      }
+      Map<String, Object> convertedParams = new HashMap<>(params.size());
+      for (Map.Entry<String, Object> entry: params.entrySet()) {
+         convertedParams.put(TransportConstantsV2.fromV3(entry.getKey()), entry.getValue());
+      }
+      return convertedParams;
+   }
+
+   private static TransportConfiguration convertTransportToV2(TransportConfiguration tc) {
+      if (tc == null) {
+         return null;
+      }
+      return new TransportConfiguration(tc.getFactoryClassName(), convertParamsToV2(tc.getParams()), tc.getName(),
+              tc.getExtraParams());
    }
 }
