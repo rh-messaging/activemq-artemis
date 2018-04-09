@@ -214,6 +214,11 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
       public void route(ServerMessage message, RoutingContext context) throws Exception {
          System.out.println("routing message: " + message);
       }
+
+      @Override
+      public boolean allowRedistribute() {
+         return false;
+      }
    }
 
 }

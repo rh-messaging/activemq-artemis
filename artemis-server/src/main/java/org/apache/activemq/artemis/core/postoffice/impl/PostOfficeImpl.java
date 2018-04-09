@@ -753,16 +753,31 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
     */
    @Override
    public Pair<RoutingContext, ServerMessage> redistribute(final ServerMessage message,
-                                                           final Queue originatingQueue,
-                                                           final Transaction tx) throws Exception {
-      // We have to copy the message and store it separately, otherwise we may lose remote bindings in case of restart before the message
-      // arrived the target node
-      // as described on https://issues.jboss.org/browse/JBPAPP-6130
-      ServerMessage copyRedistribute = message.copy(storageManager.generateID());
+                                                     final Queue originatingQueue,
+                                                     final Transaction tx) throws Exception {
 
-      Bindings bindings = addressManager.getBindingsForRoutingAddress(message.getAddress());
+      Bindings bindings = addressManager.getBindingsForRoutingAddress(originatingQueue.getAddress());
 
-      if (bindings != null) {
+      if (bindings != null && bindings.allowRedistribute()) {
+         // We have to copy the message and store it separately, otherwise we may lose remote bindings in case of restart before the message
+         // arrived the target node
+         // as described on https://issues.jboss.org/browse/JBPAPP-6130
+         ServerMessage copyRedistribute = message.copy(storageManager.generateID());
+         if (tx != null) {
+            tx.addOperation(new TransactionOperationAbstract() {
+               @Override
+               public void afterRollback(Transaction tx) {
+                  try {
+                     //this will cause large message file to be
+                     //cleaned up
+                     copyRedistribute.decrementRefCount();
+                  } catch (Exception e) {
+                     logger.warn("Failed to clean up message: " + copyRedistribute);
+                  }
+               }
+            });
+         }
+
          RoutingContext context = new RoutingContextImpl(tx);
 
          boolean routed = bindings.redistribute(copyRedistribute, originatingQueue, context);
