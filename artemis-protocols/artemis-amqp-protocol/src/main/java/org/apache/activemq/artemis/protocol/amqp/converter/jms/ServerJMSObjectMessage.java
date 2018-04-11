@@ -64,7 +64,7 @@ public class ServerJMSObjectMessage extends ServerJMSMessage implements ObjectMe
    @Override
    public void decode() throws Exception {
       super.decode();
-      ActiveMQBuffer buffer = getInnerMessage().getDataBuffer();
+      ActiveMQBuffer buffer = getInnerMessage().getReadOnlyBodyBuffer();
       int size = buffer.readInt();
       byte[] bytes = new byte[size];
       buffer.readBytes(bytes);
