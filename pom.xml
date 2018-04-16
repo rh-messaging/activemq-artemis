@@ -761,27 +761,23 @@
             <version>${cdi-api.version}</version>
             <scope>provided</scope>
          </dependency>
-      </dependencies>
-   </dependencyManagement>
-
-   <dependencies>
-        <!--  OSGi support -->
-        <dependency>
+         <!--  OSGi support -->
+         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
             <!-- License: Apache 2.0 -->
-        </dependency>
-        <dependency>
+         </dependency>
+         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.cmpn</artifactId>
             <version>6.0.0</version>
             <scope>provided</scope>
             <!-- License: Apache 2.0 -->
-        </dependency>
-
-   </dependencies>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 
    <profiles>
        <profile>

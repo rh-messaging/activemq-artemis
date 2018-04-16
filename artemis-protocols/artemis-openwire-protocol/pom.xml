@@ -62,6 +62,14 @@
          <artifactId>artemis-jms-client</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <dependency>
+         <groupId>org.osgi</groupId>
+         <artifactId>org.osgi.core</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>org.osgi</groupId>
+         <artifactId>osgi.cmpn</artifactId>
+      </dependency>
    </dependencies>
 
    <packaging>bundle</packaging>
