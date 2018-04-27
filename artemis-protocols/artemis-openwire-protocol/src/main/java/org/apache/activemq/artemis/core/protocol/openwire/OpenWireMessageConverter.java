@@ -484,7 +484,7 @@ public class OpenWireMessageConverter implements MessageConverter<OpenwireMessag
       }
       amqMsg.setBrokerInTime(brokerInTime);
 
-      ActiveMQBuffer buffer = coreMessage.getReadOnlyBodyBuffer();
+      final ActiveMQBuffer buffer = coreMessage.getDataBuffer();
       Boolean compressProp = (Boolean) coreMessage.getObjectProperty(AMQ_MSG_COMPRESSED);
       boolean isCompressed = compressProp == null ? false : compressProp.booleanValue();
       amqMsg.setCompressed(isCompressed);
