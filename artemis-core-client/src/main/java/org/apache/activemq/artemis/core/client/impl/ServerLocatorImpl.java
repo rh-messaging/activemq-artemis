@@ -67,6 +67,7 @@ import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.ActiveMQThreadPoolExecutor;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.apache.activemq.artemis.utils.actors.OrderedExecutor;
 import org.apache.activemq.artemis.utils.uri.FluentPropertyBeanIntrospectorWithIgnores;
 import org.jboss.logging.Logger;
 
@@ -110,7 +111,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    private final StaticConnector staticConnector = new StaticConnector();
 
-   private final Topology topology;
+   private Topology topology;
 
    private final Object topologyArrayGuard = new Object();
 
@@ -123,7 +124,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    // if the system should shutdown the pool when shutting down
    private transient boolean shutdownPool;
 
-   private transient ExecutorService threadPool;
+   private transient Executor threadPool;
 
    private transient ScheduledExecutorService scheduledThreadPool;
 
@@ -254,8 +255,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    }
 
    @Override
-   public synchronized boolean setThreadPools(ExecutorService threadPool,
-                                              ScheduledExecutorService scheduledThreadPool) {
+   public synchronized boolean setThreadPools(Executor threadPool, ScheduledExecutorService scheduledThreadPool) {
 
       if (threadPool == null || scheduledThreadPool == null)
          return false;
@@ -284,7 +284,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       });
    }
 
-   private synchronized void initialise() throws ActiveMQException {
+   @Override
+   public synchronized void initialize() throws ActiveMQException {
       if (state == STATE.INITIALIZED)
          return;
       synchronized (stateGuard) {
@@ -295,6 +296,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
             latch = new CountDownLatch(1);
 
             setThreadPools();
+
+            topology.setExecutor(new OrderedExecutor(threadPool));
 
             instantiateLoadBalancingPolicy();
 
@@ -561,7 +564,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    @Override
    public void start(Executor executor) throws Exception {
-      initialise();
+      initialize();
 
       this.startExecutor = executor;
 
@@ -678,7 +681,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception {
       assertOpen();
 
-      initialise();
+      initialize();
 
       ClientSessionFactoryInternal factory = new ClientSessionFactoryImpl(this, transportConfiguration, callTimeout, callFailoverTimeout, clientFailureCheckPeriod, connectionTTL, retryInterval, retryIntervalMultiplier, maxRetryInterval, reconnectAttempts, threadPool, scheduledThreadPool, incomingInterceptors, outgoingInterceptors);
 
@@ -704,7 +707,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                                                     boolean failoverOnInitialConnection) throws Exception {
       assertOpen();
 
-      initialise();
+      initialize();
 
       ClientSessionFactoryInternal factory = new ClientSessionFactoryImpl(this, transportConfiguration, callTimeout, callFailoverTimeout, clientFailureCheckPeriod, connectionTTL, retryInterval, retryIntervalMultiplier, maxRetryInterval, reconnectAttempts, threadPool, scheduledThreadPool, incomingInterceptors, outgoingInterceptors);
 
@@ -741,7 +744,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    public ClientSessionFactory createSessionFactory() throws ActiveMQException {
       assertOpen();
 
-      initialise();
+      initialize();
 
       if (this.getNumInitialConnectors() == 0 && discoveryGroup != null) {
          // Wait for an initial broadcast to give us at least one node in the cluster
@@ -1378,10 +1381,11 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
       if (shutdownPool) {
          if (threadPool != null) {
-            threadPool.shutdown();
+            ExecutorService executorService = (ExecutorService) threadPool;
+            executorService.shutdown();
 
             try {
-               if (!threadPool.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
+               if (!executorService.awaitTermination(10000, TimeUnit.MILLISECONDS)) {
                   ActiveMQClientLogger.LOGGER.timedOutWaitingForTermination();
                }
             } catch (InterruptedException e) {
@@ -1642,7 +1646,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       public ClientSessionFactory connect(boolean skipWarnings) throws ActiveMQException {
          assertOpen();
 
-         initialise();
+         initialize();
 
          createConnectors();
 
