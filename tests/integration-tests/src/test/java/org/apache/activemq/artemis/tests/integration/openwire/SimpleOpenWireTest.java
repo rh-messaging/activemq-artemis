@@ -824,10 +824,12 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
    }
 
    @Test
-   public void testAutoDestinationCreationOnConsumer() throws JMSException {
+   public void testAutoDestinationCreationAndDeletionOnConsumer() throws Exception {
       AddressSettings addressSetting = new AddressSettings();
       addressSetting.setAutoCreateQueues(true);
       addressSetting.setAutoCreateAddresses(true);
+      addressSetting.setAutoDeleteQueues(true);
+      addressSetting.setAutoDeleteAddresses(true);
 
       String address = "foo";
       server.getAddressSettingsRepository().addMatch(address, addressSetting);
@@ -840,11 +842,22 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
       MessageConsumer consumer = session.createConsumer(queue);
 
+      assertTrue(Wait.waitFor(() -> (server.locateQueue(SimpleString.toSimpleString("foo")) != null), 2000, 100));
+      assertTrue(Wait.waitFor(() -> (server.getAddressInfo(SimpleString.toSimpleString("foo")) != null), 2000, 100));
+
       MessageProducer producer = session.createProducer(null);
       producer.send(queue, message);
 
       TextMessage message1 = (TextMessage) consumer.receive(1000);
       assertTrue(message1.getText().equals(message.getText()));
+
+      assertNotNull(server.locateQueue(SimpleString.toSimpleString("foo")));
+
+      consumer.close();
+      connection.close();
+
+      assertTrue(Wait.waitFor(() -> (server.locateQueue(SimpleString.toSimpleString("foo")) == null), 2000, 100));
+      assertTrue(Wait.waitFor(() -> (server.getAddressInfo(SimpleString.toSimpleString("foo")) == null), 2000, 100));
    }
 
    @Test
