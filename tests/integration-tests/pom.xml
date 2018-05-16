@@ -19,7 +19,7 @@
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>1.5.5.jbossorg-SNAPSHOT</version>
+      <version>1.5.5.jbossorg-011</version>
    </parent>
 
    <artifactId>integration-tests</artifactId>
@@ -349,7 +349,7 @@
       <dependency>
          <groupId>org.apache.activemq.rest</groupId>
          <artifactId>artemis-rest</artifactId>
-         <version>1.5.5.jbossorg-SNAPSHOT</version>
+         <version>1.5.5.jbossorg-011</version>
          <scope>compile</scope>
       </dependency>
 

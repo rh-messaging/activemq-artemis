@@ -19,7 +19,7 @@
 	<parent>
 		<groupId>org.apache.activemq</groupId>
 		<artifactId>artemis-pom</artifactId>
-		<version>1.5.5.jbossorg-SNAPSHOT</version>
+		<version>1.5.5.jbossorg-011</version>
 	</parent>
 	<artifactId>artemis-features</artifactId>
 	<packaging>pom</packaging>
