@@ -399,6 +399,7 @@ To configure Apache ActiveMQ Artemis to use a database for persisting messages a
             <bindings-table-name>BINDINGS_TABLE</bindings-table-name>
             <message-table-name>MESSAGE_TABLE</message-table-name>
             <large-message-table-name>LARGE_MESSAGES_TABLE</large-message-table-name>
+            <node-manager-store-table-name>NODE_MANAGER_TABLE</node-manager-store-table-name>
             <jdbc-driver-class-name>org.apache.derby.jdbc.EmbeddedDriver</jdbc-driver-class-name>
          </database-store>
       </store>
@@ -428,6 +429,11 @@ To configure Apache ActiveMQ Artemis to use a database for persisting messages a
 
     The name of the table in which JMS bindings data will be  persisted for the ActiveMQ Artemis server.  Specifying table names allows users to share single database amongst multiple servers, without interference.
 
+-   `node-manager-store-table-name`
+
+    The name of the table in which the HA Shared Store locks (ie live and backup) and HA related data will be persisted for the ActiveMQ Artemis server.  Specifying table names allows users to share single database amongst multiple servers, without interference.
+    Each Shared Store live/backup pairs must use the same table name and isn't supported to share the same table between multiple (and unrelated) live/backup pairs.
+
 -   `jdbc-driver-class-name`
 
     The fully qualified class name of the desired database Driver.
@@ -435,6 +441,22 @@ To configure Apache ActiveMQ Artemis to use a database for persisting messages a
 -   `jdbc-network-timeout`
 
     The JDBC network connection timeout in milliseconds. The default value
+    is 20000 milliseconds (ie 20 seconds).
+    When using a shared store it is recommended to set it less then or equal to `jdbc-lock-expiration`.
+    
+-   `jdbc-lock-acquisition-timeout`
+
+    The max allowed time in milliseconds while trying to acquire a JDBC lock. The default value
+    is 60000 milliseconds (ie 60 seconds).
+        
+-   `jdbc-lock-renew-period`
+
+    The period in milliseconds of the keep alive service of a JDBC lock. The default value
+    is 2000 milliseconds (ie 2 seconds).
+    
+-   `jdbc-lock-expiration`
+
+    The time in milliseconds a JDBC lock is considered valid without keeping it alive. The default value
     is 20000 milliseconds (ie 20 seconds).
 
 ## Configuring Apache ActiveMQ Artemis for Zero Persistence
