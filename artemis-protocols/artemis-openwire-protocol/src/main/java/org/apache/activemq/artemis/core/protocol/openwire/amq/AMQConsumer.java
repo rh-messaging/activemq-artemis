@@ -17,8 +17,11 @@
 package org.apache.activemq.artemis.core.protocol.openwire.amq;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -66,6 +69,7 @@ public class AMQConsumer {
    //internal means we don't expose
    //it's address/queue to management service
    private boolean internalAddress = false;
+   private volatile Set<MessageReference> rolledbackMessageRefs;
 
    public AMQConsumer(AMQSession amqSession,
                       org.apache.activemq.command.ActiveMQDestination d,
@@ -82,6 +86,30 @@ public class AMQConsumer {
          messagePullHandler = new MessagePullHandler();
       }
       this.internalAddress = internalAddress;
+      this.rolledbackMessageRefs = null;
+   }
+
+   private Set<MessageReference> guardedInitializationOfRolledBackMessageRefs() {
+      synchronized (this) {
+         Set<MessageReference> rollbackedMessageRefs = this.rolledbackMessageRefs;
+         if (rollbackedMessageRefs == null) {
+            rollbackedMessageRefs = new ConcurrentSkipListSet<>(Comparator.comparingLong(MessageReference::getMessageID));
+            this.rolledbackMessageRefs = rollbackedMessageRefs;
+         }
+         return rollbackedMessageRefs;
+      }
+   }
+
+   private Set<MessageReference> getRolledbackMessageRefsOrCreate() {
+      Set<MessageReference> rolledbackMessageRefs = this.rolledbackMessageRefs;
+      if (rolledbackMessageRefs == null) {
+         rolledbackMessageRefs = guardedInitializationOfRolledBackMessageRefs();
+      }
+      return rolledbackMessageRefs;
+   }
+
+   private Set<MessageReference> getRolledbackMessageRefs() {
+      return this.rolledbackMessageRefs;
    }
 
    public void init(SlowConsumerDetectionListener slowConsumerDetectionListener, long nativeId) throws Exception {
@@ -344,7 +372,6 @@ public class AMQConsumer {
    }
 
    public boolean updateDeliveryCountAfterCancel(MessageReference ref) {
-      long seqId = ref.getMessageID();
       long lastDelSeqId = info.getLastDeliveredSequenceId();
 
       //in activemq5, closing a durable subscription won't close the consumer
@@ -364,7 +391,7 @@ public class AMQConsumer {
          // tx cases are handled by
          // org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection.CommandProcessor.processRollbackTransaction()
          ref.incrementDeliveryCount();
-      } else if (lastDelSeqId == RemoveInfo.LAST_DELIVERED_UNSET && !session.isRolledBack(seqId)) {
+      } else if (lastDelSeqId == RemoveInfo.LAST_DELIVERED_UNSET && !isRolledBack(ref)) {
          ref.incrementDeliveryCount();
       }
 
@@ -422,5 +449,25 @@ public class AMQConsumer {
             return true;
          }
       }
+   }
+
+   public boolean removeRolledback(MessageReference messageReference) {
+      final Set<MessageReference> rolledbackMessageRefs = getRolledbackMessageRefs();
+      if (rolledbackMessageRefs == null) {
+         return false;
+      }
+      return rolledbackMessageRefs.remove(messageReference);
+   }
+
+   public void addRolledback(MessageReference messageReference) {
+      getRolledbackMessageRefsOrCreate().add(messageReference);
+   }
+
+   private boolean isRolledBack(MessageReference messageReference) {
+      final Set<MessageReference> rollbackedMessageRefs = getRolledbackMessageRefs();
+      if (rollbackedMessageRefs == null) {
+         return false;
+      }
+      return rollbackedMessageRefs.contains(messageReference);
    }
 }
