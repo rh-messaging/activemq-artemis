@@ -344,7 +344,7 @@ public class AMQConsumer {
    }
 
    public boolean updateDeliveryCountAfterCancel(MessageReference ref) {
-      long seqId = ref.getMessage().getMessageID();
+      long seqId = ref.getMessageID();
       long lastDelSeqId = info.getLastDeliveredSequenceId();
 
       //in activemq5, closing a durable subscription won't close the consumer
@@ -363,6 +363,8 @@ public class AMQConsumer {
          // this takes care of un-acked messages in non-tx deliveries
          // tx cases are handled by
          // org.apache.activemq.artemis.core.protocol.openwire.OpenWireConnection.CommandProcessor.processRollbackTransaction()
+         ref.incrementDeliveryCount();
+      } else if (lastDelSeqId == RemoveInfo.LAST_DELIVERED_UNSET && !session.isRolledBack(seqId)) {
          ref.incrementDeliveryCount();
       }
 
