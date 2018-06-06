@@ -53,6 +53,8 @@ public class PagedReferenceImpl implements PagedReference {
 
    private Object protocolData;
 
+   private long messageID = -1;
+
    @Override
    public Object getProtocolData() {
       return protocolData;
@@ -256,4 +258,11 @@ public class PagedReferenceImpl implements PagedReference {
       return this.consumerId;
    }
 
+   @Override
+   public long getMessageID() {
+      if (messageID < 0) {
+         messageID = getPagedMessage().getMessage().getMessageID();
+      }
+      return messageID;
+   }
 }
