@@ -146,6 +146,11 @@ public class MessageReferenceImpl implements MessageReference {
    }
 
    @Override
+   public long getMessageID() {
+      return getMessage().getMessageID();
+   }
+
+   @Override
    public Queue getQueue() {
       return queue;
    }
