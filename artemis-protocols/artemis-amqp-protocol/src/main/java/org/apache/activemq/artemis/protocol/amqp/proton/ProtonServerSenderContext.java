@@ -689,6 +689,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
       byte[] tag = preSettle ? new byte[0] : protonSession.getTag();
 
       // Let the Message decide how to present the message bytes
+      boolean released = false;
       ReadableBuffer sendBuffer = message.getSendBuffer(deliveryCount);
 
       try {
@@ -712,7 +713,13 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
             delivery.setMessageFormat((int) message.getMessageFormat());
             delivery.setContext(messageReference);
 
-            sender.sendNoCopy(sendBuffer);
+            sender.send(sendBuffer);
+
+            // Above send copied, so release now if needed
+            if (sendBuffer instanceof NettyReadable) {
+               released = true;
+               ((NettyReadable) sendBuffer).getByteBuf().release();
+            }
 
             if (preSettle) {
                // Presettled means the client implicitly accepts any delivery we send it.
@@ -728,7 +735,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
 
          return size;
       } finally {
-         if (sendBuffer instanceof NettyReadable) {
+         if (!released && sendBuffer instanceof NettyReadable) {
             ((NettyReadable) sendBuffer).getByteBuf().release();
          }
       }
