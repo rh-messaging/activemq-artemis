@@ -689,7 +689,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
       byte[] tag = preSettle ? new byte[0] : protonSession.getTag();
 
       // Let the Message decide how to present the message bytes
-      boolean attemptRelease = true;
+      boolean released = false;
       ReadableBuffer sendBuffer = message.getSendBuffer(deliveryCount);
 
       try {
@@ -713,15 +713,12 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
             delivery.setMessageFormat((int) message.getMessageFormat());
             delivery.setContext(messageReference);
 
+            sender.send(sendBuffer);
+
+            // Above send copied, so release now if needed
             if (sendBuffer instanceof NettyReadable) {
-               sender.send(sendBuffer);
-               // Above send copied, so release now if needed
-               attemptRelease = false;
+               released = true;
                ((NettyReadable) sendBuffer).getByteBuf().release();
-            } else {
-               // Don't have pooled content, no need to release or copy.
-               attemptRelease = false;
-               sender.sendNoCopy(sendBuffer);
             }
 
             if (preSettle) {
@@ -738,7 +735,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
 
          return size;
       } finally {
-         if (attemptRelease && sendBuffer instanceof NettyReadable) {
+         if (!released && sendBuffer instanceof NettyReadable) {
             ((NettyReadable) sendBuffer).getByteBuf().release();
          }
       }
