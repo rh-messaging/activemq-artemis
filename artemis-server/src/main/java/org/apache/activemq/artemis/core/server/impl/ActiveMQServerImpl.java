@@ -2572,29 +2572,27 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private void deployQueuesFromListCoreQueueConfiguration(List<CoreQueueConfiguration> queues) throws Exception {
       for (CoreQueueConfiguration config : queues) {
-         try {
-            SimpleString queueName = SimpleString.toSimpleString(config.getName());
-            ActiveMQServerLogger.LOGGER.deployQueue(config.getName(), config.getAddress(), config.getRoutingType().toString());
-            AddressSettings as = addressSettingsRepository.getMatch(config.getAddress());
-            // determine if there is an address::queue match; update it if so
-            int maxConsumerAddressSetting = as.getDefaultMaxConsumers();
-            int maxConsumerQueueConfig = config.getMaxConsumers();
-            int maxConsumer = (config.isMaxConsumerConfigured()) ? maxConsumerQueueConfig : maxConsumerAddressSetting;
-            if (locateQueue(queueName) != null && locateQueue(queueName).getAddress().toString().equals(config.getAddress())) {
-               updateQueue(config.getName(), config.getRoutingType(), maxConsumer, config.getPurgeOnNoConsumers(),
-                           config.isExclusive() == null ? as.isDefaultExclusiveQueue() : config.isExclusive());
-            } else {
-               // if the address::queue doesn't exist then create it
-               try {
-                  createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(),
-                              queueName, SimpleString.toSimpleString(config.getFilterString()), SimpleString.toSimpleString(config.getUser()),
-                              config.isDurable(),false,false,false,false,maxConsumer,config.getPurgeOnNoConsumers(),
-                              config.isExclusive() == null ? as.isDefaultExclusiveQueue() : config.isExclusive(),
-                              config.isLastValue() == null ? as.isDefaultLastValueQueue() : config.isLastValue(), true);
-               } catch (ActiveMQQueueExistsException e) {
-                  // the queue may exist on a *different* address
-                  ActiveMQServerLogger.LOGGER.warn(e.getMessage());
-               }
+         try {SimpleString queueName = SimpleString.toSimpleString(config.getName());
+         ActiveMQServerLogger.LOGGER.deployQueue(config.getName(), config.getAddress(), config.getRoutingType().toString());
+         AddressSettings as = addressSettingsRepository.getMatch(config.getAddress());
+         // determine if there is an address::queue match; update it if so
+         int maxConsumerAddressSetting = as.getDefaultMaxConsumers();
+         int maxConsumerQueueConfig = config.getMaxConsumers();
+         int maxConsumer = (config.isMaxConsumerConfigured()) ? maxConsumerQueueConfig : maxConsumerAddressSetting;
+         if (locateQueue(queueName) != null && locateQueue(queueName).getAddress().toString().equals(config.getAddress())) {
+            updateQueue(config.getName(), config.getRoutingType(), maxConsumer, config.getPurgeOnNoConsumers(),
+                        config.isExclusive() == null ? as.isDefaultExclusiveQueue() : config.isExclusive(),
+         config.getUser());} else {
+            // if the address::queue doesn't exist then create it
+            try {
+               createQueue(SimpleString.toSimpleString(config.getAddress()), config.getRoutingType(),
+                           queueName, SimpleString.toSimpleString(config.getFilterString()), SimpleString.toSimpleString(config.getUser()),
+                           config.isDurable(),false,false,false,false,maxConsumer,config.getPurgeOnNoConsumers(),
+                           config.isExclusive() == null ? as.isDefaultExclusiveQueue() : config.isExclusive(),
+                           config.isLastValue() == null ? as.isDefaultLastValueQueue() : config.isLastValue(), true);
+            } catch (ActiveMQQueueExistsException e) {
+               // the queue may exist on a *different* address
+               ActiveMQServerLogger.LOGGER.warn(e.getMessage());}
             }
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.problemDeployingQueue(config.getName(), e.getMessage());
@@ -2984,6 +2982,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return queue;
    }
 
+   @Deprecated
    @Override
    public Queue updateQueue(String name,
                             RoutingType routingType,
@@ -2992,13 +2991,24 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return updateQueue(name, routingType, maxConsumers, purgeOnNoConsumers, null);
    }
 
+   @Deprecated
    @Override
    public Queue updateQueue(String name,
                             RoutingType routingType,
                             Integer maxConsumers,
                             Boolean purgeOnNoConsumers,
                             Boolean exclusive) throws Exception {
-      final QueueBinding queueBinding = this.postOffice.updateQueue(new SimpleString(name), routingType, maxConsumers, purgeOnNoConsumers, exclusive);
+      return updateQueue(name, routingType, maxConsumers, purgeOnNoConsumers, null, null);
+   }
+
+   @Override
+   public Queue updateQueue(String name,
+                            RoutingType routingType,
+                            Integer maxConsumers,
+                            Boolean purgeOnNoConsumers,
+                            Boolean exclusive,
+                            String user) throws Exception {
+      final QueueBinding queueBinding = this.postOffice.updateQueue(new SimpleString(name), routingType, maxConsumers, purgeOnNoConsumers, exclusive, user);
       if (queueBinding != null) {
          final Queue queue = queueBinding.getQueue();
          return queue;
