@@ -149,7 +149,7 @@ public class LDAPLoginModule implements LoginModule {
 
    @Override
    public boolean logout() throws LoginException {
-      username = null;
+      clear();
       return true;
    }
 
@@ -178,12 +178,19 @@ public class LDAPLoginModule implements LoginModule {
       for (RolePrincipal gp : groups) {
          principals.add(gp);
       }
+      clear();
       return true;
+   }
+
+   private void clear() {
+      username = null;
+      userAuthenticated = false;
+      closeContext();
    }
 
    @Override
    public boolean abort() throws LoginException {
-      username = null;
+      clear();
       return true;
    }
 
