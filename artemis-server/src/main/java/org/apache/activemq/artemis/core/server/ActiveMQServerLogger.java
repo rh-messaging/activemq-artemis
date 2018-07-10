@@ -1573,4 +1573,17 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 224091, value = "Bridge {0} is unable to connect to destination. Retrying", format = Message.Format.MESSAGE_FORMAT)
    void errorConnectingBridgeRetry(Bridge bridge);
+
+   @LogMessage(level = Logger.Level.ERROR)
+   @Message(id = 224079, value = "The process for the virtual machine will be killed, as component {0} is not responsive", format = Message.Format.MESSAGE_FORMAT)
+   void criticalSystemHalt(Object component);
+
+   @LogMessage(level = Logger.Level.ERROR)
+   @Message(id = 224080, value = "The server process will now be stopped, as component {0} is not responsive", format = Message.Format.MESSAGE_FORMAT)
+   void criticalSystemShutdown(Object component);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224081, value = "The component {0} is not responsive", format = Message.Format.MESSAGE_FORMAT)
+   void criticalSystemLog(Object component);
+
 }

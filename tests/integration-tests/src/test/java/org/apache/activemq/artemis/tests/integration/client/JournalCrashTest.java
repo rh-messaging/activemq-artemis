@@ -34,12 +34,12 @@ import org.apache.activemq.artemis.core.journal.PreparedTransactionInfo;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.impl.JournalImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
-import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.tests.util.SpawnedTestBase;
 import org.apache.activemq.artemis.tests.util.SpawnedVMSupport;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class JournalCrashTest extends ActiveMQTestBase {
+public class JournalCrashTest extends SpawnedTestBase {
 
    private static final int FIRST_RUN = 4;
 
@@ -164,7 +164,7 @@ public class JournalCrashTest extends ActiveMQTestBase {
     */
    private void runExternalProcess(final String tempDir, final int start, final int end) throws Exception {
       System.err.println("running external process...");
-      Process process = SpawnedVMSupport.spawnVM(this.getClass().getCanonicalName(), "-Xms128m", "-Xmx128m", new String[]{}, true, true, tempDir, Integer.toString(start), Integer.toString(end));
+      Process process = SpawnedVMSupport.spawnVM(this.getClass().getCanonicalName(), "-Xms128m", "-Xmx128m", new String[]{}, true, true, true, tempDir, Integer.toString(start), Integer.toString(end));
 
       Assert.assertEquals(100, process.waitFor());
    }

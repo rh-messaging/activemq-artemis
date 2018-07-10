@@ -194,7 +194,7 @@
          <xsd:element name="log-delegate-factory-class-name" type="xsd:string" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  XXX
+                  DEPRECATED: the name of the factory class to use for log delegation
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -334,7 +334,7 @@
          <xsd:element name="remoting-incoming-interceptors" type="class-name-sequenceType" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  a list of &lt;class-name/&gt; elements with the names of classes to use for interceptor incoming
+                  a list of &lt;class-name/&gt; elements with the names of classes to use for intercepting incoming
                   remoting packets
                </xsd:documentation>
             </xsd:annotation>
@@ -343,7 +343,7 @@
          <xsd:element name="remoting-outgoing-interceptors" type="class-name-sequenceType" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  a list of &lt;class-name/&gt; elements with the names of classes to use for interceptor outcoming
+                  a list of &lt;class-name/&gt; elements with the names of classes to use for intercepting outgoing
                   remoting packets
                </xsd:documentation>
             </xsd:annotation>
@@ -672,6 +672,14 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="journal-file-open-timeout" type="xsd:int" default="5" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  the length of time in seconds to wait when opening a new Journal file before timing out and failing
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element name="perf-blast-pages" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
@@ -752,6 +760,45 @@
                   The Store Type used by the server
                </xsd:documentation>
             </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="critical-analyzer" type="xsd:boolean" default="true" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  should analyze response time on critical paths and decide for broker log, shutdown or halt.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="critical-analyzer-timeout" type="xsd:long" default="120000" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The default timeout used on analyzing timeouts on the critical path.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="critical-analyzer-check-period" type="xsd:long" default="0" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The timeout here will be defaulted to half critical-analyzer-timeout, calculation happening at runtime
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="critical-analyzer-policy" default="LOG" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Should the server log, be shutdown or halted upon critical analysis failure.
+               </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:enumeration value="LOG"/>
+                  <xsd:enumeration value="HALT"/>
+                  <xsd:enumeration value="SHUTDOWN"/>
+               </xsd:restriction>
+            </xsd:simpleType>
          </xsd:element>
 
          <xsd:element name="security-settings" maxOccurs="1" minOccurs="0">
@@ -1444,8 +1491,7 @@
             <xsd:annotation>
                <xsd:documentation>
                   DEPRECATED: use message-load-balancing-type instead. Select STRICT to mimic
-                  forward-when-no-consumers=true
-                  and ON_DEMAND to mimic forward-when-no-consumers=false.
+                  forward-when-no-consumers=true and ON_DEMAND to mimic forward-when-no-consumers=false.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>

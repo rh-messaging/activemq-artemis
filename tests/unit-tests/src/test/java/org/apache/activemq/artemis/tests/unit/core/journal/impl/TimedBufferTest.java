@@ -29,6 +29,7 @@ import org.apache.activemq.artemis.core.io.buffer.TimedBuffer;
 import org.apache.activemq.artemis.core.io.buffer.TimedBufferObserver;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ReusableLatch;
+import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,7 +84,7 @@ public class TimedBufferTest extends ActiveMQTestBase {
          }
       }
 
-      TimedBuffer timedBuffer = new TimedBuffer(100, TimedBufferTest.ONE_SECOND_IN_NANOS, false);
+      TimedBuffer timedBuffer = new TimedBuffer(EmptyCriticalAnalyzer.getInstance(), 100, TimedBufferTest.ONE_SECOND_IN_NANOS, false);
 
       timedBuffer.start();
 
@@ -151,7 +152,7 @@ public class TimedBufferTest extends ActiveMQTestBase {
          }
       }
 
-      TimedBuffer timedBuffer = new TimedBuffer(100, TimedBufferTest.ONE_SECOND_IN_NANOS / 2, false);
+      TimedBuffer timedBuffer = new TimedBuffer(EmptyCriticalAnalyzer.getInstance(), 100, TimedBufferTest.ONE_SECOND_IN_NANOS / 2, false);
 
       timedBuffer.start();
 
@@ -243,7 +244,7 @@ public class TimedBufferTest extends ActiveMQTestBase {
          }
       }
 
-      TimedBuffer timedBuffer = new TimedBuffer(100, TimedBufferTest.ONE_SECOND_IN_NANOS / 10, false);
+      TimedBuffer timedBuffer = new TimedBuffer(EmptyCriticalAnalyzer.getInstance(), 100, TimedBufferTest.ONE_SECOND_IN_NANOS / 10, false);
 
       timedBuffer.start();
 

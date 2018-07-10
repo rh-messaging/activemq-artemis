@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
 import org.apache.activemq.artemis.api.core.DiscoveryGroupConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -73,6 +74,23 @@ public interface Configuration {
    Configuration parseSystemProperties() throws Exception;
 
    Configuration parseSystemProperties(Properties properties) throws Exception;
+
+   boolean isCriticalAnalyzer();
+
+   Configuration setCriticalAnalyzer(boolean CriticalAnalyzer);
+
+   long getCriticalAnalyzerTimeout();
+
+   Configuration setCriticalAnalyzerTimeout(long timeout);
+
+   long getCriticalAnalyzerCheckPeriod();
+
+   Configuration setCriticalAnalyzerCheckPeriod(long checkPeriod);
+
+   CriticalAnalyzerPolicy getCriticalAnalyzerPolicy();
+
+   Configuration setCriticalAnalyzerPolicy(CriticalAnalyzerPolicy policy);
+
 
    /**
     * Returns whether this server is clustered. <br>
@@ -618,6 +636,16 @@ public interface Configuration {
     * Default value is {@link org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration#DEFAULT_JOURNAL_COMPACT_PERCENTAGE}.
     */
    int getJournalCompactPercentage();
+
+   /**
+    * @return How long to wait when opening a new Journal file before failing
+    */
+   int getJournalFileOpenTimeout();
+
+   /**
+   * Sets the journal file open timeout
+   */
+   Configuration setJournalFileOpenTimeout(int journalFileOpenTimeout);
 
    /**
     * Sets the percentage of live data before compacting the journal.

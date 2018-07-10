@@ -20,6 +20,7 @@ package org.apache.activemq.artemis.tests.integration.persistence;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager;
 import org.apache.activemq.artemis.utils.OrderedExecutorFactory;
+import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,7 +31,7 @@ public class JournalFileSizeTest {
       ConfigurationImpl config = new ConfigurationImpl();
       int origFileSize = config.getJournalFileSize();
       config.setJournalFileSize(origFileSize + (512 / 2 - 1));
-      JournalStorageManager manager = new JournalStorageManager(config,
+      JournalStorageManager manager = new JournalStorageManager(config, EmptyCriticalAnalyzer.getInstance(),
             new OrderedExecutorFactory(null),
             new OrderedExecutorFactory(null));
       int fileSize = manager.getMessageJournal().getFileSize();
@@ -42,7 +43,7 @@ public class JournalFileSizeTest {
       ConfigurationImpl config = new ConfigurationImpl();
       int origFileSize = config.getJournalFileSize();
       config.setJournalFileSize(origFileSize + (512 / 2 + 1));
-      JournalStorageManager manager = new JournalStorageManager(config,
+      JournalStorageManager manager = new JournalStorageManager(config, EmptyCriticalAnalyzer.getInstance(),
             new OrderedExecutorFactory(null),
             new OrderedExecutorFactory(null));
       int fileSize = manager.getMessageJournal().getFileSize();
@@ -54,7 +55,7 @@ public class JournalFileSizeTest {
       ConfigurationImpl config = new ConfigurationImpl();
       int origFileSize = config.getJournalFileSize();
       config.setJournalFileSize(origFileSize + (512 / 2));
-      JournalStorageManager manager = new JournalStorageManager(config,
+      JournalStorageManager manager = new JournalStorageManager(config, EmptyCriticalAnalyzer.getInstance(),
             new OrderedExecutorFactory(null),
             new OrderedExecutorFactory(null));
       int fileSize = manager.getMessageJournal().getFileSize();

@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.tests.unit.core.server.impl.fakes.FakePostOff
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.TimeAndCounterIDGenerator;
+import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -137,7 +138,7 @@ public abstract class StorageManagerTestBase extends ActiveMQTestBase {
     * @param configuration
     */
    protected JournalStorageManager createJournalStorageManager(Configuration configuration) {
-      JournalStorageManager jsm = new JournalStorageManager(configuration, execFactory, execFactory);
+      JournalStorageManager jsm = new JournalStorageManager(configuration, EmptyCriticalAnalyzer.getInstance(), execFactory, execFactory);
       addActiveMQComponent(jsm);
       return jsm;
    }
@@ -146,7 +147,7 @@ public abstract class StorageManagerTestBase extends ActiveMQTestBase {
     * @param configuration
     */
    protected JDBCJournalStorageManager createJDBCJournalStorageManager(Configuration configuration) {
-      JDBCJournalStorageManager jsm = new JDBCJournalStorageManager(configuration, execFactory, execFactory, scheduledExecutorService);
+      JDBCJournalStorageManager jsm = new JDBCJournalStorageManager(configuration, EmptyCriticalAnalyzer.getInstance(), execFactory, execFactory, scheduledExecutorService);
       addActiveMQComponent(jsm);
       return jsm;
    }

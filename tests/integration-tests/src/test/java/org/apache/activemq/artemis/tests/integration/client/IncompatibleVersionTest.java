@@ -41,7 +41,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.version.impl.VersionImpl;
 import org.apache.activemq.artemis.tests.integration.IntegrationTestLogger;
-import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.tests.util.SpawnedTestBase;
 import org.apache.activemq.artemis.tests.util.SpawnedVMSupport;
 import org.apache.activemq.artemis.utils.VersionLoader;
 import org.junit.After;
@@ -51,7 +51,7 @@ import org.junit.Test;
 
 import static org.apache.activemq.artemis.tests.util.RandomUtil.randomString;
 
-public class IncompatibleVersionTest extends ActiveMQTestBase {
+public class IncompatibleVersionTest extends SpawnedTestBase {
 
    private static final String WORD_START = "&*STARTED&*";
    private static final IntegrationTestLogger log = IntegrationTestLogger.LOGGER;

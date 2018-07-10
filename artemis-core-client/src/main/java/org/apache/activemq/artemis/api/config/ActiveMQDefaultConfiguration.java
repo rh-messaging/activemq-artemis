@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.ArtemisConstants;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 
 /**
  * Default values of ActiveMQ Artemis configuration parameters.
@@ -258,6 +259,9 @@ public final class ActiveMQDefaultConfiguration {
    // The percentage of live data on which we consider compacting the journal
    private static int DEFAULT_JOURNAL_COMPACT_PERCENTAGE = 30;
 
+   // The time to wait when opening a new journal file before failing
+   private static int DEFAULT_JOURNAL_FILE_OPEN_TIMEOUT = 5;
+
    // The minimal number of data files before we can start compacting
    private static int DEFAULT_JOURNAL_COMPACT_MIN_FILES = 10;
 
@@ -472,6 +476,13 @@ public final class ActiveMQDefaultConfiguration {
    public static int DEFAULT_NETWORK_CHECK_TIMEOUT = 1000;
 
    public static String DEFAULT_NETWORK_CHECK_NIC = null;
+
+
+   public static final boolean DEFAULT_ANALYZE_CRITICAL = false;
+
+   public static final long DEFAULT_ANALYZE_CRITICAL_TIMEOUT = 120000;
+
+   public static final CriticalAnalyzerPolicy DEFAULT_ANALYZE_CRITICAL_POLICY = CriticalAnalyzerPolicy.LOG;
 
    /**
     * If true then the ActiveMQ Artemis Server will make use of any Protocol Managers that are in available on the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can inject their own Protocol Managers.
@@ -789,6 +800,10 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static int getDefaultJournalCompactPercentage() {
       return DEFAULT_JOURNAL_COMPACT_PERCENTAGE;
+   }
+
+   public static int getDefaultJournalFileOpenTimeout() {
+      return DEFAULT_JOURNAL_FILE_OPEN_TIMEOUT;
    }
 
    /**
@@ -1270,4 +1285,20 @@ public final class ActiveMQDefaultConfiguration {
       return DEFAULT_NETWORK_CHECK_NIC;
    }
 
+   public static boolean getCriticalAnalyzer() {
+      return DEFAULT_ANALYZE_CRITICAL;
+   }
+
+   public static long getCriticalAnalyzerTimeout() {
+      return DEFAULT_ANALYZE_CRITICAL_TIMEOUT;
+   }
+
+   public static long getCriticalAnalyzerCheckPeriod(long timeout) {
+      // this will be 0, the implementation should return 1/2 of the configured critical timeout
+      return timeout / 2;
+   }
+
+   public static CriticalAnalyzerPolicy getCriticalAnalyzerPolicy() {
+      return DEFAULT_ANALYZE_CRITICAL_POLICY;
+   }
 }

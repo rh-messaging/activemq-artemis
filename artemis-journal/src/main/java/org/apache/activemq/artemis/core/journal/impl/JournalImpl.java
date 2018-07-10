@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.journal.impl;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.AccessController;
@@ -51,6 +52,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.core.io.IOCallback;
+import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.EncodingSupport;
@@ -175,6 +177,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    // Compacting may replace this structure
    private final ConcurrentMap<Long, JournalTransaction> transactions = new ConcurrentHashMap<>();
 
+   private final IOCriticalErrorListener criticalErrorListener;
+
    // This will be set only while the JournalCompactor is being executed
    private volatile JournalCompactor compactor;
 
@@ -234,7 +238,21 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                       final String fileExtension,
                       final int maxAIO,
                       final int userVersion) {
-      this(null, fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, fileFactory, filePrefix, fileExtension, maxAIO, userVersion);
+      this(null, fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, 5, fileFactory, filePrefix, fileExtension, maxAIO, userVersion);
+   }
+
+   public JournalImpl(final int fileSize,
+                      final int minFiles,
+                      final int poolSize,
+                      final int compactMinFiles,
+                      final int compactPercentage,
+                      final int journalFileOpenTimeout,
+                      final SequentialFileFactory fileFactory,
+                      final String filePrefix,
+                      final String fileExtension,
+                      final int maxAIO,
+                      final int userVersion) {
+      this(null, fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, journalFileOpenTimeout, fileFactory, filePrefix, fileExtension, maxAIO, userVersion);
    }
 
    public JournalImpl(final ExecutorFactory ioExecutors,
@@ -248,8 +266,43 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                       final String fileExtension,
                       final int maxAIO,
                       final int userVersion) {
+      this(ioExecutors, fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, 5, fileFactory, filePrefix, fileExtension, maxAIO, userVersion);
+   }
+
+
+   public JournalImpl(final ExecutorFactory ioExecutors,
+                      final int fileSize,
+                      final int minFiles,
+                      final int poolSize,
+                      final int compactMinFiles,
+                      final int compactPercentage,
+                      final int journalFileOpenTimeout,
+                      final SequentialFileFactory fileFactory,
+                      final String filePrefix,
+                      final String fileExtension,
+                      final int maxAIO,
+                      final int userVersion) {
+      this(ioExecutors, fileSize, minFiles, poolSize, compactMinFiles, compactPercentage, journalFileOpenTimeout, fileFactory, filePrefix, fileExtension, maxAIO, userVersion, null);
+   }
+
+
+   public JournalImpl(final ExecutorFactory ioExecutors,
+                      final int fileSize,
+                      final int minFiles,
+                      final int poolSize,
+                      final int compactMinFiles,
+                      final int compactPercentage,
+                      final int journalFileOpenTimeout,
+                      final SequentialFileFactory fileFactory,
+                      final String filePrefix,
+                      final String fileExtension,
+                      final int maxAIO,
+                      final int userVersion,
+                      IOCriticalErrorListener criticalErrorListener) {
 
       super(fileFactory.isSupportsCallbacks(), fileSize);
+
+      this.criticalErrorListener = criticalErrorListener;
 
       this.providedIOThreadPool = ioExecutors;
 
@@ -275,7 +328,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       this.fileFactory = fileFactory;
 
-      filesRepository = new JournalFilesRepository(fileFactory, this, filePrefix, fileExtension, userVersion, maxAIO, fileSize, minFiles, poolSize);
+      filesRepository = new JournalFilesRepository(fileFactory, this, filePrefix, fileExtension, userVersion, maxAIO, fileSize, minFiles, poolSize, journalFileOpenTimeout);
 
       this.userVersion = userVersion;
    }
@@ -2922,17 +2975,38 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          throw new IllegalArgumentException("Record is too large to store " + size);
       }
 
-      if (!currentFile.getFile().fits(size)) {
-         moveNextFile(true);
-
-         // The same check needs to be done at the new file also
+      try {
          if (!currentFile.getFile().fits(size)) {
-            // Sanity check, this should never happen
-            throw new IllegalStateException("Invalid logic on buffer allocation");
+            moveNextFile(true);
+
+            // The same check needs to be done at the new file also
+            if (!currentFile.getFile().fits(size)) {
+               // Sanity check, this should never happen
+               throw new IllegalStateException("Invalid logic on buffer allocation");
+            }
          }
+         return currentFile;
+      } catch (Throwable e) {
+         criticalIO(e);
+         return null; // this will never happen, the method will call throw
       }
-      return currentFile;
    }
+
+   private void criticalIO(Throwable e) throws Exception {
+      if (criticalErrorListener != null) {
+         criticalErrorListener.onIOException(e, e.getMessage(), currentFile == null ? null : currentFile.getFile());
+      }
+      if (e instanceof Exception) {
+         throw (Exception) e;
+      } else if (e instanceof IllegalStateException) {
+         throw (IllegalStateException) e;
+      } else {
+         IOException ioex = new IOException();
+         ioex.initCause(e);
+         throw ioex;
+      }
+   }
+
 
    private CountDownLatch newLatch(int countDown) {
       if (state == JournalState.STOPPED) {
@@ -2963,7 +3037,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    /**
     * You need to guarantee lock.acquire() before calling this method!
     */
-   private void moveNextFile(final boolean scheduleReclaim) throws Exception {
+   protected void moveNextFile(final boolean scheduleReclaim) throws Exception {
       filesRepository.closeFile(currentFile);
 
       currentFile = filesRepository.openFile();
@@ -3005,5 +3079,4 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    public int getCompactCount() {
       return compactCount;
    }
-
 }

@@ -102,6 +102,8 @@ import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.IDGenerator;
+import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
+import org.apache.activemq.artemis.utils.critical.CriticalComponentImpl;
 import org.jboss.logging.Logger;
 
 import static org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds.ACKNOWLEDGE_CURSOR;
@@ -118,7 +120,10 @@ import static org.apache.activemq.artemis.core.persistence.impl.journal.JournalR
  * <p>
  * Using this class also ensures that locks are acquired in the right order, avoiding dead-locks.
  */
-public abstract class AbstractJournalStorageManager implements StorageManager {
+public abstract class AbstractJournalStorageManager extends CriticalComponentImpl implements StorageManager {
+
+   private static final int CRITICAL_PATHS = 1;
+   private static final int CRITICAL_STORE = 0;
 
    private static final Logger logger = Logger.getLogger(AbstractJournalStorageManager.class);
 
@@ -187,17 +192,21 @@ public abstract class AbstractJournalStorageManager implements StorageManager {
    protected final Set<Long> largeMessagesToDelete = new HashSet<>();
 
    public AbstractJournalStorageManager(final Configuration config,
+                                        final CriticalAnalyzer analyzer,
                                         final ExecutorFactory executorFactory,
                                         final ScheduledExecutorService scheduledExecutorService,
                                         final ExecutorFactory ioExecutors) {
-      this(config, executorFactory, scheduledExecutorService, ioExecutors, null);
+      this(config, analyzer, executorFactory, scheduledExecutorService, ioExecutors, null);
    }
 
    public AbstractJournalStorageManager(Configuration config,
+                                        CriticalAnalyzer analyzer,
                                         ExecutorFactory executorFactory,
                                         ScheduledExecutorService scheduledExecutorService,
                                         ExecutorFactory ioExecutors,
                                         IOCriticalErrorListener criticalErrorListener) {
+      super(analyzer, CRITICAL_PATHS);
+
       this.executorFactory = executorFactory;
 
       this.ioCriticalErrorListener = criticalErrorListener;
@@ -377,12 +386,14 @@ public abstract class AbstractJournalStorageManager implements StorageManager {
 
    @Override
    public void readLock() {
+      enterCritical(CRITICAL_STORE);
       storageManagerLock.readLock().lock();
    }
 
    @Override
    public void readUnLock() {
       storageManagerLock.readLock().unlock();
+      leaveCritical(CRITICAL_STORE);
    }
 
    @Override

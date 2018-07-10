@@ -29,8 +29,9 @@ import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.LinkedListIterator;
 import org.apache.activemq.artemis.utils.ReferenceCounter;
+import org.apache.activemq.artemis.utils.critical.CriticalComponent;
 
-public interface Queue extends Bindable {
+public interface Queue extends Bindable,CriticalComponent {
 
    SimpleString getName();
 

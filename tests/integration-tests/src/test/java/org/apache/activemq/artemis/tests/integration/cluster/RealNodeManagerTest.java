@@ -23,12 +23,17 @@ import java.util.List;
 import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.impl.FileLockNodeManager;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.tests.util.SpawnedVMCheck;
 import org.apache.activemq.artemis.tests.util.SpawnedVMSupport;
 import org.apache.activemq.artemis.utils.UUID;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class RealNodeManagerTest extends NodeManagerTest {
+
+   @Rule
+   public SpawnedVMCheck check = new SpawnedVMCheck();
 
    @Test
    public void testId() throws Exception {
@@ -45,7 +50,7 @@ public class RealNodeManagerTest extends NodeManagerTest {
    public void performWork(NodeManagerAction... actions) throws Exception {
       List<Process> processes = new ArrayList<>();
       for (NodeManagerAction action : actions) {
-         Process p = SpawnedVMSupport.spawnVM(NodeManagerAction.class.getName(), "-Xms512m", "-Xmx512m", new String[0], true, true, action.getWork());
+         Process p = SpawnedVMSupport.spawnVM(NodeManagerAction.class.getName(), "-Xms512m", "-Xmx512m", new String[0], true, true, true, action.getWork());
          processes.add(p);
       }
       for (Process process : processes) {
