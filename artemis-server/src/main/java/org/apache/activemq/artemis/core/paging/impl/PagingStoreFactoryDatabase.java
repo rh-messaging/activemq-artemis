@@ -79,6 +79,11 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
 
    private JDBCSequentialFile directoryList;
 
+   @Override
+   public ScheduledExecutorService getScheduledExecutor() {
+      return scheduledExecutor;
+   }
+
    private boolean started = false;
 
    private final IOCriticalErrorListener criticalErrorListener;

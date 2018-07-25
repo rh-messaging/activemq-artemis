@@ -58,7 +58,7 @@ public final class PagingManagerImpl implements PagingManager {
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
-   private final PagingStoreFactory pagingStoreFactory;
+   private PagingStoreFactory pagingStoreFactory;
 
    private final AtomicLong globalSizeBytes = new AtomicLong(0);
 
@@ -75,6 +75,17 @@ public final class PagingManagerImpl implements PagingManager {
 
    // Constructors
    // --------------------------------------------------------------------------------------------------------------------
+
+
+   // for tests.. not part of the API
+   public void replacePageStoreFactory(PagingStoreFactory factory) {
+      this.pagingStoreFactory = factory;
+   }
+
+   // for tests.. not part of the API
+   public PagingStoreFactory getPagingStoreFactory() {
+      return pagingStoreFactory;
+   }
 
    public PagingManagerImpl(final PagingStoreFactory pagingSPI,
                             final HierarchicalRepository<AddressSettings> addressSettingsRepository,

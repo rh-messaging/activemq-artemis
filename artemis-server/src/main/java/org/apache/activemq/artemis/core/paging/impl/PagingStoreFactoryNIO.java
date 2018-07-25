@@ -62,7 +62,7 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory {
 
    private final ExecutorFactory executorFactory;
 
-   protected final boolean syncNonTransactional;
+   private final boolean syncNonTransactional;
 
    private PagingManager pagingManager;
 
@@ -70,9 +70,37 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory {
 
    private final long syncTimeout;
 
-   protected final StorageManager storageManager;
+   private final StorageManager storageManager;
 
    private final IOCriticalErrorListener critialErrorListener;
+
+   public File getDirectory() {
+      return directory;
+   }
+
+   public ExecutorFactory getExecutorFactory() {
+      return executorFactory;
+   }
+
+   public boolean isSyncNonTransactional() {
+      return syncNonTransactional;
+   }
+
+   public PagingManager getPagingManager() {
+      return pagingManager;
+   }
+
+   public long getSyncTimeout() {
+      return syncTimeout;
+   }
+
+   public StorageManager getStorageManager() {
+      return storageManager;
+   }
+
+   public IOCriticalErrorListener getCritialErrorListener() {
+      return critialErrorListener;
+   }
 
    public PagingStoreFactoryNIO(final StorageManager storageManager,
                                 final File directory,
@@ -91,6 +119,11 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory {
    }
 
    // Public --------------------------------------------------------
+
+   @Override
+   public ScheduledExecutorService getScheduledExecutor() {
+      return scheduledExecutor;
+   }
 
    @Override
    public void stop() {
@@ -124,9 +157,7 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory {
 
       factory.createDirs();
 
-      File fileWithID = new File(directory, guid +
-         File.separatorChar +
-         PagingStoreFactoryNIO.ADDRESS_FILE);
+      File fileWithID = new File(directory, guid + File.separatorChar + PagingStoreFactoryNIO.ADDRESS_FILE);
 
       try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileWithID)))) {
          writer.write(address.toString());
@@ -186,7 +217,7 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory {
       }
    }
 
-   private SequentialFileFactory newFileFactory(final String directoryName) {
+   protected SequentialFileFactory newFileFactory(final String directoryName) {
 
       return new NIOSequentialFileFactory(new File(directory, directoryName), false, critialErrorListener, 1);
    }
