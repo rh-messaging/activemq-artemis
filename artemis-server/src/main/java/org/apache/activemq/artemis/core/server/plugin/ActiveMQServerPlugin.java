@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.postoffice.RoutingStatus;
 import org.apache.activemq.artemis.core.security.SecurityAuth;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.HandleStatus;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueConfig;
@@ -598,7 +599,6 @@ public interface ActiveMQServerPlugin {
       this.messageAcknowledged(ref, reason);
    }
 
-
    /**
     * Before a bridge is deployed
     *
@@ -616,6 +616,41 @@ public interface ActiveMQServerPlugin {
     * @throws ActiveMQException
     */
    default void afterDeployBridge(Bridge bridge) throws ActiveMQException {
+
+   }
+
+   /**
+    * Called immediately before a bridge delivers a message
+    *
+    * @param bridge
+    * @param ref
+    * @throws ActiveMQException
+    */
+   default void beforeDeliverBridge(Bridge bridge, MessageReference ref) throws ActiveMQException {
+
+   }
+
+   /**
+    * Called immediately after a bridge delivers a message but before the message
+    * is acknowledged
+    *
+    * @param bridge
+    * @param ref
+    * @param status
+    * @throws ActiveMQException
+    */
+   default void afterDeliverBridge(Bridge bridge, MessageReference ref, HandleStatus status) throws ActiveMQException {
+
+   }
+
+   /**
+    * Called after delivered message over this bridge has been acknowledged by the remote broker
+    *
+    * @param bridge
+    * @param ref
+    * @throws ActiveMQException
+    */
+   default void afterAcknowledgeBridge(Bridge bridge, MessageReference ref) throws ActiveMQException {
 
    }
 
