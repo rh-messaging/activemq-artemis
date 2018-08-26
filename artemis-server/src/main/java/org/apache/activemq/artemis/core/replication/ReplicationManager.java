@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -115,8 +114,6 @@ public final class ReplicationManager implements ActiveMQComponent {
    private boolean started;
 
    private volatile boolean enabled;
-
-   private final AtomicBoolean writable = new AtomicBoolean(true);
 
    private final Queue<OperationContext> pendingTokens = new ConcurrentLinkedQueue<>();
 
@@ -287,6 +284,12 @@ public final class ReplicationManager implements ActiveMQComponent {
             logger.trace("Stopping being ignored as it hasn't been started");
             return;
          }
+
+         started = false;
+      }
+
+      if (logger.isTraceEnabled()) {
+         logger.trace("stop()", new Exception("Trace"));
       }
 
       // This is to avoid the write holding a lock while we are trying to close it
@@ -296,7 +299,6 @@ public final class ReplicationManager implements ActiveMQComponent {
       }
 
       enabled = false;
-      writable.set(true);
       clearReplicationTokens();
 
       RemotingConnection toStop = remotingConnection;
@@ -304,7 +306,6 @@ public final class ReplicationManager implements ActiveMQComponent {
          toStop.removeFailureListener(failureListener);
       }
       remotingConnection = null;
-      started = false;
    }
 
    /**
