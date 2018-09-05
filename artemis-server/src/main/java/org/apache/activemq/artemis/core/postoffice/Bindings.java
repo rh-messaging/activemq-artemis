@@ -37,4 +37,6 @@ public interface Bindings extends UnproposalListener {
    boolean redistribute(ServerMessage message, Queue originatingQueue, RoutingContext context) throws Exception;
 
    void route(ServerMessage message, RoutingContext context) throws Exception;
+
+   boolean allowRedistribute();
 }
