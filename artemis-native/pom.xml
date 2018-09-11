@@ -79,42 +79,45 @@
             </configuration>
          </plugin>
          <plugin>
-            <artifactId>maven-resources-plugin</artifactId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>2.2</version>
             <executions>
                <execution>
                   <id>copy-resources-32</id>
                   <phase>validate</phase>
                   <goals>
-                     <goal>copy-resources</goal>
+                     <goal>copy</goal>
                   </goals>
                   <configuration>
-                     <outputDirectory>${basedir}/target/output/lib/linux-i686/</outputDirectory>
-                     <resources>
-                        <resource>
-                           <directory>bin/</directory>
-                           <includes>
-                              <include>libartemis-native-32.so</include>
-                           </includes>
-                        </resource>
-                     </resources>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>org.apache.activemq</groupId>
+                           <artifactId>libartemis-native-32</artifactId>
+                           <version>${version.org.apache.activemq.libartemis-native}</version>
+                           <type>so</type>
+                           <outputDirectory>${basedir}/target/output/lib/linux-i686/</outputDirectory>
+                           <destFileName>libartemis-native-32.so</destFileName>
+                        </artifactItem>
+                     </artifactItems>
                   </configuration>
                </execution>
                <execution>
                   <id>copy-resources-64</id>
                   <phase>validate</phase>
                   <goals>
-                     <goal>copy-resources</goal>
+                     <goal>copy</goal>
                   </goals>
                   <configuration>
-                     <outputDirectory>${basedir}/target/output/lib/linux-x86_64/</outputDirectory>
-                     <resources>
-                        <resource>
-                           <directory>bin/</directory>
-                           <includes>
-                              <include>libartemis-native-64.so</include>
-                           </includes>
-                        </resource>
-                     </resources>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>org.apache.activemq</groupId>
+                           <artifactId>libartemis-native-64</artifactId>
+                           <version>${version.org.apache.activemq.libartemis-native}</version>
+                           <type>so</type>
+                           <outputDirectory>${basedir}/target/output/lib/linux-x86_64/</outputDirectory>
+                           <destFileName>libartemis-native-64.so</destFileName>
+                        </artifactItem>
+                     </artifactItems>
                   </configuration>
                </execution>
             </executions>
@@ -122,10 +125,9 @@
       </plugins>
    </build>
 
-
-
    <properties>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
+      <version.org.apache.activemq.libartemis-native>2.6.3.jbossorg_00012-redhat-1</version.org.apache.activemq.libartemis-native>
    </properties>
 
 </project>
