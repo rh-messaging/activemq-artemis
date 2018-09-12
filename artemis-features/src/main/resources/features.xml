@@ -96,18 +96,17 @@
 		<bundle>mvn:org.apache.activemq/artemis-jms-client-osgi/${pom.version}</bundle>
 	</feature>
 
-	<feature name="artemis-amqp-client" version="${pom.version}" description="ActiveMQ Artemis AMQP Client libraries">
+	<!--<feature name="artemis-amqp-client" version="${pom.version}" description="ActiveMQ Artemis AMQP Client libraries">
 		<feature>transaction</feature>
 		<feature>netty-core</feature>
 		<bundle dependency="true">mvn:jakarta.jms/jakarta.jms-api/${jakarta.jms-api.version}</bundle>
 		<bundle>mvn:org.apache.qpid/proton-j/${proton.version}</bundle>
 		<bundle>mvn:org.apache.qpid/qpid-jms-client/${qpid.jms.version}</bundle>
-	</feature>
+	</feature>-->
 
 	<feature name="artemis-amqp" version="${pom.version}" description="ActiveMQ Artemis AMQP protocol libraries">
 		<feature>artemis-core</feature>
 		<bundle>mvn:org.apache.qpid/proton-j/${proton.version}</bundle>
-		<bundle>mvn:org.apache.qpid/qpid-jms-client/${qpid.jms.version}</bundle>
 		<bundle>mvn:org.apache.activemq/artemis-amqp-protocol/${pom.version}</bundle>
 	</feature>
 
