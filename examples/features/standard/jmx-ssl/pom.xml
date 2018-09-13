@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.broker</groupId>
       <artifactId>jms-examples</artifactId>
-      <version>2.6.3.amq-721001</version>
+      <version>2.6.3.jbossorg-00001</version>
    </parent>
 
    <artifactId>jmx-ssl</artifactId>
