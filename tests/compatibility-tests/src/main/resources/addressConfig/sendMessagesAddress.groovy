@@ -1,4 +1,4 @@
-package addressConfig
+package meshTest
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 

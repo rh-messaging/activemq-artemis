@@ -23,14 +23,13 @@ import java.io.PrintStream;
 
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
-import org.apache.activemq.artemis.tests.compatibility.base.ClasspathBase;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FIVE;
 
-public class ActiveMQJMSClientCompatibilityTest extends ClasspathBase {
+public class ActiveMQJMSClientCompatibilityTest extends ClasspathBaseTest {
 
    @Test
    public void testActiveMQJMSCompatibility_1XPrefix_SNAPSHOT() throws Exception {

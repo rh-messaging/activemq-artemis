@@ -1,4 +1,4 @@
-package prefixSendAckTest
+package meshTest
 
 import org.apache.activemq.artemis.tests.compatibility.GroovyRun
 

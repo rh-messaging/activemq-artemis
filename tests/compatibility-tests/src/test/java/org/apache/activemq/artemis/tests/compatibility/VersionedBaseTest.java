@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.tests.compatibility.base;
+package org.apache.activemq.artemis.tests.compatibility;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -23,17 +23,17 @@ import java.util.List;
 
 import org.junit.AfterClass;
 
-public abstract class VersionedBase extends ClasspathBase {
+public abstract class VersionedBaseTest extends ClasspathBaseTest {
 
    protected final String server;
    protected final String sender;
    protected final String receiver;
 
-   protected final ClassLoader serverClassloader;
-   protected final ClassLoader senderClassloader;
-   protected final ClassLoader receiverClassloader;
+   protected ClassLoader serverClassloader;
+   protected ClassLoader senderClassloader;
+   protected ClassLoader receiverClassloader;
 
-   public VersionedBase(String server, String sender, String receiver) throws Exception {
+   public VersionedBaseTest(String server, String sender, String receiver) throws Exception {
       if (server == null) {
          server = sender;
       }
@@ -43,9 +43,6 @@ public abstract class VersionedBase extends ClasspathBase {
       this.serverClassloader = getClasspath(server);
       this.senderClassloader = getClasspath(sender);
       this.receiverClassloader = getClasspath(receiver);
-      clearGroovy(senderClassloader);
-      clearGroovy(receiverClassloader);
-      clearGroovy(serverClassloader);
    }
 
    @AfterClass
@@ -54,21 +51,12 @@ public abstract class VersionedBase extends ClasspathBase {
    }
 
    protected static List<Object[]> combinatory(Object[] rootSide, Object[] sideLeft, Object[] sideRight) {
-      return combinatory(null, rootSide, sideLeft, sideRight);
-   }
-
-   protected static List<Object[]> combinatory(Object required,
-                                               Object[] rootSide,
-                                               Object[] sideLeft,
-                                               Object[] sideRight) {
       LinkedList<Object[]> combinations = new LinkedList<>();
 
       for (Object root : rootSide) {
          for (Object left : sideLeft) {
             for (Object right : sideRight) {
-               if (required == null || root.equals(required) || left.equals(required) || right.equals(required)) {
-                  combinations.add(new Object[]{root, left, right});
-               }
+               combinations.add(new Object[]{root, left, right});
             }
          }
       }

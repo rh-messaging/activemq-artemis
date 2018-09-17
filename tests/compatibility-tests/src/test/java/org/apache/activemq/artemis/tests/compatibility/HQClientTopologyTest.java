@@ -17,7 +17,6 @@
 
 package org.apache.activemq.artemis.tests.compatibility;
 
-import org.apache.activemq.artemis.tests.compatibility.base.VersionedBase;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -38,7 +37,7 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT
  * correct connector parameters (keys must be dash-delimited instead of camelCase).
  */
 @RunWith(Parameterized.class)
-public class HQClientTopologyTest extends VersionedBase {
+public class HQClientTopologyTest extends VersionedBaseTest {
 
    @Parameterized.Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {

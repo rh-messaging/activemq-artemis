@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.tests.compatibility.base;
+package org.apache.activemq.artemis.tests.compatibility;
 
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.After;
 import org.junit.Before;
 
-public class ServerBase extends VersionedBase {
+public class ServerBaseTest extends VersionedBaseTest {
 
-   public ServerBase(String server, String sender, String receiver) throws Exception {
+   public ServerBaseTest(String server, String sender, String receiver) throws Exception {
       super(server, sender, receiver);
    }
 

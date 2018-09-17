@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.activemq.artemis.tests.compatibility.base.VersionedBase;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -37,7 +36,7 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FIVE
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 
 @RunWith(Parameterized.class)
-public class AddressConfigTest extends VersionedBase {
+public class AddressConfigTest extends VersionedBaseTest {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"

@@ -1,4 +1,4 @@
-package addressConfig
+package meshTest
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.activemq.artemis.tests.compatibility.GroovyRun

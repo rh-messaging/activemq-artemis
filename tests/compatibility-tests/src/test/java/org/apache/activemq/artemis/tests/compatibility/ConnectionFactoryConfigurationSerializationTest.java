@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.activemq.artemis.tests.compatibility.base.VersionedBase;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +47,7 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.TWO_FOUR
  * Run->Edit Configuration->Add ArtemisMeshTest and add your properties.
  */
 @RunWith(Parameterized.class)
-public class ConnectionFactoryConfigurationSerializationTest extends VersionedBase {
+public class ConnectionFactoryConfigurationSerializationTest extends VersionedBaseTest {
 
    // this will ensure that all tests in this class are run twice,
    // once with "true" passed to the class' constructor and once with "false"

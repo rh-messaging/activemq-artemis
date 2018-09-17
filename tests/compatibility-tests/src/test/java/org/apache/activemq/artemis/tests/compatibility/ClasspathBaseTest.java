@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.tests.compatibility.base;
+package org.apache.activemq.artemis.tests.compatibility;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -26,14 +26,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import org.apache.activemq.artemis.tests.compatibility.GroovyRun;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 
-public class ClasspathBase {
+public class ClasspathBaseTest {
 
 
    @ClassRule
@@ -49,7 +48,7 @@ public class ClasspathBase {
 
    private static HashSet<String> printed = new HashSet<>();
 
-   protected ClassLoader defineClassLoader(String classPath) throws MalformedURLException {
+   protected static ClassLoader defineClassLoader(String classPath) throws MalformedURLException {
       String[] classPathArray = classPath.split(File.pathSeparator);
       URL[] elements = new URL[classPathArray.length];
       for (int i = 0; i < classPathArray.length; i++) {
@@ -59,21 +58,19 @@ public class ClasspathBase {
       return new URLClassLoader(elements, null);
    }
 
-   protected ClassLoader getClasspath(String name) throws Exception {
+   public static ClassLoader getClasspath(String name) throws Exception {
       return getClasspath(name, false);
    }
 
-   protected ClassLoader getClasspath(String name, boolean forceNew) throws Exception {
+   public static ClassLoader getClasspath(String name, boolean forceNew) throws Exception {
 
       if (!forceNew) {
          if (name.equals(SNAPSHOT)) {
-            GroovyRun.clear();
-            return VersionedBase.class.getClassLoader();
+            return VersionedBaseTest.class.getClassLoader();
          }
 
          ClassLoader loader = loaderMap.get(name);
          if (loader != null && !forceNew) {
-            clearGroovy(loader);
             return loader;
          }
       }
@@ -116,15 +113,6 @@ public class ClasspathBase {
          Class clazz = loader.loadClass(GroovyRun.class.getName());
          Method method = clazz.getMethod("setVariable", String.class, Object.class);
          method.invoke(null, name, object);
-         return null;
-      });
-   }
-
-   protected static void clearGroovy(ClassLoader loader) throws Exception {
-      tclCall(loader, () -> {
-         Class clazz = loader.loadClass(GroovyRun.class.getName());
-         Method method = clazz.getMethod("clear");
-         method.invoke(null);
          return null;
       });
    }

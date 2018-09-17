@@ -1,5 +1,3 @@
-package ActiveMQJMSClientCompatibilityTest
-
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient
 import org.apache.activemq.artemis.jms.client.ActiveMQQueue
 import org.apache.activemq.artemis.jms.client.ActiveMQTopic

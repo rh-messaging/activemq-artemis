@@ -1,4 +1,4 @@
-package serial
+package clients
 
 import io.netty.buffer.Unpooled
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer
