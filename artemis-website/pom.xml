@@ -147,6 +147,7 @@
                         <configuration>
                            <nodeVersion>${nodeVersion}</nodeVersion>
                            <npmVersion>${npmVersion}</npmVersion>
+                           <skip>${skipDocs}</skip>
                         </configuration>
                      </execution>
                      <execution>
@@ -157,10 +158,12 @@
                         <phase>generate-sources</phase>
                         <configuration>
                            <arguments>install</arguments>
+                           <skip>${skipDocs}</skip>
                         </configuration>
                      </execution>
                   </executions>
                   <configuration>
+                    <skip>${skipDocs}</skip>
                   </configuration>
                </plugin>
                <plugin>
@@ -200,6 +203,7 @@
                                  <arg value="${webapp-outdir-migration-guide}" />
                               </exec>
                            </target>
+                           <skip>${skipDocs}</skip>
                         </configuration>
                         <goals>
                            <goal>run</goal>
