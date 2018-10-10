@@ -84,7 +84,8 @@
       <frontend-maven-plugin-version>0.0.29</frontend-maven-plugin-version>
       <nodeVersion>v6.11.0</nodeVersion>
       <npmVersion>1.4.12</npmVersion>
-
+      <useSystemNPM>false</useSystemNPM>
+      <skipInstallNPM>true</skipInstallNPM>
    </properties>
 
    <build>
@@ -145,8 +146,7 @@
                         </goals>
                         <phase>generate-sources</phase>
                         <configuration>
-                           <nodeVersion>${nodeVersion}</nodeVersion>
-                           <npmVersion>${npmVersion}</npmVersion>
+                           <skip>${useSystemNPM}</skip>
                         </configuration>
                      </execution>
                      <execution>
@@ -156,11 +156,31 @@
                         </goals>
                         <phase>generate-sources</phase>
                         <configuration>
-                           <arguments>install</arguments>
+                           <arguments>install --fetch-retry-mintimeout 60000 --fetch-retries 10 --maxsockets 2 --verbose</arguments>
                         </configuration>
                      </execution>
                   </executions>
                   <configuration>
+                     <skip>true</skip>
+                  </configuration>
+               </plugin>
+               <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>exec-maven-plugin</artifactId>
+                  <version>1.6.0</version>
+                  <executions>
+                     <execution>
+                        <goals>
+                           <goal>exec</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                     </execution>
+                  </executions>
+                  <configuration>
+                     <executable>npm</executable>
+                     <arguments>
+                        <argument>install</argument>
+                     </arguments>
                   </configuration>
                </plugin>
                <plugin>
