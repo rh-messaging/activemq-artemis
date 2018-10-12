@@ -22,10 +22,8 @@ set -e
 # This is a helpr script to help merging branches checked out
 # with checkout-PR.sh
 
-REDHAT_USER=${REDHAT_USER:-origin-rh}
 REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
 
-git fetch $REDHAT_USER
 git fetch $REDHAT_DOWNSTREAM
 
 git checkout $1
@@ -37,7 +35,7 @@ git merge --no-ff $1 -m "This is PR #$*"
 git branch -D $1
 
 echo ""
-cho "please check everything and execute yourself this:"
+echo "please check everything and execute yourself this:"
 echo "git push downstream 2.6.3.jbossorg-x"
 
 echo ""

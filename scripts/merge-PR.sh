@@ -31,10 +31,8 @@ set -e
 # Notice: you should add +refs/pull/*/head to your fetch config on upstream
 #        as specified on https://github.com/apache/activemq-artemis/blob/master/docs/hacking-guide/en/maintainers.md
 
-REDHAT_USER=${REDHAT_USER:-origin-rh}
 REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
 
-git fetch $REDHAT_USER
 git fetch $REDHAT_DOWNSTREAM
 
 git checkout $REDHAT_DOWNSTREAM/2.6.3.jbossorg-x -B 2.6.3.jbossorg-x
