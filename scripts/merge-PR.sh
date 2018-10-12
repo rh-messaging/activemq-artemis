@@ -31,17 +31,23 @@ set -e
 # Notice: you should add +refs/pull/*/head to your fetch config on upstream
 #        as specified on https://github.com/apache/activemq-artemis/blob/master/docs/hacking-guide/en/maintainers.md
 
-ARTEMIS_USER_REMOTE_NAME=${ARTEMIS_USER_REMOTE_NAME:-origin}
-ARTEMIS_APACHE_REMOTE_NAME=${ARTEMIS_APACHE_REMOTE_NAME:-apache}
-ARTEMIS_GITHUB_REMOTE_NAME=${ARTEMIS_GITHUB_REMOTE_NAME:-upstream}
+REDHAT_USER=${REDHAT_USER:-origin-rh}
+REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
 
-git fetch $ARTEMIS_USER_REMOTE_NAME
-git fetch $ARTEMIS_APACHE_REMOTE_NAME
-git fetch $ARTEMIS_GITHUB_REMOTE_NAME
+git fetch $REDHAT_USER
+git fetch $REDHAT_DOWNSTREAM
 
-git checkout $ARTEMIS_APACHE_REMOTE_NAME/2.6.x -B 2.6.x
-git checkout $ARTEMIS_GITHUB_REMOTE_NAME/pr/$1 -B $1
-git pull --rebase $ARTEMIS_APACHE_REMOTE_NAME 2.6.x
-git checkout 2.6.x
-git merge --no-ff $1 -m "This closes #$*"
+git checkout $REDHAT_DOWNSTREAM/2.6.3.jbossorg-x -B 2.6.3.jbossorg-x
+git checkout $REDHAT_DOWNSTREAM/pr/$1 -B $1
+git pull --rebase $REDHAT_DOWNSTREAM 2.6.3.jbossorg-x
+git checkout 2.6.3.jbossorg-x
+git merge --no-ff $1 -m "This is PR #$*"
 git branch -D $1
+
+
+echo ""
+echo "please check everything and execute yourself this:"
+echo "git push downstream 2.6.3.jbossorg-x"
+
+echo ""
+echo "Then you need to make sure the PR $1 is closed on github"
