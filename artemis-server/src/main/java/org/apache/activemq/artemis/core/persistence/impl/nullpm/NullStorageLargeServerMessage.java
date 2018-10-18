@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.persistence.impl.nullpm;
 
+import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
@@ -59,6 +60,11 @@ class NullStorageLargeServerMessage extends ServerMessageImpl implements LargeSe
    @Override
    public void decrementDelayDeletionCount() {
 
+   }
+
+   @Override
+   public void encode(ActiveMQBuffer buff) {
+      encodeHeadersAndProperties(buff);
    }
 
    @Override
