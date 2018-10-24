@@ -2,6 +2,42 @@
 
 This file describes some minimum 'stuff one needs to know' to get started coding in this project.
 
+
+## Merging downstream
+
+We shouldn't use merge buttons on Pull Request. We should use the merge scripts.
+
+- Add the fetch PR to your ~/.git/config
+
+```
+[remote "downstream"]
+        url = git@github.com:rh-messaging/activemq-artemis.git
+        fetch = +refs/heads/*:refs/remotes/downstream/*
+        fetch = +refs/pull/*/head:refs/remotes/downstream/pr/*
+```
+
+And then use the following scripts:
+
+- merge-PR.sh - this will merge a PR into your 2.6.3.jbossorg-x branch:
+- checkout-PR.sh - this will checkout a PR branch as a branch with the same ID. you can then rebase or ammend and use merge-branch.sh
+- merge-branch.sh - This is similar to merge-PR.sh but instead it will merge the branch checked out by checkout-PR.sh
+
+Usage: 
+
+```sh
+./scripts/merge-PR <ID> <textual description.
+git push downstream 2.6.3.jbossorg-x
+
+```
+
+Example:
+
+```sh
+./scripts/merge-PR 136 ARTEMIS-2136 synchronize copy constructor
+git push downstream 2.6.3.jbossorg-x
+
+```
+
 ## Source
 
 For details about the modifying the code, building the project, running tests, IDE integration, etc. see
