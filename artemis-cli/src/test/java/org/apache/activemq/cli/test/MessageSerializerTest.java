@@ -73,36 +73,8 @@ public class MessageSerializerTest extends CliTestBase {
    @After
    @Override
    public void tearDown() throws Exception {
-      try {
-         connection.close();
-         cf.close();
-      } finally {
-         stopServer();
-         super.tearDown();
-      }
-   }
-
-   private void setupAuth() throws Exception {
-      setupAuth(temporaryFolder.getRoot());
-   }
-
-   private void setupAuth(File folder) throws Exception {
-      System.setProperty("java.security.auth.login.config", folder.getAbsolutePath() + "/etc/login.config");
-   }
-
-   private void startServer() throws Exception {
-      File rootDirectory = new File(temporaryFolder.getRoot(), "broker");
-      setupAuth(rootDirectory);
-      Run.setEmbedded(true);
-      Artemis.main("create", rootDirectory.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
-      System.setProperty("artemis.instance", rootDirectory.getAbsolutePath());
-      Artemis.internalExecute("run");
-   }
-
-   private void stopServer() throws Exception {
-      Artemis.internalExecute("stop");
-      assertTrue(Run.latchRunning.await(5, TimeUnit.SECONDS));
-      assertEquals(0, LibaioContext.getTotalMaxIO());
+      closeConnection(cf, connection);
+      super.tearDown();
    }
 
    private File createMessageFile() throws IOException {
@@ -215,19 +187,6 @@ public class MessageSerializerTest extends CliTestBase {
       }
    }
 
-   private List<Message> consumeMessages(Session session, String address, int noMessages, boolean fqqn) throws Exception {
-      Destination destination = fqqn ? session.createQueue(address) : getDestination(address);
-      MessageConsumer consumer = session.createConsumer(destination);
-
-      List<Message> messages = new ArrayList<>();
-      for (int i = 0; i < noMessages; i++) {
-         Message m = consumer.receive(1000);
-         assertNotNull(m);
-         messages.add(m);
-      }
-      return messages;
-   }
-
    private void exportMessages(String address, int noMessages, File output) throws Exception {
       Artemis.main("consumer",
                    "--user", "admin",
@@ -243,18 +202,6 @@ public class MessageSerializerTest extends CliTestBase {
                    "--password", "admin",
                    "--destination", address,
                    "--data", input.getAbsolutePath());
-   }
-
-   private void createQueue(String routingTypeOption, String address, String queueName) throws Exception {
-      Artemis.main("queue", "create",
-                   "--user", "admin",
-                   "--password", "admin",
-                   "--address", address,
-                   "--name", queueName,
-                   routingTypeOption,
-                   "--durable",
-                   "--preserve-on-no-consumers",
-                   "--auto-create-address");
    }
 
    @Test
@@ -344,21 +291,8 @@ public class MessageSerializerTest extends CliTestBase {
       return lines;
    }
 
-   private void sendMessages(Session session, String queueName, int messageCount) throws JMSException {
-      MessageProducer producer = session.createProducer(getDestination(queueName));
-
-      TextMessage message = session.createTextMessage(getTestMessageBody());
-
-      for (int i = 0; i < messageCount; i++) {
-         producer.send(message);
-      }
-   }
-
    private String getTestMessageBody() {
       return "Sample Message";
    }
 
-   private Destination getDestination(String queueName) {
-      return ActiveMQDestination.createDestination("queue://" + queueName, ActiveMQDestination.TYPE.QUEUE);
-   }
 }

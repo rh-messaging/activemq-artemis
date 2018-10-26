@@ -1050,12 +1050,6 @@ public class ArtemisTest extends CliTestBase {
       return System.getProperty("os.name", "null").toLowerCase().indexOf("win") >= 0;
    }
 
-   private void stopServer() throws Exception {
-      Artemis.internalExecute("stop");
-      assertTrue(Run.latchRunning.await(5, TimeUnit.SECONDS));
-      assertEquals(0, LibaioContext.getTotalMaxIO());
-   }
-
    private static Document parseXml(File xmlFile) throws ParserConfigurationException, IOException, SAXException {
       DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
       DocumentBuilder domBuilder = domFactory.newDocumentBuilder();
