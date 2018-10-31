@@ -28,7 +28,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.soak</groupId>
       <artifactId>perf-root</artifactId>
-      <version>2.6.3.jbossorg-00008</version>
+      <version>2.6.3.jbossorg-00009</version>
    </parent>
 
    <dependencies>
