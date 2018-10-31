@@ -25,6 +25,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
@@ -293,7 +294,7 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
     * @param deliveryCount Some protocols (AMQP) will have this as part of the message. ignored on core
     */
    @Override
-   public void sendBuffer(ByteBuf sendBuffer, int deliveryCount) {
+   public synchronized void sendBuffer(ByteBuf sendBuffer, int deliveryCount) {
       checkEncode();
       sendBuffer.writeBytes(buffer, 0, buffer.writerIndex());
    }
@@ -302,7 +303,7 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
     * Recast the message as an 1.4 message
     */
    @Override
-   public void sendBuffer_1X(ByteBuf sendBuffer) {
+   public synchronized void sendBuffer_1X(ByteBuf sendBuffer) {
       checkEncode();
       ByteBuf tmpBuffer = buffer.duplicate();
       sendBuffer.writeInt(endOfBodyPosition + DataConstants.SIZE_INT);
@@ -558,20 +559,33 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
     * I am keeping this synchronized as the decode of the Properties is lazy
     */
    protected TypedProperties checkProperties() {
-      if (properties == null) {
-         synchronized (this) {
-            if (properties == null) {
-               TypedProperties properties = new TypedProperties();
-               if (buffer != null && propertiesLocation >= 0) {
-                  final ByteBuf byteBuf = buffer.duplicate().readerIndex(propertiesLocation);
-                  properties.decode(byteBuf, coreMessageObjectPools == null ? null : coreMessageObjectPools.getPropertiesDecoderPools());
+      try {
+         if (properties == null) {
+            synchronized (this) {
+               if (properties == null) {
+                  TypedProperties properties = new TypedProperties();
+                  if (buffer != null && propertiesLocation >= 0) {
+                     final ByteBuf byteBuf = buffer.duplicate().readerIndex(propertiesLocation);
+                     properties.decode(byteBuf, coreMessageObjectPools == null ? null : coreMessageObjectPools.getPropertiesDecoderPools());
+                  }
+                  this.properties = properties;
                }
-               this.properties = properties;
             }
          }
-      }
 
-      return this.properties;
+         return this.properties;
+      } catch (Throwable e) {
+         ByteBuf duplicatebuffer = buffer.duplicate();
+         duplicatebuffer.readerIndex(0);
+
+         // This is not an expected error, hence no specific logger created
+         logger.warn("Could not decode properties for CoreMessage[messageID=" + messageID + ",durable=" + durable + ",userID=" + userID + ",priority=" + priority +
+            ", timestamp=" + timestamp + ",expiration=" + expiration + ",address=" + address + ", propertiesLocation=" + propertiesLocation, e);
+         logger.warn("Failed message has messageID=" + messageID + " and the following buffer:\n" + ByteBufUtil.prettyHexDump(duplicatebuffer));
+
+         throw new RuntimeException(e.getMessage(), e);
+
+      }
    }
 
    @Override
@@ -985,7 +999,6 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
 
    @Override
    public Double getDoubleProperty(final SimpleString key) throws ActiveMQPropertyConversionException {
-      messageChanged();
       checkProperties();
       return properties.getDoubleProperty(key);
    }
