@@ -349,7 +349,7 @@ public class ServerSessionPacketHandler implements ChannelHandler {
                case CREATE_QUEUE: {
                   CreateQueueMessage request = (CreateQueueMessage) packet;
                   requiresResponse = request.isRequiresResponse();
-                  session.createQueue(request.getAddress(), request.getQueueName(), getRoutingTypeFromAddress(request.getAddress()), request.getFilterString(), request.isTemporary(), request.isDurable());
+                  session.createQueue(request.getAddress(), request.getQueueName(), RoutingType.MULTICAST, request.getFilterString(), request.isTemporary(), request.isDurable());
                   if (requiresResponse) {
                      response = new NullResponseMessage();
                   }
@@ -370,7 +370,7 @@ public class ServerSessionPacketHandler implements ChannelHandler {
                   requiresResponse = request.isRequiresResponse();
                   QueueQueryResult result = session.executeQueueQuery(request.getQueueName());
                   if (!(result.isExists() && Objects.equals(result.getAddress(), request.getAddress()) && Objects.equals(result.getFilterString(), request.getFilterString()))) {
-                     session.createSharedQueue(request.getAddress(), request.getQueueName(), getRoutingTypeFromAddress(request.getAddress()), request.isDurable(), request.getFilterString());
+                     session.createSharedQueue(request.getAddress(), request.getQueueName(), request.isDurable(), request.getFilterString());
                   }
                   if (requiresResponse) {
                      response = new NullResponseMessage();
@@ -689,13 +689,6 @@ public class ServerSessionPacketHandler implements ChannelHandler {
       } finally {
          this.storageManager.clearContext();
       }
-   }
-
-   private RoutingType getRoutingTypeFromAddress(SimpleString address) {
-      if (address.startsWith(PacketImpl.OLD_QUEUE_PREFIX) || address.startsWith(PacketImpl.OLD_TEMP_QUEUE_PREFIX)) {
-         return RoutingType.ANYCAST;
-      }
-      return RoutingType.MULTICAST;
    }
 
    private void onSessionRequestProducerCredits(Packet packet) {
