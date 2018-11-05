@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.tests.compatibility;
 
+import org.apache.activemq.artemis.tests.compatibility.base.VersionedBase;
 import org.apache.activemq.artemis.utils.FileUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.ONE_FIVE
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 
 @RunWith(Parameterized.class)
-public class JmsReplyToTempTopicTest extends VersionedBaseTest {
+public class JmsReplyToTempTopicTest extends VersionedBase {
 
    @Parameterized.Parameters(name = "server={0}, producer={1}, consumer={2}")
    public static Collection getParameters() {
