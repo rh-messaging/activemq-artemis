@@ -20,7 +20,7 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-pom</artifactId>
    <packaging>pom</packaging>
-   <version>2.6.3.wildfly-012</version>
+   <version>2.6.3.jbossorg-012</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -147,6 +147,9 @@
 
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+      <!-- you have to pass this as a parameter -->
+      <staging.id>undefined</staging.id>
 
       <maven.compiler.source>1.8</maven.compiler.source>
       <maven.compiler.target>1.8</maven.compiler.target>
@@ -807,6 +810,41 @@
                <javac-compiler-id>javac</javac-compiler-id>
            </properties>
         </profile>
+
+      <profile>
+         <id>stage</id>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-deploy-plugin</artifactId>
+                  <configuration>
+                     <skip>true</skip>
+                  </configuration>
+               </plugin>
+               <plugin>
+                  <groupId>org.sonatype.plugins</groupId>
+                  <artifactId>nexus-staging-maven-plugin</artifactId>
+                  <executions>
+                     <execution>
+                        <id>default-deploy</id>
+                        <phase>deploy</phase>
+                        <goals>
+                           <goal>deploy</goal>
+                        </goals>
+                     </execution>
+                  </executions>
+                  <configuration>
+                     <serverId>jboss-releases-repository</serverId>
+                     <nexusUrl>https://repository.jboss.org/nexus/</nexusUrl>
+                     <!-- explicit matching using the staging profile id -->
+                      <stagingProfileId>${staging.id}</stagingProfileId>
+                     <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                  </configuration>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
       <!-- Google Error Prone has issues with IBM JDK 8 -->
       <!-- See ARTEMIS-861 -->
       <profile>
