@@ -643,6 +643,13 @@ public class AMQPSessionCallback implements SessionCallback {
       if (plugSender != null && plugSender.getSender().getCredit() > 0) {
          return true;
       } else {
+         if (logger.isDebugEnabled()) {
+            try {
+               logger.debug("Consumer " + consumer + " is out of credits, with credit = " + plugSender.getSender().getCredit());
+            } catch (Throwable e) {
+               logger.debug("Consumer out of credits, but exception happened", e);
+            }
+         }
          return false;
       }
    }

@@ -616,7 +616,16 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
             try {
                Modified modification = (Modified) remoteState;
 
+               if (log.isDebugEnabled()) {
+                  try {
+                     log.debug("Message " + message + " being set as modified");
+                  } catch (Throwable e) {
+                     log.debug("Message set as modified and couldn't print it", e);
+                  }
+               }
+
                if (Boolean.TRUE.equals(modification.getUndeliverableHere())) {
+                  log.warn("Rejecting consumer " + brokerConsumer.sequentialID() + " as undeliverable.");
                   message.rejectConsumer(brokerConsumer.sequentialID());
                }
 
