@@ -32,16 +32,13 @@ set -e
 #        as specified on https://github.com/apache/activemq-artemis/blob/master/docs/hacking-guide/en/maintainers.md
 
 ARTEMIS_USER_REMOTE_NAME=${ARTEMIS_USER_REMOTE_NAME:-origin}
-ARTEMIS_APACHE_REMOTE_NAME=${ARTEMIS_APACHE_REMOTE_NAME:-apache}
-ARTEMIS_GITHUB_REMOTE_NAME=${ARTEMIS_GITHUB_REMOTE_NAME:-upstream}
+ARTEMIS_GITHUB_REMOTE_NAME=${ARTEMIS_GITHUB_REMOTE_NAME:-eap}
 
 git fetch $ARTEMIS_USER_REMOTE_NAME
-git fetch $ARTEMIS_APACHE_REMOTE_NAME
 git fetch $ARTEMIS_GITHUB_REMOTE_NAME
 
-git checkout $ARTEMIS_APACHE_REMOTE_NAME/1.x -B 1.x
 git checkout $ARTEMIS_GITHUB_REMOTE_NAME/pr/$1 -B $1
-git pull --rebase $ARTEMIS_APACHE_REMOTE_NAME 1.x
-git checkout 1.x
+git pull --rebase $ARTEMIS_GITHUB_REMOTE_NAME jboss-1.5.5-x
+git checkout jboss-1.5.5-x
 git merge --no-ff $1 -m "This closes #$*"
 git branch -D $1
