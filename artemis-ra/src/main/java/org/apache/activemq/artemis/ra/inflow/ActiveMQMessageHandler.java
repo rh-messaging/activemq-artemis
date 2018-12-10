@@ -133,9 +133,7 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
 
             SimpleString oldFilterString = subResponse.getFilterString();
 
-            boolean selectorChanged = selector == null && oldFilterString != null ||
-               oldFilterString == null && selector != null ||
-               (oldFilterString != null && selector != null && !oldFilterString.toString().equals(selector));
+            boolean selectorChanged = selector == null && oldFilterString != null || oldFilterString == null && selector != null || (oldFilterString != null && selector != null && !oldFilterString.toString().equals(selector));
 
             SimpleString oldTopicName = subResponse.getAddress();
 
@@ -197,6 +195,14 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
 
    XAResource getXAResource() {
       return useXA ? session : null;
+   }
+
+   public Thread getCurrentThread() {
+      if (consumer == null) {
+         return null;
+      }
+
+      return consumer.getCurrentThread();
    }
 
    public Thread interruptConsumer(FutureLatch future) {
