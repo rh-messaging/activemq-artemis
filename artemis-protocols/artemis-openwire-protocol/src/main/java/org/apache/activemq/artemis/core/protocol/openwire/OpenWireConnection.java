@@ -89,7 +89,6 @@ import org.apache.activemq.command.ActiveMQMessage;
 import org.apache.activemq.command.ActiveMQTempQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.command.BrokerInfo;
-import org.apache.activemq.command.BrokerSubscriptionInfo;
 import org.apache.activemq.command.Command;
 import org.apache.activemq.command.ConnectionControl;
 import org.apache.activemq.command.ConnectionError;
@@ -1099,12 +1098,6 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
          }
          return null;
 
-      }
-
-      @Override
-      public Response processBrokerSubscriptionInfo(BrokerSubscriptionInfo brokerSubscriptionInfo) throws Exception {
-         // TBD
-         return null;
       }
 
       @Override
