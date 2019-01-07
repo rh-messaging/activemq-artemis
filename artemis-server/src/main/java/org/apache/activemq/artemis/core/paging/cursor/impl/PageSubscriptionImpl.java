@@ -1271,6 +1271,10 @@ final class PageSubscriptionImpl implements PageSubscription {
                   continue;
                }
 
+               if (info != null && info.isAck(message.getPosition())) {
+                  continue;
+               }
+
                // 2nd ... if TX, is it committed?
                if (valid && message.getPagedMessage().getTransactionID() >= 0) {
                   PageTransactionInfo tx = pageStore.getPagingManager().getTransaction(message.getPagedMessage().getTransactionID());
