@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.QueueAttributes;
@@ -70,6 +71,7 @@ import org.apache.activemq.artemis.jms.client.compatible1X.ActiveMQStreamCompati
 import org.apache.activemq.artemis.jms.client.compatible1X.ActiveMQTextCompabileMessage;
 import org.apache.activemq.artemis.selector.filter.FilterException;
 import org.apache.activemq.artemis.selector.impl.SelectorParser;
+import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.SelectorTranslator;
 
 /**
@@ -710,7 +712,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
             }
          }
 
-         consumer = session.createConsumer(queueName, null, false);
+         consumer = createClientConsumer(dest, queueName, null);
 
          ActiveMQMessageConsumer jbc = new ActiveMQMessageConsumer(options, connection, this, consumer, false, dest, selectorString, autoDeleteQueueName);
 
@@ -765,7 +767,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
              * Therefore, we must check if the queue names list contains the exact name of the address to know whether or
              * not a LOCAL binding for the address exists. If no LOCAL binding exists then it should be created here.
              */
-            if (!response.isExists() || !response.getQueueNames().contains(dest.getSimpleAddress())) {
+            if (!response.isExists() || !response.getQueueNames().contains(CompositeAddress.extractQueueName(dest.getSimpleAddress()))) {
                if (response.isAutoCreateQueues()) {
                   try {
                      createQueue(dest, RoutingType.ANYCAST, dest.getSimpleAddress(), null, true, true, response);
@@ -779,7 +781,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
             connection.addKnownDestination(dest.getSimpleAddress());
 
-            consumer = session.createConsumer(dest.getSimpleAddress(), coreFilterString, false);
+            consumer = createClientConsumer(dest, null, coreFilterString);
          } else {
             AddressQuery response = session.addressQuery(dest.getSimpleAddress());
 
@@ -804,8 +806,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
 
                createTemporaryQueue(dest, RoutingType.MULTICAST, queueName, coreFilterString, response);
 
-               consumer = session.createConsumer(queueName, null, false);
-
+               consumer = createClientConsumer(dest, queueName, null);
                autoDeleteQueueName = queueName;
             } else {
                // Durable sub
@@ -860,7 +861,7 @@ public class ActiveMQSession implements QueueSession, TopicSession {
                   }
                }
 
-               consumer = session.createConsumer(queueName, null, false);
+               consumer = createClientConsumer(dest, queueName, null);
             }
          }
 
@@ -872,6 +873,12 @@ public class ActiveMQSession implements QueueSession, TopicSession {
       } catch (ActiveMQException e) {
          throw JMSExceptionHelper.convertFromActiveMQException(e);
       }
+   }
+
+   private ClientConsumer createClientConsumer(ActiveMQDestination destination, SimpleString queueName, SimpleString coreFilterString) throws ActiveMQException {
+      QueueAttributes queueAttributes = destination.getQueueAttributes() == null ? new QueueAttributes() : destination.getQueueAttributes();
+      int priority = queueAttributes.getConsumerPriority() == null ? ActiveMQDefaultConfiguration.getDefaultConsumerPriority() : queueAttributes.getConsumerPriority();
+      return session.createConsumer(queueName == null ? destination.getSimpleAddress() : queueName, coreFilterString, priority, false);
    }
 
    public void ackAllConsumers() throws JMSException {
