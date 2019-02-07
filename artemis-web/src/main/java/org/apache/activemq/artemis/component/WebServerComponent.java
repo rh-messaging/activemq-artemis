@@ -29,8 +29,6 @@ import org.apache.activemq.artemis.components.ExternalComponent;
 import org.apache.activemq.artemis.dto.AppDTO;
 import org.apache.activemq.artemis.dto.ComponentDTO;
 import org.apache.activemq.artemis.dto.WebServerDTO;
-import org.apache.activemq.artemis.utils.FileUtil;
-import org.apache.activemq.artemis.utils.TimeUtils;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -58,6 +56,7 @@ public class WebServerComponent implements ExternalComponent {
    private String consoleUrl;
    private List<WebAppContext> webContexts;
    private ServerConnector connector;
+   private Path artemisHomePath;
 
    @Override
    public void configure(ComponentDTO config, String artemisInstance, String artemisHome) throws Exception {
@@ -100,7 +99,8 @@ public class WebServerComponent implements ExternalComponent {
 
       handlers = new HandlerList();
 
-      Path homeWarDir = Paths.get(artemisHome != null ? artemisHome : ".").resolve(webServerConfig.path).toAbsolutePath();
+      this.artemisHomePath = Paths.get(artemisHome != null ? artemisHome : ".");
+      Path homeWarDir = artemisHomePath.resolve(webServerConfig.path).toAbsolutePath();
       Path instanceWarDir = Paths.get(artemisInstance != null ? artemisInstance : ".").resolve(webServerConfig.path).toAbsolutePath();
 
       if (webServerConfig.apps != null && webServerConfig.apps.size() > 0) {
@@ -164,31 +164,30 @@ public class WebServerComponent implements ExternalComponent {
    }
 
    public void internalStop() throws Exception {
+      System.out.println("Stopping");
       server.stop();
       if (webContexts != null) {
-         File tmpdir = null;
-         for (WebAppContext context : webContexts) {
-            tmpdir = context.getTempDirectory();
+         cleanupWebTemporaryFiles(webContexts);
 
-            if (tmpdir != null && !context.isPersistTempDirectory()) {
-               //tmpdir will be removed by deleteOnExit()
-               //somehow when broker is stopped and restarted quickly
-               //this tmpdir won't get deleted sometimes
-               boolean fileDeleted = TimeUtils.waitOnBoolean(false, 5000, tmpdir::exists);
-
-               if (!fileDeleted) {
-                  //because the execution order of shutdown hooks are
-                  //not determined, so it's possible that the deleteOnExit
-                  //is executed after this hook, in that case we force a delete.
-                  FileUtil.deleteDirectory(tmpdir);
-                  logger.debug("Force to delete temporary file on shutdown: " + tmpdir.getAbsolutePath());
-                  if (tmpdir.exists()) {
-                     ActiveMQWebLogger.LOGGER.tmpFileNotDeleted(tmpdir);
-                  }
-               }
-            }
-         }
          webContexts.clear();
+      }
+   }
+
+   private File getLibFolder() {
+      Path lib = artemisHomePath.resolve("lib");
+      File libFolder = new File(lib.toUri());
+      return libFolder;
+   }
+
+   public void cleanupWebTemporaryFiles(List<WebAppContext> webContexts) throws Exception {
+      List<File> temporaryFiles = new ArrayList<>();
+      for (WebAppContext context : webContexts) {
+         File tmpdir = context.getTempDirectory();
+         temporaryFiles.add(tmpdir);
+      }
+
+      if (!temporaryFiles.isEmpty()) {
+         WebTmpCleaner.cleanupTmpFiles(getLibFolder(), temporaryFiles);
       }
    }
 
