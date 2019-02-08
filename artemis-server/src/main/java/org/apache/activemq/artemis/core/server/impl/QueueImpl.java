@@ -106,11 +106,12 @@ import org.jboss.logging.Logger;
  */
 public class QueueImpl extends CriticalComponentImpl implements Queue {
 
-   protected static final int CRITICAL_PATHS = 4;
+   protected static final int CRITICAL_PATHS = 5;
    protected static final int CRITICAL_PATH_ADD_TAIL = 0;
    protected static final int CRITICAL_PATH_ADD_HEAD = 1;
    protected static final int CRITICAL_DELIVER = 2;
    protected static final int CRITICAL_CONSUMER = 3;
+   protected static final int CRITICAL_CHECK_DEPAGE = 4;
 
    private static final Logger logger = Logger.getLogger(QueueImpl.class);
 
@@ -2220,7 +2221,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * This method will deliver as many messages as possible until all consumers are busy or there
     * are no more matching or available messages.
     */
-   private void deliver() {
+   private boolean deliver() {
       if (logger.isDebugEnabled()) {
          logger.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
       }
@@ -2245,7 +2246,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             deliverAsync();
 
-            return;
+            return false;
          }
 
          if (System.currentTimeMillis() > timeout) {
@@ -2255,7 +2256,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             deliverAsync();
 
-            return;
+            return false;
          }
 
          MessageReference ref;
@@ -2266,7 +2267,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             // Need to do these checks inside the synchronized
             if (paused || consumerList.isEmpty()) {
-               return;
+               return false;
             }
 
             if (messageReferences.size() == 0) {
@@ -2410,7 +2411,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
       }
 
-      checkDepage();
+      return true;
    }
 
    private void checkDepage() {
@@ -3209,13 +3210,24 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             // We will be using the deliverRunner instance as the guard object to avoid multiple threads executing
             // an asynchronous delivery
             enterCritical(CRITICAL_DELIVER);
+            boolean needCheckDepage = false;
             try {
                synchronized (QueueImpl.this.deliverRunner) {
-                  deliver();
+                  needCheckDepage = deliver();
                }
             } finally {
                leaveCritical(CRITICAL_DELIVER);
             }
+
+            if (needCheckDepage) {
+               enterCritical(CRITICAL_CHECK_DEPAGE);
+               try {
+                  checkDepage();
+               } finally {
+                  leaveCritical(CRITICAL_CHECK_DEPAGE);
+               }
+            }
+
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.errorDelivering(e);
          } finally {
