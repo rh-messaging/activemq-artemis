@@ -12,6 +12,7 @@ be reloaded automatically:
 - Diverts
 - Addresses & queues
 
+If using [modulised broker.xml](configuration-index.md#modularising-broker.xml) ensure you also read [Reloading modular configuration files](configuration-index.md#reloading-modular-configuration-files)
 
 **Note:**
 
