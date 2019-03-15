@@ -30,6 +30,7 @@
    <name>Apache ActiveMQ Artemis Distribution</name>
 
    <properties>
+      <version.org.apache.activemq.libactivemq-artemis-native>1.0.0.jbossorg_00002-redhat-1</version.org.apache.activemq.libactivemq-artemis-native>
       <schemaLocation>${project.build.directory}/${project.artifactId}-${project.version}-bin/${project.artifactId}-${project.version}/schema</schemaLocation>
       <configLocation>src/main/resources/config</configLocation>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
@@ -126,6 +127,7 @@
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-artemis-native</artifactId>
          <version>${activemq-artemis-native-version}</version>
+         <type>jar</type>
       </dependency>
       <dependency>
          <groupId>org.apache.activemq</groupId>
@@ -238,6 +240,50 @@
          </resource>
       </resources>
       <plugins>
+         <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>2.2</version>
+            <executions>
+               <execution>
+                  <id>copy-resources-32</id>
+                  <phase>validate</phase>
+                  <goals>
+                     <goal>copy</goal>
+                  </goals>
+                  <configuration>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>org.apache.activemq</groupId>
+                           <artifactId>libactivemq-artemis-native-32</artifactId>
+                           <version>${version.org.apache.activemq.libactivemq-artemis-native}</version>
+                           <type>so</type>
+                           <outputDirectory>${basedir}/target/natives/lib/linux-i686/</outputDirectory>
+                           <destFileName>libartemis-native-32.so</destFileName>
+                        </artifactItem>
+                     </artifactItems>
+                  </configuration>
+               </execution>
+               <execution>
+                  <id>copy-resources-64</id>
+                  <phase>validate</phase>
+                  <goals>
+                     <goal>copy</goal>
+                  </goals>
+                  <configuration>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>org.apache.activemq</groupId>
+                           <artifactId>libactivemq-artemis-native-64</artifactId>
+                           <version>${version.org.apache.activemq.libactivemq-artemis-native}</version>
+                           <type>so</type>
+                           <outputDirectory>${basedir}/target/natives/lib/linux-x86_64/</outputDirectory>
+                           <destFileName>libartemis-native-64.so</destFileName>
+                        </artifactItem>
+                     </artifactItems>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-deploy-plugin</artifactId>
