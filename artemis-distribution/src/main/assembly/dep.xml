@@ -122,19 +122,6 @@
          <outputDirectory>lib/client</outputDirectory>
          <unpack>false</unpack>
       </dependencySet>
-      <!-- native -->
-      <dependencySet>
-         <includes>
-            <include>org.apache.activemq:activemq-artemis-native</include>
-         </includes>
-         <outputDirectory>bin</outputDirectory>
-         <unpack>true</unpack>
-         <unpackOptions>
-            <includes>
-               <include>**/*.so</include>
-            </includes>
-         </unpackOptions>
-      </dependencySet>
       <dependencySet>
          <includes>
             <include>org.apache.activemq:artemis-website</include>
@@ -181,6 +168,12 @@
       
    </dependencySets>
    <fileSets>
+      <!-- native -->
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-distribution/target/natives/lib</directory>
+         <outputDirectory>bin/lib</outputDirectory>
+         <lineEnding>keep</lineEnding>
+      </fileSet>
       <!-- schema -->
       <fileSet>
          <directory>${activemq.basedir}/artemis-server/src/main/resources/schema/</directory>
