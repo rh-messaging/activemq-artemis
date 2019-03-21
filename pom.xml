@@ -252,6 +252,11 @@
             <artifactId>qpid-jms</artifactId>
             <version>${qpid.jms.version}</version>
          </dependency>
+         <dependency>
+           <groupId>org.apache.qpid</groupId>
+           <artifactId>qpid-jms-client</artifactId>
+           <version>${qpid.jms.version}</version>
+         </dependency>
          <!-- ## Test Dependencies ## Note: Junit is required in certain module tests.  We should control versions from here. -->
          <dependency>
             <groupId>junit</groupId>
