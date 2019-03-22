@@ -149,10 +149,26 @@
          <groupId>org.jboss.logmanager</groupId>
          <artifactId>jboss-logmanager</artifactId>
       </dependency>
-         <dependency>
-            <groupId>org.jboss.slf4j</groupId>
-            <artifactId>slf4j-jboss-logmanager</artifactId>
-         </dependency>
+      <dependency>
+         <groupId>org.jboss.slf4j</groupId>
+         <artifactId>slf4j-jboss-logmanager</artifactId>
+         <version>${jb.slf4j-jboss-logmanager.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.tomcat</groupId>
+         <artifactId>tomcat-servlet-api</artifactId>
+         <version>${tomcat.servlet.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava</artifactId>
+         <version>${guava.version}</version>
+      </dependency>
        <dependency>
            <groupId>io.airlift</groupId>
            <artifactId>airline</artifactId>
@@ -218,6 +234,7 @@
          <groupId>io.netty</groupId>
          <artifactId>netty-all</artifactId>
          <version>${netty.version}</version>
+         <scope>runtime</scope>
       </dependency>
        <dependency>
            <groupId>org.apache.geronimo.specs</groupId>

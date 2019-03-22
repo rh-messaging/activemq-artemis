@@ -96,14 +96,15 @@
       <netty-tcnative-version>2.0.22.Final</netty-tcnative-version>
       <proton.version>0.31.0</proton.version>
       <resteasy.version>3.0.19.Final</resteasy.version>
-      <slf4j.version>1.7.22</slf4j.version>
+      <slf4j.version>1.7.21</slf4j.version>
+      <tomcat.servlet.version>8.5.38</tomcat.servlet.version>
       <qpid.jms.version>0.40.0</qpid.jms.version>
       <johnzon.version>0.9.5</johnzon.version>
       <json-p.spec.version>1.0-alpha-1</json-p.spec.version>
       <javax.inject.version>1</javax.inject.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <jb.logmanager.version>2.0.3.Final</jb.logmanager.version>
-      <jb.slf4j-jboss-logmanager.version>1.0.4.GA</jb.slf4j-jboss-logmanager.version>
+      <jb.slf4j-jboss-logmanager.version>1.0.3.GA</jb.slf4j-jboss-logmanager.version>
       <airlift.version>0.7</airlift.version>
       <geronimo.annotation.1.1.spec.version>1.0.1</geronimo.annotation.1.1.spec.version>
       <geronimo.ejb.3.0.spec.version>1.0.1</geronimo.ejb.3.0.spec.version>
@@ -247,16 +248,17 @@
 
    <dependencyManagement>
       <dependencies>
-         <!--needed for PNC and product alignement-->
+         <!-- binaries in the distribution-->
          <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-jms</artifactId>
             <version>${qpid.jms.version}</version>
          </dependency>
          <dependency>
-           <groupId>org.apache.qpid</groupId>
-           <artifactId>qpid-jms-client</artifactId>
-           <version>${qpid.jms.version}</version>
+           <groupId>com.google.guava</groupId>
+           <artifactId>guava</artifactId>
+           <version>${guava.version}</version>
+            <scope>runtime</scope>
          </dependency>
          <!-- ## Test Dependencies ## Note: Junit is required in certain module tests.  We should control versions from here. -->
          <dependency>
@@ -670,7 +672,7 @@
          <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-servlet-api</artifactId>
-            <version>8.5.38</version>
+            <version>${tomcat.servlet.version}</version>
          </dependency>
          <!-- ## End Jetty Wed Dependencies ## -->
 
