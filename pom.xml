@@ -251,7 +251,7 @@
          <!-- binaries in the distribution-->
          <dependency>
             <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-jms</artifactId>
+            <artifactId>qpid-jms-client</artifactId>
             <version>${qpid.jms.version}</version>
          </dependency>
          <dependency>
