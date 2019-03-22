@@ -155,7 +155,7 @@
          <version>${jb.slf4j-jboss-logmanager.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.jboss.slf4j</groupId>
+         <groupId>org.slf4j</groupId>
          <artifactId>slf4j-api</artifactId>
          <version>${slf4j.version}</version>
       </dependency>
