@@ -258,7 +258,6 @@
            <groupId>com.google.guava</groupId>
            <artifactId>guava</artifactId>
            <version>${guava.version}</version>
-            <scope>runtime</scope>
          </dependency>
          <!-- ## Test Dependencies ## Note: Junit is required in certain module tests.  We should control versions from here. -->
          <dependency>
