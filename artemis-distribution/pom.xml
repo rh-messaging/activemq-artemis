@@ -160,11 +160,6 @@
          <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.apache.tomcat</groupId>
-         <artifactId>tomcat-servlet-api</artifactId>
-         <version>${tomcat.servlet.version}</version>
-      </dependency>
-      <dependency>
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
          <version>${guava.version}</version>
@@ -186,6 +181,7 @@
        <dependency>
            <groupId>org.apache.tomcat</groupId>
            <artifactId>tomcat-servlet-api</artifactId>
+           <version>${tomcat.servlet.version}</version>
        </dependency>
 
       <!-- for artemis cli producer/consumer -->

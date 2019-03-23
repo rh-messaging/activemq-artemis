@@ -92,7 +92,8 @@
       <jgroups.version>3.6.13.Final</jgroups.version>
       <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
       <mockito.version>2.8.47</mockito.version>
-      <netty.version>4.1.33.Final</netty.version>
+      <netty.version>4.1.32.Final</netty.version>
+      <commons.io.version>2.6</commons.io.version>
       <netty-tcnative-version>2.0.22.Final</netty-tcnative-version>
       <proton.version>0.31.0</proton.version>
       <resteasy.version>3.0.19.Final</resteasy.version>
@@ -388,6 +389,11 @@
             <artifactId>dependency-check-utils</artifactId>
             <version>${owasp.version}</version>
             <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
          </dependency>
 
          <!-- ### Run Time Dependencies: MUST NOT INCLUDE CAT X LICENSES ###-->
