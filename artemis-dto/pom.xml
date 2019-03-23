@@ -55,9 +55,14 @@
          <version>${jaxb.version}</version>
       </dependency>
       <dependency>
-         <groupId>javax.activation</groupId>
-         <artifactId>activation</artifactId>
-         <version>${version.activation}</version>
+         <groupId>com.sun.xml.bind</groupId>
+         <artifactId>jaxb-xjc</artifactId>
+         <version>${jaxb.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.sun.xml.bind</groupId>
+         <artifactId>jaxb-core</artifactId>
+         <version>${jaxb.version}</version>
       </dependency>
    </dependencies>
 
@@ -122,6 +127,16 @@
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
                   <artifactId>jaxb-jxc</artifactId>
+                  <version>${jaxb.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>com.sun.xml.bind</groupId>
+                  <artifactId>jaxb-xjc</artifactId>
+                  <version>${jaxb.version}</version>
+               </dependency>
+               <dependency>
+                  <groupId>com.sun.xml.bind</groupId>
+                  <artifactId>jaxb-core</artifactId>
                   <version>${jaxb.version}</version>
                </dependency>
             </dependencies>
