@@ -168,9 +168,20 @@
           <classifier>uber</classifier>
        </dependency>
        <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-servlet-api</artifactId>
+          <groupId>org.apache.tomcat</groupId>
+          <artifactId>tomcat-servlet-api</artifactId>
+          <version>${tomcat.servlet.version}</version>
        </dependency>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava</artifactId>
+         <version>${guava.version}</version>
+      </dependency>
 
       <!-- for artemis cli producer/consumer -->
       <dependency>

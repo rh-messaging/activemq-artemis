@@ -80,7 +80,7 @@
       <commons.config.version>2.4</commons.config.version>
       <commons.lang.version>3.0</commons.lang.version>
       <commons.logging.version>1.2</commons.logging.version>
-      <activemq5-version>5.11.0</activemq5-version>
+      <activemq5-version>5.11.0.redhat-630377</activemq5-version>
       <apache.derby.version>10.11.1.1</apache.derby.version>
       <commons.beanutils.version>1.9.3</commons.beanutils.version>
       <commons.collections.version>3.2.2</commons.collections.version>
@@ -92,11 +92,13 @@
       <jgroups.version>3.6.13.Final</jgroups.version>
       <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
       <mockito.version>2.8.47</mockito.version>
-      <netty.version>4.1.33.Final</netty.version>
+      <netty.version>4.1.32.Final</netty.version>
+      <commons.io.version>2.6</commons.io.version>
       <netty-tcnative-version>2.0.22.Final</netty-tcnative-version>
       <proton.version>0.31.0</proton.version>
       <resteasy.version>3.0.19.Final</resteasy.version>
       <slf4j.version>1.7.22</slf4j.version>
+      <tomcat.servlet.version>8.5.20</tomcat.servlet.version>
       <qpid.jms.version>0.40.0</qpid.jms.version>
       <johnzon.version>0.9.5</johnzon.version>
       <json-p.spec.version>1.0-alpha-1</json-p.spec.version>
@@ -391,6 +393,11 @@
 
          <!-- ### Run Time Dependencies: MUST NOT INCLUDE CAT X LICENSES ###-->
          <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
+         </dependency>
+         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>${javax.inject.version}</version>
@@ -670,7 +677,7 @@
          <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-servlet-api</artifactId>
-            <version>8.5.38</version>
+            <version>${tomcat.servlet.version}</version>
          </dependency>
          <!-- ## End Jetty Wed Dependencies ## -->
 
