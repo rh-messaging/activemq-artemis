@@ -29,7 +29,8 @@
 
    <properties>
       <version.activation>1.1.1</version.activation>
-      <version.jaxb>2.2.7</version.jaxb>
+      <version.jaxb>2.2.11</version.jaxb>
+      <version.jaxb-api>2.2.12</version.jaxb-api>
 
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
    </properties>
@@ -43,7 +44,7 @@
       <dependency>
          <groupId>javax.xml.bind</groupId>
          <artifactId>jaxb-api</artifactId>
-         <version>${version.jaxb}</version>
+         <version>${version.jaxb-api}</version>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
@@ -52,7 +53,7 @@
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
-         <artifactId>jaxb-jxc</artifactId>
+         <artifactId>jaxb-osgi</artifactId>
          <version>${version.jaxb}</version>
       </dependency>
       <dependency>
@@ -113,7 +114,7 @@
                <dependency>
                   <groupId>javax.xml.bind</groupId>
                   <artifactId>jaxb-api</artifactId>
-                  <version>${version.jaxb}</version>
+                  <version>${version.jaxb-api}</version>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
@@ -122,7 +123,7 @@
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
-                  <artifactId>jaxb-jxc</artifactId>
+                  <artifactId>jaxb-osgi</artifactId>
                   <version>${version.jaxb}</version>
                </dependency>
             </dependencies>

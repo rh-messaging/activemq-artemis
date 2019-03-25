@@ -102,7 +102,7 @@
             <include>org.apache.johnzon:johnzon-core</include>
             <include>javax.xml.bind:jaxb-api</include>
             <include>com.sun.xml.bind:jaxb-impl</include>
-            <include>com.sun.xml.bind:jaxb-core</include>
+            <include>com.sun.xml.bind:jaxb-osgi</include>
             <include>javax.activation:activation</include>
          </includes>
          <!--excludes>
