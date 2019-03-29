@@ -216,6 +216,12 @@
          <artifactId>commons-beanutils</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.apache.commons</groupId>
+         <artifactId>commons-text</artifactId>
+         <version>${commons.text.version}</version>
+         <!-- License: Apache 2.0 -->
+      </dependency>
+      <dependency>
          <groupId>commons-logging</groupId>
          <artifactId>commons-logging</artifactId>
       </dependency>
