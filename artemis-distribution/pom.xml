@@ -217,6 +217,11 @@
       </dependency>
       <dependency>
          <groupId>org.apache.commons</groupId>
+         <artifactId>commons-configuration2</artifactId>
+         <version>${commons.config.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.commons</groupId>
          <artifactId>commons-text</artifactId>
          <version>${commons.text.version}</version>
          <!-- License: Apache 2.0 -->
