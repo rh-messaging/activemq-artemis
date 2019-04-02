@@ -24,6 +24,7 @@ import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.RefsOperation;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
 import org.apache.activemq.artemis.protocol.amqp.proton.ProtonServerSenderContext;
@@ -51,8 +52,8 @@ public class ProtonTransactionImpl extends TransactionImpl {
    }
 
    @Override
-   public RefsOperation createRefsOperation(Queue queue) {
-      return new ProtonTransactionRefsOperation(queue, storageManager);
+   public RefsOperation createRefsOperation(Queue queue, AckReason reason) {
+      return new ProtonTransactionRefsOperation(queue, reason, storageManager);
    }
 
    @Override

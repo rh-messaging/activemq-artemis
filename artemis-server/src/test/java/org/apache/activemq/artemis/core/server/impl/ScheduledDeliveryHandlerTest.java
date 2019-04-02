@@ -794,6 +794,11 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
+      public long getAcknowledgeAttempts() {
+         return 0;
+      }
+
+      @Override
       public void setMaxConsumer(int maxConsumers) {
 
       }
@@ -1380,7 +1385,7 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public void postAcknowledge(MessageReference ref) {
+      public void postAcknowledge(MessageReference ref, AckReason reason) {
 
       }
 

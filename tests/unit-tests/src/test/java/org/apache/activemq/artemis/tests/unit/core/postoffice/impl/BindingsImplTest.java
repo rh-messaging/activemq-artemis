@@ -33,6 +33,7 @@ import org.apache.activemq.artemis.core.postoffice.impl.BindingsImpl;
 import org.apache.activemq.artemis.core.server.Bindable;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RoutingContext;
+import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.RefsOperation;
 import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
 import org.apache.activemq.artemis.core.transaction.Transaction;
@@ -248,7 +249,7 @@ public class BindingsImplTest extends ActiveMQTestBase {
       }
 
       @Override
-      public RefsOperation createRefsOperation(Queue queue) {
+      public RefsOperation createRefsOperation(Queue queue, AckReason reason) {
          // TODO Auto-generated method stub
          return null;
       }

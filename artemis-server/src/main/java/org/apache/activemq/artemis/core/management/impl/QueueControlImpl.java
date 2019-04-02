@@ -347,6 +347,18 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    }
 
    @Override
+   public long getAcknowledgeAttempts() {
+      checkStarted();
+
+      clearIO();
+      try {
+         return queue.getAcknowledgeAttempts();
+      } finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
    public long getMessagesExpired() {
       checkStarted();
 
