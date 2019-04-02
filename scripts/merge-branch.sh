@@ -22,19 +22,22 @@ set -e
 # This is a helpr script to help merging branches checked out
 # with checkout-PR.sh
 
-ARTEMIS_USER_REMOTE_NAME=${ARTEMIS_USER_REMOTE_NAME:-origin}
-ARTEMIS_APACHE_REMOTE_NAME=${ARTEMIS_APACHE_REMOTE_NAME:-apache}
-ARTEMIS_GITHUB_REMOTE_NAME=${ARTEMIS_GITHUB_REMOTE_NAME:-upstream}
+REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
 
-git fetch $ARTEMIS_USER_REMOTE_NAME
-git fetch $ARTEMIS_APACHE_REMOTE_NAME
-git fetch $ARTEMIS_GITHUB_REMOTE_NAME
-
+git fetch $REDHAT_DOWNSTREAM
 
 git checkout $1
 
-git pull --rebase $ARTEMIS_APACHE_REMOTE_NAME master
-git checkout $ARTEMIS_APACHE_REMOTE_NAME/master -B master
+git pull --rebase $REDHAT_DOWNSTREAM 2.7.0.jbossorg-x
+git checkout $REDHAT_DOWNSTREAM/2.7.0.jbossorg-x -B 2.7.0.jbossorg-x
 
-git merge --no-ff $1 -m "This closes #$*"
+git merge --no-ff $1 -m "This is PR #$*"
 git branch -D $1
+
+echo ""
+echo "please check everything and execute yourself this:"
+echo "git push downstream 2.7.0.jbossorg-x"
+
+echo ""
+echo "Then you need to make sure the PR $1 is closed on github"
+
