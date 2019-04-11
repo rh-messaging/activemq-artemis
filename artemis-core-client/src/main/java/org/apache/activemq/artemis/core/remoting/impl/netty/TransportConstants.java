@@ -169,7 +169,7 @@ public class TransportConstants {
 
    public static final boolean DEFAULT_USE_EPOLL = true;
 
-   public static final boolean DEFAULT_USE_KQUEUE = true;
+   public static final boolean DEFAULT_USE_KQUEUE = false;
 
    public static final boolean DEFAULT_USE_INVM = false;
 
