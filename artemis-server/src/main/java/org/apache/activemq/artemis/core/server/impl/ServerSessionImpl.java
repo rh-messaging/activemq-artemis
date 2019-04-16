@@ -280,6 +280,10 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       this.closeables.add(closeable);
    }
 
+   public Map<SimpleString, TempQueueCleanerUpper> getTempQueueCleanUppers() {
+      return tempQueueCleannerUppers;
+   }
+
    @Override
    public void disableSecurity() {
       this.securityEnabled = false;
