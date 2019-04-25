@@ -26,6 +26,7 @@ import java.util.UUID;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.ParameterisedAddress;
 import org.apache.activemq.artemis.api.core.QueueAttributes;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.jndi.JNDIStorable;
@@ -58,6 +59,18 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       this.name = name;
    }
 
+   public static ActiveMQDestination createDestination(RoutingType routingType, SimpleString address) {
+      if (address == null) {
+         return null;
+      } else if (RoutingType.ANYCAST.equals(routingType)) {
+         return ActiveMQDestination.createQueue(address);
+      } else if (RoutingType.MULTICAST.equals(routingType)) {
+         return ActiveMQDestination.createTopic(address);
+      } else {
+         return ActiveMQDestination.fromPrefixedName(address.toString());
+      }
+   }
+
    /**
     * Static helper method for working with destinations.
     */
@@ -88,11 +101,11 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       }
    }
 
-   public static Destination fromPrefixedName(final String name) {
+   public static ActiveMQDestination fromPrefixedName(final String name) {
       return fromPrefixedName(name, name);
    }
 
-   public static Destination fromPrefixedName(final String addr, final String name) {
+   public static ActiveMQDestination fromPrefixedName(final String addr, final String name) {
 
       ActiveMQDestination destination;
       if (addr.startsWith(ActiveMQDestination.QUEUE_QUALIFIED_PREFIX)) {
@@ -110,20 +123,6 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
       } else {
          destination = new ActiveMQDestination(addr, TYPE.DESTINATION, null);
       }
-
-      String unprefixedName = name;
-
-      if (name.startsWith(ActiveMQDestination.QUEUE_QUALIFIED_PREFIX)) {
-         unprefixedName = name.substring(ActiveMQDestination.QUEUE_QUALIFIED_PREFIX.length());
-      } else if (name.startsWith(ActiveMQDestination.TOPIC_QUALIFIED_PREFIX)) {
-         unprefixedName = name.substring(ActiveMQDestination.TOPIC_QUALIFIED_PREFIX.length());
-      } else if (name.startsWith(ActiveMQDestination.TEMP_QUEUE_QUALIFED_PREFIX)) {
-         unprefixedName = name.substring(ActiveMQDestination.TEMP_QUEUE_QUALIFED_PREFIX.length());
-      } else if (name.startsWith(ActiveMQDestination.TEMP_TOPIC_QUALIFED_PREFIX)) {
-         unprefixedName = name.substring(ActiveMQDestination.TEMP_TOPIC_QUALIFED_PREFIX.length());
-      }
-
-      destination.setName(unprefixedName);
 
       return destination;
    }
@@ -421,18 +420,30 @@ public class ActiveMQDestination extends JNDIStorable implements Destination, Se
 
    public void delete() throws JMSException {
       if (session != null) {
-         /**
-          * The status of the session used to create the temporary destination is uncertain, but the JMS spec states
-          * that the lifetime of the temporary destination is tied to the connection so even if the originating
-          * session is closed the temporary destination should still be deleted. Therefore, just create a new one
-          * and close it after the temporary destination is deleted. This is necessary because the Core API is
-          * predicated on having a Core ClientSession which is encapsulated by the JMS session implementation.
-          */
-         try (ActiveMQSession sessionToUse = (ActiveMQSession) session.getConnection().createSession()) {
+         boolean openedHere = false;
+         ActiveMQSession sessionToUse = session;
+
+         if (session.getCoreSession().isClosed()) {
+            sessionToUse = (ActiveMQSession)session.getConnection().createSession();
+            openedHere = true;
+         }
+
+         try {
+            /**
+             * The status of the session used to create the temporary destination is uncertain, but the JMS spec states
+             * that the lifetime of the temporary destination is tied to the connection so even if the originating
+             * session is closed the temporary destination should still be deleted. Therefore, just create a new one
+             * and close it after the temporary destination is deleted. This is necessary because the Core API is
+             * predicated on having a Core ClientSession which is encapsulated by the JMS session implementation.
+             */
             if (isQueue()) {
                sessionToUse.deleteTemporaryQueue(this);
             } else {
                sessionToUse.deleteTemporaryTopic(this);
+            }
+         } finally {
+            if (openedHere) {
+               sessionToUse.close();
             }
          }
       }

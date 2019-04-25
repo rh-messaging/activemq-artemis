@@ -520,6 +520,104 @@ public class GroupingTest extends JMSTestBase {
       ctx.close();
    }
 
+
+   @Test
+   public void testGroupFirstKey() throws Exception {
+      String customFirstGroupKey = "my-custom-key";
+      ConnectionFactory fact = getCF();
+      Assume.assumeFalse("only makes sense withOUT auto-group", ((ActiveMQConnectionFactory) fact).isAutoGroup());
+      Assume.assumeTrue("only makes sense withOUT explicit group-id", ((ActiveMQConnectionFactory) fact).getGroupID() == null);
+      String testQueueName = getName() + "_group_first_key";
+
+      server.createQueue(SimpleString.toSimpleString(testQueueName), RoutingType.ANYCAST, SimpleString.toSimpleString(testQueueName), null, null, true, false, false, false, false, -1, false, false, true, -1, SimpleString.toSimpleString(customFirstGroupKey), false, null, false, 0, 0, false, 0, 0, true);
+
+      JMSContext ctx = addContext(getCF().createContext(JMSContext.SESSION_TRANSACTED));
+
+      Queue testQueue = ctx.createQueue(testQueueName);
+
+
+      final String groupID1 = "groupA";
+      final String groupID2 = "groupB";
+      final String groupID3 = "groupC";
+
+
+      JMSProducer producer1 = ctx.createProducer().setProperty("JMSXGroupID", groupID1);
+      JMSProducer producer2 = ctx.createProducer().setProperty("JMSXGroupID", groupID2);
+      JMSProducer producer3 = ctx.createProducer().setProperty("JMSXGroupID", groupID3);
+
+      JMSConsumer consumer1 = ctx.createConsumer(testQueue);
+      JMSConsumer consumer2 = ctx.createConsumer(testQueue);
+
+      ctx.start();
+
+      for (int j = 0; j < 10; j++) {
+         send(ctx, testQueue, groupID1, producer1, j);
+      }
+      for (int j = 10; j < 20; j++) {
+         send(ctx, testQueue, groupID2, producer2, j);
+      }
+      for (int j = 20; j < 30; j++) {
+         send(ctx, testQueue, groupID3, producer3, j);
+      }
+
+      ctx.commit();
+
+      //First set of msgs should go to the first consumer only
+      for (int j = 0; j < 10; j++) {
+         TextMessage tm = (TextMessage) consumer1.receive(10000);
+         assertNotNull(tm);
+         tm.acknowledge();
+         assertEquals("Message" + j, tm.getText());
+         assertEquals(tm.getStringProperty("JMSXGroupID"), groupID1);
+         if (j == 0) {
+            assertTrue(tm.getBooleanProperty(customFirstGroupKey));
+         } else {
+            assertFalse(tm.propertyExists(customFirstGroupKey));
+         }
+      }
+
+      //Second set of msgs should go to the second consumers only
+      for (int j = 10; j < 20; j++) {
+         TextMessage tm = (TextMessage) consumer2.receive(10000);
+
+         assertNotNull(tm);
+
+         tm.acknowledge();
+
+         assertEquals("Message" + j, tm.getText());
+
+         assertEquals(tm.getStringProperty("JMSXGroupID"), groupID2);
+
+         if (j == 10) {
+            assertTrue(tm.getBooleanProperty(customFirstGroupKey));
+         } else {
+            assertFalse(tm.propertyExists(customFirstGroupKey));
+         }
+      }
+
+      //Third set of msgs should go to the first consumer only
+      for (int j = 20; j < 30; j++) {
+         TextMessage tm = (TextMessage) consumer1.receive(10000);
+
+         assertNotNull(tm);
+
+         tm.acknowledge();
+
+         assertEquals("Message" + j, tm.getText());
+
+         assertEquals(tm.getStringProperty("JMSXGroupID"), groupID3);
+
+         if (j == 20) {
+            assertTrue(tm.getBooleanProperty(customFirstGroupKey));
+         } else {
+            assertFalse(tm.propertyExists(customFirstGroupKey));
+         }
+      }
+      ctx.commit();
+
+      ctx.close();
+   }
+
    @Test
    public void testGroupDisable() throws Exception {
       ConnectionFactory fact = getCF();
@@ -651,6 +749,35 @@ public class GroupingTest extends JMSTestBase {
 
          QueueBinding queueBinding = (QueueBinding) server.getPostOffice().getBinding(SimpleString.toSimpleString(testQueueName));
          assertTrue(queueBinding.getQueue().isGroupRebalance());
+      } finally {
+         connection.close();
+      }
+   }
+
+
+   @Test
+   public void testGroupFirstKeyUsingAddressQueueParameters() throws Exception {
+      ConnectionFactory fact = getCF();
+      Connection connection = fact.createConnection();
+
+      try {
+
+         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+         String testQueueName = getName() + "group_first_key_param";
+
+         Queue queue = session.createQueue(testQueueName + "?group-first-key=my-custom-key");
+         assertEquals(testQueueName, queue.getQueueName());
+
+
+         ActiveMQDestination a = (ActiveMQDestination) queue;
+         assertEquals("my-custom-key", a.getQueueAttributes().getGroupFirstKey().toString());
+
+         MessageProducer producer = session.createProducer(queue);
+
+
+         QueueBinding queueBinding = (QueueBinding) server.getPostOffice().getBinding(SimpleString.toSimpleString(testQueueName));
+         assertEquals("my-custom-key", queueBinding.getQueue().getGroupFirstKey().toString());
       } finally {
          connection.close();
       }

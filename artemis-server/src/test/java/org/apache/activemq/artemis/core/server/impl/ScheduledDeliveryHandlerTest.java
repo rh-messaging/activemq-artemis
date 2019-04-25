@@ -794,6 +794,11 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
+      public long getAcknowledgeAttempts() {
+         return 0;
+      }
+
+      @Override
       public boolean allowsReferenceCallback() {
          return false;
       }
@@ -855,6 +860,16 @@ public class ScheduledDeliveryHandlerTest extends Assert {
 
       @Override
       public void setGroupRebalance(boolean groupRebalance) {
+
+      }
+
+      @Override
+      public SimpleString getGroupFirstKey() {
+         return null;
+      }
+
+      @Override
+      public void setGroupFirstKey(SimpleString groupFirstKey) {
 
       }
 
@@ -1477,7 +1492,7 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
-      public void postAcknowledge(MessageReference ref) {
+      public void postAcknowledge(MessageReference ref, AckReason reason) {
 
       }
 

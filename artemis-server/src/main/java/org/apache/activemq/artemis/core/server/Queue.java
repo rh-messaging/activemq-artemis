@@ -118,6 +118,10 @@ public interface Queue extends Bindable,CriticalComponent {
 
    void setGroupRebalance(boolean groupRebalance);
 
+   SimpleString getGroupFirstKey();
+
+   void setGroupFirstKey(SimpleString groupFirstKey);
+
    boolean isConfigurationManaged();
 
    void setConfigurationManaged(boolean configurationManaged);
@@ -233,6 +237,8 @@ public interface Queue extends Bindable,CriticalComponent {
    Map<String, List<MessageReference>> getDeliveringMessages();
 
    long getMessagesAdded();
+
+   long getAcknowledgeAttempts();
 
    long getMessagesAcknowledged();
 
@@ -393,7 +399,7 @@ public interface Queue extends Bindable,CriticalComponent {
     */
    void deliverScheduledMessages() throws ActiveMQException;
 
-   void postAcknowledge(MessageReference ref);
+   void postAcknowledge(MessageReference ref, AckReason reason);
 
    float getRate();
 

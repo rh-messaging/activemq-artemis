@@ -86,6 +86,7 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeLis
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
 import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
 import org.apache.activemq.artemis.core.transaction.impl.BindingsTransactionImpl;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
@@ -186,11 +187,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private final QueuePendingMessageMetrics deliveringMetrics = new QueuePendingMessageMetrics(this);
 
-   private final ScheduledDeliveryHandler scheduledDeliveryHandler;
+   protected final ScheduledDeliveryHandler scheduledDeliveryHandler;
 
    private AtomicLong messagesAdded = new AtomicLong(0);
 
    private AtomicLong messagesAcknowledged = new AtomicLong(0);
+
+   private AtomicLong ackAttempts = new AtomicLong(0);
 
    private AtomicLong messagesExpired = new AtomicLong(0);
 
@@ -238,6 +241,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private volatile boolean groupRebalance;
 
    private volatile int groupBuckets;
+
+   private volatile SimpleString groupFirstKey;
 
    private MessageGroups<Consumer> groups;
 
@@ -425,6 +430,38 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    public QueueImpl(final long id,
+                    final SimpleString address,
+                    final SimpleString name,
+                    final Filter filter,
+                    final PageSubscription pageSubscription,
+                    final SimpleString user,
+                    final boolean durable,
+                    final boolean temporary,
+                    final boolean autoCreated,
+                    final RoutingType routingType,
+                    final Integer maxConsumers,
+                    final Boolean exclusive,
+                    final Boolean groupRebalance,
+                    final Integer groupBuckets,
+                    final Boolean nonDestructive,
+                    final Integer consumersBeforeDispatch,
+                    final Long delayBeforeDispatch,
+                    final Boolean purgeOnNoConsumers,
+                    final Boolean autoDelete,
+                    final Long autoDeleteDelay,
+                    final Long autoDeleteMessageCount,
+                    final boolean configurationManaged,
+                    final ScheduledExecutorService scheduledExecutor,
+                    final PostOffice postOffice,
+                    final StorageManager storageManager,
+                    final HierarchicalRepository<AddressSettings> addressSettingsRepository,
+                    final ArtemisExecutor executor,
+                    final ActiveMQServer server,
+                    final QueueFactory factory) {
+      this(id, address, name, filter, pageSubscription, user, durable, temporary, autoCreated, routingType, maxConsumers, exclusive, groupRebalance, groupBuckets, null, nonDestructive, consumersBeforeDispatch, delayBeforeDispatch, purgeOnNoConsumers, autoDelete, autoDeleteDelay, autoDeleteMessageCount, configurationManaged, scheduledExecutor, postOffice, storageManager, addressSettingsRepository, executor, server, factory);
+   }
+
+   public QueueImpl(final long id,
                      final SimpleString address,
                      final SimpleString name,
                      final Filter filter,
@@ -438,6 +475,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                      final Boolean exclusive,
                      final Boolean groupRebalance,
                      final Integer groupBuckets,
+                     final SimpleString groupFirstKey,
                      final Boolean nonDestructive,
                      final Integer consumersBeforeDispatch,
                      final Long delayBeforeDispatch,
@@ -493,7 +531,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       this.groups = groupMap(this.groupBuckets);
 
-      this.autoDelete = autoDelete == null ? ActiveMQDefaultConfiguration.getDefaultQueueAutoDelete() : autoDelete;
+      this.groupFirstKey = groupFirstKey == null ? ActiveMQDefaultConfiguration.getDefaultGroupFirstKey() : groupFirstKey;
+
+      this.autoDelete = autoDelete == null ? ActiveMQDefaultConfiguration.getDefaultQueueAutoDelete(autoCreated) : autoDelete;
 
       this.autoDeleteDelay = autoDeleteDelay == null ? ActiveMQDefaultConfiguration.getDefaultQueueAutoDeleteDelay() : autoDeleteDelay;
 
@@ -744,6 +784,17 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public SimpleString getGroupFirstKey() {
+      return groupFirstKey;
+   }
+
+   @Override
+   public synchronized void setGroupFirstKey(SimpleString groupFirstKey) {
+      this.groupFirstKey = groupFirstKey;
+   }
+
+
+   @Override
    public boolean isConfigurationManaged() {
       return configurationManaged;
    }
@@ -895,7 +946,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                // directDeliver flag to be re-computed resulting in direct delivery if the queue is empty
                // We don't recompute it on every delivery since executing isEmpty is expensive for a ConcurrentQueue
 
-               if (deliveriesInTransit.getCount() == 0 && getExecutor().isFlushed() && intermediateMessageReferences.isEmpty() && messageReferences.isEmpty() && !pageIterator.hasNext() && !pageSubscription.isPaging()) {
+               if (deliveriesInTransit.getCount() == 0 && getExecutor().isFlushed() &&
+                  intermediateMessageReferences.isEmpty() && messageReferences.isEmpty() &&
+                  pageIterator != null && !pageIterator.hasNext() &&
+                  pageSubscription != null && !pageSubscription.isPaging()) {
                   // We must block on the executor to ensure any async deliveries have completed or we might get out of order
                   // deliveries
                   // Go into direct delivery mode
@@ -1469,7 +1523,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       } else {
          if (ref.isPaged()) {
             pageSubscription.ack((PagedReference) ref);
-            postAcknowledge(ref);
+            postAcknowledge(ref, reason);
          } else {
             Message message = ref.getMessage();
 
@@ -1478,18 +1532,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             if (durableRef) {
                storageManager.storeAcknowledge(id, message.getMessageID());
             }
-            postAcknowledge(ref);
+            postAcknowledge(ref, reason);
          }
 
-         if (reason == AckReason.EXPIRED) {
-            messagesExpired.incrementAndGet();
-         } else if (reason == AckReason.KILLED) {
-            messagesKilled.incrementAndGet();
-         } else if (reason == AckReason.REPLACED) {
-            messagesReplaced.incrementAndGet();
-         } else {
-            messagesAcknowledged.incrementAndGet();
-         }
+         ackAttempts.incrementAndGet();
 
          if (server != null && server.hasBrokerMessagePlugins()) {
             server.callBrokerMessagePlugins(plugin -> plugin.messageAcknowledged(ref, reason, consumer));
@@ -1504,10 +1550,12 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public void acknowledge(final Transaction tx, final MessageReference ref, final AckReason reason, final ServerConsumer consumer) throws Exception {
+      RefsOperation refsOperation = getRefsOperation(tx, reason);
+
       if (ref.isPaged()) {
          pageSubscription.ackTx(tx, (PagedReference) ref);
 
-         getRefsOperation(tx).addAck(ref);
+         refsOperation.addAck(ref);
       } else {
          Message message = ref.getMessage();
 
@@ -1519,15 +1567,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             tx.setContainsPersistent();
          }
 
-         getRefsOperation(tx).addAck(ref);
-      }
+         ackAttempts.incrementAndGet();
 
-      if (reason == AckReason.EXPIRED) {
-         messagesExpired.incrementAndGet();
-      } else if (reason == AckReason.KILLED) {
-         messagesKilled.incrementAndGet();
-      } else {
-         messagesAcknowledged.incrementAndGet();
+         refsOperation.addAck(ref);
       }
 
       if (server != null && server.hasBrokerMessagePlugins()) {
@@ -1543,7 +1585,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          tx.setContainsPersistent();
       }
 
-      getRefsOperation(tx).addAck(ref);
+      getRefsOperation(tx, AckReason.NORMAL).addAck(ref);
 
       // https://issues.jboss.org/browse/HORNETQ-609
       incDelivering(ref);
@@ -1551,16 +1593,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       messagesAcknowledged.incrementAndGet();
    }
 
-   private RefsOperation getRefsOperation(final Transaction tx) {
-      return getRefsOperation(tx, false);
+   private RefsOperation getRefsOperation(final Transaction tx, AckReason ackReason) {
+      return getRefsOperation(tx, ackReason, false);
    }
 
-   private RefsOperation getRefsOperation(final Transaction tx, boolean ignoreRedlieveryCheck) {
+   private RefsOperation getRefsOperation(final Transaction tx, AckReason ackReason, boolean ignoreRedlieveryCheck) {
       synchronized (tx) {
          RefsOperation oper = (RefsOperation) tx.getProperty(TransactionPropertyIndexes.REFS_OPERATION);
 
          if (oper == null) {
-            oper = tx.createRefsOperation(this);
+            oper = tx.createRefsOperation(this, ackReason);
 
             tx.putProperty(TransactionPropertyIndexes.REFS_OPERATION, oper);
 
@@ -1582,7 +1624,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    @Override
    public void cancel(final Transaction tx, final MessageReference reference, boolean ignoreRedeliveryCheck) {
-      getRefsOperation(tx, ignoreRedeliveryCheck).addAck(reference);
+      getRefsOperation(tx, AckReason.NORMAL, ignoreRedeliveryCheck).addAck(reference);
    }
 
    @Override
@@ -1699,6 +1741,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public long getMessagesAcknowledged() {
       return messagesAcknowledged.get();
+   }
+
+   @Override
+   public long getAcknowledgeAttempts() {
+      return ackAttempts.get();
    }
 
    @Override
@@ -2553,7 +2600,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                if (status == HandleStatus.HANDLED) {
 
                   if (redistributor == null) {
-                     handleMessageGroup(ref, consumer, groupConsumer, groupID);
+                     ref = handleMessageGroup(ref, consumer, groupConsumer, groupID);
                   }
 
                   deliveriesInTransit.countUp();
@@ -3020,7 +3067,41 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
          acknowledge(tx, ref, AckReason.EXPIRED, null);
       }
+
+      if (server != null && server.hasBrokerMessagePlugins()) {
+         ExpiryLogger expiryLogger = (ExpiryLogger)tx.getProperty(TransactionPropertyIndexes.EXPIRY_LOGGER);
+         if (expiryLogger == null) {
+            expiryLogger = new ExpiryLogger();
+            tx.putProperty(TransactionPropertyIndexes.EXPIRY_LOGGER, expiryLogger);
+            tx.addOperation(expiryLogger);
+         }
+
+         expiryLogger.addExpiry(address, ref);
+      }
+
    }
+
+   private class ExpiryLogger extends TransactionOperationAbstract {
+
+      List<Pair<SimpleString, MessageReference>> expiries = new LinkedList<>();
+
+      public void addExpiry(SimpleString address, MessageReference ref) {
+         expiries.add(new Pair<>(address, ref));
+      }
+
+      @Override
+      public void afterCommit(Transaction tx) {
+         for (Pair<SimpleString, MessageReference> pair : expiries) {
+            try {
+               server.callBrokerMessagePlugins(plugin -> plugin.messageExpired(pair.getB(), pair.getA(), null));
+            } catch (Throwable e) {
+               logger.warn(e.getMessage(), e);
+            }
+         }
+         expiries.clear(); // just giving a hand to GC
+      }
+   }
+
 
    @Override
    public void sendToDeadLetterAddress(final Transaction tx, final MessageReference ref) throws Exception {
@@ -3130,15 +3211,17 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             HandleStatus status = handle(ref, consumer);
 
             if (status == HandleStatus.HANDLED) {
-
+               final MessageReference reference;
                if (redistributor == null) {
-                  handleMessageGroup(ref, consumer, groupConsumer, groupID);
+                  reference = handleMessageGroup(ref, consumer, groupConsumer, groupID);
+               } else {
+                  reference = ref;
                }
 
                messagesAdded.incrementAndGet();
 
                deliveriesInTransit.countUp();
-               proceedDeliver(consumer, ref);
+               proceedDeliver(consumer, reference);
                consumers.reset();
                return true;
             }
@@ -3169,10 +3252,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       return groupConsumer;
    }
 
-   private void handleMessageGroup(MessageReference ref, Consumer consumer, Consumer groupConsumer, SimpleString groupID) {
+   private MessageReference handleMessageGroup(MessageReference ref, Consumer consumer, Consumer groupConsumer, SimpleString groupID) {
       if (exclusive) {
          if (groupConsumer == null) {
             exclusiveConsumer = consumer;
+            if (groupFirstKey != null) {
+               return new GroupFirstMessageReference(groupFirstKey, ref);
+            }
          }
          consumers.repeat();
       } else if (groupID != null) {
@@ -3181,10 +3267,14 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             consumers.repeat();
          } else if (groupConsumer == null) {
             groups.put(groupID, consumer);
+            if (groupFirstKey != null) {
+               return new GroupFirstMessageReference(groupFirstKey, ref);
+            }
          } else {
             consumers.repeat();
          }
       }
+      return ref;
    }
 
    private void proceedDeliver(Consumer consumer, MessageReference reference) {
@@ -3262,10 +3352,20 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public void postAcknowledge(final MessageReference ref) {
+   public void postAcknowledge(final MessageReference ref, AckReason reason) {
       QueueImpl queue = (QueueImpl) ref.getQueue();
 
       queue.decDelivering(ref);
+
+      if (reason == AckReason.EXPIRED) {
+         messagesExpired.incrementAndGet();
+      } else if (reason == AckReason.KILLED) {
+         messagesKilled.incrementAndGet();
+      } else if (reason == AckReason.REPLACED) {
+         messagesReplaced.incrementAndGet();
+      } else {
+         messagesAcknowledged.incrementAndGet();
+      }
 
       if (ref.isPaged()) {
          // nothing to be done

@@ -196,6 +196,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String DEFAULT_GROUP_BUCKETS = "default-group-buckets";
 
+   private static final String DEFAULT_GROUP_FIRST_KEY = "default-group-first-key";
+
    private static final String DEFAULT_CONSUMERS_BEFORE_DISPATCH = "default-consumers-before-dispatch";
 
    private static final String DEFAULT_DELAY_BEFORE_DISPATCH = "default-delay-before-dispatch";
@@ -221,6 +223,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
    private static final String AUTO_CREATE_QUEUES = "auto-create-queues";
 
    private static final String AUTO_DELETE_QUEUES = "auto-delete-queues";
+
+   private static final String AUTO_DELETE_CREATED_QUEUES = "auto-delete-created-queues";
 
    private static final String AUTO_DELETE_QUEUES_DELAY = "auto-delete-queues-delay";
 
@@ -1041,6 +1045,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setDefaultGroupRebalance(XMLUtil.parseBoolean(child));
          } else if (DEFAULT_GROUP_BUCKETS.equalsIgnoreCase(name)) {
             addressSettings.setDefaultGroupBuckets(XMLUtil.parseInt(child));
+         } else if (DEFAULT_GROUP_FIRST_KEY.equalsIgnoreCase(name)) {
+            addressSettings.setDefaultGroupFirstKey(SimpleString.toSimpleString(getTrimmedTextContent(child)));
          } else if (MAX_DELIVERY_ATTEMPTS.equalsIgnoreCase(name)) {
             addressSettings.setMaxDeliveryAttempts(XMLUtil.parseInt(child));
          } else if (REDISTRIBUTION_DELAY_NODE_NAME.equalsIgnoreCase(name)) {
@@ -1074,6 +1080,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setAutoCreateQueues(XMLUtil.parseBoolean(child));
          } else if (AUTO_DELETE_QUEUES.equalsIgnoreCase(name)) {
             addressSettings.setAutoDeleteQueues(XMLUtil.parseBoolean(child));
+         } else if (AUTO_DELETE_CREATED_QUEUES.equalsIgnoreCase(name)) {
+            addressSettings.setAutoDeleteCreatedQueues(XMLUtil.parseBoolean(child));
          } else if (AUTO_DELETE_QUEUES_DELAY.equalsIgnoreCase(name)) {
             long autoDeleteQueuesDelay = XMLUtil.parseLong(child);
             Validators.GE_ZERO.validate(AUTO_DELETE_QUEUES_DELAY, autoDeleteQueuesDelay);
@@ -1161,6 +1169,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       Boolean exclusive = null;
       Boolean groupRebalance = null;
       Integer groupBuckets = null;
+      String groupFirstKey = null;
       Boolean lastValue = null;
       String lastValueKey = null;
       Boolean nonDestructive = null;
@@ -1181,6 +1190,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             groupRebalance = Boolean.parseBoolean(item.getNodeValue());
          } else if (item.getNodeName().equals("group-buckets")) {
             groupBuckets = Integer.parseInt(item.getNodeValue());
+         } else if (item.getNodeName().equals("group-first-key")) {
+            groupFirstKey = item.getNodeValue();
          } else if (item.getNodeName().equals("last-value")) {
             lastValue = Boolean.parseBoolean(item.getNodeValue());
          } else if (item.getNodeName().equals("last-value-key")) {
@@ -1220,6 +1231,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
               .setExclusive(exclusive)
               .setGroupRebalance(groupRebalance)
               .setGroupBuckets(groupBuckets)
+              .setGroupFirstKey(groupFirstKey)
               .setLastValue(lastValue)
               .setLastValueKey(lastValueKey)
               .setNonDestructive(nonDestructive)

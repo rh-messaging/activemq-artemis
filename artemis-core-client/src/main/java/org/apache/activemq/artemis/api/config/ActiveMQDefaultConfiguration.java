@@ -509,6 +509,8 @@ public final class ActiveMQDefaultConfiguration {
 
    public static final boolean DEFAULT_QUEUE_AUTO_DELETE = true;
 
+   public static final boolean DEFAULT_CREATED_QUEUE_AUTO_DELETE = false;
+
    public static final long DEFAULT_QUEUE_AUTO_DELETE_DELAY = 0;
 
    public static final long DEFAULT_QUEUE_AUTO_DELETE_MESSAGE_COUNT = 0;
@@ -520,6 +522,8 @@ public final class ActiveMQDefaultConfiguration {
    public static final int DEFAULT_GROUP_BUCKETS = -1;
 
    public static final boolean DEFAULT_GROUP_REBALANCE = false;
+
+   public static final SimpleString DEFAULT_GROUP_FIRST_KEY = null;
 
    public static final RoutingType DEFAULT_ROUTING_TYPE = RoutingType.MULTICAST;
 
@@ -1392,8 +1396,16 @@ public final class ActiveMQDefaultConfiguration {
       return DEFAULT_PURGE_ON_NO_CONSUMERS;
    }
 
+   public static boolean getDefaultQueueAutoDelete(boolean autoCreated) {
+      return autoCreated ? getDefaultQueueAutoDelete() : getDefaultCreatedQueueAutoDelete();
+   }
+
    public static boolean getDefaultQueueAutoDelete() {
       return DEFAULT_QUEUE_AUTO_DELETE;
+   }
+
+   public static boolean getDefaultCreatedQueueAutoDelete() {
+      return DEFAULT_CREATED_QUEUE_AUTO_DELETE;
    }
 
    public static long getDefaultQueueAutoDeleteDelay() {
@@ -1418,6 +1430,10 @@ public final class ActiveMQDefaultConfiguration {
 
    public static boolean getDefaultGroupRebalance() {
       return DEFAULT_GROUP_REBALANCE;
+   }
+
+   public static SimpleString getDefaultGroupFirstKey() {
+      return DEFAULT_GROUP_FIRST_KEY;
    }
 
    public static String getInternalNamingPrefix() {

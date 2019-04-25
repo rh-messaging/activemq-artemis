@@ -519,6 +519,7 @@
                         <xsd:attribute name="exclusive" type="xsd:boolean" use="optional"/>
                         <xsd:attribute name="group-rebalance" type="xsd:boolean" use="optional"/>
                         <xsd:attribute name="group-buckets" type="xsd:int" use="optional"/>
+                        <xsd:attribute name="group-first-key" type="xsd:string" use="optional"/>
                         <xsd:attribute name="last-value" type="xsd:boolean" use="optional"/>
                         <xsd:attribute name="last-value-key" type="xsd:string" use="optional"/>
                         <xsd:attribute name="non-destructive" type="xsd:boolean" use="optional"/>
@@ -1669,12 +1670,24 @@
    </xsd:complexType>
 
    <xsd:complexType name="federationTransformerType">
-      <xsd:complexContent>
-         <xsd:extension base="transformerType">
-            <xsd:attribute name="name" type="xsd:ID" use="required" />
-            <xsd:attributeGroup ref="xml:specialAttrs"/>
-         </xsd:extension>
-      </xsd:complexContent>
+      <xsd:sequence>
+         <xsd:element name="class-name" type="xsd:string" maxOccurs="1" minOccurs="1">
+            <xsd:annotation>
+               <xsd:documentation>
+                  optional name of transformer class
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element ref="property"  maxOccurs="unbounded" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  properties to configure the transformer class
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      </xsd:sequence>
+      <xsd:attribute name="name" type="xsd:ID" use="required" />
+      <xsd:attributeGroup ref="xml:specialAttrs"/>
    </xsd:complexType>
 
    <!-- TRANSFORMER CONFIGURATION -->
@@ -3043,6 +3056,14 @@
                </xsd:annotation>
             </xsd:element>
 
+            <xsd:element name="default-group-first-key" type="xsd:string" maxOccurs="1" minOccurs="0">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     key used to mark a message is first in a group for a consumer
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+
             <xsd:element name="default-consumers-before-dispatch" type="xsd:int" default="0" maxOccurs="1" minOccurs="0">
                <xsd:annotation>
                   <xsd:documentation>
@@ -3156,6 +3177,14 @@
                <xsd:annotation>
                   <xsd:documentation>
                      whether or not to delete auto-created queues when the queue has 0 consumers and 0 messages
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+
+            <xsd:element name="auto-delete-created-queues" type="xsd:boolean" default="false" maxOccurs="1" minOccurs="0">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     whether or not to delete created queues when the queue has 0 consumers and 0 messages
                   </xsd:documentation>
                </xsd:annotation>
             </xsd:element>
@@ -3410,6 +3439,7 @@
       <xsd:attribute name="exclusive" type="xsd:boolean" use="optional"/>
       <xsd:attribute name="group-rebalance" type="xsd:boolean" use="optional"/>
       <xsd:attribute name="group-buckets" type="xsd:int" use="optional"/>
+      <xsd:attribute name="group-first-key" type="xsd:string" use="optional"/>
       <xsd:attribute name="last-value" type="xsd:boolean" use="optional"/>
       <xsd:attribute name="last-value-key" type="xsd:string" use="optional"/>
       <xsd:attribute name="non-destructive" type="xsd:boolean" use="optional"/>

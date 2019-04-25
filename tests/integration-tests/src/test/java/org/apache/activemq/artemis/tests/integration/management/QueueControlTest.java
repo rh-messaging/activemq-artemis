@@ -36,6 +36,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.management.Notification;
 import javax.management.openmbean.CompositeData;
+import javax.transaction.xa.XAResource;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
@@ -66,6 +67,7 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
+import org.apache.activemq.artemis.core.transaction.impl.XidImpl;
 import org.apache.activemq.artemis.junit.Wait;
 import org.apache.activemq.artemis.tests.integration.jms.server.management.JMSUtil;
 import org.apache.activemq.artemis.utils.Base64;
@@ -366,6 +368,92 @@ public class QueueControlTest extends ManagementTestBase {
       //      ManagementTestBase.consumeMessages(2, session, queue);
 
       //      Assert.assertEquals(2, getMessagesAdded(queueControl));
+
+      session.deleteQueue(queue);
+   }
+
+   @Test
+   public void testGetMessagesAcknowledgedOnXARollback() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, RoutingType.MULTICAST, queue, null, durable);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+      Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+
+      ClientProducer producer = session.createProducer(address);
+      producer.send(session.createMessage(durable));
+
+      ClientSessionFactory xaFactory = createSessionFactory(locator);
+      ClientSession xaSession = addClientSession(xaFactory.createSession(true, false, false));
+      xaSession.start();
+
+      ClientConsumer consumer = xaSession.createConsumer(queue);
+
+      int tries = 10;
+      for (int i = 0; i < tries; i++) {
+         XidImpl xid = newXID();
+         xaSession.start(xid, XAResource.TMNOFLAGS);
+         ClientMessage message = consumer.receive(1000);
+         Assert.assertNotNull(message);
+         message.acknowledge();
+         Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+         xaSession.end(xid, XAResource.TMSUCCESS);
+         Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+         xaSession.prepare(xid);
+         Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+         if (i + 1 == tries) {
+            xaSession.commit(xid, false);
+         } else {
+            xaSession.rollback(xid);
+         }
+      }
+
+      Wait.assertEquals(1, queueControl::getMessagesAcknowledged);
+      Wait.assertEquals(10, queueControl::getAcknowledgeAttempts);
+
+      consumer.close();
+
+      session.deleteQueue(queue);
+   }
+
+   @Test
+   public void testGetMessagesAcknowledgedOnRegularRollback() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, RoutingType.MULTICAST, queue, null, durable);
+
+      QueueControl queueControl = createManagementControl(address, queue);
+      Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+
+      ClientProducer producer = session.createProducer(address);
+      producer.send(session.createMessage(durable));
+
+      ClientSessionFactory xaFactory = createSessionFactory(locator);
+      ClientSession txSession = addClientSession(xaFactory.createSession(false, false, false));
+      txSession.start();
+
+      ClientConsumer consumer = txSession.createConsumer(queue);
+
+      int tries = 10;
+      for (int i = 0; i < tries; i++) {
+         ClientMessage message = consumer.receive(1000);
+         Assert.assertNotNull(message);
+         message.acknowledge();
+         Assert.assertEquals(0, queueControl.getMessagesAcknowledged());
+         if (i + 1 == tries) {
+            txSession.commit();
+         } else {
+            txSession.rollback();
+         }
+      }
+
+      Wait.assertEquals(1, queueControl::getMessagesAcknowledged);
+      Wait.assertEquals(10, queueControl::getAcknowledgeAttempts);
+
+      consumer.close();
 
       session.deleteQueue(queue);
    }
@@ -1327,6 +1415,63 @@ public class QueueControlTest extends ManagementTestBase {
 
       session.deleteQueue(queue);
       session.deleteQueue(otherQueue);
+   }
+
+   /**
+    *    Moving message from another address to a single "child" queue of a multicast address
+    *
+    *    <address name="ErrorQueue">
+    *             <anycast>
+    *                <queue name="ErrorQueue" />
+    *             </anycast>
+    *          </address>
+    *          <address name="parent.addr.1">
+    *             <multicast>
+    *                <queue name="child.queue.1" />
+    *                <queue name="child.queue.2" />
+    *             </multicast>
+    *          </address>
+    */
+   @Test
+   public void testMoveMessageToFQQN() throws Exception {
+      SimpleString address = new SimpleString("ErrorQueue");
+      SimpleString queue = new SimpleString("ErrorQueue");
+      SimpleString otherAddress = new SimpleString("parent.addr.1");
+      SimpleString otherQueue1 = new SimpleString("child.queue.1");
+      SimpleString otherQueue2 = new SimpleString("child.queue.2");
+
+      session.createQueue(address, RoutingType.ANYCAST, queue, null, durable);
+      session.createQueue(otherAddress, RoutingType.MULTICAST, otherQueue1, null, durable);
+      session.createQueue(otherAddress, RoutingType.MULTICAST, otherQueue2, null, durable);
+      ClientProducer producer = session.createProducer(address);
+
+      producer.send(session.createMessage(durable));
+      producer.send(session.createMessage(durable));
+
+      QueueControl queueControl = createManagementControl(address, queue, RoutingType.ANYCAST);
+      QueueControl otherQueue1Control = createManagementControl(otherAddress, otherQueue1);
+      QueueControl otherQueue2Control = createManagementControl(otherAddress, otherQueue2);
+      assertMessageMetrics(queueControl, 2, durable);
+      assertMessageMetrics(otherQueue1Control, 0, durable);
+      assertMessageMetrics(otherQueue2Control, 0, durable);
+
+      // the message IDs are set on the server
+      Map<String, Object>[] messages = queueControl.listMessages(null);
+      Assert.assertEquals(2, messages.length);
+      long messageID = (Long) messages[0].get("messageID");
+
+      boolean moved = queueControl.moveMessage(messageID, otherQueue1.toString());
+      Assert.assertTrue(moved);
+      assertMessageMetrics(queueControl, 1, durable);
+      assertMessageMetrics(otherQueue1Control, 1, durable);
+      assertMessageMetrics(otherQueue2Control, 0, durable);
+
+      consumeMessages(1, session, queue);
+      consumeMessages(1, session, otherQueue1);
+
+      session.deleteQueue(queue);
+      session.deleteQueue(otherQueue1);
+      session.deleteQueue(otherQueue2);
    }
 
    @Test

@@ -146,6 +146,16 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public SimpleString getGroupFirstKey() {
+      return null;
+   }
+
+   @Override
+   public void setGroupFirstKey(SimpleString groupFirstKey) {
+
+   }
+
+   @Override
    public boolean isConfigurationManaged() {
       return false;
    }
@@ -204,6 +214,11 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    public void setInternalQueue(boolean internalQueue) {
       // no-op
 
+   }
+
+   @Override
+   public long getAcknowledgeAttempts() {
+      return 0;
    }
 
    @Override
@@ -841,7 +856,7 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public void postAcknowledge(MessageReference ref) {
+   public void postAcknowledge(MessageReference ref, AckReason reason) {
    }
 
    @Override
