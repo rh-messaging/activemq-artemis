@@ -934,7 +934,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
 
       if (logger.isTraceEnabled()) {
-         logger.trace("Message after routed=" + message);
+         logger.trace("Message after routed=" + message + "\n" + context.toString());
       }
 
       try {
@@ -1505,7 +1505,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                startedTX.set(true);
             }
 
-            cache.addToCache(duplicateIDBytes, context.getTransaction(), false);
+            cache.addToCache(duplicateIDBytes, context.getTransaction(), startedTX.get());
          }
       }
 
