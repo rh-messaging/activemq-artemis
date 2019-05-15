@@ -165,7 +165,7 @@ public class GlobalPagingTest extends PagingTest {
 
       session.start();
 
-      assertEquals(numberOfMessages * 2, getMessageCount(queue));
+      Wait.assertEquals(numberOfMessages * 2, queue::getMessageCount);
 
       // The consumer has to be created after the getMessageCount(queue) assertion
       // otherwise delivery could alter the messagecount and give us a false failure
@@ -182,7 +182,7 @@ public class GlobalPagingTest extends PagingTest {
       }
       session.commit();
 
-      assertEquals(0, getMessageCount(queue));
+      Wait.assertEquals(0, queue::getMessageCount);
    }
 
    protected void sendFewMessages(int numberOfMessages,
@@ -330,13 +330,15 @@ public class GlobalPagingTest extends PagingTest {
             try (ClientProducer requestProducer = session.createProducer(managementAddress)) {
                final SimpleString replyQueue = new SimpleString(managementAddress + "." + UUID.randomUUID().toString());
                session.createTemporaryQueue(replyQueue, ActiveMQDefaultConfiguration.getDefaultRoutingType(), replyQueue);
+               int id = 1000;
                try (ClientConsumer consumer = session.createConsumer(replyQueue)) {
                   final Queue queue = server.locateQueue(replyQueue);
                   final MessageReference reference = MessageReference.Factory.createReference(session.createMessage(false), queue);
+                  reference.getMessage().setMessageID(id++);
                   //it will cause QueueImpl::directDeliver -> false
                   queue.addHead(reference, false);
                   Wait.assertFalse(queue::isDirectDeliver);
-                  Wait.assertTrue(() -> queue.removeReferenceWithID(reference.getMessageID()) != null);
+                  queue.removeReferenceWithID(reference.getMessageID());
                   ClientMessage message = session.createMessage(false);
                   message.putStringProperty(ClientMessageImpl.REPLYTO_HEADER_NAME, replyQueue);
                   ManagementHelper.putAttribute(message, "queue." + address.toString(), "messageCount");

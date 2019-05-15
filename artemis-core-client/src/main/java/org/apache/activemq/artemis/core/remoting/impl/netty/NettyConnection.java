@@ -142,6 +142,11 @@ public class NettyConnection implements Connection {
    }
 
    @Override
+   public boolean isOpen() {
+      return channel.isOpen();
+   }
+
+   @Override
    public final void fireReady(final boolean ready) {
       ArrayList<ReadyListener> readyToCall = localListenersPool.get();
       if (readyToCall != null) {
