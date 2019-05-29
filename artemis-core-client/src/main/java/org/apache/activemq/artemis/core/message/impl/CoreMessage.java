@@ -389,7 +389,7 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
    }
 
    @Override
-   public void messageChanged() {
+   public synchronized void messageChanged() {
       validBuffer = false;
    }
 
