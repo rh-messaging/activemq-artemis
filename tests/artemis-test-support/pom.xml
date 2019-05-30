@@ -38,6 +38,12 @@
       <dependency>
          <groupId>org.apache.qpid</groupId>
          <artifactId>qpid-jms-client</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>io.netty</groupId>
+               <artifactId>netty-transport-native-kqueue</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>org.slf4j</groupId>
