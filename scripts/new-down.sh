@@ -16,31 +16,23 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Setting the script to fail if anything goes wrong
-set -e
 
-# This is a helpr script to help merging branches checked out
-# with checkout-PR.sh
+# Use this script to generate the downstream branch:
+# Usage example:
 
-echo `dirname`
+# ./scripts/new-down ENTMQBR-XXX commit1 commit2... commitN
+
 . downstream-env.profile
 
-echo $REDHAT_DOWNSTREAM
-
 git fetch $REDHAT_DOWNSTREAM
+git checkout $REDHAT_DOWNSTREAM/$DOWNSTREAM_BRANCH -B $1
 
-git checkout $1
+for i in "${@:2}"
+do
+    echo "$i"
+    git cherry-pick -x $i
+    OLD_MSG=$(git log --format=%B -n1)
+    git commit --amend -m"$OLD_MSG" -m"downstream: $1"
+done
 
-git pull --rebase $REDHAT_DOWNSTREAM $DOWNSTREAM_BRANCH
-git checkout $REDHAT_DOWNSTREAM/$DOWNSTREAM_BRANCH -B $DOWNSTREAM_BRANCH
-
-git merge --no-ff $1 -m "This is PR #$*"
-git branch -D $1
-
-echo ""
-echo "please check everything and execute yourself this:"
-echo "git push downstream $DOWNSTREAM_BRANCH"
-
-echo ""
-echo "Then you need to make sure the PR $1 is closed on github"
-
+git push origin-rh $1 -f
