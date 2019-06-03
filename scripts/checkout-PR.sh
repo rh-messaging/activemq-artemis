@@ -20,15 +20,13 @@
 set -e
 
 # this script is a helper that will checkout the PR Branch
+REDHAT_USER=${REDHAT_USER:-origin-rh}
+REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
 
-ARTEMIS_USER_REMOTE_NAME=${ARTEMIS_USER_REMOTE_NAME:-origin}
-ARTEMIS_APACHE_REMOTE_NAME=${ARTEMIS_APACHE_REMOTE_NAME:-apache}
-ARTEMIS_GITHUB_REMOTE_NAME=${ARTEMIS_GITHUB_REMOTE_NAME:-upstream}
 
-git fetch $ARTEMIS_USER_REMOTE_NAME
-git fetch $ARTEMIS_APACHE_REMOTE_NAME
-git fetch $ARTEMIS_GITHUB_REMOTE_NAME
+git fetch $REDHAT_USER
+git fetch $REDHAT_DOWNSTREAM
 
-git checkout $ARTEMIS_GITHUB_REMOTE_NAME/pr/$1 -B $1
+git checkout $REDHAT_DOWNSTREAM/pr/$1 -B $1
 
-echo "\ndo your own rebase by typing: git pull --rebase $ARTEMIS_APACHE_REMOTE_NAME master"
+echo "\ndo your own rebase by typing: git pull --rebase $REDHAT_DOWNSTREAM 2.9.0.jbossorg-x"
