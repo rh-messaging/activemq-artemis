@@ -112,6 +112,7 @@ import org.apache.activemq.command.MessagePull;
 import org.apache.activemq.command.ProducerAck;
 import org.apache.activemq.command.ProducerId;
 import org.apache.activemq.command.ProducerInfo;
+import org.apache.activemq.command.RemoveInfo;
 import org.apache.activemq.command.RemoveSubscriptionInfo;
 import org.apache.activemq.command.Response;
 import org.apache.activemq.command.SessionId;
@@ -865,6 +866,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
          this.addConsumerBrokerExchange(info.getConsumerId(), amqSession, consumersList);
          ss.addConsumer(info);
+         info.setLastDeliveredSequenceId(RemoveInfo.LAST_DELIVERED_UNKNOWN);
 
          if (consumersList.size() == 0) {
             return;
@@ -1074,6 +1076,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       }
    }
 
+   private void propagateLastSequenceId(SessionState sessionState, long lastDeliveredSequenceId) {
+      for (ConsumerState consumerState : sessionState.getConsumerStates()) {
+         consumerState.getInfo().setLastDeliveredSequenceId(lastDeliveredSequenceId);
+      }
+   }
+
    CommandProcessor commandProcessorInstance = new CommandProcessor();
 
    // This will listen for commands through the protocolmanager
@@ -1180,6 +1188,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
             }
          }
          state.removeSession(id);
+         propagateLastSequenceId(session, lastDeliveredSequenceId);
          removeSession(context, session.getInfo());
          return null;
       }
@@ -1631,6 +1640,9 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       public Response processRemoveConnection(ConnectionId id, long lastDeliveredSequenceId) throws Exception {
          //we let protocol manager to handle connection add/remove
          try {
+            for (SessionState sessionState : state.getSessionStates()) {
+               propagateLastSequenceId(sessionState, lastDeliveredSequenceId);
+            }
             protocolManager.removeConnection(state.getInfo(), null);
          } catch (Throwable e) {
             // log
