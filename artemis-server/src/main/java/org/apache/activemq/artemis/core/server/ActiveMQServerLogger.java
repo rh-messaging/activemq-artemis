@@ -1998,4 +1998,13 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224097, value = "Failed to start server", format = Message.Format.MESSAGE_FORMAT)
    void failedToStartServer(@Cause Throwable t);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224098, value = "Received a vote saying the backup is live with connector: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void qourumBackupIsLive(String liveConnector);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224099, value = "Message with ID {0} has a header too large. More information available on debug level for class {1}",
+      format = Message.Format.MESSAGE_FORMAT)
+   void messageWithHeaderTooLarge(Long messageID, String loggerClass);
 }
