@@ -96,7 +96,7 @@
       <netty.version>4.1.32.Final</netty.version>
       <commons.io.version>2.6</commons.io.version>
       <netty-tcnative-version>2.0.22.Final</netty-tcnative-version>
-      <proton.version>0.33.0</proton.version>
+      <proton.version>0.33.1</proton.version>
       <resteasy.version>3.0.19.Final</resteasy.version>
       <slf4j.version>1.7.22</slf4j.version>
       <tomcat.servlet.version>8.0.36</tomcat.servlet.version>
