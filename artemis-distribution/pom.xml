@@ -30,7 +30,7 @@
    <name>Apache ActiveMQ Artemis Distribution</name>
 
    <properties>
-      <version.org.apache.activemq.libartemis-native>1.0.0.00003-redhat-00001</version.org.apache.activemq.libartemis-native>
+      <version.org.apache.activemq.libartemis-native>1.0.0_00003-redhat-1</version.org.apache.activemq.libartemis-native>
       <schemaLocation>${project.build.directory}/${project.artifactId}-${project.version}-bin/${project.artifactId}-${project.version}/schema</schemaLocation>
       <configLocation>src/main/resources/config</configLocation>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
