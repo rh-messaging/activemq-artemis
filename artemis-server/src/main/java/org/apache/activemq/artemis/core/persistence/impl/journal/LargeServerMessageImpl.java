@@ -378,7 +378,9 @@ public final class LargeServerMessageImpl extends CoreMessage implements LargeSe
 
          long oldPosition = file.position();
 
-         file.open();
+         if (!file.isOpen()) {
+            file.open();
+         }
          file.position(0);
 
          for (;;) {
