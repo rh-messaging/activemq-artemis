@@ -161,6 +161,12 @@ public class PageCursorProviderImpl implements PageCursorProvider {
             if (!pagingStore.checkPageFileExists((int) pageId)) {
                return null;
             }
+            Page currentPage = pagingStore.getCurrentPage();
+            // Live page cache might be cleared by gc, we need to retrieve it otherwise partially written page cache is being returned
+            if (currentPage != null && currentPage.getPageId() == pageId && (cache = currentPage.getLiveCache()) != null) {
+               softCache.put(cache.getPageId(), cache);
+               return cache;
+            }
             inProgressReadPage = inProgressReadPages.get(pageId);
             if (inProgressReadPage == null) {
                final CompletableFuture<PageCache> readPage = new CompletableFuture<>();
@@ -225,7 +231,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
       } finally {
          try {
             if (page != null) {
-               page.close(false);
+               page.close(false, false);
             }
          } catch (Throwable ignored) {
          }
@@ -521,13 +527,12 @@ public class PageCursorProviderImpl implements PageCursorProvider {
                   pgdMessagesList = depagedPage.read(storageManager);
                } finally {
                   try {
-                     depagedPage.close(false);
+                     depagedPage.close(false, false);
                   } catch (Exception e) {
                   }
 
                   storageManager.afterPageRead();
                }
-               depagedPage.close(false);
                pgdMessages = pgdMessagesList.toArray(new PagedMessage[pgdMessagesList.size()]);
             } else {
                pgdMessages = cache.getMessages();
