@@ -93,7 +93,7 @@ public class NoProcessFilesBehind extends TestWatcher {
       java.lang.management.RuntimeMXBean runtime = java.lang.management.ManagementFactory.getRuntimeMXBean();
       java.lang.reflect.Field jvmField = runtime.getClass().getDeclaredField("jvm");
       jvmField.setAccessible(true);
-      sun.management.VMManagement jvm = (sun.management.VMManagement) jvmField.get(runtime);
+      Object jvm = jvmField.get(runtime);
       java.lang.reflect.Method getProcessIdMethod = jvm.getClass().getDeclaredMethod("getProcessId");
       getProcessIdMethod.setAccessible(true);
       return (Integer) getProcessIdMethod.invoke(jvm);
