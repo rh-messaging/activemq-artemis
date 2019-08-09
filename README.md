@@ -2,6 +2,28 @@
 
 This file describes some minimum 'stuff one needs to know' to get started coding in this project.
 
+## Building this downstream:
+
+Add the following into your ~/.m2/settings.xml
+```xml
+    <profile>
+     <id>redhat-ga</id>
+     <repositories>
+       <repository>
+         <id>redhat-ga</id>
+         <name>redhat-ga</name>
+         <url>https://maven.repository.redhat.com/ga</url>
+       </repository>
+     </repositories>
+   </profile>
+```
+
+
+And add the following parameter to your maven line:
+```sh
+mvn install -Predhat-ga -Dmaven.repo.local=~/myLocalRepo -Dhawtio.version=1.4.0.redhat-630377
+```
+
 ## Source
 
 For details about the modifying the code, building the project, running tests, IDE integration, etc. see
