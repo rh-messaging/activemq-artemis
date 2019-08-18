@@ -40,6 +40,7 @@ import org.apache.activemq.artemis.protocol.amqp.util.NettyReadable;
 import org.apache.activemq.artemis.protocol.amqp.util.NettyWritable;
 import org.apache.activemq.artemis.protocol.amqp.util.TLSEncode;
 import org.apache.activemq.artemis.reader.MessageUtil;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.DataConstants;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
 import org.apache.qpid.proton.amqp.Binary;
@@ -69,6 +70,7 @@ public class AMQPMessage extends RefCountMessage {
 
    public static final SimpleString ADDRESS_PROPERTY = SimpleString.toSimpleString("_AMQ_AD");
 
+   public static final int DEFAULT_MESSAGE_FORMAT = 0;
    public static final int DEFAULT_MESSAGE_PRIORITY = 4;
    public static final int MAX_MESSAGE_PRIORITY = 9;
 
@@ -188,7 +190,7 @@ public class AMQPMessage extends RefCountMessage {
       return map;
    }
 
-   private ApplicationProperties getApplicationProperties() {
+   public ApplicationProperties getApplicationProperties() {
       parseHeaders();
 
       if (applicationProperties == null && appLocation >= 0) {
@@ -202,6 +204,12 @@ public class AMQPMessage extends RefCountMessage {
       }
 
       return applicationProperties;
+   }
+
+   /** This is different from toString, as this will print an expanded version of the buffer
+    *  in Hex and programmers's readable format */
+   public String toDebugString() {
+      return ByteUtil.debugByteArray(data.array());
    }
 
    private DeliveryAnnotations getDeliveryAnnotations() {
@@ -462,7 +470,6 @@ public class AMQPMessage extends RefCountMessage {
    @Override
    public void messageChanged() {
       bufferValid = false;
-      this.data = null;
    }
 
    @Override
