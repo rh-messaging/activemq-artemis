@@ -287,11 +287,11 @@ public class TestConversions extends Assert {
       encodedMessage.setAddress(SimpleString.toSimpleString("xxxx.v1.queue"));
 
       for (int i = 0; i < 100; i++) {
-         encodedMessage.getApplicationProperties().getValue().put("another" + i, "value" + i);
+         encodedMessage.putStringProperty("another" + i, "value" + i);
          encodedMessage.messageChanged();
          encodedMessage.reencode();
-         AmqpValue value = (AmqpValue)encodedMessage.getProtonMessage().getBody();
-         Assert.assertEquals(text, (String)value.getValue());
+         AmqpValue value = (AmqpValue) encodedMessage.getProtonMessage().getBody();
+         Assert.assertEquals(text, (String) value.getValue());
          ICoreMessage coreMessage = encodedMessage.toCore();
          if (logger.isDebugEnabled()) {
             logger.debug("Converted message: " + coreMessage);
@@ -311,7 +311,43 @@ public class TestConversions extends Assert {
             encodedMessage = encodeAndCreateAMQPMessage(message);
 
          }
+      }
+   }
 
+   @Test
+   public void testExpandNoReencode() throws Exception {
+
+      Map<String, Object> mapprop = createPropertiesMap();
+      ApplicationProperties properties = new ApplicationProperties(mapprop);
+      properties.getValue().put("hello", "hello");
+      MessageImpl message = (MessageImpl) Message.Factory.create();
+      MessageAnnotations annotations = new MessageAnnotations(new HashMap<>());
+      message.setMessageAnnotations(annotations);
+      message.setApplicationProperties(properties);
+
+      String text = "someText";
+      message.setBody(new AmqpValue(text));
+
+      AMQPMessage encodedMessage = encodeAndCreateAMQPMessage(message);
+      TypedProperties extraProperties = new TypedProperties();
+      encodedMessage.setAddress(SimpleString.toSimpleString("xxxx.v1.queue"));
+
+      for (int i = 0; i < 100; i++) {
+         encodedMessage.setMessageID(333L);
+         if (i % 3 == 0) {
+            encodedMessage.referenceOriginalMessage(encodedMessage, "SOME-OTHER-QUEUE-DOES-NOT-MATTER-WHAT");
+         } else {
+            encodedMessage.referenceOriginalMessage(encodedMessage, "XXX");
+         }
+         encodedMessage.putStringProperty("another " + i, "value " + i);
+         encodedMessage.messageChanged();
+         if (i % 2 == 0) {
+            encodedMessage.setAddress("THIS-IS-A-BIG-THIS-IS-A-BIG-ADDRESS-THIS-IS-A-BIG-ADDRESS-RIGHT");
+         } else {
+            encodedMessage.setAddress("A"); // small address
+         }
+         encodedMessage.messageChanged();
+         ICoreMessage coreMessage = encodedMessage.toCore();
       }
    }
 
