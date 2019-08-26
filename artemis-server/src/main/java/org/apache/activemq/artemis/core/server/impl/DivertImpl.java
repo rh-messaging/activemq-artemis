@@ -104,8 +104,6 @@ public class DivertImpl implements Divert {
 
          copy.setExpiration(message.getExpiration());
 
-         copy.reencode();
-
          switch (routingType) {
             case ANYCAST:
                copy.setRoutingType(RoutingType.ANYCAST);
@@ -123,6 +121,8 @@ public class DivertImpl implements Divert {
          if (transformer != null) {
             copy = transformer.transform(copy);
          }
+
+         copy.reencode();
       } else {
          copy = message;
       }

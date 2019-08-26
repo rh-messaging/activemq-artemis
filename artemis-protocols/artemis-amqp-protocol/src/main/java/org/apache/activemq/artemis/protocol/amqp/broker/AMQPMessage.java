@@ -1278,14 +1278,15 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public String toString() {
-      return "AMQPMessage [durable=" + isDurable() +
+      /* return "AMQPMessage [durable=" + isDurable() +
          ", messageID=" + getMessageID() +
          ", address=" + getAddress() +
          ", size=" + getEncodeSize() +
          ", applicationProperties=" + getApplicationProperties() +
          ", properties=" + getProperties() +
          ", extraProperties = " + getExtraProperties() +
-         "]";
+         "]"; */
+      return super.toString();
    }
 
    private SimpleString.StringSimpleStringPool getPropertyKeysPool() {
