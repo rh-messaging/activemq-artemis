@@ -444,4 +444,5 @@ public interface Queue extends Bindable,CriticalComponent {
 
    }
 
+   boolean internalDelete();
 }
