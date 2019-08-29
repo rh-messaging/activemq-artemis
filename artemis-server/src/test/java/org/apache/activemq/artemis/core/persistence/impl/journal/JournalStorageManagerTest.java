@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
+import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.paging.PagingManager;
@@ -36,6 +36,7 @@ import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.impl.JournalLoader;
+import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.junit.AfterClass;
@@ -53,7 +54,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
-public class JournalStorageManagerTest {
+public class JournalStorageManagerTest extends ActiveMQTestBase {
 
    @Parameterized.Parameter
    public JournalType journalType;
@@ -89,11 +90,11 @@ public class JournalStorageManagerTest {
     * Test of fixJournalFileSize method, of class JournalStorageManager.
     */
    @Test
-   public void testFixJournalFileSize() {
+   public void testFixJournalFileSize() throws Exception {
       if (journalType == JournalType.ASYNCIO) {
          assumeTrue("AIO is not supported on this platform", AIOSequentialFileFactory.isSupported());
       }
-      final ConfigurationImpl configuration = new ConfigurationImpl().setJournalType(journalType);
+      final Configuration configuration = createDefaultInVMConfig().setJournalType(journalType);
       final ExecutorFactory executorFactory = new OrderedExecutorFactory(executor);
       final ExecutorFactory ioExecutorFactory = new OrderedExecutorFactory(ioExecutor);
       final JournalStorageManager manager = spy(new JournalStorageManager(configuration, null, executorFactory, null, ioExecutorFactory));
@@ -107,7 +108,7 @@ public class JournalStorageManagerTest {
       if (journalType == JournalType.ASYNCIO) {
          assumeTrue("AIO is not supported on this platform", AIOSequentialFileFactory.isSupported());
       }
-      final ConfigurationImpl configuration = new ConfigurationImpl().setJournalType(journalType);
+      final Configuration configuration = createDefaultInVMConfig().setJournalType(journalType);
       final ExecutorFactory executorFactory = new OrderedExecutorFactory(executor);
       final ExecutorFactory ioExecutorFactory = new OrderedExecutorFactory(ioExecutor);
       final JournalStorageManager manager = spy(new JournalStorageManager(configuration, null, executorFactory, null, ioExecutorFactory));
