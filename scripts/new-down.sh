@@ -22,7 +22,8 @@
 
 # ./scripts/new-down ENTMQBR-XXX commit1 commit2... commitN
 
-. downstream-env.profile
+export PRG_PATH=`dirname $0`
+. $PRG_PATH/downstream-env.profile
 
 git fetch $REDHAT_DOWNSTREAM
 git checkout $REDHAT_DOWNSTREAM/$DOWNSTREAM_BRANCH -B $1

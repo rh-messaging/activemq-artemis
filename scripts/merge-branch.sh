@@ -22,8 +22,8 @@ set -e
 # This is a helpr script to help merging branches checked out
 # with checkout-PR.sh
 
-echo `dirname`
-. downstream-env.profile
+export PRG_PATH=`dirname $0`
+. $PRG_PATH/downstream-env.profile
 
 echo $REDHAT_DOWNSTREAM
 

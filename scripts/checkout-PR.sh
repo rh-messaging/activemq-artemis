@@ -19,7 +19,8 @@
 # Setting the script to fail if anything goes wrong
 set -e
 
-. downstream-env.profile
+export PRG_PATH=`dirname $0`
+. $PRG_PATH/downstream-env.profile
 
 # this script is a helper that will checkout the PR Branch
 
