@@ -2012,4 +2012,21 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224099, value = "Message with ID {0} has a header too large. More information available on debug level for class {1}",
       format = Message.Format.MESSAGE_FORMAT)
    void messageWithHeaderTooLarge(Long messageID, String loggerClass);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224100, value = "Timed out waiting for large messages deletion with IDs {0}, might not be deleted if broker crashes atm",
+      format = Message.Format.MESSAGE_FORMAT)
+   void timedOutWaitingForLargeMessagesDeletion(List<Long> largeMessageIds);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224101, value = "Apache ActiveMQ Artemis is using a scheduled pool without remove on cancel policy, so a cancelled task could be not automatically removed from the work queue, it may also cause unbounded retention of cancelled tasks.", format = Message.Format.MESSAGE_FORMAT)
+   void scheduledPoolWithNoRemoveOnCancelPolicy();
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224102, value = "unable to undeploy address {0} : reason {1}", format = Message.Format.MESSAGE_FORMAT)
+   void unableToUndeployAddress(SimpleString addressName, String reason);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224103, value = "unable to undeploy queue {0} : reason {1}", format = Message.Format.MESSAGE_FORMAT)
+   void unableToUndeployQueue(SimpleString queueName, String reason);
 }
