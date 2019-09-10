@@ -25,6 +25,8 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.persistence.impl.journal.AbstractJournalStorageManager;
@@ -202,13 +204,22 @@ public final class ReplicationSyncFileMessage extends PacketImpl {
          encodeHeader(buffer);
          encodeRest(buffer, connection);
          if (!isNetty) {
-            ByteBuffer byteBuffer;
-            if (buffer.byteBuf() != null && buffer.byteBuf().nioBufferCount() == 1) {
-               byteBuffer = buffer.byteBuf().internalNioBuffer(buffer.writerIndex(), buffer.writableBytes());
+            if (buffer.byteBuf() != null && buffer.byteBuf().nioBufferCount() == 1 && buffer.byteBuf().isDirect()) {
+               final ByteBuffer byteBuffer = buffer.byteBuf().internalNioBuffer(buffer.writerIndex(), buffer.writableBytes());
+               readFile(byteBuffer);
             } else {
-               byteBuffer = buffer.toByteBuffer(buffer.writerIndex(), buffer.writableBytes());
+               final ByteBuf byteBuffer = PooledByteBufAllocator.DEFAULT.directBuffer(buffer.writableBytes(), buffer.writableBytes());
+               try {
+                  final ByteBuffer nioBuffer = byteBuffer.internalNioBuffer(0, buffer.writableBytes());
+                  final int readBytes = readFile(nioBuffer);
+                  if (readBytes > 0) {
+                     //still use byteBuf to copy data
+                     buffer.writeBytes(byteBuffer, 0, readBytes);
+                  }
+               } finally {
+                  byteBuffer.release();
+               }
             }
-            readFile(byteBuffer);
             buffer.writerIndex(buffer.capacity());
          }
          encodeSize(buffer, encodedSize);
@@ -256,9 +267,9 @@ public final class ReplicationSyncFileMessage extends PacketImpl {
       }
    }
 
-   private void readFile(ByteBuffer buffer) {
+   private int readFile(ByteBuffer buffer) {
       try {
-         fileChannel.read(buffer, offset);
+         return fileChannel.read(buffer, offset);
       } catch (IOException e) {
          throw new RuntimeException(e);
       }
