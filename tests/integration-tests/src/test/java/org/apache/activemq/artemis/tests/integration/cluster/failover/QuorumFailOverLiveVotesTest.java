@@ -26,6 +26,7 @@ import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.core.server.impl.SharedNothingLiveActivation;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.tests.integration.cluster.util.BackupSyncDelay;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -53,7 +54,9 @@ public class QuorumFailOverLiveVotesTest extends StaticClusterWithBackupFailover
 
    }
 
-
+   /** Ignored per https://issues.apache.org/jira/browse/ARTEMIS-2484.
+    *   Please remove this javadoc and the @Ignore when fixed */
+   @Ignore
    @Test
    public void testQuorumVotingLiveNotDead() throws Exception {
       int[] liveServerIDs = new int[]{0, 1, 2};
@@ -69,6 +72,10 @@ public class QuorumFailOverLiveVotesTest extends StaticClusterWithBackupFailover
       waitForFailoverTopology(3, 0, 1, 2);
       waitForFailoverTopology(4, 0, 1, 2);
       waitForFailoverTopology(5, 0, 1, 2);
+
+      Wait.assertTrue(servers[0]::isReplicaSync);
+      Wait.assertTrue(servers[1]::isReplicaSync);
+      Wait.assertTrue(servers[2]::isReplicaSync);
 
       for (int i : liveServerIDs) {
          setupSessionFactory(i, i + 3, isNetty(), false);
@@ -91,7 +98,6 @@ public class QuorumFailOverLiveVotesTest extends StaticClusterWithBackupFailover
       assertFalse("no shared storage", servers[3].getHAPolicy().isSharedStore());
 
       SharedNothingLiveActivation liveActivation = (SharedNothingLiveActivation) servers[0].getActivation();
-     // ;
       servers[0].getRemotingService().freeze(null, null);
       waitForFailoverTopology(4, 3, 1, 2);
       waitForFailoverTopology(5, 3, 1, 2);
