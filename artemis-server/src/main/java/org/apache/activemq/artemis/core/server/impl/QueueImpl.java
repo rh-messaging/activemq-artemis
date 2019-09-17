@@ -1986,6 +1986,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public void removeAddress() throws Exception {
+      server.removeAddressInfo(getAddress(), null);
+   }
+
+   @Override
    public void deleteQueue(boolean removeConsumers) throws Exception {
       synchronized (this) {
          if (this.queueDestroyed)
