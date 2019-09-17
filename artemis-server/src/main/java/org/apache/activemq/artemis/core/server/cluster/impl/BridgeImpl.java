@@ -1111,9 +1111,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    }
 
-   protected void postStop() {
-   }
-
 
    // Inner classes -------------------------------------------------
 
@@ -1230,7 +1227,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             logger.trace("Removing consumer on stopRunnable " + this + " from queue " + queue);
          }
          ActiveMQServerLogger.LOGGER.bridgeStopped(name);
-         postStop();
       }
    }
 
