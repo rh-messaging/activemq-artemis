@@ -924,7 +924,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       synchronized (this) {
          try {
             if (ringSize != -1) {
-               enforceRing(ref, scheduling);
+               enforceRing(ref, scheduling, true);
             }
 
             if (!ref.isAlreadyAcked()) {
@@ -1022,8 +1022,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    public void addTail(final MessageReference ref, final boolean direct) {
       enterCritical(CRITICAL_PATH_ADD_TAIL);
       try {
-         enforceRing();
-
          if (scheduleIfPossible(ref)) {
             return;
          }
@@ -2569,6 +2567,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       refAdded(ref);
       messageReferences.addTail(ref, getPriority(ref));
       pendingMetrics.incrementMetrics(ref);
+      enforceRing(false);
    }
 
    /**
@@ -4048,14 +4047,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
-   private void enforceRing() {
+   private void enforceRing(boolean head) {
       if (ringSize != -1) { // better escaping & inlining when ring isn't being used
-         enforceRing(null, false);
+         enforceRing(null, false, head);
       }
    }
 
-   private void enforceRing(MessageReference refToAck, boolean scheduling) {
-      if (getMessageCountForRing() >= ringSize) {
+   private void enforceRing(MessageReference refToAck, boolean scheduling, boolean head) {
+      int adjustment = head ? 1 : 0;
+
+      if (getMessageCountForRing() + adjustment > ringSize) {
          refToAck = refToAck == null ? messageReferences.poll() : refToAck;
 
          if (refToAck != null) {
