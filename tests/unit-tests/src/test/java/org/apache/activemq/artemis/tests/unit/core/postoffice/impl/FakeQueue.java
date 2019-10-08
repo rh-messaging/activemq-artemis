@@ -60,6 +60,11 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    }
 
    @Override
+   public void removeAddress() throws Exception {
+
+   }
+
+   @Override
    public long getDelayBeforeDispatch() {
       return 0;
    }
@@ -194,11 +199,6 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    @Override
    public void recheckRefCount(OperationContext context) {
 
-   }
-
-   @Override
-   public boolean internalDelete() {
-      return false;
    }
 
    @Override
@@ -351,6 +351,16 @@ public class FakeQueue extends CriticalComponentImpl implements Queue {
    @Override
    public void addConsumer(final Consumer consumer) throws Exception {
       // no-op
+
+   }
+
+   @Override
+   public void addLingerSession(String sessionId) {
+
+   }
+
+   @Override
+   public void removeLingerSession(String sessionId) {
 
    }
 

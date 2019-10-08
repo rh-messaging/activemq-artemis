@@ -34,6 +34,7 @@ import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.SharedStoreMasterPolicyConfiguration;
 import org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.DefaultSensitiveStringCodec;
 import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
@@ -284,7 +285,6 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
                "         <connectors>\n" +
                "            <connector-ref>server0-connector</connector-ref>\n" +
                "         </connectors>\n" +
-               "         <cleanup-sf-queue>true</cleanup-sf-queue>\n" +
                "      </scale-down>\n" +
                "   </live-only>\n" +
                "</ha-policy>\n" + lastPart;
@@ -297,7 +297,6 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
 
       LiveOnlyPolicyConfiguration liveOnlyCfg = (LiveOnlyPolicyConfiguration) haConfig;
       ScaleDownConfiguration scaledownCfg = liveOnlyCfg.getScaleDownConfiguration();
-      assertTrue(scaledownCfg.isCleanupSfQueue());
       List<String> connectors = scaledownCfg.getConnectors();
       assertEquals(1, connectors.size());
       String connector = connectors.get(0);
@@ -333,6 +332,24 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
            "               </static-connectors>\n" +
            "            </bridge>\n" +
            "</bridges>\n";
+
+   @Test
+   public void testParsingAddressSettings() throws Exception {
+      long expected = 2147483648L;
+      String firstPartWithoutAS = firstPart.substring(0, firstPart.indexOf("<address-settings"));
+      String configStr = firstPartWithoutAS + ("<address-settings>\n"
+                                               + "<address-setting match=\"#\">\n"
+                                               + String.format("<max-size-bytes-reject-threshold>%d</max-size-bytes-reject-threshold>\n",
+                                                               expected)
+                                               + "</address-setting>\n"
+                                               + "</address-settings>"
+                                               + "\n") + lastPart;
+      ByteArrayInputStream input = new ByteArrayInputStream(configStr.getBytes(StandardCharsets.UTF_8));
+      Configuration configuration = new FileConfigurationParser().parseMainConfig(input);
+      assertEquals(1, configuration.getAddressesSettings().size());
+      AddressSettings addressSettings = configuration.getAddressesSettings().get("#");
+      assertEquals(expected, addressSettings.getMaxSizeBytesRejectThreshold());
+   }
 
    private static String firstPart = "<core xmlns=\"urn:activemq:core\">" + "\n" +
       "<name>ActiveMQ.main.config</name>" + "\n" +

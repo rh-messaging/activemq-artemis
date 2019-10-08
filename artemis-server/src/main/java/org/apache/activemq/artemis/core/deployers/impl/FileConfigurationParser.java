@@ -174,6 +174,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String MAX_SIZE_BYTES_NODE_NAME = "max-size-bytes";
 
+   private static final String MAX_SIZE_BYTES_REJECT_THRESHOLD_NODE_NAME = "max-size-bytes-reject-threshold";
+
    private static final String ADDRESS_FULL_MESSAGE_POLICY_NODE_NAME = "address-full-policy";
 
    private static final String PAGE_SIZE_BYTES_NODE_NAME = "page-size-bytes";
@@ -793,6 +795,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          }
       });
 
+      ActiveMQServerLogger.LOGGER.initializingMetricsPlugin(clazz, properties.toString());
       config.setMetricsPlugin(metricsPlugin.init(properties));
 
       return metricsPlugin;
@@ -1057,6 +1060,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setMaxRedeliveryDelay(XMLUtil.parseLong(child));
          } else if (MAX_SIZE_BYTES_NODE_NAME.equalsIgnoreCase(name)) {
             addressSettings.setMaxSizeBytes(ByteUtil.convertTextBytes(getTrimmedTextContent(child)));
+         } else if (MAX_SIZE_BYTES_REJECT_THRESHOLD_NODE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setMaxSizeBytesRejectThreshold(ByteUtil.convertTextBytes(getTrimmedTextContent(child)));
          } else if (PAGE_SIZE_BYTES_NODE_NAME.equalsIgnoreCase(name)) {
             long pageSizeLong = ByteUtil.convertTextBytes(getTrimmedTextContent(child));
             Validators.POSITIVE_INT.validate(PAGE_SIZE_BYTES_NODE_NAME, pageSizeLong);
@@ -1578,8 +1583,6 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
          Element scaleDownElement = (Element) scaleDownNode.item(0);
 
-         scaleDownConfiguration.setCleanupSfQueue(getBoolean(scaleDownElement, "cleanup-sf-queue", scaleDownConfiguration.isCleanupSfQueue()));
-
          scaleDownConfiguration.setEnabled(getBoolean(scaleDownElement, "enabled", scaleDownConfiguration.isEnabled()));
 
          NodeList discoveryGroupRef = scaleDownElement.getElementsByTagName("discovery-group-ref");
@@ -1792,6 +1795,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       long clusterNotificationInterval = getLong(e, "notification-interval", ActiveMQDefaultConfiguration.getDefaultClusterNotificationInterval(), Validators.GT_ZERO);
 
       int clusterNotificationAttempts = getInteger(e, "notification-attempts", ActiveMQDefaultConfiguration.getDefaultClusterNotificationAttempts(), Validators.GT_ZERO);
+
+      String scaleDownConnector = e.getAttribute("scale-down-connector");
 
       String discoveryGroupName = null;
 

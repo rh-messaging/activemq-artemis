@@ -80,6 +80,7 @@ import org.apache.activemq.artemis.core.server.QueueFactory;
 import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.ScheduledDeliveryHandler;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
+import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
 import org.apache.activemq.artemis.core.server.cluster.impl.Redistributor;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
@@ -101,6 +102,7 @@ import org.apache.activemq.artemis.utils.Env;
 import org.apache.activemq.artemis.utils.ReferenceCounter;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
+import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedList;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedListImpl;
@@ -313,13 +315,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private volatile long ringSize;
 
-   private Boolean removeSf;
-
    /**
     * This is to avoid multi-thread races on calculating direct delivery,
     * to guarantee ordering will be always be correct
     */
    private final Object directDeliveryGuard = new Object();
+
+   private final ConcurrentHashSet<String> lingerSessionIds = new ConcurrentHashSet<>();
 
    public String debug() {
       StringWriter str = new StringWriter();
@@ -924,7 +926,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       synchronized (this) {
          try {
             if (ringSize != -1) {
-               enforceRing(ref, scheduling);
+               enforceRing(ref, scheduling, true);
             }
 
             if (!ref.isAlreadyAcked()) {
@@ -1022,8 +1024,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    public void addTail(final MessageReference ref, final boolean direct) {
       enterCritical(CRITICAL_PATH_ADD_TAIL);
       try {
-         enforceRing();
-
          if (scheduleIfPossible(ref)) {
             return;
          }
@@ -1258,6 +1258,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          leaveCritical(CRITICAL_CONSUMER);
       }
 
+   }
+
+   @Override
+   public void addLingerSession(String sessionId) {
+      lingerSessionIds.add(sessionId);
+   }
+
+   @Override
+   public void removeLingerSession(String sessionId) {
+      lingerSessionIds.remove(sessionId);
    }
 
    @Override
@@ -1585,6 +1595,15 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             mapReturn.put(holder.consumer.toManagementString(), msgs);
          }
       }
+
+      for (String lingerSessionId : lingerSessionIds) {
+         ServerSession serverSession = server.getSessionByID(lingerSessionId);
+         List<MessageReference> refs = serverSession == null ? null : serverSession.getInTxLingerMessages();
+         if (refs != null && !refs.isEmpty()) {
+            mapReturn.put(serverSession.toManagementString(), refs);
+         }
+      }
+
       return mapReturn;
    }
 
@@ -2054,6 +2073,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public void deleteQueue() throws Exception {
       deleteQueue(false);
+   }
+
+   @Override
+   public void removeAddress() throws Exception {
+      server.removeAddressInfo(getAddress(), null);
    }
 
    @Override
@@ -2536,7 +2560,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public void setInternalQueue(boolean internalQueue) {
       this.internalQueue = internalQueue;
-      this.removeSf = null;
    }
 
    // Public
@@ -2569,6 +2592,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       refAdded(ref);
       messageReferences.addTail(ref, getPriority(ref));
       pendingMetrics.incrementMetrics(ref);
+      enforceRing(false);
    }
 
    /**
@@ -2722,9 +2746,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                      logger.trace("Reference " + ref + " being expired");
                   }
                   removeMessageReference(holder, ref);
-
-
-
                   handled++;
                   consumers.reset();
                   continue;
@@ -2755,8 +2776,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
                   deliveriesInTransit.countUp();
 
-
-                  removeMessageReference(holder, ref);
+                  if (!nonDestructive) {
+                     removeMessageReference(holder, ref);
+                  }
                   ref.setInDelivery(true);
                   handledconsumer = consumer;
                   handled++;
@@ -2813,10 +2835,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    protected void removeMessageReference(ConsumerHolder<? extends Consumer> holder, MessageReference ref) {
-      if (!nonDestructive) {
-         holder.iter.remove();
-         refRemoved(ref);
-      }
+      holder.iter.remove();
+      refRemoved(ref);
    }
 
    private void checkDepage() {
@@ -2877,6 +2897,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (ref.isPaged()) {
          pagedReferences.decrementAndGet();
       }
+   }
+
+   protected void addRefSize(MessageReference ref) {
+      queueMemorySize.addAndGet(ref.getMessageMemoryEstimate());
+      pendingMetrics.incrementMetrics(ref);
    }
 
    protected void refAdded(final MessageReference ref) {
@@ -3464,29 +3489,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
-   /**
-    * Delete the store and forward queue
-    * Only the second caller (if there is one) of this method does the actual deletion.
-    * The logic makes sure the sf queue is deleted only after bridge is stopped.
-    */
-   @Override
-   public synchronized boolean internalDelete() {
-      if (this.isInternalQueue()) {
-         if (removeSf == null) {
-            removeSf = false;
-         } else if (removeSf == false) {
-            try {
-               deleteQueue();
-               removeSf = true;
-               return true;
-            } catch (Exception e) {
-               logger.debug("Error removing sf queue " + getName(), e);
-            }
-         }
-      }
-      return false;
-   }
-
    private boolean checkExpired(final MessageReference reference) {
       try {
          if (reference.getMessage().isExpired()) {
@@ -4048,14 +4050,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
-   private void enforceRing() {
+   private void enforceRing(boolean head) {
       if (ringSize != -1) { // better escaping & inlining when ring isn't being used
-         enforceRing(null, false);
+         enforceRing(null, false, head);
       }
    }
 
-   private void enforceRing(MessageReference refToAck, boolean scheduling) {
-      if (getMessageCountForRing() >= ringSize) {
+   private void enforceRing(MessageReference refToAck, boolean scheduling, boolean head) {
+      int adjustment = head ? 1 : 0;
+
+      if (getMessageCountForRing() + adjustment > ringSize) {
          refToAck = refToAck == null ? messageReferences.poll() : refToAck;
 
          if (refToAck != null) {

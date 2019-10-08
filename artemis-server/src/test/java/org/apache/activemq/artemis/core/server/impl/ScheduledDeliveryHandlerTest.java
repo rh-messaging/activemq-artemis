@@ -795,6 +795,10 @@ public class ScheduledDeliveryHandlerTest extends Assert {
       }
 
       @Override
+      public void removeAddress() throws Exception {
+      }
+
+      @Override
       public long getAcknowledgeAttempts() {
          return 0;
       }
@@ -886,11 +890,6 @@ public class ScheduledDeliveryHandlerTest extends Assert {
 
       @Override
       public void recheckRefCount(OperationContext context) {
-      }
-
-      @Override
-      public boolean internalDelete() {
-         return false;
       }
 
       @Override
@@ -1007,6 +1006,16 @@ public class ScheduledDeliveryHandlerTest extends Assert {
 
       @Override
       public void addConsumer(Consumer consumer) throws Exception {
+
+      }
+
+      @Override
+      public void addLingerSession(String sessionId) {
+
+      }
+
+      @Override
+      public void removeLingerSession(String sessionId) {
 
       }
 

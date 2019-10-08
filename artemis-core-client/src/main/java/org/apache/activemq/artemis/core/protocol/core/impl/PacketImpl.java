@@ -277,7 +277,6 @@ public class PacketImpl implements Packet {
 
    public static final byte SESS_BINDINGQUERY_RESP_V4 = -15;
 
-   public static final byte SCALEDOWN_ANNOUNCEMENT_V2 = -16;
 
    // Static --------------------------------------------------------
 
@@ -337,11 +336,7 @@ public class PacketImpl implements Packet {
    }
 
    protected void encodeSize(ActiveMQBuffer buffer) {
-      encodeSize(buffer, buffer.writerIndex());
-   }
-
-   protected void encodeSize(ActiveMQBuffer buffer, int size) {
-      this.size = size;
+      size = buffer.writerIndex();
 
       // The length doesn't include the actual length byte
       int len = size - DataConstants.SIZE_INT;
@@ -350,10 +345,9 @@ public class PacketImpl implements Packet {
    }
 
    protected ActiveMQBuffer createPacket(CoreRemotingConnection connection) {
-      return createPacket(connection, expectedEncodeSize());
-   }
 
-   protected ActiveMQBuffer createPacket(CoreRemotingConnection connection, int size) {
+      int size = expectedEncodeSize();
+
       if (connection == null) {
          return new ChannelBufferWrapper(Unpooled.buffer(size));
       } else {

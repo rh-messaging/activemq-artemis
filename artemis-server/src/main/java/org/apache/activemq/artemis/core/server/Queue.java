@@ -129,6 +129,10 @@ public interface Queue extends Bindable,CriticalComponent {
 
    void addConsumer(Consumer consumer) throws Exception;
 
+   void addLingerSession(String sessionId);
+
+   void removeLingerSession(String sessionId);
+
    void removeConsumer(Consumer consumer);
 
    int getConsumerCount();
@@ -197,6 +201,9 @@ public interface Queue extends Bindable,CriticalComponent {
    void deleteQueue() throws Exception;
 
    void deleteQueue(boolean removeConsumers) throws Exception;
+
+   /** This method will push a removeAddress call into server's remove address */
+   void removeAddress() throws Exception;
 
    void destroyPaging() throws Exception;
 
@@ -450,5 +457,4 @@ public interface Queue extends Bindable,CriticalComponent {
 
    }
 
-   boolean internalDelete();
 }
