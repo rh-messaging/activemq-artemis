@@ -56,6 +56,85 @@ import org.junit.Test;
 public class RedeployTest extends ActiveMQTestBase {
 
    @Test
+   /*
+    * This tests that the broker doesnt fall over when it tries to delete any autocreated addresses/queues in a clustered environment
+    * If the undeploy fails then bridges etc can stop working, we need to make sure if undeploy fails on anything the broker is still live
+    * */
+   public void testRedeployAutoCreateAddress() throws Exception {
+      Path brokerXML = getTestDirfile().toPath().resolve("broker.xml");
+      URL url1 = RedeployTest.class.getClassLoader().getResource("reload-test-autocreateaddress.xml");
+      URL url2 = RedeployTest.class.getClassLoader().getResource("reload-test-autocreateaddress-reload.xml");
+      Files.copy(url1.openStream(), brokerXML);
+
+      EmbeddedActiveMQ embeddedActiveMQ = new EmbeddedActiveMQ();
+      embeddedActiveMQ.setConfigResourcePath(brokerXML.toUri().toString());
+      embeddedActiveMQ.start();
+
+      ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory();
+      try (Connection connection = factory.createConnection()) {
+         Session session = connection.createSession();
+         Queue queue = session.createQueue("autoQueue");
+         MessageProducer producer = session.createProducer(queue);
+         producer.send(session.createTextMessage("text"));
+         connection.start();
+         MessageConsumer consumer = session.createConsumer(session.createQueue("autoQueue"));
+         Assert.assertNotNull("Address wasn't autocreated accordingly", consumer.receive(5000));
+      }
+
+      Assert.assertNotNull(getQueue(embeddedActiveMQ, "autoQueue"));
+
+      // this simulates a remote queue or other type being added that wouldnt get deleted, its not valid to have this happen but it can happen when addresses and queues are auto created in a clustered env
+      embeddedActiveMQ.getActiveMQServer().getPostOffice().addBinding(new RemoteQueueBindingImpl(5L,
+              new SimpleString("autoQueue"),
+              new SimpleString("uniqueName"),
+              new SimpleString("routingName"),
+              6L,
+              null,
+              new FakeQueue(new SimpleString("foo"), 6L),
+              new SimpleString("bridge"),
+              1,
+              MessageLoadBalancingType.OFF));
+
+      final ReusableLatch latch = new ReusableLatch(1);
+
+      Runnable tick = new Runnable() {
+         @Override
+         public void run() {
+            latch.countDown();
+         }
+      };
+
+      embeddedActiveMQ.getActiveMQServer().getReloadManager().setTick(tick);
+
+      try {
+         latch.await(10, TimeUnit.SECONDS);
+         Files.copy(url2.openStream(), brokerXML, StandardCopyOption.REPLACE_EXISTING);
+         brokerXML.toFile().setLastModified(System.currentTimeMillis() + 1000);
+         latch.setCount(1);
+         embeddedActiveMQ.getActiveMQServer().getReloadManager().setTick(tick);
+         latch.await(10, TimeUnit.SECONDS);
+
+         Assert.assertTrue(tryConsume());
+
+         Assert.assertNotNull(getQueue(embeddedActiveMQ, "autoQueue"));
+
+         factory = new ActiveMQConnectionFactory();
+         try (Connection connection = factory.createConnection()) {
+            Session session = connection.createSession();
+            Queue queue = session.createQueue("autoQueue");
+            MessageProducer producer = session.createProducer(queue);
+            producer.send(session.createTextMessage("text"));
+            connection.start();
+            MessageConsumer consumer = session.createConsumer(session.createQueue("autoQueue"));
+            Assert.assertNotNull("autoQueue redeployed accordingly", consumer.receive(5000));
+         }
+
+      } finally {
+         embeddedActiveMQ.stop();
+      }
+   }
+
+   @Test
    public void testRedeploy() throws Exception {
       Path brokerXML = getTestDirfile().toPath().resolve("broker.xml");
       URL url1 = RedeployTest.class.getClassLoader().getResource("reload-test-jms.xml");
