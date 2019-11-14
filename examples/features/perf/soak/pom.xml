@@ -28,7 +28,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.soak</groupId>
       <artifactId>perf-root</artifactId>
-      <version>2.9.0</version>
+      <version>2.9.0-PATCH-3018</version>
    </parent>
 
    <dependencies>
