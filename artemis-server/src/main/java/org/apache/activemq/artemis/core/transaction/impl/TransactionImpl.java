@@ -367,7 +367,7 @@ public class TransactionImpl implements Transaction {
          }
          if (state != State.PREPARED) {
             try {
-               internalRollback(sorted);
+               internalRollback();
             } catch (Exception e) {
                // nothing we can do beyond logging
                // no need to special handler here as this was not even supposed to happen at this point
