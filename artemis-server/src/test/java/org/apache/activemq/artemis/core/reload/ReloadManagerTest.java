@@ -33,8 +33,10 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class ReloadManagerTest extends ActiveMQTestBase {
 
    private ScheduledExecutorService scheduledExecutorService;
@@ -58,6 +60,7 @@ public class ReloadManagerTest extends ActiveMQTestBase {
       scheduledExecutorService = null;
    }
 
+   @Ignore
    @Test
    public void testUpdate() throws Exception {
 
@@ -66,6 +69,7 @@ public class ReloadManagerTest extends ActiveMQTestBase {
 
    }
 
+   @Ignore
    @Test
    public void testUpdateWithSpace() throws Exception {
       File spaceDir = new File(getTemporaryDir(), "./with %25space");
