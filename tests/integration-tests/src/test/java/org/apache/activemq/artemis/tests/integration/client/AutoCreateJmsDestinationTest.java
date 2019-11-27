@@ -41,8 +41,8 @@ import org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
-import org.apache.activemq.artemis.jms.client.ActiveMQConnection;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
 import org.apache.activemq.artemis.jms.client.ActiveMQTemporaryTopic;
 import org.apache.activemq.artemis.jms.client.ActiveMQTopic;
@@ -300,7 +300,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
          producer.send(session.createTextMessage("hello"));
       }
 
-      Assert.assertTrue(((ActiveMQConnection)connection).containsKnownDestination(addressName));
+      Assert.assertTrue((((ActiveMQDestination) topic).isCreated()));
    }
 
    @Test (timeout = 30000)
@@ -324,7 +324,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
             Assert.fail("Expected to throw exception here");
          } catch (JMSException expected) {
          }
-         Assert.assertFalse(((ActiveMQConnection)connection).containsKnownDestination(addressName));
+         Assert.assertFalse(((ActiveMQDestination) queue).isCreated());
       }
 
    }
@@ -349,7 +349,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
       } catch (JMSException expected) {
       }
 
-      Assert.assertFalse(((ActiveMQConnection)connection).containsKnownDestination(addressName));
+      Assert.assertFalse(((ActiveMQDestination) queue).isCreated());
    }
 
 
@@ -370,7 +370,7 @@ public class AutoCreateJmsDestinationTest extends JMSTestBase {
          MessageProducer producer = session.createProducer(queue);
          Assert.assertNotNull(server.locateQueue(addressName));
 
-         Assert.assertTrue(((ActiveMQConnection) connection).containsKnownDestination(addressName));
+         Assert.assertTrue(((ActiveMQDestination) queue).isCreated());
       }
    }
 
