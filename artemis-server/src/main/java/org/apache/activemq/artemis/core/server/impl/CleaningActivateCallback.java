@@ -14,11 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.tests.util;
 
-/**
- * Utility adapted from: org.apache.activemq.util.Wait
- */
-public class Wait extends org.apache.activemq.artemis.utils.Wait {
+package org.apache.activemq.artemis.core.server.impl;
 
+import org.apache.activemq.artemis.core.server.ActivateCallback;
+import org.apache.activemq.artemis.core.server.ActiveMQServer;
+
+/** This is an abstract ActivateCallback that will cleanup itself when the broker is shutodwn */
+public abstract class CleaningActivateCallback implements ActivateCallback {
+
+   public CleaningActivateCallback() {
+   }
+
+   @Override
+   public void stop(ActiveMQServer server) {
+      server.unregisterActivateCallback(this);
+   }
+
+   @Override
+   public void shutdown(ActiveMQServer server) {
+      server.unregisterActivateCallback(this);
+   }
 }

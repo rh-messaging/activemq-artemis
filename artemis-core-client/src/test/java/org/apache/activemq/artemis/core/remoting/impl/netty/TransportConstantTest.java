@@ -14,11 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.tests.util;
 
-/**
- * Utility adapted from: org.apache.activemq.util.Wait
- */
-public class Wait extends org.apache.activemq.artemis.utils.Wait {
+package org.apache.activemq.artemis.core.remoting.impl.netty;
 
+import org.junit.Assert;
+import org.junit.Test;
+
+public class TransportConstantTest {
+
+   /** We change the default on the main pom.xml
+    * This is just validating the pom still works */
+   @Test
+   public void testDefaultOnPom() {
+      Assert.assertEquals("It is expected to have the default at 0 on the testsuite", 0, TransportConstants.DEFAULT_QUIET_PERIOD);
+      Assert.assertEquals("It is expected to have the default at 0 on the testsuite", 0, TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT);
+   }
 }
