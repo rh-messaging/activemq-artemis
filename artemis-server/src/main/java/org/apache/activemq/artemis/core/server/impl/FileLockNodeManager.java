@@ -83,6 +83,49 @@ public class FileLockNodeManager extends NodeManager {
    }
 
    @Override
+   protected synchronized void setUpServerLockFile() throws IOException {
+      super.setUpServerLockFile();
+
+      if (lockChannels[0] == null || !lockChannels[0].isOpen()) {
+         File fileLock = newFile(NodeManager.SERVER_LOCK_NAME);
+         if (!fileLock.exists()) {
+            fileLock.createNewFile();
+         }
+         RandomAccessFile randomFileLock = new RandomAccessFile(fileLock, "rw");
+         lockChannels[0] = randomFileLock.getChannel();
+      }
+
+      for (int i = 1; i < 3; i++) {
+         if (lockChannels[i] != null && lockChannels[i].isOpen()) {
+            continue;
+         }
+         File fileLock = newFile("serverlock." + i);
+         if (!fileLock.exists()) {
+            fileLock.createNewFile();
+         }
+         RandomAccessFile randomFileLock = new RandomAccessFile(fileLock, "rw");
+         lockChannels[i] = randomFileLock.getChannel();
+      }
+   }
+
+   @Override
+   public synchronized void stop() throws Exception {
+      for (FileChannel channel : lockChannels) {
+         if (channel != null && channel.isOpen()) {
+            try {
+               channel.close();
+            } catch (Throwable e) {
+               // I do not want to interrupt a shutdown. If anything is wrong here, just log it
+               // it could be a critical error or something like that throwing the system down
+               logger.warn(e.getMessage(), e);
+            }
+         }
+      }
+
+      super.stop();
+   }
+
+   @Override
    public boolean isAwaitingFailback() throws Exception {
       return getState() == FileLockNodeManager.FAILINGBACK;
    }
