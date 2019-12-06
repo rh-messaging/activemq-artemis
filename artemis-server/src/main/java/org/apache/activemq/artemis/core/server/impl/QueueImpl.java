@@ -221,6 +221,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    //This lock is used to prevent deadlocks between direct and async deliveries
    private final ReentrantLock deliverLock = new ReentrantLock();
 
+   private final ReentrantLock depageLock = new ReentrantLock();
+
    private volatile boolean depagePending = false;
 
    private final StorageManager storageManager;
@@ -307,6 +309,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private volatile boolean configurationManaged;
 
    private volatile boolean nonDestructive;
+
+   private volatile long ringSize;
 
    /**
     * This is to avoid multi-thread races on calculating direct delivery,
@@ -1823,7 +1827,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public synchronized int deleteMatchingReferences(final int flushLimit, final Filter filter1, AckReason ackReason) throws Exception {
+   public int deleteMatchingReferences(final int flushLimit, final Filter filter1, AckReason ackReason) throws Exception {
       return iterQueue(flushLimit, filter1, createDeleteMatchingAction(ackReason));
    }
 
@@ -1855,53 +1859,60 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * @return
     * @throws Exception
     */
-   private synchronized int iterQueue(final int flushLimit,
+   private int iterQueue(final int flushLimit,
                                       final Filter filter1,
                                       QueueIterateAction messageAction) throws Exception {
       int count = 0;
       int txCount = 0;
 
-      Transaction tx = new TransactionImpl(storageManager);
+      depageLock.lock();
 
-      try (LinkedListIterator<MessageReference> iter = iterator()) {
+      try {
+         Transaction tx = new TransactionImpl(storageManager);
 
-         while (iter.hasNext()) {
-            MessageReference ref = iter.next();
+         synchronized (this) {
 
-            if (ref.isPaged() && queueDestroyed) {
-               // this means the queue is being removed
-               // hence paged references are just going away through
-               // page cleanup
-               continue;
+            try (LinkedListIterator<MessageReference> iter = iterator()) {
+
+               while (iter.hasNext()) {
+                  MessageReference ref = iter.next();
+
+                  if (ref.isPaged() && queueDestroyed) {
+                     // this means the queue is being removed
+                     // hence paged references are just going away through
+                     // page cleanup
+                     continue;
+                  }
+
+                  if (filter1 == null || filter1.match(ref.getMessage())) {
+                     messageAction.actMessage(tx, ref);
+                     iter.remove();
+                     txCount++;
+                     count++;
+                  }
+               }
+
+               if (txCount > 0) {
+                  tx.commit();
+
+                  tx = new TransactionImpl(storageManager);
+
+                  txCount = 0;
+               }
+
+               List<MessageReference> cancelled = scheduledDeliveryHandler.cancel(filter1);
+               for (MessageReference messageReference : cancelled) {
+                  messageAction.actMessage(tx, messageReference, false);
+                  count++;
+                  txCount++;
+               }
+
+               if (txCount > 0) {
+                  tx.commit();
+                  tx = new TransactionImpl(storageManager);
+                  txCount = 0;
+               }
             }
-
-            if (filter1 == null || filter1.match(ref.getMessage())) {
-               messageAction.actMessage(tx, ref);
-               iter.remove();
-               txCount++;
-               count++;
-            }
-         }
-
-         if (txCount > 0) {
-            tx.commit();
-
-            tx = new TransactionImpl(storageManager);
-
-            txCount = 0;
-         }
-
-         List<MessageReference> cancelled = scheduledDeliveryHandler.cancel(filter1);
-         for (MessageReference messageReference : cancelled) {
-            messageAction.actMessage(tx, messageReference, false);
-            count++;
-            txCount++;
-         }
-
-         if (txCount > 0) {
-            tx.commit();
-            tx = new TransactionImpl(storageManager);
-            txCount = 0;
          }
 
          if (pageIterator != null && !queueDestroyed) {
@@ -1935,6 +1946,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
 
          return count;
+      } finally {
+         depageLock.unlock();
       }
    }
 
@@ -1981,6 +1994,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public void deleteQueue() throws Exception {
       deleteQueue(false);
+   }
+
+   @Override
+   public void removeAddress() throws Exception {
+      server.removeAddressInfo(getAddress(), null);
    }
 
    @Override
@@ -2253,7 +2271,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public synchronized int moveReferences(final int flushLimit,
+   public int moveReferences(final int flushLimit,
                                           final Filter filter,
                                           final SimpleString toAddress,
                                           final boolean rejectDuplicates,
@@ -2287,7 +2305,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       });
    }
 
-   public synchronized int moveReferencesBetweenSnFQueues(final SimpleString queueSuffix) throws Exception {
+   public int moveReferencesBetweenSnFQueues(final SimpleString queueSuffix) throws Exception {
       return iterQueue(DEFAULT_FLUSH_LIMIT, null, new QueueIterateAction() {
          @Override
          public void actMessage(Transaction tx, MessageReference ref) throws Exception {
@@ -2812,52 +2830,60 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private void depage(final boolean scheduleExpiry) {
       depagePending = false;
 
-      synchronized (this) {
-         if (paused || pageIterator == null) {
-            return;
+      if (!depageLock.tryLock()) {
+         return;
+      }
+
+      try {
+         synchronized (this) {
+            if (paused || pageIterator == null) {
+               return;
+            }
          }
-      }
 
-      long maxSize = pageSubscription.getPagingStore().getPageSizeBytes();
+         long maxSize = pageSubscription.getPagingStore().getPageSizeBytes();
 
-      long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
+         long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
 
-      if (logger.isTraceEnabled()) {
-         logger.trace("QueueMemorySize before depage on queue=" + this.getName() + " is " + queueMemorySize.get());
-      }
-
-      this.directDeliver = false;
-
-      int depaged = 0;
-      while (timeout > System.currentTimeMillis() && needsDepage() && pageIterator.hasNext()) {
-         depaged++;
-         PagedReference reference = pageIterator.next();
          if (logger.isTraceEnabled()) {
-            logger.trace("Depaging reference " + reference + " on queue " + this.getName());
+            logger.trace("QueueMemorySize before depage on queue=" + this.getName() + " is " + queueMemorySize.get());
          }
-         addTail(reference, false);
-         pageIterator.remove();
 
-         //We have to increment this here instead of in the iterator so we have access to the reference from next()
-         pageSubscription.incrementDeliveredSize(getPersistentSize(reference));
-      }
+         this.directDeliver = false;
 
-      if (logger.isDebugEnabled()) {
-         if (depaged == 0 && queueMemorySize.get() >= maxSize) {
-            logger.debug("Couldn't depage any message as the maxSize on the queue was achieved. " + "There are too many pending messages to be acked in reference to the page configuration");
+         int depaged = 0;
+         while (timeout > System.currentTimeMillis() && needsDepage() && pageIterator.hasNext()) {
+            depaged++;
+            PagedReference reference = pageIterator.next();
+            if (logger.isTraceEnabled()) {
+               logger.trace("Depaging reference " + reference + " on queue " + this.getName());
+            }
+            addTail(reference, false);
+            pageIterator.remove();
+
+            //We have to increment this here instead of in the iterator so we have access to the reference from next()
+            pageSubscription.incrementDeliveredSize(getPersistentSize(reference));
          }
 
          if (logger.isDebugEnabled()) {
-            logger.debug("Queue Memory Size after depage on queue=" + this.getName() + " is " + queueMemorySize.get() + " with maxSize = " + maxSize + ". Depaged " + depaged + " messages, pendingDelivery=" + messageReferences.size() + ", intermediateMessageReferences= " + intermediateMessageReferences.size() + ", queueDelivering=" + deliveringMetrics.getMessageCount());
+            if (depaged == 0 && queueMemorySize.get() >= maxSize) {
+               logger.debug("Couldn't depage any message as the maxSize on the queue was achieved. " + "There are too many pending messages to be acked in reference to the page configuration");
+            }
 
+            if (logger.isDebugEnabled()) {
+               logger.debug("Queue Memory Size after depage on queue=" + this.getName() + " is " + queueMemorySize.get() + " with maxSize = " + maxSize + ". Depaged " + depaged + " messages, pendingDelivery=" + messageReferences.size() + ", intermediateMessageReferences= " + intermediateMessageReferences.size() + ", queueDelivering=" + deliveringMetrics.getMessageCount());
+
+            }
          }
-      }
 
-      deliverAsync();
+         deliverAsync();
 
-      if (depaged > 0 && scheduleExpiry) {
-         // This will just call an executor
-         expireReferences();
+         if (depaged > 0 && scheduleExpiry) {
+            // This will just call an executor
+            expireReferences();
+         }
+      } finally {
+         depageLock.unlock();
       }
    }
 

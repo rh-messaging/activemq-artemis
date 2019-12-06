@@ -15,16 +15,6 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<broker xmlns="http://activemq.org/schema">
-
-   <jaas-security domain="activemq"/>
-
-   <server configuration="${artemis.URI.instance}/etc/broker.xml"/>
-
-   <web bind="http://localhost:8080" path="web">
-      <!-- ${war} is defined in the example's pom.xml -->
-      <app url="camel" war="WARFILE"/>
-   </web>
-</broker>
-
+<management-context xmlns="http://activemq.org/schema">
+   <connector connector-port="10199" connector-host="localhost"/>
+</management-context>
