@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.10.0</version>
+      <version>2.10.0-PATCH-3026</version>
    </parent>
 
    <artifactId>compatibility-tests</artifactId>
@@ -160,7 +160,7 @@
       <dependency>
          <groupId>org.apache.activemq.rest</groupId>
          <artifactId>artemis-rest</artifactId>
-         <version>2.10.0</version>
+         <version>2.10.0-PATCH-3026</version>
       </dependency>
       <dependency>
          <groupId>org.codehaus.groovy</groupId>
@@ -385,19 +385,19 @@
                   <goals>
                      <goal>dependency-scan</goal>
                   </goals>
-                  <id>2_10_0-check</id>
+                  <id>2.10.0-PATCH-3026-check</id>
                   <configuration>
-                     <!-- At the time I'm writing this 2.10.0 is not released yet
-                          This could be removed the day 2.10.0 is released.
-                          I am adding this now to make sure we will run tests on 2.10.0 when it is released -->
+                     <!-- At the time I'm writing this 2.10.0-PATCH-3026 is not released yet
+                          This could be removed the day 2.10.0-PATCH-3026 is released.
+                          I am adding this now to make sure we will run tests on 2.10.0-PATCH-3026 when it is released -->
                      <optional>true</optional>
                      <libListWithDeps>
-                        <arg>org.apache.activemq:artemis-jms-server:2.10.0</arg>
-                        <arg>org.apache.activemq:artemis-jms-client:2.10.0</arg>
-                        <arg>org.apache.activemq:artemis-cli:2.10.0</arg>
-                        <arg>org.apache.activemq:artemis-hornetq-protocol:2.10.0</arg>
-                        <arg>org.apache.activemq:artemis-amqp-protocol:2.10.0</arg>
-                        <arg>org.apache.activemq:artemis-hornetq-protocol:2.10.0</arg>
+                        <arg>org.apache.activemq:artemis-jms-server:2.10.0-PATCH-3026</arg>
+                        <arg>org.apache.activemq:artemis-jms-client:2.10.0-PATCH-3026</arg>
+                        <arg>org.apache.activemq:artemis-cli:2.10.0-PATCH-3026</arg>
+                        <arg>org.apache.activemq:artemis-hornetq-protocol:2.10.0-PATCH-3026</arg>
+                        <arg>org.apache.activemq:artemis-amqp-protocol:2.10.0-PATCH-3026</arg>
+                        <arg>org.apache.activemq:artemis-hornetq-protocol:2.10.0-PATCH-3026</arg>
                         <arg>org.codehaus.groovy:groovy-all:${groovy.version}</arg>
                      </libListWithDeps>
                      <libList>
@@ -405,7 +405,7 @@
                      </libList>
                      <!-- for future maintainers, notice that if you add new variables you also need to add the system property
                            otherwise this is not captured, search for the word @@@@ on this pom where I left anothr comment -->
-                     <variableName>ARTEMIS-2_10_0</variableName>
+                     <variableName>ARTEMIS-2.10.0-PATCH-3026</variableName>
                   </configuration>
                </execution>
                <execution>
