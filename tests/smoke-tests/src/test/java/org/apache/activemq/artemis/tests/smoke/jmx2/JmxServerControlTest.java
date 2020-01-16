@@ -90,7 +90,9 @@ public class JmxServerControlTest extends SmokeTestBase {
             cf.createConnection().createSession(true, Session.SESSION_TRANSACTED).createConsumer(new ActiveMQQueue(queueName));
 
             String options = JsonUtil.toJsonObject(ImmutableMap.of("field","queue", "operation", "EQUALS", "value", queueName)).toString();
+            System.out.println("JmxServerControlTest.testListConsumers.options:" + options);
             String consumersAsJsonString = activeMQServerControl.listConsumers(options, 1, 10);
+            System.out.println("JmxServerControlTest.testListConsumers.consumersAsJsonString:" + consumersAsJsonString);
 
             JsonObject consumersAsJsonObject = JsonUtil.readJsonObject(consumersAsJsonString);
             JsonArray array = (JsonArray) consumersAsJsonObject.get("data");
