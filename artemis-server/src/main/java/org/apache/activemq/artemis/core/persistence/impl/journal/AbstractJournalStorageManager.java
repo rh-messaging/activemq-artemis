@@ -839,7 +839,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       readLock();
       try {
 
-         JournalLoadInformation info = messageJournal.load(records::add, preparedTransactions, new LargeMessageTXFailureCallback(this));
+         JournalLoadInformation info = messageJournal.load(records, preparedTransactions, new LargeMessageTXFailureCallback(this));
 
          ArrayList<LargeServerMessage> largeMessages = new ArrayList<>();
 
@@ -1439,7 +1439,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public JournalLoadInformation loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos,
                                                     final List<GroupingInfo> groupingInfos,
                                                     final List<AddressBindingInfo> addressBindingInfos) throws Exception {
-      List<RecordInfo> records = new ArrayList<>();
+      SparseArrayLinkedList<RecordInfo> records = new SparseArrayLinkedList<>();
 
       List<PreparedTransactionInfo> preparedTransactions = new ArrayList<>();
 
@@ -1447,45 +1447,51 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
       HashMap<Long, PersistentQueueBindingEncoding> mapBindings = new HashMap<>();
 
-      for (RecordInfo record : records) {
-         long id = record.id;
+      records.clear(record -> {
+         try {
+            long id = record.id;
 
-         ActiveMQBuffer buffer = ActiveMQBuffers.wrappedBuffer(record.data);
+            ActiveMQBuffer buffer = ActiveMQBuffers.wrappedBuffer(record.data);
 
-         byte rec = record.getUserRecordType();
+            byte rec = record.getUserRecordType();
 
-         if (rec == JournalRecordIds.QUEUE_BINDING_RECORD) {
-            PersistentQueueBindingEncoding bindingEncoding = newQueueBindingEncoding(id, buffer);
-            mapBindings.put(bindingEncoding.getId(), bindingEncoding);
-         } else if (rec == JournalRecordIds.ID_COUNTER_RECORD) {
-            idGenerator.loadState(record.id, buffer);
-         } else if (rec == JournalRecordIds.ADDRESS_BINDING_RECORD) {
-            PersistentAddressBindingEncoding bindingEncoding = newAddressBindingEncoding(id, buffer);
-            addressBindingInfos.add(bindingEncoding);
-         } else if (rec == JournalRecordIds.GROUP_RECORD) {
-            GroupingEncoding encoding = newGroupEncoding(id, buffer);
-            groupingInfos.add(encoding);
-         } else if (rec == JournalRecordIds.ADDRESS_SETTING_RECORD) {
-            PersistedAddressSetting setting = newAddressEncoding(id, buffer);
-            mapPersistedAddressSettings.put(setting.getAddressMatch(), setting);
-         } else if (rec == JournalRecordIds.SECURITY_RECORD) {
-            PersistedRoles roles = newSecurityRecord(id, buffer);
-            mapPersistedRoles.put(roles.getAddressMatch(), roles);
-         } else if (rec == JournalRecordIds.QUEUE_STATUS_RECORD) {
-            QueueStatusEncoding statusEncoding = newQueueStatusEncoding(id, buffer);
-            PersistentQueueBindingEncoding queueBindingEncoding = mapBindings.get(statusEncoding.queueID);
-            if (queueBindingEncoding != null) {
-               queueBindingEncoding.addQueueStatusEncoding(statusEncoding);
+            if (rec == JournalRecordIds.QUEUE_BINDING_RECORD) {
+               PersistentQueueBindingEncoding bindingEncoding = newQueueBindingEncoding(id, buffer);
+               mapBindings.put(bindingEncoding.getId(), bindingEncoding);
+            } else if (rec == JournalRecordIds.ID_COUNTER_RECORD) {
+               idGenerator.loadState(record.id, buffer);
+            } else if (rec == JournalRecordIds.ADDRESS_BINDING_RECORD) {
+               PersistentAddressBindingEncoding bindingEncoding = newAddressBindingEncoding(id, buffer);
+               addressBindingInfos.add(bindingEncoding);
+            } else if (rec == JournalRecordIds.GROUP_RECORD) {
+               GroupingEncoding encoding = newGroupEncoding(id, buffer);
+               groupingInfos.add(encoding);
+            } else if (rec == JournalRecordIds.ADDRESS_SETTING_RECORD) {
+               PersistedAddressSetting setting = newAddressEncoding(id, buffer);
+               mapPersistedAddressSettings.put(setting.getAddressMatch(), setting);
+            } else if (rec == JournalRecordIds.SECURITY_RECORD) {
+               PersistedRoles roles = newSecurityRecord(id, buffer);
+               mapPersistedRoles.put(roles.getAddressMatch(), roles);
+            } else if (rec == JournalRecordIds.QUEUE_STATUS_RECORD) {
+               QueueStatusEncoding statusEncoding = newQueueStatusEncoding(id, buffer);
+               PersistentQueueBindingEncoding queueBindingEncoding = mapBindings.get(statusEncoding.queueID);
+               if (queueBindingEncoding != null) {
+                  queueBindingEncoding.addQueueStatusEncoding(statusEncoding);
+               } else {
+                  // unlikely to happen, so I didn't bother about the Logger method
+                  ActiveMQServerLogger.LOGGER.infoNoQueueWithID(statusEncoding.queueID, statusEncoding.getId());
+                  this.deleteQueueStatus(statusEncoding.getId());
+               }
             } else {
-               // unlikely to happen, so I didn't bother about the Logger method
-               ActiveMQServerLogger.LOGGER.infoNoQueueWithID(statusEncoding.queueID, statusEncoding.getId());
-               this.deleteQueueStatus(statusEncoding.getId());
+               // unlikely to happen
+               ActiveMQServerLogger.LOGGER.invalidRecordType(rec, new Exception("invalid record type " + rec));
             }
-         } else {
-            // unlikely to happen
-            ActiveMQServerLogger.LOGGER.invalidRecordType(rec, new Exception("invalid record type " + rec));
+         } catch (RuntimeException e) {
+            throw e;
+         } catch (Exception e) {
+            throw new RuntimeException(e);
          }
-      }
+      });
 
       for (PersistentQueueBindingEncoding queue : mapBindings.values()) {
          queueBindingInfos.add(queue);
