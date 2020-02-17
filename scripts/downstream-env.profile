@@ -18,7 +18,7 @@
 
 # Setting the script to fail if anything goes wrong
 
-export DOWNSTREAM_BRANCH=2.11.0-jbossorg
+export DOWNSTREAM_BRANCH=2.11.0.jbossorg-x
 
 export REDHAT_USER=${REDHAT_USER:-origin-rh}
 export REDHAT_DOWNSTREAM=${REDHAT_DOWNSTREAM:-downstream}
