@@ -89,7 +89,7 @@
       <guava.version>24.1.1-jre</guava.version>
       <jaxb.version>2.2.28</jaxb.version>
       <jboss.logging.version>3.4.0.Final</jboss.logging.version>
-      <jetty.version>9.4.3.v20170317</jetty.version>
+      <jetty.version>9.4.26.v20200117</jetty.version>
       <jgroups.version>3.6.13.Final</jgroups.version>
       <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
       <mockito.version>2.25.0</mockito.version>
@@ -833,6 +833,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
             <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaspic_1.0_spec</artifactId>
+            <version>1.0</version>
          </dependency>
       </dependencies>
 
