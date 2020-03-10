@@ -88,6 +88,8 @@ public class ProtonHandler extends ProtonInitializable implements SaslListener {
 
    boolean scheduledFlush = false;
 
+   boolean flushInstantly = false;
+
    public ProtonHandler(EventLoop workerExecutor, ArtemisExecutor poolExecutor, boolean isServer) {
       this.workerExecutor = workerExecutor;
       this.poolExecutor = poolExecutor;
@@ -172,14 +174,28 @@ public class ProtonHandler extends ProtonInitializable implements SaslListener {
       sasl.setListener(this);
    }
 
-
+   public void instantFlush() {
+      this.flushInstantly = true;
+      // This will perform event handling, and at some point the flushBytes will be called
+      this.flush();
+   }
 
    public void flushBytes() {
       requireHandler();
 
-      if (!scheduledFlush) {
-         scheduledFlush = true;
-         workerExecutor.execute(this::actualFlush);
+      if (flushInstantly) {
+         flushInstantly = false;
+         scheduledFlush = false;
+         actualFlush();
+      } else {
+         // Under regular circunstances, it would be too costly to flush every time,
+         // so we flush only once at the end of processing.
+
+         // this decision was made after extensive performance testing.
+         if (!scheduledFlush) {
+            scheduledFlush = true;
+            workerExecutor.execute(this::actualFlush);
+         }
       }
    }
 
