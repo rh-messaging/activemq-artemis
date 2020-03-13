@@ -252,7 +252,7 @@ public final class ActiveMQDefaultConfiguration {
    private static int DEFAULT_MAX_CONCURRENT_PAGE_IO = 5;
 
    // If true the whole page would be read, otherwise just seek and read while getting message
-   private static boolean DEFAULT_READ_WHOLE_PAGE = false;
+   private static boolean DEFAULT_READ_WHOLE_PAGE = true;
 
    // the directory to store the journal files in
    private static String DEFAULT_JOURNAL_DIR = "data/journal";
