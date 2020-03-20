@@ -179,8 +179,8 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
 
       DirContext ctx = getContext();
       BasicAttributes basicAttributes = new BasicAttributes();
-      basicAttributes.put("uniquemember", "uid=role2");
-      ctx.modifyAttributes("cn=write,uid=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.REPLACE_ATTRIBUTE, basicAttributes);
+      basicAttributes.put("uniquemember", "cn=role2");
+      ctx.modifyAttributes("cn=write,cn=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.REPLACE_ATTRIBUTE, basicAttributes);
       ctx.close();
 
       Wait.assertTrue(() -> {
@@ -224,8 +224,8 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
 
       DirContext ctx = getContext();
       BasicAttributes basicAttributes = new BasicAttributes();
-      basicAttributes.put("uniquemember", "uid=role2");
-      ctx.modifyAttributes("cn=read,uid=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.REPLACE_ATTRIBUTE, basicAttributes);
+      basicAttributes.put("uniquemember", "cn=role2");
+      ctx.modifyAttributes("cn=read,cn=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.REPLACE_ATTRIBUTE, basicAttributes);
       ctx.close();
 
       Wait.assertTrue(() -> {
@@ -267,12 +267,12 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
 
       DirContext ctx = getContext();
       BasicAttributes basicAttributes = new BasicAttributes();
-      basicAttributes.put("uniquemember", "uid=role1");
+      basicAttributes.put("uniquemember", "cn=role1");
       Attribute objclass = new BasicAttribute("objectclass");
       objclass.add("top");
       objclass.add("groupOfUniqueNames");
       basicAttributes.put(objclass);
-      ctx.bind("cn=read,uid=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system", null, basicAttributes);
+      ctx.bind("cn=read,cn=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system", null, basicAttributes);
 
       Wait.assertTrue(() -> {
          try {
@@ -284,7 +284,7 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
          }
       }, 2000, 100);
 
-      ctx.unbind("cn=read,uid=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system");
+      ctx.unbind("cn=read,cn=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system");
       ctx.close();
 
       try {
@@ -316,12 +316,12 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
 
       DirContext ctx = getContext();
       BasicAttributes basicAttributes = new BasicAttributes();
-      basicAttributes.put("uniquemember", "uid=role1");
+      basicAttributes.put("uniquemember", "cn=role1");
       Attribute objclass = new BasicAttribute("objectclass");
       objclass.add("top");
       objclass.add("groupOfUniqueNames");
       basicAttributes.put(objclass);
-      ctx.bind("cn=write,uid=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system", null, basicAttributes);
+      ctx.bind("cn=write,cn=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system", null, basicAttributes);
 
       Wait.assertTrue(() -> {
          try {
@@ -333,7 +333,7 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
       }, 2000, 100);
 
 
-      ctx.unbind("cn=write,uid=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system");
+      ctx.unbind("cn=write,cn=" + queue + ",ou=queues,ou=destinations,o=ActiveMQ,ou=system");
       ctx.close();
 
       try {
@@ -399,7 +399,7 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
          DirContext ctx = getContext();
          BasicAttributes basicAttributes = new BasicAttributes();
          basicAttributes.put("uniquemember", "cn=role3");
-         ctx.modifyAttributes("cn=write,uid=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.ADD_ATTRIBUTE, basicAttributes);
+         ctx.modifyAttributes("cn=write,cn=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.ADD_ATTRIBUTE, basicAttributes);
          ctx.close();
       }
 
