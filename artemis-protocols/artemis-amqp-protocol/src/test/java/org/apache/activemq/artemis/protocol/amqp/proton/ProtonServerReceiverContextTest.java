@@ -71,5 +71,4 @@ public class ProtonServerReceiverContextTest {
       }
       verifyNoMoreInteractions(mockReceiver);
    }
-
 }

@@ -611,16 +611,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
             // this can happen in the twice ack mode, that is the receiver accepts and settles separately
             // acking again would show an exception but would have no negative effect but best to handle anyway.
             if (!delivery.isSettled()) {
-               // we have to individual ack as we can't guarantee we will get the delivery updates
-               // (including acks) in order from dealer, a performance hit but a must
-               try {
-                  sessionSPI.ack(null, brokerConsumer, message);
-               } catch (Exception e) {
-                  log.warn(e.toString(), e);
-                  throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.errorAcknowledgingMessage(message.toString(), e.getMessage());
-               }
-
-               delivery.settle();
+               inSessionACK(delivery, message);
             }
          } else {
             handleExtendedDeliveryOutcomes(message, delivery, remoteState);
@@ -631,6 +622,37 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          }
       } finally {
          sessionSPI.afterIO(connectionFlusher);
+         sessionSPI.resetContext(oldContext);
+      }
+   }
+
+   private void inSessionACK(Delivery delivery, Message message) throws ActiveMQAMQPIllegalStateException {
+      OperationContext oldContext = sessionSPI.recoverContext();
+      try {
+         // we have to individual ack as we can't guarantee we will get the delivery updates
+         // (including acks) in order from dealer, a performance hit but a must
+         try {
+            sessionSPI.ack(null, brokerConsumer, message);
+         } catch (Exception e) {
+            log.warn(e.toString(), e);
+            throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.errorAcknowledgingMessage(message.toString(), e.getMessage());
+         }
+
+         sessionSPI.afterIO(new IOCallback() {
+            @Override
+            public void done() {
+               connection.runLater(() -> {
+                  delivery.settle();
+                  connection.instantFlush();
+               });
+            }
+
+            @Override
+            public void onError(int errorCode, String errorMessage) {
+
+            }
+         });
+      } finally {
          sessionSPI.resetContext(oldContext);
       }
    }
