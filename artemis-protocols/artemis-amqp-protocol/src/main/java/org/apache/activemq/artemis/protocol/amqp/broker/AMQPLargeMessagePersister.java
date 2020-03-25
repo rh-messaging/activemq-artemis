@@ -18,7 +18,6 @@
 package org.apache.activemq.artemis.protocol.amqp.broker;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -33,11 +32,6 @@ import static org.apache.activemq.artemis.core.persistence.PersisterIDs.AMQPLarg
 
 public class AMQPLargeMessagePersister extends MessagePersister {
    private static final Logger log = Logger.getLogger(AMQPLargeMessagePersister.class);
-
-   // We need to save the encoder ahead of time
-   // as we need to know the exact size of the Encoding
-   // so we store the savedBuffer on the getEncodeSize before we actually store it
-   private static final ThreadLocal<ByteBuf> savedBuffer = new ThreadLocal<>();
 
    public static final byte ID = AMQPLargeMessagePersister_ID;
 
@@ -62,24 +56,18 @@ public class AMQPLargeMessagePersister extends MessagePersister {
 
    @Override
    public int getEncodeSize(Message record) {
-      ByteBuf buf = getSavedEncodeBuffer(record);
+      AMQPLargeMessage msgEncode = (AMQPLargeMessage) record;
+      ByteBuf buf = msgEncode.getSavedEncodeBuffer();
 
-      int encodeSize = DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + DataConstants.SIZE_LONG + DataConstants.SIZE_LONG + SimpleString.sizeofNullableString(record.getAddressSimpleString()) + DataConstants.SIZE_BOOLEAN + buf.writerIndex();
+      try {
+         int encodeSize = DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + DataConstants.SIZE_LONG + DataConstants.SIZE_LONG + SimpleString.sizeofNullableString(record.getAddressSimpleString()) + DataConstants.SIZE_BOOLEAN + buf.writerIndex();
 
-      TypedProperties properties = ((AMQPMessage) record).getExtraProperties();
+         TypedProperties properties = ((AMQPMessage) record).getExtraProperties();
 
-      return encodeSize + (properties != null ? properties.getEncodeSize() : 0);
-   }
-
-   private ByteBuf getSavedEncodeBuffer(Message record) {
-      ByteBuf buf = savedBuffer.get();
-      if (buf == null) {
-         AMQPLargeMessage largeMessage = (AMQPLargeMessage)record;
-         buf = PooledByteBufAllocator.DEFAULT.buffer(largeMessage.getEstimateSavedEncode());
-         largeMessage.saveEncoding(buf);
-         savedBuffer.set(buf);
+         return encodeSize + (properties != null ? properties.getEncodeSize() : 0);
+      } finally {
+         msgEncode.releaseEncodedBuffer();
       }
-      return buf;
    }
 
    /**
@@ -89,7 +77,7 @@ public class AMQPLargeMessagePersister extends MessagePersister {
    public void encode(ActiveMQBuffer buffer, Message record) {
       super.encode(buffer, record);
 
-      AMQPMessage msgEncode = (AMQPMessage) record;
+      AMQPLargeMessage msgEncode = (AMQPLargeMessage) record;
 
       buffer.writeLong(record.getMessageID());
       buffer.writeBoolean(record.isDurable());
@@ -103,11 +91,10 @@ public class AMQPLargeMessagePersister extends MessagePersister {
          properties.encode(buffer.byteBuf());
       }
 
-      ByteBuf savedEncodeBuffer = getSavedEncodeBuffer(record);
+      ByteBuf savedEncodeBuffer = msgEncode.getSavedEncodeBuffer();
       buffer.writeBytes(savedEncodeBuffer, 0, savedEncodeBuffer.writerIndex());
-      savedEncodeBuffer.release();
-
-      savedBuffer.set(null);
+      msgEncode.releaseEncodedBufferAfterWrite(); // we need two releases, as getSavedEncodedBuffer will keep 1 for himself until encoding has happened
+                                                  // which this is the expected event where we need to release the extra refCounter
    }
 
    @Override
