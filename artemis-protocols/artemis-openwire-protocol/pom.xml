@@ -93,6 +93,8 @@
          <groupId>io.netty</groupId>
          <artifactId>netty-codec</artifactId>
       </dependency>
+      <!-- The OpenWire protocol implementation should really only ever be used in conjuction with
+      the broker which will have it's own JMS interface dependency so using "provided" scope here -->
       <dependency>
          <groupId>org.apache.geronimo.specs</groupId>
          <artifactId>geronimo-jms_1.1_spec</artifactId>
