@@ -649,6 +649,15 @@ public final class ReplicationTest extends ActiveMQTestBase {
       }
 
       @Override
+      public boolean tryAppendUpdateRecord(long id,
+                                           byte recordType,
+                                           Persister persister,
+                                           Object record,
+                                           boolean sync) throws Exception {
+         return true;
+      }
+
+      @Override
       public void appendUpdateRecord(long id,
                                      byte recordType,
                                      Persister persister,
@@ -656,6 +665,16 @@ public final class ReplicationTest extends ActiveMQTestBase {
                                      boolean sync,
                                      IOCompletion callback) throws Exception {
 
+      }
+
+      @Override
+      public boolean tryAppendUpdateRecord(long id,
+                                           byte recordType,
+                                           Persister persister,
+                                           Object record,
+                                           boolean sync,
+                                           IOCompletion callback) throws Exception {
+         return true;
       }
 
       @Override
@@ -729,6 +748,11 @@ public final class ReplicationTest extends ActiveMQTestBase {
       }
 
       @Override
+      public boolean tryAppendDeleteRecord(long id, boolean sync) throws Exception {
+         return true;
+      }
+
+      @Override
       public void appendDeleteRecordTransactional(final long txID,
                                                   final long id,
                                                   final byte[] record) throws Exception {
@@ -772,6 +796,11 @@ public final class ReplicationTest extends ActiveMQTestBase {
                                      final byte[] record,
                                      final boolean sync) throws Exception {
 
+      }
+
+      @Override
+      public boolean tryAppendUpdateRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception {
+         return true;
       }
 
       @Override
@@ -863,6 +892,11 @@ public final class ReplicationTest extends ActiveMQTestBase {
       public void appendDeleteRecord(final long id,
                                      final boolean sync,
                                      final IOCompletion completionCallback) throws Exception {
+      }
+
+      @Override
+      public boolean tryAppendDeleteRecord(long id, boolean sync, IOCompletion completionCallback) throws Exception {
+         return true;
       }
 
       @Override
