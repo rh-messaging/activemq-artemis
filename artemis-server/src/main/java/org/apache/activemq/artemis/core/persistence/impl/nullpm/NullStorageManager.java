@@ -214,7 +214,8 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void deleteMessage(final long messageID) throws Exception {
+   public boolean deleteMessage(final long messageID) throws Exception {
+      return true;
    }
 
    @Override
@@ -226,7 +227,8 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception {
+   public boolean updateScheduledDeliveryTime(final MessageReference ref) throws Exception {
+      return true;
    }
 
    @Override
@@ -238,7 +240,8 @@ public class NullStorageManager implements StorageManager {
    }
 
    @Override
-   public void updateDeliveryCount(final MessageReference ref) throws Exception {
+   public boolean updateDeliveryCount(final MessageReference ref) throws Exception {
+      return true;
    }
 
    @Override
