@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.soak</groupId>
       <artifactId>perf-root</artifactId>
-      <version>2.9.0-PATCH-3034</version>
+      <version>2.9.0-PATCH-3039</version>
    </parent>
 
    <artifactId>openwire-perf</artifactId>
@@ -45,12 +45,6 @@ under the License.
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-client</artifactId>
          <version>${activemq5-version}</version>
-         <exclusions>
-            <exclusion>
-               <groupId>org.apache.geronimo.specs</groupId>
-               <artifactId>geronimo-jms_1.1_spec</artifactId>
-            </exclusion>
-         </exclusions>
       </dependency>
       <dependency>
          <groupId>org.slf4j</groupId>
