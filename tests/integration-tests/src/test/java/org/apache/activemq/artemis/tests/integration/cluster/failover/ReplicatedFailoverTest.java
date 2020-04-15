@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.component.WebServerComponent;
 import org.apache.activemq.artemis.core.config.ha.ReplicaPolicyConfiguration;
@@ -54,18 +55,6 @@ public class ReplicatedFailoverTest extends FailoverTest {
 
    };
 
-
-   /* @Test
-   public void testLoop() throws Throwable {
-
-      for (int i = 0; i < 100; i++) {
-         System.err.println("#Test " + i);
-         testReplicatedFailback();
-         tearDown();
-         setUp();
-      }
-   } */
-
    protected void beforeWaitForRemoteBackupSynchronization() {
    }
 
@@ -88,7 +77,7 @@ public class ReplicatedFailoverTest extends FailoverTest {
 
          ClientSession session = createSession(sf, true, true);
 
-         session.createQueue(ADDRESS, ADDRESS, null, true);
+         session.createQueue(new QueueConfiguration(ADDRESS));
 
          crash(session);
 
