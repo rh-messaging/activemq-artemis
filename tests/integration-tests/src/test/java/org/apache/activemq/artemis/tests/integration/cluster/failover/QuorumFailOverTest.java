@@ -29,7 +29,6 @@ import org.apache.activemq.artemis.core.config.ha.ReplicatedPolicyConfiguration;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.core.server.impl.SharedNothingLiveActivation;
 import org.apache.activemq.artemis.tests.integration.cluster.util.BackupSyncDelay;
-import org.apache.activemq.artemis.utils.RetryMethod;
 import org.apache.activemq.artemis.utils.RetryRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,7 +36,7 @@ import org.junit.Test;
 public class QuorumFailOverTest extends StaticClusterWithBackupFailoverTest {
 
    @Rule
-   public RetryRule retryRule = new RetryRule(0);
+   public RetryRule retryRule = new RetryRule(2);
 
    @Override
    protected void setupServers() throws Exception {
@@ -56,7 +55,6 @@ public class QuorumFailOverTest extends StaticClusterWithBackupFailoverTest {
 
    }
 
-   @RetryMethod(retries = 2)
    @Test
    public void testQuorumVoting() throws Exception {
       int[] liveServerIDs = new int[]{0, 1, 2};
