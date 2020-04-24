@@ -1585,7 +1585,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       @Override
       public void run() {
          for (Queue queue : getLocalQueues()) {
-            if (!queue.isInternalQueue() && QueueManagerImpl.isAutoDelete(queue) && QueueManagerImpl.consumerCountCheck(queue) && QueueManagerImpl.delayCheck(queue) && QueueManagerImpl.messageCountCheck(queue)) {
+            if (!queue.isInternalQueue() && QueueManagerImpl.isAutoDelete(queue) && QueueManagerImpl.consumerCountCheck(queue) && QueueManagerImpl.delayCheck(queue) && QueueManagerImpl.messageCountCheck(queue) && queueWasUsed(queue)) {
                QueueManagerImpl.performAutoDeleteQueue(server, queue);
             }
          }
@@ -1609,6 +1609,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                ActiveMQServerLogger.LOGGER.errorRemovingAutoCreatedQueue(e, address);
             }
          }
+      }
+
+      private boolean queueWasUsed(Queue queue) {
+         return queue.getMessagesExpired() > 0 || queue.getMessagesAcknowledged() > 0 || queue.getMessagesKilled() > 0 || queue.getConsumerRemovedTimestamp() != -1;
       }
    }
 
