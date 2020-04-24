@@ -83,6 +83,7 @@ import org.apache.activemq.artemis.spi.core.protocol.AbstractRemotingConnection;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
+import org.apache.activemq.artemis.utils.actors.Actor;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.command.ActiveMQDestination;
 import org.apache.activemq.command.ActiveMQMessage;
@@ -190,6 +191,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    private ConnectionEntry connectionEntry;
    private boolean useKeepAlive;
    private long maxInactivityDuration;
+   private Actor<Command> openWireActor;
 
    private final Set<SimpleString> knownDestinations = new ConcurrentHashSet<>();
 
@@ -269,16 +271,31 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    @Override
    public void bufferReceived(Object connectionID, ActiveMQBuffer buffer) {
       super.bufferReceived(connectionID, buffer);
+
       try {
-
-         recoverOperationContext();
-
          Command command = (Command) inWireFormat.unmarshal(buffer);
 
          // log the openwire command
          if (logger.isTraceEnabled()) {
             traceBufferReceived(connectionID, command);
          }
+
+         if (openWireActor != null) {
+            openWireActor.act(command);
+         } else {
+            act(command);
+         }
+      } catch (Exception e) {
+         ActiveMQServerLogger.LOGGER.debug(e);
+         sendException(e);
+      }
+
+   }
+
+
+   private void act(Command command) {
+      try {
+         recoverOperationContext();
 
          boolean responseRequired = command.isResponseRequired();
          int commandId = command.getCommandId();
@@ -733,6 +750,9 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
       createInternalSession(info);
 
+      // the actor can only be used after the WireFormat has been initialized with versioning
+      this.openWireActor = new Actor<>(executor, this::act);
+
       return context;
    }
 
@@ -1027,6 +1047,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    public void removeDestination(ActiveMQDestination dest) throws Exception {
       if (dest.isQueue()) {
+
+         if (!dest.isTemporary()) {
+            // this should not really happen,
+            // so I'm not creating a Logger for this
+            logger.warn("OpenWire client sending a queue remove towards " + dest.getPhysicalName());
+         }
          try {
             server.destroyQueue(new SimpleString(dest.getPhysicalName()), getRemotingConnection());
          } catch (ActiveMQNonExistentQueueException neq) {
