@@ -14,28 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.api.core.management;
+package org.apache.activemq.artemis.spi.core.security.jaas;
 
-/**
- * A BroadcastGroupControl is used to manage a broadcast group.
- */
-public interface BroadcastGroupControl extends BaseBroadcastGroupControl {
+import org.apache.activemq.artemis.logs.AuditLogger;
 
-   /**
-    * Returns the local port this broadcast group is bound to.
-    */
-   @Attribute(desc = "local port this broadcast group is bound to")
-   int getLocalBindPort() throws Exception;
+import javax.security.auth.Subject;
+import javax.security.auth.spi.LoginModule;
 
-   /**
-    * Returns the address this broadcast group is broadcasting to.
-    */
-   @Attribute(desc = "address this broadcast group is broadcasting to")
-   String getGroupAddress() throws Exception;
+/*
+* This is only to support auditlogging
+* */
+public interface AuditLoginModule extends LoginModule {
 
-   /**
-    * Returns the port this broadcast group is broadcasting to.
-    */
-   @Attribute(desc = "port this broadcast group is broadcasting to")
-   int getGroupPort() throws Exception;
+   /*
+   * We need this because if authentication fails at the web layer then there is no way to access the unauthenticated
+   * subject as it is removed and the session destroyed and never gets as far as the broker
+   * */
+   default void registerFailureForAudit(String name) {
+      Subject subject = new Subject();
+      subject.getPrincipals().add(new UserPrincipal(name));
+      AuditLogger.setCurrentCaller(subject);
+   }
 }

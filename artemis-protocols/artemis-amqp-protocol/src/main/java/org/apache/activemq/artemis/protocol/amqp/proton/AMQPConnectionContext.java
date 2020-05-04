@@ -393,6 +393,11 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
    }
 
    @Override
+   public String getRemoteAddress() {
+      return connectionCallback.getTransportConnection().getRemoteAddress();
+   }
+
+   @Override
    public void onRemoteOpen(Connection connection) throws Exception {
       handler.requireHandler();
       try {
@@ -539,8 +544,6 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
 
       // We scheduled it for later, as that will work through anything that's pending on the current deliveries.
       runNow(() -> {
-         link.close();
-         link.free();
 
          ProtonDeliveryHandler linkContext = (ProtonDeliveryHandler) link.getContext();
          if (linkContext != null) {
@@ -550,7 +553,15 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
                log.error(e.getMessage(), e);
             }
          }
-         flush();
+
+         /// we have to perform the link.close after the linkContext.close is finished.
+         // linkeContext.close will perform a few executions on the netty loop,
+         // this has to come next
+         runLater(() -> {
+            link.close();
+            link.free();
+            flush();
+         });
 
       });
    }
