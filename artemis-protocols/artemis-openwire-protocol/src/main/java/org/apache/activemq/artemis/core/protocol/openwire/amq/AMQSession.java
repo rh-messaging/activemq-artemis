@@ -183,7 +183,7 @@ public class AMQSession implements SessionCallback {
          }
          if (openWireDest.isQueue()) {
             openWireDest = protocolManager.virtualTopicConsumerToFQQN(openWireDest);
-            SimpleString queueName = new SimpleString(convertWildcard(openWireDest.getPhysicalName()));
+            SimpleString queueName = new SimpleString(convertWildcard(openWireDest));
 
             if (!checkAutoCreateQueue(queueName, openWireDest.isTemporary())) {
                throw new InvalidDestinationException("Destination doesn't exist: " + queueName);
@@ -517,8 +517,12 @@ public class AMQSession implements SessionCallback {
       connection.enableTtl();
    }
 
-   public String convertWildcard(String physicalName) {
-      return OPENWIRE_WILDCARD.convert(physicalName, server.getConfiguration().getWildcardConfiguration());
+   public String convertWildcard(ActiveMQDestination openWireDest) {
+      if (openWireDest.isTemporary() || AdvisorySupport.isAdvisoryTopic(openWireDest)) {
+         return openWireDest.getPhysicalName();
+      } else {
+         return OPENWIRE_WILDCARD.convert(openWireDest.getPhysicalName(), server.getConfiguration().getWildcardConfiguration());
+      }
    }
 
    public ServerSession getCoreSession() {

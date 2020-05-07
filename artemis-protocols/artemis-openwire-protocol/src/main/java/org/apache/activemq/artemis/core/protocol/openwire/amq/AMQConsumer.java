@@ -139,7 +139,8 @@ public class AMQConsumer {
          }
       }
 
-      SimpleString destinationName = new SimpleString(session.convertWildcard(openwireDestination.getPhysicalName()));
+      SimpleString destinationName = new SimpleString(session.convertWildcard(openwireDestination));
+
       if (openwireDestination.isTopic()) {
          SimpleString queueName = createTopicSubscription(info.isDurable(), info.getClientId(), destinationName.toString(), info.getSubscriptionName(), selector, destinationName);
 
