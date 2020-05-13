@@ -27,7 +27,7 @@ import javax.jms.Session;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.tests.util.CFUtil;
-import org.apache.activemq.artemis.utils.Wait;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
