@@ -37,15 +37,22 @@ import org.apache.qpid.proton.codec.TypeConstructor;
 final class AMQPMessageSymbolSearch {
 
    // used to quick search for MessageAnnotations
-   private static final IdentityHashMap<Class<?>, Boolean> MSG_BODY_TYPES;
+   private static final IdentityHashMap<Class<?>, Boolean> MSG_ANNOTATIONS_STOPSET;
+   private static final IdentityHashMap<Class<?>, Boolean> APPLICATION_PROPERTIES_STOPSET;
 
    static {
       // we're including MessageAnnotations here because it will still cause termination
-      final List<Class<?>> classList = Arrays.asList(MessageAnnotations.class, Properties.class,
-                                                     ApplicationProperties.class, Data.class,
-                                                     AmqpSequence.class, AmqpValue.class, Footer.class);
-      MSG_BODY_TYPES = new IdentityHashMap<>(classList.size());
-      classList.forEach(clazz -> MSG_BODY_TYPES.put(clazz, Boolean.TRUE));
+      List<Class<?>> classList = Arrays.asList(MessageAnnotations.class, Properties.class,
+              ApplicationProperties.class, Data.class,
+              AmqpSequence.class, AmqpValue.class, Footer.class);
+      MSG_ANNOTATIONS_STOPSET = new IdentityHashMap<>(classList.size());
+      classList.forEach(clazz -> MSG_ANNOTATIONS_STOPSET.put(clazz, Boolean.TRUE));
+
+      // we're including ApplicationProperties here because it will still cause termination
+      classList = Arrays.asList(ApplicationProperties.class, Data.class,
+              AmqpSequence.class, AmqpValue.class, Footer.class);
+      APPLICATION_PROPERTIES_STOPSET = new IdentityHashMap<>(classList.size());
+      classList.forEach(clazz -> APPLICATION_PROPERTIES_STOPSET.put(clazz, Boolean.TRUE));
    }
 
    public static KMPNeedle kmpNeedleOf(Symbol symbol) {
@@ -58,22 +65,22 @@ final class AMQPMessageSymbolSearch {
 
 
    public static boolean anyMessageAnnotations(final ReadableBuffer data, final KMPNeedle[] needles) {
-      return lookupOnSection(MessageAnnotations.class, data, needles);
+      return lookupOnSection(MSG_ANNOTATIONS_STOPSET, MessageAnnotations.class, data, needles, 0);
    }
 
-   public static boolean anyApplicationProperties(final ReadableBuffer data, final KMPNeedle[] needles) {
-      return lookupOnSection(ApplicationProperties.class, data, needles);
+   public static boolean anyApplicationProperties(final ReadableBuffer data, final KMPNeedle[] needles, int startAt) {
+      return lookupOnSection(APPLICATION_PROPERTIES_STOPSET, ApplicationProperties.class, data, needles, startAt);
    }
 
-   private static boolean lookupOnSection(final Class section, final ReadableBuffer data, final KMPNeedle[] needles) {
+   private static boolean lookupOnSection(IdentityHashMap<Class<?>, Boolean> stopSet, final Class section, final ReadableBuffer data, final KMPNeedle[] needles, final int startAt) {
       DecoderImpl decoder = TLSEncode.getDecoder();
       final int position = data.position();
-      decoder.setBuffer(data.rewind());
+      decoder.setBuffer(data.position(startAt));
       try {
          while (data.hasRemaining()) {
             TypeConstructor<?> constructor = decoder.readConstructor();
             final Class<?> typeClass = constructor.getTypeClass();
-            if (MSG_BODY_TYPES.containsKey(typeClass)) {
+            if (MSG_ANNOTATIONS_STOPSET.containsKey(typeClass)) {
                if (section.equals(typeClass)) {
                   final int start = data.position();
                   constructor.skipValue();
