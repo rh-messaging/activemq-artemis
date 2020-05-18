@@ -105,9 +105,9 @@
             <include>org.jgroups:jgroups</include>
             <include>org.apache.geronimo.specs:geronimo-json_1.0_spec</include>
             <include>org.apache.johnzon:johnzon-core</include>
-            <include>javax.xml.bind:jaxb-api</include>
+            <include>org.jboss.spec.javax.xml.bind:jboss-jaxb-api_2.2_spec</include>
             <include>com.sun.xml.bind:jaxb-impl</include>
-            <include>com.sun.xml.bind:jaxb-core</include>
+            <include>com.sun.xml.bind:jaxb-osgi</include>
             <include>javax.activation:activation</include>
             <include>org.apache.geronimo.specs:geronimo-jaspic_1.0_spec</include>
          </includes>
@@ -125,19 +125,6 @@
          </includes>
          <outputDirectory>lib/client</outputDirectory>
          <unpack>false</unpack>
-      </dependencySet>
-      <!-- native -->
-      <dependencySet>
-         <includes>
-            <include>org.apache.activemq:activemq-artemis-native</include>
-         </includes>
-         <outputDirectory>bin</outputDirectory>
-         <unpack>true</unpack>
-         <unpackOptions>
-            <includes>
-               <include>**/*.so</include>
-            </includes>
-         </unpackOptions>
       </dependencySet>
       <dependencySet>
          <includes>
@@ -185,6 +172,12 @@
       
    </dependencySets>
    <fileSets>
+      <!-- native -->
+      <fileSet>
+         <directory>${activemq.basedir}/artemis-distribution/target/natives/lib</directory>
+         <outputDirectory>bin/lib</outputDirectory>
+         <lineEnding>keep</lineEnding>
+      </fileSet>
       <!-- schema -->
       <fileSet>
          <directory>${activemq.basedir}/artemis-server/src/main/resources/schema/</directory>
