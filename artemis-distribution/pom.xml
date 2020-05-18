@@ -179,9 +179,20 @@
           <classifier>uber</classifier>
        </dependency>
        <dependency>
-           <groupId>org.apache.tomcat</groupId>
-           <artifactId>tomcat-servlet-api</artifactId>
+          <groupId>org.apache.tomcat</groupId>
+          <artifactId>tomcat-servlet-api</artifactId>
+          <version>${tomcat.servlet.version}</version>
        </dependency>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava</artifactId>
+         <version>${guava.version}</version>
+      </dependency>
 
       <!-- for artemis cli producer/consumer -->
       <dependency>
@@ -222,6 +233,17 @@
          <artifactId>commons-beanutils</artifactId>
       </dependency>
       <dependency>
+         <groupId>org.apache.commons</groupId>
+         <artifactId>commons-configuration2</artifactId>
+         <version>${commons.config.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.commons</groupId>
+         <artifactId>commons-text</artifactId>
+         <version>${commons.text.version}</version>
+         <!-- License: Apache 2.0 -->
+      </dependency>
+      <dependency>
          <groupId>commons-logging</groupId>
          <artifactId>commons-logging</artifactId>
       </dependency>
@@ -245,6 +267,7 @@
       <dependency>
          <groupId>io.netty</groupId>
          <artifactId>netty-all</artifactId>
+         <version>${netty.version}</version>
       </dependency>
        <dependency>
           <groupId>jakarta.json</groupId>
