@@ -40,6 +40,7 @@ import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.security.SecurityStore;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
@@ -128,9 +129,18 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
    }
 
    @Override
+   public String[] getRemoteQueueNames() throws Exception {
+      return getQueueNames(false);
+   }
+
+   @Override
    public String[] getQueueNames() throws Exception {
+      return getQueueNames(true);
+   }
+
+   private String[] getQueueNames(boolean local) throws Exception {
       if (AuditLogger.isEnabled()) {
-         AuditLogger.getQueueNames(this.addressInfo);
+         AuditLogger.getQueueNames(this.addressInfo, local);
       }
 
       String[] result;
@@ -140,7 +150,7 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
          if (bindings != null) {
             List<String> queueNames = new ArrayList<>();
             for (Binding binding : bindings.getBindings()) {
-               if (binding instanceof QueueBinding) {
+               if ((local && binding.isLocal()) || (!local && binding instanceof RemoteQueueBinding)) {
                   queueNames.add(binding.getUniqueName().toString());
                }
             }
