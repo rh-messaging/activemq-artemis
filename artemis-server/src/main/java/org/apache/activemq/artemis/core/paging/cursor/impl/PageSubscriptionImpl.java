@@ -72,6 +72,11 @@ public final class PageSubscriptionImpl implements PageSubscription {
 
    private boolean empty = true;
 
+   /** for tests */
+   public AtomicInteger getScheduledCleanupCount() {
+      return scheduledCleanupCount;
+   }
+
    // Number of scheduled cleanups, to avoid too many schedules
    private final AtomicInteger scheduledCleanupCount = new AtomicInteger(0);
 
