@@ -77,14 +77,14 @@
       <activemq-artemis-native-version>1.0.0</activemq-artemis-native-version>
       <karaf.version>4.0.6</karaf.version>
       <pax.exam.version>4.9.1</pax.exam.version>
-      <commons.config.version>2.4</commons.config.version>
+      <commons.config.version>2.7</commons.config.version>
       <commons.lang.version>3.0</commons.lang.version>
       <commons.logging.version>1.2</commons.logging.version>
       <activemq5-version>5.11.0.redhat-630377</activemq5-version>
       <apache.derby.version>10.11.1.1</apache.derby.version>
       <commons.beanutils.version>1.9.4</commons.beanutils.version>
       <commons.collections.version>3.2.2</commons.collections.version>
-      <commons.text.version>1.6</commons.text.version>
+      <commons.text.version>1.8</commons.text.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <guava.version>24.1.1-jre</guava.version>
       <jaxb.version>2.2.28</jaxb.version>
