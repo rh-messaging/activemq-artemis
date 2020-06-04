@@ -42,6 +42,9 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.security.CheckType;
 import org.apache.activemq.artemis.core.security.Role;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.cluster.RemoteQueueBinding;
+import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
+import org.apache.activemq.artemis.core.server.cluster.impl.RemoteQueueBindingImpl;
 import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.Wait;
@@ -85,12 +88,16 @@ public class AddressControlTest extends ManagementTestBase {
    }
 
    @Test
-   public void testGetQueueNames() throws Exception {
+   public void testGetLocalQueueNames() throws Exception {
       SimpleString address = RandomUtil.randomSimpleString();
       SimpleString queue = RandomUtil.randomSimpleString();
       SimpleString anotherQueue = RandomUtil.randomSimpleString();
 
       session.createQueue(address, queue, true);
+
+      // add a fake RemoteQueueBinding to simulate being in a cluster; we don't want this binding to be returned by getQueueNames()
+      RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateID(), address, RandomUtil.randomSimpleString(), RandomUtil.randomSimpleString(), RandomUtil.randomLong(), null, null, RandomUtil.randomSimpleString(), RandomUtil.randomInt() + 1, MessageLoadBalancingType.OFF);
+      server.getPostOffice().addBinding(binding);
 
       AddressControl addressControl = createManagementControl(address);
       String[] queueNames = addressControl.getQueueNames();
@@ -106,6 +113,57 @@ public class AddressControlTest extends ManagementTestBase {
       queueNames = addressControl.getQueueNames();
       Assert.assertEquals(1, queueNames.length);
       Assert.assertEquals(anotherQueue.toString(), queueNames[0]);
+
+      session.deleteQueue(anotherQueue);
+   }
+
+   @Test
+   public void testGetRemoteQueueNames() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createAddress(address, RoutingType.MULTICAST, false);
+
+      // add a fake RemoteQueueBinding to simulate being in a cluster; this should be returned by getRemoteQueueNames()
+      RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateID(), address, queue, RandomUtil.randomSimpleString(), RandomUtil.randomLong(), null, null, RandomUtil.randomSimpleString(), RandomUtil.randomInt() + 1, MessageLoadBalancingType.OFF);
+      server.getPostOffice().addBinding(binding);
+
+      AddressControl addressControl = createManagementControl(address);
+      String[] queueNames = addressControl.getRemoteQueueNames();
+      Assert.assertEquals(1, queueNames.length);
+      Assert.assertEquals(queue.toString(), queueNames[0]);
+   }
+
+   @Test
+   public void testGetAllQueueNames() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+      SimpleString anotherQueue = RandomUtil.randomSimpleString();
+      SimpleString remoteQueue = RandomUtil.randomSimpleString();
+
+      session.createQueue(address, queue, true);
+
+      // add a fake RemoteQueueBinding to simulate being in a cluster
+      RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateID(), address, remoteQueue, RandomUtil.randomSimpleString(), RandomUtil.randomLong(), null, null, RandomUtil.randomSimpleString(), RandomUtil.randomInt() + 1, MessageLoadBalancingType.OFF);
+      server.getPostOffice().addBinding(binding);
+
+      AddressControl addressControl = createManagementControl(address);
+      String[] queueNames = addressControl.getAllQueueNames();
+      Assert.assertEquals(2, queueNames.length);
+      Assert.assertTrue(Arrays.asList(queueNames).contains(queue.toString()));
+      Assert.assertTrue(Arrays.asList(queueNames).contains(remoteQueue.toString()));
+
+      session.createQueue(address, anotherQueue, false);
+      queueNames = addressControl.getAllQueueNames();
+      Assert.assertEquals(3, queueNames.length);
+      Assert.assertTrue(Arrays.asList(queueNames).contains(anotherQueue.toString()));
+
+      session.deleteQueue(queue);
+
+      queueNames = addressControl.getAllQueueNames();
+      Assert.assertEquals(2, queueNames.length);
+      Assert.assertTrue(Arrays.asList(queueNames).contains(anotherQueue.toString()));
+      Assert.assertFalse(Arrays.asList(queueNames).contains(queue.toString()));
 
       session.deleteQueue(anotherQueue);
    }
