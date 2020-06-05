@@ -1172,6 +1172,9 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
                ss.removeProducer(id);
             }
          }
+         synchronized (producerExchanges) {
+            producerExchanges.remove(id);
+         }
          return null;
       }
 
