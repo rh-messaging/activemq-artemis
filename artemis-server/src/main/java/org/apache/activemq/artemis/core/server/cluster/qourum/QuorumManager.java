@@ -195,8 +195,10 @@ public final class QuorumManager implements ClusterTopologyListener, ActiveMQCom
                runnables.add(voteRunnable);
             }
          }
-         if (runnables.size() > 0) {
-            voteRunnables.put(quorumVote, new VoteRunnableHolder(quorumVote, runnables, runnables.size()));
+         final int votes = runnables.size();
+         ActiveMQServerLogger.LOGGER.requestedQuorumVotes(votes);
+         if (votes > 0) {
+            voteRunnables.put(quorumVote, new VoteRunnableHolder(quorumVote, runnables, votes));
 
             for (VoteRunnable runnable : runnables) {
                executor.submit(runnable);

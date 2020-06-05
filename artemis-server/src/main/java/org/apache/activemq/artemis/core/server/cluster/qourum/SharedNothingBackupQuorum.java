@@ -290,7 +290,8 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
       //lets assume live is not down
       Boolean decision = false;
       int voteAttempts = 0;
-      int size = quorumSize == -1 ? quorumManager.getMaxClusterSize() : quorumSize;
+      final int maxClusterSize = quorumManager.getMaxClusterSize();
+      int size = quorumSize == -1 ? maxClusterSize : quorumSize;
 
       synchronized (voteGuard) {
          while (!stopped && voteAttempts++ < voteRetries) {
@@ -299,11 +300,15 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
 
             quorumManager.vote(quorumVote);
 
-            try {
-               quorumVote.await(quorumVoteWait, TimeUnit.SECONDS);
-            } catch (InterruptedException interruption) {
-               // No-op. The best the quorum can do now is to return the latest number it has
-               ActiveMQServerLogger.LOGGER.quorumVoteAwaitInterrupted();
+            if (maxClusterSize > 1) {
+               try {
+                  quorumVote.await(quorumVoteWait, TimeUnit.SECONDS);
+               } catch (InterruptedException interruption) {
+                  // No-op. The best the quorum can do now is to return the latest number it has
+                  ActiveMQServerLogger.LOGGER.quorumVoteAwaitInterrupted();
+               }
+            } else {
+               ActiveMQServerLogger.LOGGER.ignoringQuorumVote(maxClusterSize);
             }
 
             quorumManager.voteComplete(quorumVote);
