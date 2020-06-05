@@ -253,7 +253,8 @@ public class SharedNothingLiveActivation extends LiveActivation {
 
                         if (failed && replicatedPolicy.isVoteOnReplicationFailure()) {
                            QuorumManager quorumManager = activeMQServer.getClusterManager().getQuorumManager();
-                           int size = replicatedPolicy.getQuorumSize() == -1 ? quorumManager.getMaxClusterSize() : replicatedPolicy.getQuorumSize();
+                           final int maxClusterSize = quorumManager.getMaxClusterSize();
+                           int size = replicatedPolicy.getQuorumSize() == -1 ? maxClusterSize : replicatedPolicy.getQuorumSize();
                            String liveConnector = null;
                            List<ClusterConnectionConfiguration> clusterConfigurations = activeMQServer.getConfiguration().getClusterConfigurations();
                            if (clusterConfigurations != null && clusterConfigurations.size() > 0) {
@@ -266,10 +267,14 @@ public class SharedNothingLiveActivation extends LiveActivation {
 
                            quorumManager.vote(quorumVote);
 
-                           try {
-                              quorumVote.await(5, TimeUnit.SECONDS);
-                           } catch (InterruptedException interruption) {
-                              // No-op. The best the quorum can do now is to return the latest number it has
+                           if (maxClusterSize > 1) {
+                              try {
+                                 quorumVote.await(5, TimeUnit.SECONDS);
+                              } catch (InterruptedException interruption) {
+                                 // No-op. The best the quorum can do now is to return the latest number it has
+                              }
+                           } else {
+                              ActiveMQServerLogger.LOGGER.ignoringQuorumVote(maxClusterSize);
                            }
 
                            quorumManager.voteComplete(quorumVote);
