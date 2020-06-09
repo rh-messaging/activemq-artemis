@@ -924,6 +924,7 @@ public class AMQPMessage extends RefCountMessage {
 
    @Override
    public long getExpiration() {
+      ensureMessageDataScanned();
       return expiration;
    }
 
