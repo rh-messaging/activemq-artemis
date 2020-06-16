@@ -1068,6 +1068,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
          state = SERVER_STATE.STOPPING;
 
+         if (criticalIOError) {
+            // notifications trigger disk IO so we don't want to send any on a critical IO error
+            managementService.enableNotifications(false);
+         }
+
          if (fileStoreMonitor != null) {
             fileStoreMonitor.stop();
             fileStoreMonitor = null;
