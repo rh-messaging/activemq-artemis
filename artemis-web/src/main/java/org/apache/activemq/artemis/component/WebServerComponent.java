@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.component;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -46,7 +47,6 @@ import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.eclipse.jetty.webapp.WebInfConfiguration;
 import org.jboss.logging.Logger;
 
 public class WebServerComponent implements ExternalComponent {
@@ -61,6 +61,7 @@ public class WebServerComponent implements ExternalComponent {
    private List<WebAppContext> webContexts;
    private ServerConnector connector;
    private Path artemisHomePath;
+   private Path temporaryWarDir;
 
    @Override
    public void configure(ComponentDTO config, String artemisInstance, String artemisHome) throws Exception {
@@ -114,6 +115,11 @@ public class WebServerComponent implements ExternalComponent {
       this.artemisHomePath = Paths.get(artemisHome != null ? artemisHome : ".");
       Path homeWarDir = artemisHomePath.resolve(webServerConfig.path).toAbsolutePath();
       Path instanceWarDir = Paths.get(artemisInstance != null ? artemisInstance : ".").resolve(webServerConfig.path).toAbsolutePath();
+
+      temporaryWarDir = Paths.get(artemisInstance != null ? artemisInstance : ".").resolve("tmp").resolve("webapps").toAbsolutePath();
+      if (!Files.exists(temporaryWarDir)) {
+         Files.createDirectories(temporaryWarDir);
+      }
 
       if (webServerConfig.apps != null && webServerConfig.apps.size() > 0) {
          webContexts = new ArrayList<>();
@@ -265,27 +271,16 @@ public class WebServerComponent implements ExternalComponent {
          //there is no webapp to be deployed (as in some tests)
          return;
       }
-      List<File> temporaryFiles = new ArrayList<>();
 
-      for (WebAppContext context : webContexts) {
-         WebInfConfiguration config = new WebInfConfiguration();
-         try {
-            config.resolveTempDirectory(context);
-            File webTmpBase = context.getTempDirectory().getParentFile();
-            if (webTmpBase.exists()) {
-               webTmpBase.listFiles((f) -> {
-                  temporaryFiles.add(f);
-                  return false;
-               });
-            }
-            if (temporaryFiles.size() > 0) {
-               WebTmpCleaner.cleanupTmpFiles(getLibFolder(), temporaryFiles, true);
-            }
-            //all web contexts share a same base dir. So we only do it once.
-            break;
-         } catch (Exception e) {
-            logger.warn("Failed to get base dir for tmp web files", e);
+      try {
+         List<File> temporaryFiles = new ArrayList<>();
+         Files.newDirectoryStream(temporaryWarDir).forEach(path -> temporaryFiles.add(path.toFile()));
+
+         if (temporaryFiles.size() > 0) {
+            WebTmpCleaner.cleanupTmpFiles(getLibFolder(), temporaryFiles, true);
          }
+      } catch (Exception e) {
+         logger.warn("Failed to get base dir for tmp web files", e);
       }
    }
 
@@ -322,6 +317,9 @@ public class WebServerComponent implements ExternalComponent {
       }
 
       webapp.setWar(warDirectory.resolve(warFile).toString());
+
+      webapp.setAttribute("org.eclipse.jetty.webapp.basetempdir", temporaryWarDir.toFile().getAbsolutePath());
+
       handlers.addHandler(webapp);
       return webapp;
    }
