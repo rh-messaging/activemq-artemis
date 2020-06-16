@@ -359,6 +359,12 @@ public class ClusterController implements ActiveMQComponent {
                   clusterConnection = server.getClusterManager().getDefaultConnection(null);
                }
 
+               //if there is no default cluster connection and security is enabled then just ignore the packet with a log message
+               if (clusterConnection == null && server.getConfiguration().isSecurityEnabled()) {
+                  ActiveMQServerLogger.LOGGER.failedToFindClusterConnection(packet.toString());
+                  return;
+               }
+
                ClusterConnectMessage msg = (ClusterConnectMessage) packet;
 
                if (server.getConfiguration().isSecurityEnabled() && !clusterConnection.verify(msg.getClusterUser(), msg.getClusterPassword())) {

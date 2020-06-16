@@ -1,7 +1,19 @@
 language: java
 install: true
-jdk:
-  - openjdk8
+matrix:
+  include:
+    - os: linux
+      jdk: openjdk8
+      env:
+        - EXAMPLES_PROFILE="release"
+    - os: linux
+      jdk: openjdk11
+      env:
+        - EXAMPLES_PROFILE="noRun"
+    - os: linux
+      jdk: openjdk14
+      env:
+        - EXAMPLES_PROFILE="noRun"
 
 # clean out Artemis artifacts from the cache
 before_install:
@@ -14,10 +26,10 @@ script:
 - set -e
 - mvn -Dorg.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory.DISABLED=AnythingNotNull -Pfast-tests -Pextra-tests -Ptests-CI -B install -q
 - cd examples
-- mvn install -Prelease install -B -q
+- mvn install -P${EXAMPLES_PROFILE} -B -q
 
 cache:
   directories:
   - $HOME/.m2
-  before_cache:
+before_cache:
   - rm -rf $HOME/.m2/repository/org/apache/activemq/artemis-*
