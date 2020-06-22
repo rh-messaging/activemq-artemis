@@ -79,7 +79,7 @@
       <retryTests>false</retryTests>
       <logging.config>logging.properties</logging.config>
 
-      <activemq-artemis-native-version>1.0.1</activemq-artemis-native-version>
+      <activemq-artemis-native-version>1.0.2</activemq-artemis-native-version>
       <karaf.version>4.0.6</karaf.version>
       <pax.exam.version>4.9.1</pax.exam.version>
       <commons.config.version>2.7</commons.config.version>
@@ -131,6 +131,7 @@
       <version.maven.jar.plugin>2.4</version.maven.jar.plugin>
       <version.micrometer>1.1.4</version.micrometer>
       <hamcrest.version>2.1</hamcrest.version>
+      <surefire.version>2.22.2</surefire.version>
 
       <!-- used on tests -->
       <groovy.version>2.5.10</groovy.version>
@@ -1529,7 +1530,6 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-surefire-plugin</artifactId>
-               <version>2.18.1</version>
                <configuration>
                   <forkMode>once</forkMode>
                   <testFailureIgnore>${testFailureIgnore}</testFailureIgnore>
@@ -1541,7 +1541,6 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-surefire-report-plugin</artifactId>
-               <version>2.18.1</version>
             </plugin>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
