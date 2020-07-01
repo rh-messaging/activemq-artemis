@@ -57,8 +57,6 @@ import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
-import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -155,7 +153,6 @@ import org.apache.activemq.artemis.core.server.group.impl.RemoteGroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.jdbc.JdbcNodeManager;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
-import org.apache.activemq.artemis.core.server.metrics.BrokerMetricNames;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQPluginRunnable;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerAddressPlugin;
@@ -1169,7 +1166,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
 
       stopComponent(managementService);
-      unregisterMeters();
       stopComponent(resourceManager);
       stopComponent(postOffice);
 
@@ -2754,8 +2750,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          metricsManager = new MetricsManager(configuration.getName(), configuration.getMetricsPlugin());
       }
 
-      registerMeters();
-
       postOffice = new PostOfficeImpl(this, storageManager, pagingManager, queueFactory, managementService, configuration.getMessageExpiryScanPeriod(), configuration.getAddressQueueScanPeriod(), configuration.getWildcardConfiguration(), configuration.getIDCacheSize(), configuration.isPersistIDCache(), addressSettingsRepository);
 
       // This can't be created until node id is set
@@ -2945,24 +2939,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       getRemotingService().startAcceptors();
       activationLatch.countDown();
       callActivationCompleteCallbacks();
-   }
-
-   private void registerMeters() {
-      MetricsManager metricsManager = this.metricsManager; // volatile load
-      if (metricsManager != null) {
-         metricsManager.registerBrokerGauge(builder -> {
-            builder.register(BrokerMetricNames.CONNECTION_COUNT, this, metrics -> Double.valueOf(getConnectionCount()), ActiveMQServerControl.CONNECTION_COUNT_DESCRIPTION);
-            builder.register(BrokerMetricNames.TOTAL_CONNECTION_COUNT, this, metrics -> Double.valueOf(getTotalConnectionCount()), ActiveMQServerControl.TOTAL_CONNECTION_COUNT_DESCRIPTION);
-            builder.register(BrokerMetricNames.ADDRESS_MEMORY_USAGE, this, metrics -> Double.valueOf(getPagingManager().getGlobalSize()), ActiveMQServerControl.ADDRESS_MEMORY_USAGE_DESCRIPTION);
-         });
-      }
-   }
-
-   private void unregisterMeters() {
-      MetricsManager metricsManager = this.metricsManager; // volatile load
-      if (metricsManager != null) {
-         metricsManager.remove(ResourceNames.BROKER + "." + configuration.getName());
-      }
    }
 
    private void deploySecurityFromConfiguration() {
