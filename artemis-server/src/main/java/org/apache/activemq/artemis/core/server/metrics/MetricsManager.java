@@ -30,9 +30,11 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
+import org.jboss.logging.Logger;
 
 public class MetricsManager {
+
+   private static final Logger log = Logger.getLogger(MetricsManager.class);
 
    private final String brokerName;
 
@@ -73,14 +75,7 @@ public class MetricsManager {
          newMeters.add(meter);
       });
       final String resource = ResourceNames.QUEUE + queue;
-      this.meters.compute(resource, (s, meters) -> {
-         //the old meters are ignored on purpose
-         meters = new ArrayList<>(newMeters.size());
-         for (Gauge.Builder gauge : newMeters) {
-            meters.add(gauge.register(meterRegistry));
-         }
-         return meters;
-      });
+      registerMeter(newMeters, resource);
    }
 
    public void registerAddressGauge(String address, Consumer<MetricGaugeBuilder> builder) {
@@ -98,14 +93,7 @@ public class MetricsManager {
          newMeters.add(meter);
       });
       final String resource = ResourceNames.ADDRESS + address;
-      this.meters.compute(resource, (s, meters) -> {
-         //the old meters are ignored on purpose
-         meters = new ArrayList<>(newMeters.size());
-         for (Gauge.Builder gauge : newMeters) {
-            meters.add(gauge.register(meterRegistry));
-         }
-         return meters;
-      });
+      registerMeter(newMeters, resource);
    }
 
    public void registerBrokerGauge(Consumer<MetricGaugeBuilder> builder) {
@@ -122,11 +110,19 @@ public class MetricsManager {
          newMeters.add(meter);
       });
       final String resource = ResourceNames.BROKER + "." + brokerName;
+      registerMeter(newMeters, resource);
+   }
+
+   private void registerMeter(List<Gauge.Builder> newMeters, String resource) {
       this.meters.compute(resource, (s, meters) -> {
          //the old meters are ignored on purpose
          meters = new ArrayList<>(newMeters.size());
-         for (Gauge.Builder gauge : newMeters) {
-            meters.add(gauge.register(meterRegistry));
+         for (Gauge.Builder gaugeBuilder : newMeters) {
+            Gauge gauge = gaugeBuilder.register(meterRegistry);
+            meters.add(gauge);
+            if (log.isDebugEnabled()) {
+               log.debug("Registered meter: " + gauge.getId());
+            }
          }
          return meters;
       });
@@ -139,8 +135,8 @@ public class MetricsManager {
          }
          for (Meter meter : meters) {
             Meter removed = meterRegistry.remove(meter);
-            if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-               ActiveMQServerLogger.LOGGER.debug("Removed meter: " + removed.getId());
+            if (log.isDebugEnabled()) {
+               log.debug("Unregistered meter: " + removed.getId());
             }
          }
          return null;
