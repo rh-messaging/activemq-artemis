@@ -2037,4 +2037,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.INFO)
    @Message(id = 224103, value = "unable to undeploy queue {0} : reason {1}", format = Message.Format.MESSAGE_FORMAT)
    void unableToUndeployQueue(SimpleString queueName, String reason);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224105, value = "Connecting to cluster failed")
+   void failedConnectingToCluster(@Cause Exception e);
 }
