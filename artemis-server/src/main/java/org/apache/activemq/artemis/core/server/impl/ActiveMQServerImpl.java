@@ -48,6 +48,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
@@ -58,7 +60,6 @@ import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
@@ -152,9 +153,7 @@ import org.apache.activemq.artemis.core.server.group.impl.RemoteGroupingHandler;
 import org.apache.activemq.artemis.core.server.impl.jdbc.JdbcNodeManager;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
-import org.apache.activemq.artemis.core.server.metrics.BrokerMetricNames;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
-import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerFederationPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQPluginRunnable;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerAddressPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
@@ -163,6 +162,7 @@ import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBridgePlugin
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerConnectionPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerConsumerPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerCriticalPlugin;
+import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerFederationPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerMessagePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerQueuePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
@@ -1171,7 +1171,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
 
       stopComponent(managementService);
-      unregisterMeters();
       stopComponent(resourceManager);
       stopComponent(postOffice);
 
@@ -2891,8 +2890,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          metricsManager = new MetricsManager(configuration.getName(), configuration.getMetricsConfiguration(), addressSettingsRepository);
       }
 
-      registerMeters();
-
       postOffice = new PostOfficeImpl(this, storageManager, pagingManager, queueFactory, managementService, configuration.getMessageExpiryScanPeriod(), configuration.getAddressQueueScanPeriod(), configuration.getWildcardConfiguration(), configuration.getIDCacheSize(), configuration.isPersistIDCache(), addressSettingsRepository);
 
       // This can't be created until node id is set
@@ -3076,30 +3073,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       callActivationCompleteCallbacks();
    }
 
-   private void registerMeters() {
-      MetricsManager metricsManager = this.metricsManager; // volatile load
-      if (metricsManager != null) {
-         metricsManager.registerBrokerGauge(builder -> {
-            builder.register(BrokerMetricNames.CONNECTION_COUNT, this, metrics -> Double.valueOf(getConnectionCount()), ActiveMQServerControl.CONNECTION_COUNT_DESCRIPTION);
-            builder.register(BrokerMetricNames.TOTAL_CONNECTION_COUNT, this, metrics -> Double.valueOf(getTotalConnectionCount()), ActiveMQServerControl.TOTAL_CONNECTION_COUNT_DESCRIPTION);
-            builder.register(BrokerMetricNames.ADDRESS_MEMORY_USAGE, this, metrics -> Double.valueOf(getPagingManager().getGlobalSize()), ActiveMQServerControl.ADDRESS_MEMORY_USAGE_DESCRIPTION);
-            builder.register(BrokerMetricNames.DISK_STORE_USAGE, this, metrics -> Double.valueOf(calculateDiskStoreUsage()), ActiveMQServerControl.DISK_STORE_USAGE_DESCRIPTION);
-         });
+   @Override
+   public double getDiskStoreUsage() {
+      //this should not happen but if it does, return -1 to highlight it is not working
+      if (getPagingManager() == null) {
+         return -1L;
       }
-   }
 
-   private double calculateDiskStoreUsage() {
-      long usableSpace = getPagingManager().getDiskUsableSpace();
-      long totalSpace = getPagingManager().getDiskTotalSpace();
-
-      return FileStoreMonitor.calculateUsage(usableSpace, totalSpace);
-   }
-
-   private void unregisterMeters() {
-      MetricsManager metricsManager = this.metricsManager; // volatile load
-      if (metricsManager != null) {
-         metricsManager.remove(ResourceNames.BROKER + "." + configuration.getName());
-      }
+      return FileStoreMonitor.calculateUsage(getPagingManager().getDiskUsableSpace(), getPagingManager().getDiskTotalSpace());
    }
 
    private void deploySecurityFromConfiguration() {
@@ -3224,7 +3205,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
             // determine if there is an address::queue match; update it if so
             if (locateQueue(config.getName()) != null && locateQueue(config.getName()).getAddress().equals(config.getAddress())) {
-               updateQueue(config.setConfigurationManaged(true));
+               config.setConfigurationManaged(true);
+               setUnsetQueueParamsToDefaults(config);
+               updateQueue(config, true);
             } else {
                // if the address::queue doesn't exist then create it
                try {
@@ -3770,7 +3753,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public Queue updateQueue(QueueConfiguration queueConfiguration) throws Exception {
-      final QueueBinding queueBinding = this.postOffice.updateQueue(queueConfiguration);
+      return updateQueue(queueConfiguration, false);
+   }
+
+   @Override
+   public Queue updateQueue(QueueConfiguration queueConfiguration, boolean forceUpdate) throws Exception {
+      final QueueBinding queueBinding = this.postOffice.updateQueue(queueConfiguration, forceUpdate);
       if (queueBinding != null) {
          return queueBinding.getQueue();
       } else {
@@ -3981,6 +3969,33 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             deployReloadableConfigFromConfiguration();
          }
       }
+   }
+
+   private static <T> void setDefaultIfUnset(Supplier<T> getter, Consumer<T> setter, T defaultValue) {
+      if (getter.get() == null) {
+         setter.accept(defaultValue);
+      }
+   }
+
+   private static void setUnsetQueueParamsToDefaults(QueueConfiguration c) {
+      // Param list taken from PostOfficeImpl::updateQueue
+      setDefaultIfUnset(c::getMaxConsumers, c::setMaxConsumers, ActiveMQDefaultConfiguration.getDefaultMaxQueueConsumers());
+      setDefaultIfUnset(c::getRoutingType, c::setRoutingType, ActiveMQDefaultConfiguration.getDefaultRoutingType());
+      setDefaultIfUnset(c::isPurgeOnNoConsumers, c::setPurgeOnNoConsumers, ActiveMQDefaultConfiguration.getDefaultPurgeOnNoConsumers());
+      setDefaultIfUnset(c::isEnabled, c::setEnabled, ActiveMQDefaultConfiguration.getDefaultEnabled());
+      setDefaultIfUnset(c::isExclusive, c::setExclusive, ActiveMQDefaultConfiguration.getDefaultExclusive());
+      setDefaultIfUnset(c::isGroupRebalance, c::setGroupRebalance, ActiveMQDefaultConfiguration.getDefaultGroupRebalance());
+      setDefaultIfUnset(c::getGroupBuckets, c::setGroupBuckets, ActiveMQDefaultConfiguration.getDefaultGroupBuckets());
+      setDefaultIfUnset(c::getGroupFirstKey, c::setGroupFirstKey, ActiveMQDefaultConfiguration.getDefaultGroupFirstKey());
+      setDefaultIfUnset(c::isNonDestructive, c::setNonDestructive, ActiveMQDefaultConfiguration.getDefaultNonDestructive());
+      setDefaultIfUnset(c::getConsumersBeforeDispatch, c::setConsumersBeforeDispatch, ActiveMQDefaultConfiguration.getDefaultConsumersBeforeDispatch());
+      setDefaultIfUnset(c::getDelayBeforeDispatch, c::setDelayBeforeDispatch, ActiveMQDefaultConfiguration.getDefaultDelayBeforeDispatch());
+      setDefaultIfUnset(c::getFilterString, c::setFilterString, new SimpleString(""));
+      // Defaults to false automatically as per isConfigurationManaged() JavaDoc
+      setDefaultIfUnset(c::isConfigurationManaged, c::setConfigurationManaged, false);
+      // Setting to null might have side effects
+      setDefaultIfUnset(c::getUser, c::setUser, null);
+      setDefaultIfUnset(c::getRingSize, c::setRingSize, ActiveMQDefaultConfiguration.getDefaultRingSize());
    }
 
    private void deployReloadableConfigFromConfiguration() throws Exception {
