@@ -473,4 +473,7 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229225, value = "Validated User is not set", format = Message.Format.MESSAGE_FORMAT)
    ActiveMQIllegalStateException rejectEmptyValidatedUser();
+
+   @Message(id = 229232, value = "Cannot create consumer on {0}. Session is closed.", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQIllegalStateException cannotCreateConsumerOnClosedSession(SimpleString queueName);
 }
