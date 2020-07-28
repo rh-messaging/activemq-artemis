@@ -488,4 +488,7 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229230, value = "Failed to bind acceptor {0} to {1}", format = Message.Format.MESSAGE_FORMAT)
    IllegalStateException failedToBind(String acceptor, String hostPort, @Cause Exception e);
+
+   @Message(id = 229232, value = "Cannot create consumer on {0}. Session is closed.", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQIllegalStateException cannotCreateConsumerOnClosedSession(SimpleString queueName);
 }
