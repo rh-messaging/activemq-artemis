@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.tests.util.network;
+package org.apache.activemq.artemis.utils.network;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -100,7 +100,7 @@ public class NetUtil {
       while (iter.hasNext()) {
          Map.Entry<String, String> entry = (Map.Entry<String, String>) iter.next();
          try {
-            netDown(entry.getKey(), entry.getValue());
+            netDown(entry.getKey(), entry.getValue(), true);
          } catch (Exception e) {
             e.printStackTrace();
          }
@@ -109,6 +109,10 @@ public class NetUtil {
 
    public static void netUp(String ip) throws Exception {
       String deviceID = "lo:" + nextDevice.incrementAndGet();
+      netUp(ip, deviceID);
+   }
+
+   public static void netUp(String ip, String deviceID) throws Exception {
       if (osUsed == OS.MAC) {
          if (runCommand("sudo", "-n", "ifconfig", "lo0", "alias", ip) != 0) {
             Assert.fail("Cannot sudo ifconfig for ip " + ip);
@@ -125,20 +129,33 @@ public class NetUtil {
    }
 
    public static void netDown(String ip) throws Exception {
-      String device = networks.remove(ip);
-      Assert.assertNotNull("ip " + ip + "wasn't set up before", device);
-      netDown(ip, device);
-
+      netDown(ip, false);
    }
 
-   private static void netDown(String ip, String device) throws Exception {
+
+   public static void netDown(String ip, boolean force) throws Exception {
+      String device = networks.remove(ip);
+      if (!force) {
+         // in case the netDown is coming from a different VM (spawned tests)
+         Assert.assertNotNull("ip " + ip + "wasn't set up before", device);
+      }
+      netDown(ip, device, force);
+   }
+
+   public static void netDown(String ip, String device, boolean force) throws Exception {
+      networks.remove(ip);
+
       if (osUsed == OS.MAC) {
          if (runCommand("sudo", "-n", "ifconfig", "lo0", "-alias", ip) != 0) {
-            Assert.fail("Cannot sudo ifconfig for ip " + ip);
+            if (!force) {
+               Assert.fail("Cannot sudo ifconfig for ip " + ip);
+            }
          }
       } else if (osUsed == OS.LINUX) {
          if (runCommand("sudo", "-n", "ifconfig", device, "down") != 0) {
-            Assert.fail("Cannot sudo ifconfig for ip " + ip);
+            if (!force) {
+               Assert.fail("Cannot sudo ifconfig for ip " + ip);
+            }
          }
       } else {
          Assert.fail("OS not supported");

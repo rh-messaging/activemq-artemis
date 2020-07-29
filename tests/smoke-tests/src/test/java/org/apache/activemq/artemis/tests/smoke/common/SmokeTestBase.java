@@ -18,14 +18,18 @@
 package org.apache.activemq.artemis.tests.smoke.common;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.apache.activemq.artemis.cli.commands.Stop;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.util.ServerUtil;
 import org.junit.After;
+import org.junit.Assert;
 
 public class SmokeTestBase extends ActiveMQTestBase {
-   ArrayList<Process> processes = new ArrayList();
+   Set<Process> processes = new HashSet<>();
 
    public static final String basedir = System.getProperty("basedir");
 
@@ -33,18 +37,35 @@ public class SmokeTestBase extends ActiveMQTestBase {
    public void after() throws Exception {
       for (Process process : processes) {
          try {
-            ServerUtil.killServer(process);
+            ServerUtil.killServer(process, true);
          } catch (Throwable e) {
             e.printStackTrace();
          }
       }
+      processes.clear();
    }
 
-   public String getServerLocation(String serverName) {
+   public void killServer(Process process) {
+      processes.remove(process);
+      try {
+         ServerUtil.killServer(process);
+      } catch (Throwable e) {
+         e.printStackTrace();
+      }
+   }
+
+   protected static void stopServerWithFile(String serverLocation) throws IOException {
+      File serverPlace = new File(serverLocation);
+      File etcPlace = new File(serverPlace, "etc");
+      File stopMe = new File(etcPlace, Stop.STOP_FILE_NAME);
+      Assert.assertTrue(stopMe.createNewFile());
+   }
+
+   public static String getServerLocation(String serverName) {
       return basedir + "/target/" + serverName;
    }
 
-   public void cleanupData(String serverName) {
+   public static void cleanupData(String serverName) {
       String location = getServerLocation(serverName);
       deleteDirectory(new File(location, "data"));
    }
@@ -55,6 +76,12 @@ public class SmokeTestBase extends ActiveMQTestBase {
 
    public Process startServer(String serverName, int portID, int timeout) throws Exception {
       Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, portID, timeout);
+      addProcess(process);
+      return process;
+   }
+
+   public Process startServer(String serverName, String uri, int timeout) throws Exception {
+      Process process = ServerUtil.startServer(getServerLocation(serverName), serverName, uri, timeout);
       addProcess(process);
       return process;
    }
