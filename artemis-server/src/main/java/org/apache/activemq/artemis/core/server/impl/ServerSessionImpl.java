@@ -401,7 +401,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
             Transaction txToRollback = tx;
             if (txToRollback != null) {
                if (txToRollback.getXid() != null) {
-                  resourceManager.removeTransaction(txToRollback.getXid());
+                  resourceManager.removeTransaction(txToRollback.getXid(), remotingConnection);
                }
                txToRollback.rollbackIfPossible();
             }
@@ -410,7 +410,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
             if (txToRollback != null) {
                if (txToRollback.getXid() != null) {
-                  resourceManager.removeTransaction(txToRollback.getXid());
+                  resourceManager.removeTransaction(txToRollback.getXid(), remotingConnection);
                }
                txToRollback.rollbackIfPossible();
             }
@@ -426,6 +426,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
                }
             }
          }
+         closed = true;
       }
 
       //putting closing of consumers outside the sync block
@@ -463,7 +464,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
             callback.closed();
          }
 
-         closed = true;
          //When the ServerSessionImpl is closed, need to create and send a SESSION_CLOSED notification.
          sendSessionNotification(CoreNotificationType.SESSION_CLOSED);
 
@@ -559,8 +559,14 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
                filterString, browseOnly, supportLargeMessage));
       }
 
-      ServerConsumer consumer = new ServerConsumerImpl(consumerID, this, (QueueBinding) binding, filter, priority, started, browseOnly, storageManager, callback, preAcknowledge, strictUpdateDeliveryCount, managementService, supportLargeMessage, credits, server);
-      consumers.put(consumer.getID(), consumer);
+      ServerConsumer consumer;
+      synchronized (this) {
+         if (closed) {
+            throw ActiveMQMessageBundle.BUNDLE.cannotCreateConsumerOnClosedSession(queueName);
+         }
+         consumer = new ServerConsumerImpl(consumerID, this, (QueueBinding) binding, filter, priority, started, browseOnly, storageManager, callback, preAcknowledge, strictUpdateDeliveryCount, managementService, supportLargeMessage, credits, server);
+         consumers.put(consumer.getID(), consumer);
+      }
 
       if (server.hasBrokerConsumerPlugins()) {
          server.callBrokerConsumerPlugins(plugin -> plugin.afterCreateConsumer(consumer));
@@ -1346,7 +1352,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
          throw new ActiveMQXAException(XAException.XAER_PROTO, msg);
       } else {
-         Transaction theTx = resourceManager.removeTransaction(xid);
+         Transaction theTx = resourceManager.removeTransaction(xid, remotingConnection);
 
          if (logger.isTraceEnabled()) {
             logger.trace("XAcommit into " + theTx + ", xid=" + xid);
@@ -1369,7 +1375,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          } else {
             if (theTx.getState() == Transaction.State.SUSPENDED) {
                // Put it back
-               resourceManager.putTransaction(xid, theTx);
+               resourceManager.putTransaction(xid, theTx, remotingConnection);
 
                throw new ActiveMQXAException(XAException.XAER_PROTO, "Cannot commit transaction, it is suspended " + xid);
             } else {
@@ -1491,7 +1497,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
          throw new ActiveMQXAException(XAException.XAER_PROTO, msg);
       } else {
-         Transaction theTx = resourceManager.removeTransaction(xid);
+         Transaction theTx = resourceManager.removeTransaction(xid, remotingConnection);
          if (logger.isTraceEnabled()) {
             logger.trace("xarollback into " + theTx);
          }
@@ -1526,7 +1532,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
                }
 
                // Put it back
-               resourceManager.putTransaction(xid, tx);
+               resourceManager.putTransaction(xid, tx, remotingConnection);
 
                throw new ActiveMQXAException(XAException.XAER_PROTO, "Cannot rollback transaction, it is suspended " + xid);
             } else {
@@ -1545,7 +1551,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
             if (tx.getState() != Transaction.State.PREPARED) {
                // we don't want to rollback anything prepared here
                if (tx.getXid() != null) {
-                  resourceManager.removeTransaction(tx.getXid());
+                  resourceManager.removeTransaction(tx.getXid(), remotingConnection);
                }
                tx.rollback();
             }
@@ -1560,7 +1566,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          logger.trace("xastart into tx= " + tx);
       }
 
-      boolean added = resourceManager.putTransaction(xid, tx);
+      boolean added = resourceManager.putTransaction(xid, tx, remotingConnection);
 
       if (!added) {
          final String msg = "Cannot start, there is already a xid " + tx.getXid();
@@ -1575,7 +1581,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
       if (theTX == null) {
          theTX = newTransaction(xid);
-         resourceManager.putTransaction(xid, theTX);
+         resourceManager.putTransaction(xid, theTX, remotingConnection);
       }
 
       if (theTX.isEffective()) {
