@@ -444,6 +444,10 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
             int pos = loadBalancingPolicy.select(initialConnectors.length);
 
+            if (initialConnectors.length == 0) {
+               return null;
+            }
+
             return initialConnectors[pos];
          }
       }

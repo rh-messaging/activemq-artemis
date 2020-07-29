@@ -14,28 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.cli.commands;
 
-import java.io.File;
+package org.apache.activemq.artemis.utils.network;
 
-import io.airlift.airline.Command;
-import org.apache.activemq.artemis.dto.BrokerDTO;
+import org.junit.rules.ExternalResource;
 
-@Command(name = "stop", description = "stops the broker instance")
-public class Stop extends Configurable {
+public class NetUtilResource extends ExternalResource {
 
-   public static final String STOP_FILE_NAME = "STOP_ME";
    @Override
-   public Object execute(ActionContext context) throws Exception {
-      super.execute(context);
-      BrokerDTO broker = getBrokerDTO();
-
-      File file = broker.server.getConfigurationFile().getParentFile();
-
-      File stopFile = new File(file, STOP_FILE_NAME);
-
-      stopFile.createNewFile();
-
-      return null;
+   protected void after() {
+      super.after();
+      NetUtil.cleanup();
    }
 }

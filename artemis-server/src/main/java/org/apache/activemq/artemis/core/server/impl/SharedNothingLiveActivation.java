@@ -97,6 +97,7 @@ public class SharedNothingLiveActivation extends LiveActivation {
    @Override
    public void run() {
       try {
+         // Tell cluster connections to not accept split brains updates on the topology
          if (replicatedPolicy.isCheckForLiveServer() && isNodeIdUsed()) {
             //set for when we failback
             if (logger.isTraceEnabled()) {
@@ -115,7 +116,7 @@ public class SharedNothingLiveActivation extends LiveActivation {
 
          activeMQServer.initialisePart2(false);
 
-         activeMQServer.completeActivation();
+         activeMQServer.completeActivation(true);
 
          if (activeMQServer.getIdentity() != null) {
             ActiveMQServerLogger.LOGGER.serverIsLive(activeMQServer.getIdentity());

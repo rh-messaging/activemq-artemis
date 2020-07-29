@@ -1670,6 +1670,12 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224007, value = "page subscription = {0} error={1}", format = Message.Format.MESSAGE_FORMAT)
    void pageSubscriptionError(IOCallback IOCallback, String error);
 
+   @LogMessage(level = Logger.Level.WARN) // I really want emphasis on this logger, so adding the stars
+   @Message(id = 222294, value = "\n**************************************************************************************************************************************************************************************************************************************************************\n" +
+      "There is a possible split brain on nodeID {0}, coming from connectors {1}. Topology update ignored.\n" +
+      "**************************************************************************************************************************************************************************************************************************************************************", format = Message.Format.MESSAGE_FORMAT)
+   void possibleSplitBrain(String nodeID, String connectionPairInformation);
+
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224008, value = "Failed to store id", format = Message.Format.MESSAGE_FORMAT)
    void batchingIdError(@Cause Exception e);

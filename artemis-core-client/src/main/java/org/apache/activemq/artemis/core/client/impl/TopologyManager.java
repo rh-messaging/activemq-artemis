@@ -15,15 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.activemq.artemis.tests.util.network;
+package org.apache.activemq.artemis.core.client.impl;
 
-import org.junit.rules.ExternalResource;
-
-public class NetUtilResource extends ExternalResource {
-
-   @Override
-   protected void after() {
-      super.after();
-      NetUtil.cleanup();
-   }
+public interface TopologyManager {
+   boolean updateMember(long uniqueEventID, String nodeId, TopologyMemberImpl memberInput);
+   boolean removeMember(long uniqueEventID, String nodeId);
 }
