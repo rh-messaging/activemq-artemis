@@ -316,12 +316,6 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          config.setHAPolicyConfiguration(new LiveOnlyPolicyConfiguration());
       }
 
-      NodeList storeTypeNodes = e.getElementsByTagName("store");
-
-      if (storeTypeNodes.getLength() > 0) {
-         parseStoreConfiguration((Element) storeTypeNodes.item(0), config);
-      }
-
       config.setResolveProtocols(getBoolean(e, "resolve-protocols", config.isResolveProtocols()));
 
       config.setPersistenceEnabled(getBoolean(e, "persistence-enabled", config.isPersistenceEnabled()));
@@ -408,6 +402,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       }
 
       config.setClusterUser(getString(e, "cluster-user", config.getClusterUser(), Validators.NO_CHECK));
+
+      NodeList storeTypeNodes = e.getElementsByTagName("store");
+
+      if (storeTypeNodes.getLength() > 0) {
+         parseStoreConfiguration((Element) storeTypeNodes.item(0), config);
+      }
 
       NodeList interceptorNodes = e.getElementsByTagName("remoting-interceptors");
 
