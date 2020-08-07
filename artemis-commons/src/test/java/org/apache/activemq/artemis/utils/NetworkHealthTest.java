@@ -156,8 +156,7 @@ public class NetworkHealthTest {
          }
       });
       check.addComponent(component);
-      InetAddress address = InetAddress.getByName("127.0.0.1");
-      check.addAddress(address);
+      check.addAddress("127.0.0.1");
 
       component.stop();
 
