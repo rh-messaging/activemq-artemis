@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,28 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.cli.commands;
+package org.apache.activemq.artemis.tests.unit.core.util;
 
-import java.io.File;
+import org.apache.activemq.artemis.utils.RandomUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
-import io.airlift.airline.Command;
-import org.apache.activemq.artemis.dto.BrokerDTO;
+public class RandomUtilTest {
 
-@Command(name = "stop", description = "stops the broker instance")
-public class Stop extends Configurable {
 
-   public static final String STOP_FILE_NAME = "STOP_ME";
-   @Override
-   public Object execute(ActionContext context) throws Exception {
-      super.execute(context);
-      BrokerDTO broker = getBrokerDTO();
+   @Test
+   public void testInterval() {
+      int i = RandomUtil.randomInterval(0, 1000);
+      Assert.assertTrue(i <= 1000);
+      Assert.assertTrue(i >= 0);
 
-      File file = broker.server.getConfigurationFile().getParentFile();
+      i = RandomUtil.randomInterval(0, 0);
+      Assert.assertEquals(0, i);
 
-      File stopFile = new File(file, STOP_FILE_NAME);
+      i = RandomUtil.randomInterval(10, 10);
+      Assert.assertEquals(10, i);
 
-      stopFile.createNewFile();
-
-      return null;
    }
 }
