@@ -606,6 +606,7 @@ public class Create extends InputAbstract {
       filters.put("${user}", getUser());
       filters.put("${password}", getPassword());
       filters.put("${role}", role);
+      filters.put("${encoded.role}", role.replaceAll(" ", "\\\\ "));
 
 
       if (globalMaxSize == null || globalMaxSize.trim().equals("")) {
