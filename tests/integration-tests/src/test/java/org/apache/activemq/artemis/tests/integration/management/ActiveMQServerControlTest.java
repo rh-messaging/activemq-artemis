@@ -421,6 +421,25 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    }
 
    @Test
+   public void testCreateAndUpdateQueueWithoutFilter() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+
+      ActiveMQServerControl serverControl = createManagementControl();
+
+      serverControl.createQueue(address.toString(), "ANYCAST", name.toString(), null, true, -1, false, true);
+      serverControl.updateQueue(name.toString(), "ANYCAST", 1, null, null, null);
+
+      QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, RoutingType.ANYCAST, mbeanServer);
+      Assert.assertEquals(address.toString(), queueControl.getAddress());
+      Assert.assertEquals(name.toString(), queueControl.getName());
+      Assert.assertNull(queueControl.getFilter());
+      Assert.assertEquals(1, queueControl.getMaxConsumers());
+
+      serverControl.destroyQueue(name.toString());
+   }
+
+   @Test
    public void testGetQueueNames() throws Exception {
       SimpleString address = RandomUtil.randomSimpleString();
       SimpleString name = RandomUtil.randomSimpleString();
