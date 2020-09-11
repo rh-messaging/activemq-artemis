@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.tests.integration.client;
 
 import org.apache.activemq.artemis.api.core.ActiveMQInvalidTransientQueueUseException;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
@@ -26,6 +27,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.tests.util.SingleServerTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.Test;
 
 public class TransientQueueTest extends SingleServerTestBase {
@@ -114,18 +116,20 @@ public class TransientQueueTest extends SingleServerTestBase {
 
       consumer2.close();
 
-      session.createSharedQueue(address, queue, false);
+      // validate if the queue was deleted after the consumer was closed
+      Wait.assertTrue(() -> server.locateQueue(queue) == null, 2000, 100);
+
+      session.createSharedQueue(address, RoutingType.ANYCAST, queue, false);
 
       consumer1 = session.createConsumer(queue);
 
-      // validate if the queue was deleted after the consumer was closed
-      assertNotNull(server.locateQueue(queue));
+      Wait.assertTrue(() -> server.locateQueue(queue) != null, 2000, 100);
 
       assertNull(consumer1.receiveImmediate());
 
       consumer1.close();
 
-      assertNull(server.locateQueue(queue));
+      Wait.assertTrue(() -> server.locateQueue(queue) == null, 2000, 100);
 
    }
 
@@ -170,7 +174,7 @@ public class TransientQueueTest extends SingleServerTestBase {
       // forcing a consumer close to make the queue go away
       session.createConsumer(queue).close();
 
-      assertNull(server.locateQueue(queue));
+      Wait.assertTrue(() -> server.locateQueue(queue) == null, 2000, 100);
 
       session.createSharedQueue(address, queue, SimpleString.toSimpleString("q=1"), false);
 
