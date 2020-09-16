@@ -251,6 +251,8 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
 
    private Boolean enableMetrics = null;
 
+   private SimpleString pageStoreName = null;
+
    //from amq5
    //make it transient
    private transient Integer queuePrefetch = null;
@@ -315,6 +317,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       this.defaultGroupFirstKey = other.defaultGroupFirstKey;
       this.defaultRingSize = other.defaultRingSize;
       this.enableMetrics = other.enableMetrics;
+      this.pageStoreName = other.pageStoreName;
    }
 
    public AddressSettings() {
@@ -896,6 +899,15 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       return this;
    }
 
+   public SimpleString getPageStoreName() {
+      return pageStoreName;
+   }
+
+   public AddressSettings setPageStoreName(final SimpleString pageStoreName) {
+      this.pageStoreName = pageStoreName;
+      return this;
+   }
+
    /**
     * merge 2 objects in to 1
     *
@@ -1085,6 +1097,9 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       }
       if (enableMetrics == null) {
          enableMetrics = merged.enableMetrics;
+      }
+      if (pageStoreName == null) {
+         pageStoreName = merged.pageStoreName;
       }
    }
 
@@ -1294,6 +1309,11 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       if (buffer.readableBytes() > 0) {
          enableMetrics = BufferHelper.readNullableBoolean(buffer);
       }
+
+      if (buffer.readableBytes() > 0) {
+         pageStoreName = buffer.readNullableSimpleString();
+      }
+
    }
 
    @Override
@@ -1356,7 +1376,8 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
          BufferHelper.sizeOfNullableBoolean(autoCreateExpiryResources) +
          SimpleString.sizeofNullableString(expiryQueuePrefix) +
          SimpleString.sizeofNullableString(expiryQueueSuffix) +
-         BufferHelper.sizeOfNullableBoolean(enableMetrics);
+         BufferHelper.sizeOfNullableBoolean(enableMetrics) +
+         SimpleString.sizeofNullableString(pageStoreName);
    }
 
    @Override
@@ -1480,6 +1501,8 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       BufferHelper.writeNullableLong(buffer, maxExpiryDelay);
 
       BufferHelper.writeNullableBoolean(buffer, enableMetrics);
+
+      buffer.writeNullableSimpleString(pageStoreName);
    }
 
    /* (non-Javadoc)
@@ -1550,6 +1573,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       result = prime * result + ((expiryQueuePrefix == null) ? 0 : expiryQueuePrefix.hashCode());
       result = prime * result + ((expiryQueueSuffix == null) ? 0 : expiryQueueSuffix.hashCode());
       result = prime * result + ((enableMetrics == null) ? 0 : enableMetrics.hashCode());
+      result = prime * result + ((pageStoreName == null) ? 0 : pageStoreName.hashCode());
       return result;
    }
 
@@ -1891,6 +1915,12 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       } else if (!enableMetrics.equals(other.enableMetrics))
          return false;
 
+      if (pageStoreName == null) {
+         if (other.pageStoreName != null)
+            return false;
+      } else if (!pageStoreName.equals(other.pageStoreName))
+         return false;
+
       return true;
    }
 
@@ -2018,6 +2048,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
          expiryQueueSuffix +
          ", enableMetrics=" +
          enableMetrics +
+         ", pageAddress=" + pageStoreName +
          "]";
    }
 }

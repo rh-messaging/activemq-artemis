@@ -294,6 +294,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String ENABLE_METRICS = "enable-metrics";
 
+   private static final String PAGE_STORE_NAME = "page-store-name";
 
    // Attributes ----------------------------------------------------
 
@@ -1254,6 +1255,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setExpiryQueueSuffix(new SimpleString(getTrimmedTextContent(child)));
          } else if (ENABLE_METRICS.equalsIgnoreCase(name)) {
             addressSettings.setEnableMetrics(XMLUtil.parseBoolean(child));
+         } else if (PAGE_STORE_NAME.equalsIgnoreCase(name)) {
+            addressSettings.setPageStoreName(new SimpleString(getTrimmedTextContent(child)));
          }
       }
       return setting;
