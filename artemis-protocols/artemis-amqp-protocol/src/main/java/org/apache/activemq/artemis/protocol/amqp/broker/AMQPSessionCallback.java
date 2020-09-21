@@ -446,6 +446,8 @@ public class AMQPSessionCallback implements SessionCallback {
                           ReadableBuffer data,
                           RoutingContext routingContext) throws Exception {
       AMQPMessage message = new AMQPMessage(messageFormat, data, null, coreMessageObjectPools);
+
+      RoutingType routingType = null;
       if (address != null) {
          message.setAddress(address);
       } else {
@@ -456,10 +458,15 @@ public class AMQPSessionCallback implements SessionCallback {
             rejectMessage(delivery, Symbol.valueOf("failed"), "Missing 'to' field for message sent to an anonymous producer");
             return;
          }
+
+         routingType = message.getRoutingType();
       }
 
       //here check queue-autocreation
-      RoutingType routingType = context.getRoutingType(receiver, address);
+      if (routingType == null) {
+         routingType = context.getRoutingType(receiver, address);
+      }
+
       if (!checkAddressAndAutocreateIfPossible(address, routingType)) {
          throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.addressDoesntExist();
       }
