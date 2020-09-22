@@ -398,21 +398,6 @@ public class ArtemisTest extends CliTestBase {
          log.debug("output7:\n" + result);
          assertTrue(result.contains("\"admin\"(amq)"));
          assertTrue(result.contains("Total: 1"));
-
-         //now remove last
-         rmCmd = new RemoveUser();
-         rmCmd.setUserCommandUser("admin");
-         rmCmd.setUser("admin");
-         rmCmd.setPassword("admin");
-         rmCmd.execute(ActionContext.system());
-
-         //check
-         context = new TestActionContext();
-         listCmd.execute(context);
-         result = context.getStdout();
-         log.debug("output8:\n" + result);
-
-         assertTrue(result.contains("Total: 0"));
       } finally {
          stopServer();
       }
@@ -640,21 +625,6 @@ public class ArtemisTest extends CliTestBase {
          //default only one user admin with role amq
          assertTrue(result.contains("\"admin\"(amq)"));
 
-         //remove a user
-         RemoveUser rmCmd = new RemoveUser();
-         rmCmd.setUserCommandUser("admin");
-         rmCmd.setUser("admin");
-         rmCmd.setPassword("admin");
-         rmCmd.execute(ActionContext.system());
-
-         //check
-         context = new TestActionContext();
-         listCmd.execute(context);
-         result = context.getStdout();
-         log.debug("output8:\n" + result);
-
-         assertTrue(result.contains("Total: 0"));
-
          //add some users
          AddUser addCmd = new AddUser();
          addCmd.setUserCommandUser("guest");
@@ -686,7 +656,7 @@ public class ArtemisTest extends CliTestBase {
          result = context.getStdout();
          log.debug("output2:\n" + result);
 
-         assertTrue(result.contains("Total: 4"));
+         assertTrue(result.contains("Total: 5"));
          assertTrue(result.contains("\"guest\"(admin)"));
          assertTrue(Pattern
                        .compile("\"user1\"\\((admin|manager),(admin|manager)\\)")
@@ -837,58 +807,6 @@ public class ArtemisTest extends CliTestBase {
             // this could fail if the user doesn't exist
          }
       }
-   }
-
-   @Test
-   public void testRoleWithSpaces() throws Exception {
-      String roleWithSpaces = "amq with spaces";
-      Run.setEmbedded(true);
-      File instanceRole = new File(temporaryFolder.getRoot(), "instance_role");
-      System.setProperty("java.security.auth.login.config", instanceRole.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instanceRole.getAbsolutePath(), "--silent", "--no-autotune", "--no-web", "--require-login", "--role", roleWithSpaces);
-      System.setProperty("artemis.instance", instanceRole.getAbsolutePath());
-      Artemis.internalExecute("run");
-
-      try {
-         File roleFile = new File(instanceRole.getAbsolutePath() + "/etc/artemis-roles.properties");
-
-         ListUser listCmd = new ListUser();
-         listCmd.setUser("admin");
-         listCmd.setPassword("admin");
-         TestActionContext context = new TestActionContext();
-         listCmd.execute(context);
-
-         String result = context.getStdout();
-         log.debug("output1:\n" + result);
-
-         assertTrue(result.contains("\"admin\"(" + roleWithSpaces + ")"));
-
-         checkRole("admin", roleFile, roleWithSpaces);
-      } finally {
-         stopServer();
-      }
-   }
-
-   @Test
-   public void testRoleWithSpaces() throws Exception {
-      String roleWithSpaces = "amq with spaces";
-      Run.setEmbedded(true);
-      File instanceRole = new File(temporaryFolder.getRoot(), "instance_role");
-      System.setProperty("java.security.auth.login.config", instanceRole.getAbsolutePath() + "/etc/login.config");
-      Artemis.main("create", instanceRole.getAbsolutePath(), "--silent", "--no-autotune", "--role", roleWithSpaces);
-      System.setProperty("artemis.instance", instanceRole.getAbsolutePath());
-
-      File roleFile = new File(instanceRole.getAbsolutePath() + "/etc/artemis-roles.properties");
-
-      ListUser listCmd = new ListUser();
-      TestActionContext context = new TestActionContext();
-      listCmd.execute(context);
-
-      String result = context.getStdout();
-
-      assertTrue(result.contains("\"admin\"(" + roleWithSpaces + ")"));
-
-      checkRole("admin", roleFile, roleWithSpaces);
    }
 
    @Test
