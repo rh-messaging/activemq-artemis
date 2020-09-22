@@ -399,7 +399,7 @@ public class LegacyLDAPSecuritySettingPluginListenerTest extends AbstractLdapTes
          DirContext ctx = getContext();
          BasicAttributes basicAttributes = new BasicAttributes();
          basicAttributes.put("uniquemember", "cn=role3");
-         ctx.modifyAttributes("cn=write,cn=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.ADD_ATTRIBUTE, basicAttributes);
+         ctx.modifyAttributes("cn=write,uid=queue1,ou=queues,ou=destinations,o=ActiveMQ,ou=system", DirContext.ADD_ATTRIBUTE, basicAttributes);
          ctx.close();
       }
 
