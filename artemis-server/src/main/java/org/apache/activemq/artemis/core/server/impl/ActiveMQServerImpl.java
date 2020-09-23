@@ -1081,17 +1081,24 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          state = SERVER_STATE.STOPPING;
 
          if (criticalIOError) {
-            // notifications trigger disk IO so we don't want to send any on a critical IO error
-            managementService.enableNotifications(false);
+            final ManagementService managementService = this.managementService;
+            if (managementService != null) {
+               // notifications trigger disk IO so we don't want to send any on a critical IO error
+               managementService.enableNotifications(false);
+            }
          }
 
+         final FileStoreMonitor fileStoreMonitor = this.fileStoreMonitor;
          if (fileStoreMonitor != null) {
             fileStoreMonitor.stop();
-            fileStoreMonitor = null;
+            this.fileStoreMonitor = null;
          }
 
          if (failoverOnServerShutdown) {
-            activation.sendLiveIsStopping();
+            final Activation activation = this.activation;
+            if (activation != null) {
+               activation.sendLiveIsStopping();
+            }
          }
 
          stopComponent(connectorsService);
@@ -1105,6 +1112,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          stopComponent(federationManager);
          stopComponent(clusterManager);
 
+         final RemotingService remotingService = this.remotingService;
          if (remotingService != null) {
             remotingService.pauseAcceptors();
          }
@@ -1126,7 +1134,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          freezeConnections();
       }
 
-      activation.postConnectionFreeze();
+      final Activation activation = this.activation;
+      if (activation != null) {
+         activation.postConnectionFreeze();
+      }
 
       closeAllServerSessions(criticalIOError);
 
@@ -1139,6 +1150,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       //
       // *************************************************************************************************************
 
+      final StorageManager storageManager = this.storageManager;
       if (storageManager != null)
          storageManager.clearContext();
 
@@ -1147,10 +1159,12 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       stopComponent(backupManager);
 
-      try {
-         activation.preStorageClose();
-      } catch (Throwable t) {
-         ActiveMQServerLogger.LOGGER.errorStoppingComponent(t, activation.getClass().getName());
+      if (activation != null) {
+         try {
+            activation.preStorageClose();
+         } catch (Throwable t) {
+            ActiveMQServerLogger.LOGGER.errorStoppingComponent(t, activation.getClass().getName());
+         }
       }
 
       stopComponent(pagingManager);
@@ -1164,6 +1178,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       // We stop remotingService before otherwise we may lock the system in case of a critical IO
       // error shutdown
+      final RemotingService remotingService = this.remotingService;
       if (remotingService != null)
          try {
             remotingService.stop(criticalIOError);
@@ -1172,6 +1187,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
 
       // Stop the management service after the remoting service to ensure all acceptors are deregistered with JMX
+      final ManagementService managementService = this.managementService;
       if (managementService != null)
          try {
             managementService.unregisterServer();
@@ -1224,7 +1240,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       messagingServerControl = null;
       memoryManager = null;
       backupManager = null;
-      storageManager = null;
+      this.storageManager = null;
 
       sessions.clear();
 
@@ -1321,7 +1337,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * {@link #stop(boolean, boolean, boolean)}.
     */
    private void freezeConnections() {
-      activation.freezeConnections(remotingService);
+      Activation activation = this.activation;
+      if (activation != null) {
+         activation.freezeConnections(remotingService);
+      }
 
       // after disconnecting all the clients close all the server sessions so any messages in delivery will be cancelled back to the queue
       for (ServerSession serverSession : sessions.values()) {
