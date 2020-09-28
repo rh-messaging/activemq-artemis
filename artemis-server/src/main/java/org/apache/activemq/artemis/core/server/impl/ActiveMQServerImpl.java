@@ -3440,7 +3440,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       final AddressSettings addressSettings = addressSettingsRepository.getMatch(queueConfiguration.getAddress().toString());
       QueueConfigurationUtils.applyDynamicQueueDefaults(queueConfiguration, addressSettings);
 
-      if (AddressImpl.isContainsWildCard(queueConfiguration.getAddress(), configuration.getWildcardConfiguration())) {
+      if (AddressImpl.isContainsWildCard(queueConfiguration.getAddress(), configuration.getWildcardConfiguration()) && addressSettings.getPageStoreName() == null) {
          ActiveMQServerLogger.LOGGER.wildcardRoutingWithoutSharedPageStore(queueConfiguration.getName(), queueConfiguration.getAddress());
       }
 
