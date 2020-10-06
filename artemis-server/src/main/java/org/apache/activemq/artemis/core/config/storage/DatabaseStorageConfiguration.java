@@ -17,9 +17,14 @@
 package org.apache.activemq.artemis.core.config.storage;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
+import org.apache.activemq.artemis.jdbc.store.drivers.JDBCConnectionProvider;
+import org.apache.activemq.artemis.jdbc.store.drivers.JDBCDataSourceUtils;
 import org.apache.activemq.artemis.jdbc.store.sql.SQLProvider;
 
 public class DatabaseStorageConfiguration implements StoreConfiguration {
@@ -43,6 +48,12 @@ public class DatabaseStorageConfiguration implements StoreConfiguration {
    private String jdbcDriverClassName = ActiveMQDefaultConfiguration.getDefaultDriverClassName();
 
    private DataSource dataSource;
+
+   private String dataSourceClassName = ActiveMQDefaultConfiguration.getDefaultDataSourceClassName();
+
+   private Map<String, Object> dataSourceProperties = new HashMap();
+
+   private JDBCConnectionProvider connectionProvider;
 
    private SQLProvider.Factory sqlProviderFactory;
 
@@ -138,7 +149,22 @@ public class DatabaseStorageConfiguration implements StoreConfiguration {
     *
     * @return the DataSource used to store Artemis data in the JDBC data store.
     */
-   public DataSource getDataSource() {
+   private DataSource getDataSource() {
+      if (dataSource == null) {
+         if (dataSourceProperties.isEmpty()) {
+            addDataSourceProperty("driverClassName", jdbcDriverClassName);
+            addDataSourceProperty("url", jdbcConnectionUrl);
+            if (jdbcUser != null) {
+               addDataSourceProperty("username", jdbcUser);
+            }
+            if (jdbcPassword != null) {
+               addDataSourceProperty("password", jdbcPassword);
+            }
+            // Let the pool to have unbounded number of connections by default to prevent connection starvation
+            addDataSourceProperty("maxTotal", "-1");
+         }
+         dataSource = JDBCDataSourceUtils.getDataSource(dataSourceClassName, dataSourceProperties);
+      }
       return dataSource;
    }
 
@@ -149,6 +175,46 @@ public class DatabaseStorageConfiguration implements StoreConfiguration {
     */
    public void setDataSource(DataSource dataSource) {
       this.dataSource = dataSource;
+   }
+
+   public JDBCConnectionProvider getConnectionProvider() {
+      if (connectionProvider == null) {
+         connectionProvider = new JDBCConnectionProvider(getDataSource());
+      }
+      return connectionProvider;
+   }
+
+   public DatabaseStorageConfiguration setConnectionProviderNetworkTimeout(Executor executor, int ms) {
+      getConnectionProvider().setNetworkTimeout(executor, ms);
+      return this;
+   }
+
+   public DatabaseStorageConfiguration clearConnectionProviderNetworkTimeout() {
+      if (connectionProvider != null) {
+         connectionProvider.setNetworkTimeout(null, -1);
+      }
+      return this;
+   }
+
+   public void addDataSourceProperty(String key, String value) {
+      if (value.toLowerCase().equals("true") || value.toLowerCase().equals("false")) {
+         dataSourceProperties.put(key, Boolean.parseBoolean(value.toLowerCase()));
+      } else {
+         try {
+            int i = Integer.parseInt(value);
+            dataSourceProperties.put(key, i);
+         } catch (NumberFormatException nfe) {
+            dataSourceProperties.put(key, value);
+         }
+      }
+   }
+
+   public String getDataSourceClassName() {
+      return dataSourceClassName;
+   }
+
+   public void setDataSourceClassName(String dataSourceClassName) {
+      this.dataSourceClassName = dataSourceClassName;
    }
 
    /**

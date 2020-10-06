@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.jdbc.store.journal;
 
-import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -50,6 +50,7 @@ import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.journal.impl.SimpleWaitIOCallback;
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.jdbc.store.drivers.AbstractJDBCDriver;
+import org.apache.activemq.artemis.jdbc.store.drivers.JDBCConnectionProvider;
 import org.apache.activemq.artemis.jdbc.store.sql.SQLProvider;
 import org.apache.activemq.artemis.utils.collections.SparseArrayLinkedList;
 import org.jboss.logging.Logger;
@@ -67,15 +68,15 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
    private final List<JDBCJournalRecord> records;
 
-   private PreparedStatement insertJournalRecords;
+   private String insertJournalRecords;
 
-   private PreparedStatement selectJournalRecords;
+   private String selectJournalRecords;
 
-   private PreparedStatement countJournalRecords;
+   private String countJournalRecords;
 
-   private PreparedStatement deleteJournalRecords;
+   private String deleteJournalRecords;
 
-   private PreparedStatement deleteJournalTxRecords;
+   private String deleteJournalTxRecords;
 
    private boolean started;
 
@@ -95,30 +96,13 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
    private final IOCriticalErrorListener criticalIOErrorListener;
 
-   public JDBCJournalImpl(DataSource dataSource,
+   public JDBCJournalImpl(JDBCConnectionProvider connectionProvider,
                           SQLProvider provider,
                           ScheduledExecutorService scheduledExecutorService,
                           Executor completeExecutor,
                           IOCriticalErrorListener criticalIOErrorListener,
                           long syncDelay) {
-      super(dataSource, provider);
-      records = new ArrayList<>();
-      this.scheduledExecutorService = scheduledExecutorService;
-      this.completeExecutor = completeExecutor;
-      this.criticalIOErrorListener = criticalIOErrorListener;
-      this.syncDelay = syncDelay;
-   }
-
-   public JDBCJournalImpl(String jdbcUrl,
-                          String user,
-                          String password,
-                          String jdbcDriverClass,
-                          SQLProvider sqlProvider,
-                          ScheduledExecutorService scheduledExecutorService,
-                          Executor completeExecutor,
-                          IOCriticalErrorListener criticalIOErrorListener,
-                          long syncDelay) {
-      super(sqlProvider, jdbcUrl, user, password, jdbcDriverClass);
+      super(connectionProvider, provider);
       records = new ArrayList<>();
       this.scheduledExecutorService = scheduledExecutorService;
       this.completeExecutor = completeExecutor;
@@ -153,13 +137,13 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    }
 
    @Override
-   protected void prepareStatements() throws SQLException {
+   protected void prepareStatements() {
       logger.tracef("preparing statements");
-      insertJournalRecords = connection.prepareStatement(sqlProvider.getInsertJournalRecordsSQL());
-      selectJournalRecords = connection.prepareStatement(sqlProvider.getSelectJournalRecordsSQL());
-      countJournalRecords = connection.prepareStatement(sqlProvider.getCountJournalRecordsSQL());
-      deleteJournalRecords = connection.prepareStatement(sqlProvider.getDeleteJournalRecordsSQL());
-      deleteJournalTxRecords = connection.prepareStatement(sqlProvider.getDeleteJournalTxRecordsSQL());
+      insertJournalRecords = sqlProvider.getInsertJournalRecordsSQL();
+      selectJournalRecords = sqlProvider.getSelectJournalRecordsSQL();
+      countJournalRecords = sqlProvider.getCountJournalRecordsSQL();
+      deleteJournalRecords = sqlProvider.getDeleteJournalRecordsSQL();
+      deleteJournalTxRecords = sqlProvider.getDeleteJournalTxRecordsSQL();
    }
 
    @Override
@@ -205,7 +189,11 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
       TransactionHolder holder;
 
-      try {
+      try (Connection connection = connectionProvider.getConnection();
+           PreparedStatement deleteJournalRecords = connection.prepareStatement(this.deleteJournalRecords);
+           PreparedStatement deleteJournalTxRecords = connection.prepareStatement(this.deleteJournalTxRecords);
+           PreparedStatement insertJournalRecords = connection.prepareStatement(this.insertJournalRecords)) {
+
          connection.setAutoCommit(false);
 
          for (JDBCJournalRecord record : recordRef) {
@@ -213,7 +201,6 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
             if (logger.isTraceEnabled()) {
                logger.trace("sync::preparing JDBC statement for " + record);
             }
-
 
 
             switch (record.getRecordType()) {
@@ -255,7 +242,7 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
             logger.trace("JDBC commit worked");
          }
 
-         if (cleanupTxRecords(deletedRecords, committedTransactions)) {
+         if (cleanupTxRecords(deletedRecords, committedTransactions, deleteJournalTxRecords)) {
             deleteJournalTxRecords.executeBatch();
             connection.commit();
             logger.trace("JDBC commit worked on cleanupTxRecords");
@@ -263,7 +250,6 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
          executeCallbacks(recordRef, true);
 
          return recordRef.size();
-
       } catch (Exception e) {
          handleException(recordRef, e);
          return 0;
@@ -280,18 +266,6 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
          logger.trace("Rolling back Transaction, just in case");
       }
 
-      try {
-         connection.rollback();
-      } catch (Throwable rollback) {
-         logger.warn(rollback);
-      }
-
-      try {
-         connection.close();
-      } catch (Throwable rollback) {
-         logger.warn(rollback);
-      }
-
       if (recordRef != null) {
          executeCallbacks(recordRef, false);
       }
@@ -299,7 +273,8 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
 
    /* We store Transaction reference in memory (once all records associated with a Tranascation are Deleted,
       we remove the Tx Records (i.e. PREPARE, COMMIT). */
-   private synchronized boolean cleanupTxRecords(List<Long> deletedRecords, List<Long> committedTx) throws SQLException {
+   private synchronized boolean cleanupTxRecords(List<Long> deletedRecords, List<Long> committedTx,
+                                                 PreparedStatement deleteJournalTxRecords) throws SQLException {
       List<RecordInfo> iterableCopy;
       List<TransactionHolder> iterableCopyTx = new ArrayList<>();
       iterableCopyTx.addAll(transactions.values());
@@ -868,51 +843,54 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
       JDBCJournalReaderCallback jrc = new JDBCJournalReaderCallback(reloadManager);
       JDBCJournalRecord r;
 
-      try (ResultSet rs = selectJournalRecords.executeQuery()) {
-         int noRecords = 0;
-         while (rs.next()) {
-            r = JDBCJournalRecord.readRecord(rs);
-            switch (r.getRecordType()) {
-               case JDBCJournalRecord.ADD_RECORD:
-                  jrc.onReadAddRecord(r.toRecordInfo());
-                  break;
-               case JDBCJournalRecord.UPDATE_RECORD:
-                  jrc.onReadUpdateRecord(r.toRecordInfo());
-                  break;
-               case JDBCJournalRecord.DELETE_RECORD:
-                  jrc.onReadDeleteRecord(r.getId());
-                  break;
-               case JDBCJournalRecord.ADD_RECORD_TX:
-                  jrc.onReadAddRecordTX(r.getTxId(), r.toRecordInfo());
-                  break;
-               case JDBCJournalRecord.UPDATE_RECORD_TX:
-                  jrc.onReadUpdateRecordTX(r.getTxId(), r.toRecordInfo());
-                  break;
-               case JDBCJournalRecord.DELETE_RECORD_TX:
-                  jrc.onReadDeleteRecordTX(r.getTxId(), r.toRecordInfo());
-                  break;
-               case JDBCJournalRecord.PREPARE_RECORD:
-                  jrc.onReadPrepareRecord(r.getTxId(), r.getTxDataAsByteArray(), r.getTxCheckNoRecords());
-                  break;
-               case JDBCJournalRecord.COMMIT_RECORD:
-                  jrc.onReadCommitRecord(r.getTxId(), r.getTxCheckNoRecords());
-                  break;
-               case JDBCJournalRecord.ROLLBACK_RECORD:
-                  jrc.onReadRollbackRecord(r.getTxId());
-                  break;
-               default:
-                  throw new Exception("Error Reading Journal, Unknown Record Type: " + r.getRecordType());
+      try (Connection connection = connectionProvider.getConnection();
+           PreparedStatement selectJournalRecords = connection.prepareStatement(this.selectJournalRecords)) {
+         try (ResultSet rs = selectJournalRecords.executeQuery()) {
+            int noRecords = 0;
+            while (rs.next()) {
+               r = JDBCJournalRecord.readRecord(rs);
+               switch (r.getRecordType()) {
+                  case JDBCJournalRecord.ADD_RECORD:
+                     jrc.onReadAddRecord(r.toRecordInfo());
+                     break;
+                  case JDBCJournalRecord.UPDATE_RECORD:
+                     jrc.onReadUpdateRecord(r.toRecordInfo());
+                     break;
+                  case JDBCJournalRecord.DELETE_RECORD:
+                     jrc.onReadDeleteRecord(r.getId());
+                     break;
+                  case JDBCJournalRecord.ADD_RECORD_TX:
+                     jrc.onReadAddRecordTX(r.getTxId(), r.toRecordInfo());
+                     break;
+                  case JDBCJournalRecord.UPDATE_RECORD_TX:
+                     jrc.onReadUpdateRecordTX(r.getTxId(), r.toRecordInfo());
+                     break;
+                  case JDBCJournalRecord.DELETE_RECORD_TX:
+                     jrc.onReadDeleteRecordTX(r.getTxId(), r.toRecordInfo());
+                     break;
+                  case JDBCJournalRecord.PREPARE_RECORD:
+                     jrc.onReadPrepareRecord(r.getTxId(), r.getTxDataAsByteArray(), r.getTxCheckNoRecords());
+                     break;
+                  case JDBCJournalRecord.COMMIT_RECORD:
+                     jrc.onReadCommitRecord(r.getTxId(), r.getTxCheckNoRecords());
+                     break;
+                  case JDBCJournalRecord.ROLLBACK_RECORD:
+                     jrc.onReadRollbackRecord(r.getTxId());
+                     break;
+                  default:
+                     throw new Exception("Error Reading Journal, Unknown Record Type: " + r.getRecordType());
+               }
+               noRecords++;
+               if (r.getSeq() > seq.longValue()) {
+                  seq.set(r.getSeq());
+               }
             }
-            noRecords++;
-            if (r.getSeq() > seq.longValue()) {
-               seq.set(r.getSeq());
-            }
-         }
-         jrc.checkPreparedTx();
+            jrc.checkPreparedTx();
 
-         jli.setMaxID(((JDBCJournalLoaderCallback) reloadManager).getMaxId());
-         jli.setNumberOfRecords(noRecords);
-         transactions = jrc.getTransactions();
+            jli.setMaxID(((JDBCJournalLoaderCallback) reloadManager).getMaxId());
+            jli.setNumberOfRecords(noRecords);
+            transactions = jrc.getTransactions();
+         }
       } catch (Throwable e) {
          handleException(null, e);
       }
@@ -962,9 +940,12 @@ public class JDBCJournalImpl extends AbstractJDBCDriver implements Journal {
    @Override
    public int getNumberOfRecords() {
       int count = 0;
-      try (ResultSet rs = countJournalRecords.executeQuery()) {
-         rs.next();
-         count = rs.getInt(1);
+      try (Connection connection = connectionProvider.getConnection();
+           PreparedStatement countJournalRecords = connection.prepareStatement(this.countJournalRecords)) {
+         try (ResultSet rs = countJournalRecords.executeQuery()) {
+            rs.next();
+            count = rs.getInt(1);
+         }
       } catch (SQLException e) {
          logger.warn(e.getMessage(), e);
          return -1;
