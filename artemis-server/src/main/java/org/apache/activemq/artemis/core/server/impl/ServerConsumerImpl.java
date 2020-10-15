@@ -467,11 +467,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
             }
 
             if (preAcknowledge) {
-               if (message.isLargeMessage()) {
-                  // we must hold one reference, or the file will be deleted before it could be delivered
-                  ((LargeServerMessage) message).toMessage().usageUp();
-               }
-
                // With pre-ack, we ack *before* sending to the client
                ref.getQueue().acknowledge(ref, this);
                acks++;
@@ -646,7 +641,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
    public void forceDelivery(final long sequence)  {
       forceDelivery(sequence, () -> {
          Message forcedDeliveryMessage = new CoreMessage(storageManager.generateID(), 50);
-         MessageReference reference = MessageReference.Factory.createReference(forcedDeliveryMessage, messageQueue);
+         MessageReference reference = MessageReference.Factory.createReference(forcedDeliveryMessage, messageQueue, null);
          reference.setDeliveryCount(0);
 
          forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
