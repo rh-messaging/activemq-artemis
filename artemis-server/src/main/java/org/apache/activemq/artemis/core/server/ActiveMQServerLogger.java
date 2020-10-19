@@ -1706,9 +1706,6 @@ public interface ActiveMQServerLogger extends BasicLogger {
                                  "**************************************************************************************************************************************************************************************************************************************************************", format = Message.Format.MESSAGE_FORMAT)
    void possibleSplitBrain(String nodeID, String connectionPairInformation);
 
-   @LogMessage(level = Logger.Level.WARN)
-   @Message(id = 222295, value = "Subscription {0} uses wildcard address {1} but no matching address-setting has configured the shared page-store-name; counters may be inaccurate", format = Message.Format.MESSAGE_FORMAT)
-   void wildcardRoutingWithoutSharedPageStore(SimpleString queueName, SimpleString address);
 
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222296, value = "Unable to deploy Hawtio MBeam, console client side RBAC not available",
@@ -1719,6 +1716,14 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222297, value = "Unable to start Management Context, RBAC not available",
          format = Message.Format.MESSAGE_FORMAT)
    void unableStartManagementContext(@Cause Exception e);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222298, value = "Failed to create bootstrap user \"{0}\". User management may not function.", format = Message.Format.MESSAGE_FORMAT)
+   void failedToCreateBootstrapCredentials(@Cause Exception e, String user);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222299, value = "No bootstrap credentials found. User management may not function.", format = Message.Format.MESSAGE_FORMAT)
+   void noBootstrapCredentialsFound();
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
