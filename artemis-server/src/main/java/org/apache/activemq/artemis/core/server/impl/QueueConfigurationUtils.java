@@ -43,7 +43,5 @@ public class QueueConfigurationUtils {
 
       config.setAutoDeleteDelay(config.getAutoDeleteDelay() == null ? as.getAutoDeleteQueuesDelay() : config.getAutoDeleteDelay());
       config.setAutoDeleteMessageCount(config.getAutoDeleteMessageCount() == null ? as.getAutoDeleteQueuesMessageCount() : config.getAutoDeleteMessageCount());
-
-      config.setPageStoreName(as.getPageStoreName());
    }
 }

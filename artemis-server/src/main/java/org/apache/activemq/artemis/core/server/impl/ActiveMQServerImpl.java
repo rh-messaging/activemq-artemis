@@ -102,7 +102,6 @@ import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.postoffice.Bindings;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
 import org.apache.activemq.artemis.core.postoffice.QueueBinding;
-import org.apache.activemq.artemis.core.postoffice.impl.AddressImpl;
 import org.apache.activemq.artemis.core.postoffice.impl.DivertBinding;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
 import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
@@ -3437,12 +3436,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          }
       }
 
-      final AddressSettings addressSettings = addressSettingsRepository.getMatch(queueConfiguration.getAddress().toString());
-      QueueConfigurationUtils.applyDynamicQueueDefaults(queueConfiguration, addressSettings);
-
-      if (AddressImpl.isContainsWildCard(queueConfiguration.getAddress(), configuration.getWildcardConfiguration()) && addressSettings.getPageStoreName() == null) {
-         ActiveMQServerLogger.LOGGER.wildcardRoutingWithoutSharedPageStore(queueConfiguration.getName(), queueConfiguration.getAddress());
-      }
+      QueueConfigurationUtils.applyDynamicQueueDefaults(queueConfiguration, addressSettingsRepository.getMatch(queueConfiguration.getAddress().toString()));
 
       AddressInfo info = postOffice.getAddressInfo(queueConfiguration.getAddress());
       if (queueConfiguration.isAutoCreateAddress() || queueConfiguration.isTemporary()) {
