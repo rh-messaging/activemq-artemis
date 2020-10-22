@@ -220,6 +220,19 @@ public class LastValueQueue extends QueueImpl {
       super.acknowledge(ref, reason, consumer);
    }
 
+   @Override
+   public synchronized void reload(final MessageReference ref) {
+      // repopulate LVQ map & reload proper HolderReferences
+      SimpleString lastValueProp = ref.getLastValueProperty();
+      if (lastValueProp != null) {
+         HolderReference hr = new HolderReference(lastValueProp, ref);
+         map.put(lastValueProp, hr);
+         super.reload(hr);
+      } else {
+         super.reload(ref);
+      }
+   }
+
    private synchronized void removeIfCurrent(MessageReference ref) {
       SimpleString lastValueProp = ref.getLastValueProperty();
       if (lastValueProp != null) {
@@ -462,6 +475,11 @@ public class LastValueQueue extends QueueImpl {
       @Override
       public long getPersistentSize() throws ActiveMQException {
          return ref.getPersistentSize();
+      }
+
+      @Override
+      public String toString() {
+         return new StringBuilder().append("HolderReference").append("@").append(Integer.toHexString(System.identityHashCode(this))).append("[ref=").append(ref).append("]").toString();
       }
    }
 
