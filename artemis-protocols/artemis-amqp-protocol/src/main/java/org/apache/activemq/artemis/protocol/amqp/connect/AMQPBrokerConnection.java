@@ -154,9 +154,11 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       server.getConfiguration().registerBrokerPlugin(this);
       try {
 
-         for (AMQPBrokerConnectionElement connectionElement : brokerConnectConfiguration.getConnectionElements()) {
-            if (connectionElement.getType() == AMQPBrokerConnectionAddressType.MIRROR) {
-               installMirrorController((AMQPMirrorBrokerConnectionElement)connectionElement, server);
+         if (brokerConnectConfiguration != null && brokerConnectConfiguration.getConnectionElements() != null) {
+            for (AMQPBrokerConnectionElement connectionElement : brokerConnectConfiguration.getConnectionElements()) {
+               if (connectionElement.getType() == AMQPBrokerConnectionAddressType.MIRROR) {
+                  installMirrorController((AMQPMirrorBrokerConnectionElement) connectionElement, server);
+               }
             }
          }
       } catch (Throwable e) {
@@ -243,8 +245,9 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
          }
 
          ConnectionEntry entry = protonProtocolManager.createOutgoingConnectionEntry(connection, saslFactory);
+         server.getRemotingService().addConnectionEntry(connection, entry);
          protonRemotingConnection = (ActiveMQProtonRemotingConnection) entry.connection;
-         connection.getChannel().pipeline().addLast(new AMQPBrokerConnectionChannelHandler(bridgesConnector.getChannelGroup(), protonRemotingConnection.getAmqpConnection().getHandler()));
+         connection.getChannel().pipeline().addLast(new AMQPBrokerConnectionChannelHandler(bridgesConnector.getChannelGroup(), protonRemotingConnection.getAmqpConnection().getHandler(), this, server.getExecutorFactory().getExecutor()));
 
          session = protonRemotingConnection.getAmqpConnection().getHandler().getConnection().session();
          sessionContext = protonRemotingConnection.getAmqpConnection().getSessionExtension(session);
@@ -304,7 +307,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
    }
 
    private static void uninstallMirrorController(AMQPMirrorBrokerConnectionElement replicaConfig, ActiveMQServer server) {
-
+      // TODO implement this as part of https://issues.apache.org/jira/browse/ARTEMIS-2965
    }
 
    /** The reason this method is static is the following:
@@ -345,7 +348,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
          throw new IllegalAccessException("Cannot start replica");
       }
 
-      AMQPMirrorControllerSource newPartition = new AMQPMirrorControllerSource(snfQueue, server, replicaConfig.isMessageAcknowledgements());
+      AMQPMirrorControllerSource newPartition = new AMQPMirrorControllerSource(snfQueue, server, replicaConfig.isMessageAcknowledgements(), replicaConfig.isQueueCreation(), replicaConfig.isQueueRemoval());
 
       server.scanAddresses(newPartition);
 
@@ -498,6 +501,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
 
    @Override
    public void connectionDestroyed(Object connectionID) {
+      server.getRemotingService().removeConnection(connectionID);
       redoConnection();
    }
 
