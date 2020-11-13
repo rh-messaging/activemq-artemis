@@ -48,7 +48,7 @@ public class AddressImpl implements Address {
       this.address = address;
       this.wildcardConfiguration = wildcardConfiguration;
       addressParts = address.split(wildcardConfiguration.getDelimiter());
-      containsWildCard = address.contains(wildcardConfiguration.getSingleWord()) || address.contains(wildcardConfiguration.getAnyWords());
+      containsWildCard = address.containsEitherOf(wildcardConfiguration.getSingleWord(), wildcardConfiguration.getAnyWords());
    }
 
    @Override
@@ -73,9 +73,7 @@ public class AddressImpl implements Address {
 
    @Override
    public void addLinkedAddress(final Address address) {
-      if (!linkedAddresses.contains(address)) {
-         linkedAddresses.add(address);
-      }
+      linkedAddresses.add(address);
    }
 
    @Override
