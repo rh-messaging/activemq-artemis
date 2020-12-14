@@ -141,6 +141,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       largeBody = new LargeBody(this, copy.largeBody.getStorageManager(), fileCopy);
       largeBody.setBodySize(copy.largeBody.getStoredBodySize());
       this.storageManager = copy.largeBody.getStorageManager();
+      this.reencoded = copy.reencoded;
       setMessageID(newID);
    }
 
@@ -503,6 +504,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       AMQPLargeMessage newMessage = new AMQPLargeMessage(this, newfile, messageID);
       newMessage.setParentRef(this);
       newMessage.setFileDurable(this.isDurable());
+      newMessage.reloadExpiration(this.expiration);
       return newMessage;
    }
 
