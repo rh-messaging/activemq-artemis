@@ -37,7 +37,7 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
    private static final Logger LOGGER = Logger.getLogger(SharedNothingBackupQuorum.class);
 
    public enum BACKUP_ACTIVATION {
-      FAIL_OVER, FAILURE_REPLICATING, ALREADY_REPLICATING, STOP;
+      FAIL_OVER, FAILURE_RETRY, FAILURE_REPLICATING, ALREADY_REPLICATING, STOP;
    }
 
    private QuorumManager quorumManager;
@@ -113,7 +113,7 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
          if (signal == BACKUP_ACTIVATION.FAIL_OVER) {
             LOGGER.debug("Replication connection failure with signal == FAIL_OVER: no need to take any action");
             if (networkHealthCheck != null && !networkHealthCheck.check()) {
-               signal = BACKUP_ACTIVATION.FAILURE_REPLICATING;
+               signal = BACKUP_ACTIVATION.FAILURE_RETRY;
             }
             return;
          }
@@ -123,7 +123,7 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
          if (!isLiveDown()) {
             //lost connection but don't know if live is down so restart as backup as we can't replicate any more
             ActiveMQServerLogger.LOGGER.restartingAsBackupBasedOnQuorumVoteResults();
-            signal = BACKUP_ACTIVATION.FAILURE_REPLICATING;
+            signal = BACKUP_ACTIVATION.FAILURE_RETRY;
          } else {
             // live is assumed to be down, backup fails-over
             ActiveMQServerLogger.LOGGER.failingOverBasedOnQuorumVoteResults();
@@ -139,7 +139,7 @@ public class SharedNothingBackupQuorum implements Quorum, SessionFailureListener
                signal = BACKUP_ACTIVATION.FAIL_OVER;
             } else {
                ActiveMQServerLogger.LOGGER.serverIsolatedOnNetwork();
-               signal = BACKUP_ACTIVATION.FAILURE_REPLICATING;
+               signal = BACKUP_ACTIVATION.FAILURE_RETRY;
             }
          }
          latch.countDown();
