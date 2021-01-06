@@ -14,20 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.postoffice;
+package org.apache.activemq.artemis.core.postoffice.impl;
 
-import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.utils.ByteUtil;
 
-/**
- * USed to hold a hierarchical style address, delimited by a '.'.
- */
-public interface Address {
+final class ByteArray {
 
-   SimpleString getAddress();
+   final byte[] bytes;
 
-   SimpleString[] getAddressParts();
+   private int hash;
 
-   boolean containsWildCard();
+   ByteArray(final byte[] bytes) {
+      this.bytes = bytes;
+   }
 
-   boolean matches(Address add);
+   @Override
+   public boolean equals(final Object other) {
+      if (other instanceof ByteArray) {
+         ByteArray s = (ByteArray) other;
+
+         return ByteUtil.equals(bytes, s.bytes);
+      } else {
+         return false;
+      }
+   }
+
+   @Override
+   public int hashCode() {
+      if (hash == 0) {
+         hash = ByteUtil.hashCode(bytes);
+      }
+
+      return hash;
+   }
 }

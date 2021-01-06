@@ -14,20 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.core.postoffice;
+package org.apache.activemq.artemis.core.postoffice.impl;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.postoffice.DuplicateIDCache;
 
-/**
- * USed to hold a hierarchical style address, delimited by a '.'.
- */
-public interface Address {
+public final class DuplicateIDCaches {
 
-   SimpleString getAddress();
+   private DuplicateIDCaches() {
 
-   SimpleString[] getAddressParts();
+   }
 
-   boolean containsWildCard();
+   public static DuplicateIDCache persistent(final SimpleString address,
+                                             final int size,
+                                             final StorageManager storageManager) {
+      return new PersistentDuplicateIDCache(address, size, storageManager);
+   }
 
-   boolean matches(Address add);
+   public static DuplicateIDCache inMemory(final SimpleString address, final int size) {
+      return new InMemoryDuplicateIDCache(address, size);
+   }
+
 }
