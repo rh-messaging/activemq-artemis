@@ -446,20 +446,28 @@ public class AMQPSessionCallback implements SessionCallback {
                           ReadableBuffer data,
                           RoutingContext routingContext) throws Exception {
       AMQPMessage message = new AMQPMessage(messageFormat, data, null, coreMessageObjectPools);
+
+      RoutingType routingType = null;
       if (address != null) {
+         // Fixed-address producer
          message.setAddress(address);
+         routingType = context.getDefRoutingType();
       } else {
-         // Anonymous relay must set a To value
+         // Anonymous-relay producer, message must carry a To value
          address = message.getAddressSimpleString();
          if (address == null) {
             // Errors are not currently handled as required by AMQP 1.0 anonterm-v1.0
             rejectMessage(delivery, Symbol.valueOf("failed"), "Missing 'to' field for message sent to an anonymous producer");
             return;
          }
+
+         routingType = message.getRoutingType();
+         if (routingType == null) {
+            routingType = context.getRoutingType(receiver, address);
+         }
       }
 
       //here check queue-autocreation
-      RoutingType routingType = context.getRoutingType(receiver, address);
       if (!checkAddressAndAutocreateIfPossible(address, routingType)) {
          throw ActiveMQAMQPProtocolMessageBundle.BUNDLE.addressDoesntExist();
       }
