@@ -484,14 +484,6 @@ public class PagingTest extends ActiveMQTestBase {
       waitForNotPaging(queue);
 
       server.stop();
-
-      HashMap<Integer, AtomicInteger> counts = countJournalLivingRecords(server.getConfiguration());
-
-      AtomicInteger pgComplete = counts.get((int) JournalRecordIds.PAGE_CURSOR_COMPLETE);
-
-      assertTrue(pgComplete == null || pgComplete.get() == 0);
-
-      System.out.println("pgComplete = " + pgComplete);
    }
 
    @Test
@@ -828,7 +820,6 @@ public class PagingTest extends ActiveMQTestBase {
          assertNotNull(msg);
          assertEquals(i, msg.getIntProperty("count").intValue());
          msg.acknowledge();
-         System.out.println(msg);
       }
 
       assertNull(consumer.receiveImmediate());
@@ -4541,7 +4532,7 @@ public class PagingTest extends ActiveMQTestBase {
       // It's async, so need to wait a bit for it happening
       assertFalse(server.getPagingManager().getPageStore(ADDRESS).isPaging());
 
-      Wait.assertEquals(1, ()->server.getPagingManager().getPageStore(ADDRESS).getNumberOfPages());
+      Wait.assertEquals(0, ()->server.getPagingManager().getPageStore(ADDRESS).getNumberOfPages());
    }
 
    @Test
@@ -5919,7 +5910,7 @@ public class PagingTest extends ActiveMQTestBase {
 
          locator.close();
 
-         Wait.assertEquals(2, store::getNumberOfPages);
+         Wait.assertEquals(0, store::getNumberOfPages);
 
       } finally {
          try {
