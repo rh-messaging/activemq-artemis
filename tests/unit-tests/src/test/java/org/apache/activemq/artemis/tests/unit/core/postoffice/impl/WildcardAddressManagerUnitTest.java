@@ -17,10 +17,15 @@
 package org.apache.activemq.artemis.tests.unit.core.postoffice.impl;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -39,6 +44,7 @@ import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -138,6 +144,41 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testWildCardAddBinding() throws Exception {
+      WildcardAddressManager ad = new WildcardAddressManager(new BindingFactoryFake(), null, null);
+      ad.addAddressInfo(new AddressInfo(SimpleString.toSimpleString("Queue1.#"), RoutingType.ANYCAST));
+      Assert.assertTrue(ad.addBinding(new BindingFake("Queue1.#", "one")));
+   }
+
+   @Test
+   public void tesWildcardOnClusterUpdate() throws Exception {
+      WildcardAddressManager ad = new WildcardAddressManager(new BindingFactoryFake(), null, null);
+      ad.addAddressInfo(new AddressInfo(SimpleString.toSimpleString("Queue1.#"), RoutingType.ANYCAST));
+      Assert.assertTrue(ad.addBinding(new BindingFake("Queue1.A", "oneOnA")));
+      Assert.assertTrue(ad.addBinding(new BindingFake("Queue1.#", "one")));
+
+      Field wildcardAddressField = WildcardAddressManager.class.getDeclaredField("wildCardAddresses");
+      wildcardAddressField.setAccessible(true);
+      Map<SimpleString, Address> wildcardAddresses = (Map<SimpleString, Address>)wildcardAddressField.get(ad);
+      SimpleString addressOfInterest = SimpleString.toSimpleString("Queue1.#");
+      assertEquals(1, wildcardAddresses.get(addressOfInterest).getLinkedAddresses().size());
+      // whack the existing state, it should remain whacked!
+      wildcardAddresses.get(addressOfInterest).getLinkedAddresses().clear();
+
+      // simulate cluster, verify just reads linkedAddresses
+      ad.updateMessageLoadBalancingTypeForAddress(addressOfInterest, MessageLoadBalancingType.ON_DEMAND);
+      assertTrue("no addresses added", wildcardAddresses.get(addressOfInterest).getLinkedAddresses().isEmpty());
+   }
+
+   @Test(expected = ActiveMQQueueExistsException.class)
+   public void testWildCardAddAlreadyExistingBindingShouldThrowException() throws Exception {
+      WildcardAddressManager ad = new WildcardAddressManager(new BindingFactoryFake(), null, null);
+      ad.addAddressInfo(new AddressInfo(SimpleString.toSimpleString("Queue1.#"), RoutingType.ANYCAST));
+      ad.addBinding(new BindingFake("Queue1.#", "one"));
+      ad.addBinding(new BindingFake("Queue1.#", "one"));
+   }
+
+   @Test
    public void testWildCardAddressRemovalDifferentWildcard() throws Exception {
 
       final WildcardConfiguration configuration = new WildcardConfiguration();
@@ -194,6 +235,54 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
       assertEquals(0, ad.getDirectBindings(SimpleString.toSimpleString("Topic2.>")).getBindings().size());
       assertEquals(1, ad.getDirectBindings(SimpleString.toSimpleString("Topic2.test")).getBindings().size());
 
+   }
+
+   @Test
+   public void testConcurrentCalls() throws Exception {
+      final WildcardConfiguration configuration = new WildcardConfiguration();
+      configuration.setAnyWords('>');
+      final WildcardAddressManager ad = new WildcardAddressManager(new BindingFactoryFake(), configuration, null, null);
+
+      final SimpleString wildCard = SimpleString.toSimpleString("Topic1.>");
+      ad.addAddressInfo(new AddressInfo(wildCard, RoutingType.MULTICAST));
+
+      AtomicReference<Throwable> oops = new AtomicReference<>();
+      int numSubs = 500;
+      int numThreads = 2;
+      ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+
+      for (int i = 0; i < numSubs; i++ ) {
+         final int id = i;
+
+         executorService.submit(() -> {
+            try {
+
+               // add/remove is externally sync via postOffice
+               synchronized (executorService) {
+                  // subscribe as wildcard
+                  ad.addBinding(new BindingFake(SimpleString.toSimpleString("Topic1.>"), SimpleString.toSimpleString("" + id)));
+               }
+
+               SimpleString pubAddr = SimpleString.toSimpleString("Topic1." + id );
+               // publish to new address, will create
+               Bindings binding = ad.getBindingsForRoutingAddress(pubAddr);
+
+               // publish again, read only
+               binding = ad.getBindingsForRoutingAddress(pubAddr);
+
+               // cluster consumer, concurrent access
+               ad.updateMessageLoadBalancingTypeForAddress(wildCard, MessageLoadBalancingType.ON_DEMAND);
+
+            } catch (Exception e) {
+               e.printStackTrace();
+               oops.set(e);
+            }
+         });
+      }
+
+      executorService.shutdown();
+      assertTrue("finished on time", executorService.awaitTermination(10, TimeUnit.MINUTES));
+      assertNull("no exceptions", oops.get());
    }
 
    class BindingFactoryFake implements BindingsFactory {
@@ -269,8 +358,8 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
       }
 
       @Override
-      public long getID() {
-         return 0;
+      public Long getID() {
+         return Long.valueOf(0);
       }
 
       @Override
@@ -302,23 +391,23 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
       }
    }
 
-   class BindingsFake implements Bindings {
+   static class BindingsFake implements Bindings {
 
-      ArrayList<Binding> bindings = new ArrayList<>();
+      ConcurrentHashMap<SimpleString, Binding> bindings = new ConcurrentHashMap<>();
 
       @Override
       public Collection<Binding> getBindings() {
-         return bindings;
+         return bindings.values();
       }
 
       @Override
       public void addBinding(Binding binding) {
-         bindings.add(binding);
+         bindings.put(binding.getUniqueName(), binding);
       }
 
       @Override
-      public void removeBinding(Binding binding) {
-         bindings.remove(binding);
+      public Binding removeBindingByUniqueName(SimpleString uniqueName) {
+         return bindings.remove(uniqueName);
       }
 
       @Override
