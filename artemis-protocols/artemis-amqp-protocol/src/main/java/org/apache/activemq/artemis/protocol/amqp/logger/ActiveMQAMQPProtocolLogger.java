@@ -60,4 +60,15 @@ public interface ActiveMQAMQPProtocolLogger extends BasicLogger {
                                  "\nRetrying Server AMQP Connection {0} on {1} retry {2} of {3}" +
                                  "\n*******************************************************************************************************************************\n", format = Message.Format.MESSAGE_FORMAT)
    void retryConnection(String name, String hostAndPort, int currentRetry, int maxRetry);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 111003, value = "\n*******************************************************************************************************************************" +
+      "\nSuccess on Server AMQP Connection {0} on {1} after {2} retries" +
+      "\n*******************************************************************************************************************************\n", format = Message.Format.MESSAGE_FORMAT)
+   void successReconnect(String name, String hostAndPort, int currentRetry);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 111004, value = "AddressFullPolicy clash on an anonymous producer between destinations {0}(addressFullPolicy={1}) and {2}(addressFullPolicy={3}). This could lead to semantic inconsistencies on your clients. Notice you could have other instances of this scenario however this message will only be logged once. log.debug output would show all instances of this event.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void incompatibleAddressFullMessagePolicy(String oldAddress, String oldPolicy, String newAddress, String newPolicy);
 }
