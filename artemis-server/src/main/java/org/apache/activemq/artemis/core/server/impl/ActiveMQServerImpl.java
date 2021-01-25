@@ -131,6 +131,7 @@ import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.LoggingConfigurationFileReloader;
 import org.apache.activemq.artemis.core.server.MemoryManager;
+import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.NetworkHealthCheck;
 import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.core.server.PostQueueCreationCallback;
@@ -139,6 +140,7 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueFactory;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
+import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.ServiceComponent;
 import org.apache.activemq.artemis.core.server.ServiceRegistry;
@@ -157,6 +159,7 @@ import org.apache.activemq.artemis.core.server.impl.jdbc.JdbcNodeManager;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.impl.ManagementServiceImpl;
 import org.apache.activemq.artemis.core.server.metrics.MetricsManager;
+import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQPluginRunnable;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerAddressPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerBasePlugin;
@@ -170,10 +173,8 @@ import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerMessagePlugi
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerQueuePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerResourcePlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
-import org.apache.activemq.artemis.core.server.reload.ReloadCallback;
 import org.apache.activemq.artemis.core.server.reload.ReloadManager;
 import org.apache.activemq.artemis.core.server.reload.ReloadManagerImpl;
-import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.server.transformer.Transformer;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
@@ -2561,6 +2562,27 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public boolean callBrokerMessagePluginsCanAccept(ServerConsumer serverConsumer, MessageReference messageReference) throws ActiveMQException {
+      for (ActiveMQServerMessagePlugin plugin : getBrokerMessagePlugins()) {
+         try {
+            //if ANY plugin returned false the message will not be accepted for that consumer
+            if (!plugin.canAccept(serverConsumer, messageReference)) {
+               return false;
+            }
+         } catch (Throwable e) {
+            if (e instanceof ActiveMQException) {
+               logger.debug("plugin " + plugin + " is throwing ActiveMQException");
+               throw (ActiveMQException) e;
+            } else {
+               logger.warn("Internal error on plugin " + plugin, e.getMessage(), e);
+            }
+         }
+      }
+      //if ALL plugins have returned true consumer can accept message
+      return true;
+   }
+
+   @Override
    public void callBrokerBridgePlugins(final ActiveMQPluginRunnable<ActiveMQServerBridgePlugin> pluginRun) throws ActiveMQException {
       callBrokerPlugins(getBrokerBridgePlugins(), pluginRun);
    }
@@ -3103,7 +3125,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       this.reloadManager = new ReloadManagerImpl(getScheduledPool(), executorFactory.getExecutor(), configuration.getConfigurationFileRefreshPeriod());
 
       if (configuration.getConfigurationUrl() != null && getScheduledPool() != null) {
-         reloadManager.addCallback(configuration.getConfigurationUrl(), new ConfigurationFileReloader());
+         reloadManager.addCallback(configuration.getConfigurationUrl(), uri -> reloadConfigurationFile(uri));
       }
 
       if (System.getProperty("logging.configuration") != null) {
@@ -4190,22 +4212,23 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    }
 
-   private final class ConfigurationFileReloader implements ReloadCallback {
+   @Override
+   public void reloadConfigurationFile() throws Exception {
+      reloadConfigurationFile(configuration.getConfigurationUrl());
+   }
 
-      @Override
-      public void reload(URL uri) throws Exception {
-         Configuration config = new FileConfigurationParser().parseMainConfig(uri.openStream());
-         LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
-         legacyJMSConfiguration.parseConfiguration(uri.openStream());
-         configuration.setSecurityRoles(config.getSecurityRoles());
-         configuration.setAddressesSettings(config.getAddressesSettings());
-         configuration.setDivertConfigurations(config.getDivertConfigurations());
-         configuration.setAddressConfigurations(config.getAddressConfigurations());
-         configuration.setQueueConfigs(config.getQueueConfigs());
-         configurationReloadDeployed.set(false);
-         if (isActive()) {
-            deployReloadableConfigFromConfiguration();
-         }
+   private void reloadConfigurationFile(URL uri) throws Exception {
+      Configuration config = new FileConfigurationParser().parseMainConfig(uri.openStream());
+      LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
+      legacyJMSConfiguration.parseConfiguration(uri.openStream());
+      configuration.setSecurityRoles(config.getSecurityRoles());
+      configuration.setAddressesSettings(config.getAddressesSettings());
+      configuration.setDivertConfigurations(config.getDivertConfigurations());
+      configuration.setAddressConfigurations(config.getAddressConfigurations());
+      configuration.setQueueConfigs(config.getQueueConfigs());
+      configurationReloadDeployed.set(false);
+      if (isActive()) {
+         deployReloadableConfigFromConfiguration();
       }
    }
 
