@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.utils;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.junit.Assert;
 
@@ -153,13 +154,13 @@ public class Wait {
                                  final long sleepMillis) {
 
       try {
-         final long expiry = System.currentTimeMillis() + durationMillis;
+         final long expiry = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(durationMillis);
          boolean conditionSatisified = condition.isSatisfied();
-         while (!conditionSatisified && System.currentTimeMillis() < expiry) {
+         while (!conditionSatisified && System.nanoTime() - expiry < 0) {
             if (sleepMillis == 0) {
                Thread.yield();
             } else {
-               TimeUnit.MILLISECONDS.sleep(sleepMillis);
+               LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(sleepMillis));
             }
             conditionSatisified = condition.isSatisfied();
          }
@@ -168,6 +169,5 @@ public class Wait {
          throw new IllegalStateException(e);
       }
    }
-
 
 }
