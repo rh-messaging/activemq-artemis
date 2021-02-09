@@ -29,8 +29,8 @@
 
    <properties>
       <version.activation>1.1.1</version.activation>
-      <version.jaxb>2.2.11</version.jaxb>
-      <version.jaxb-api>1.0.5.Final</version.jaxb-api>
+      <version.jaxb>2.3.3</version.jaxb>
+      <version.jaxb-api>2.0.1.Final</version.jaxb-api>
 
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
    </properties>
@@ -47,13 +47,13 @@
       </dependency>
       <dependency>
          <groupId>org.jboss.spec.javax.xml.bind</groupId>
-         <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+         <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
          <version>${version.jaxb-api}</version>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
          <artifactId>jaxb-impl</artifactId>
-         <version>${version.jaxb}</version>
+         <version>${version.jaxb.runtime}</version>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
@@ -126,13 +126,13 @@
             <dependencies>
                <dependency>
                   <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                  <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+                  <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
                   <version>${version.jaxb-api}</version>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
                   <artifactId>jaxb-impl</artifactId>
-                  <version>${version.jaxb}</version>
+                  <version>${version.jaxb.runtime}</version>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>

@@ -30,7 +30,7 @@
 
    <properties>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
-      <version.jaxb-api>1.0.5.Final</version.jaxb-api>
+      <version.jaxb-api>2.0.1.Final-redhat-00001</version.jaxb-api>
    </properties>
 
    <dependencies>
@@ -142,7 +142,7 @@
       </dependency>
       <dependency>
          <groupId>org.jboss.spec.javax.xml.bind</groupId>
-         <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
+         <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
          <version>${version.jaxb-api}</version>
       </dependency>
       <dependency>
