@@ -53,7 +53,7 @@
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
          <artifactId>jaxb-impl</artifactId>
-         <version>${version.jaxb}</version>
+         <version>${version.jaxb.runtime}</version>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
@@ -132,7 +132,7 @@
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
                   <artifactId>jaxb-impl</artifactId>
-                  <version>${version.jaxb}</version>
+                  <version>${version.jaxb.runtime}</version>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
