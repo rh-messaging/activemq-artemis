@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.9.0</version>
+      <version>2.9.0.redhat-00019</version>
    </parent>
 
    <groupId>org.apache.activemq.rest</groupId>
@@ -30,7 +30,7 @@
 
    <properties>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
-      <version.jaxb-api>1.0.5.Final</version.jaxb-api>
+      <version.jaxb-api>1.0.5.Final-redhat-1</version.jaxb-api>
    </properties>
 
    <dependencies>
@@ -144,12 +144,12 @@
       <dependency>
          <groupId>org.apache.httpcomponents</groupId>
          <artifactId>httpcore</artifactId>
-         <version>4.3.3</version>
+         <version>4.3.3.redhat-4</version>
       </dependency>
       <dependency>
          <groupId>org.apache.httpcomponents</groupId>
          <artifactId>httpclient</artifactId>
-         <version>4.3.6</version>
+         <version>4.3.6.redhat-3</version>
       </dependency>
       <dependency>
          <groupId>junit</groupId>

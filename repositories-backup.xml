@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <id>jenkins</id>
+          <name>jenkins</name>
+          <url>https://repo.jenkins-ci.org/releases/</url>
+        </repository>
+        <repository>
+          <snapshots />
+          <id>apache.snapshots</id>
+          <name>Apache Development Snapshot Repository</name>
+          <url>https://repository.apache.org/content/repositories/snapshots/</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <snapshots />
+          <id>apache.snapshots</id>
+          <name>Apache Development Snapshot Repository</name>
+          <url>https://repository.apache.org/content/repositories/snapshots/</url>
+        </pluginRepository>
+      </pluginRepositories>
+      <id>removed-by-pme</id>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>removed-by-pme</activeProfile>
+  </activeProfiles>
+</settings>

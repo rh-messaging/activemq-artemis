@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.9.0</version>
+      <version>2.9.0.redhat-00019</version>
    </parent>
 
    <artifactId>artemis-dto</artifactId>
@@ -28,9 +28,9 @@
    <name>ActiveMQ Artemis DTO</name>
 
    <properties>
-      <version.activation>1.1.1</version.activation>
-      <version.jaxb>2.2.11</version.jaxb>
-      <version.jaxb-api>1.0.5.Final</version.jaxb-api>
+      <version.activation>1.1.1.redhat-5</version.activation>
+      <version.jaxb>2.2.11.redhat-4</version.jaxb>
+      <version.jaxb-api>1.0.5.Final-redhat-1</version.jaxb-api>
 
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
    </properties>

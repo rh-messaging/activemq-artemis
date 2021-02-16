@@ -20,12 +20,12 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-pom</artifactId>
    <packaging>pom</packaging>
-   <version>2.9.0</version>
+   <version>2.9.0.redhat-00019</version>
 
    <parent>
       <groupId>org.apache</groupId>
       <artifactId>apache</artifactId>
-      <version>18</version>
+      <version>18.0.0.redhat-1</version>
       <relativePath>org.apache:apache</relativePath>
    </parent>
 
@@ -77,45 +77,45 @@
       <activemq-artemis-native-version>1.0.2.redhat-00001</activemq-artemis-native-version>
       <karaf.version>4.0.6</karaf.version>
       <pax.exam.version>4.9.1</pax.exam.version>
-      <commons.config.version>2.7</commons.config.version>
-      <commons.lang.version>3.0</commons.lang.version>
-      <commons.logging.version>1.2</commons.logging.version>
-      <activemq5-version>5.11.0.redhat-630377</activemq5-version>
+      <commons.config.version>2.7.0.redhat-00001</commons.config.version>
+      <commons.lang.version>3.0.0.redhat-1</commons.lang.version>
+      <commons.logging.version>1.2.0.redhat-3</commons.logging.version>
+      <activemq5-version>5.11.0.redhat-630495</activemq5-version>
       <apache.derby.version>10.11.1.1</apache.derby.version>
-      <commons.beanutils.version>1.9.4</commons.beanutils.version>
-      <commons.collections.version>3.2.2</commons.collections.version>
-      <commons.text.version>1.8</commons.text.version>
+      <commons.beanutils.version>1.9.4.redhat-00002</commons.beanutils.version>
+      <commons.collections.version>3.2.2.redhat-2</commons.collections.version>
+      <commons.text.version>1.8.0.redhat-00001</commons.text.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
-      <guava.version>24.1.1-jre</guava.version>
+      <guava.version>24.1.1.jre-redhat-00001</guava.version>
       <jaxb.version>2.2.28</jaxb.version>
-      <jboss.logging.version>3.4.0.Final</jboss.logging.version>
-      <jetty.version>9.4.35.v20201120</jetty.version>
-      <jgroups.version>3.6.13.Final</jgroups.version>
+      <jboss.logging.version>3.4.0.Final-redhat-00001</jboss.logging.version>
+      <jetty.version>9.4.35.v20201120-redhat-00001</jetty.version>
+      <jgroups.version>3.6.13.Final-redhat-2</jgroups.version>
       <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
       <mockito.version>2.25.0</mockito.version>
-      <netty.version>4.1.48.Final</netty.version>
-      <commons.io.version>2.6</commons.io.version>
+      <netty.version>4.1.48.Final-redhat-00001</netty.version>
+      <commons.io.version>2.6.0.redhat-00001</commons.io.version>
 
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.29.Final</netty-tcnative-version>
-      <proton.version>0.33.1</proton.version>
-      <resteasy.version>3.0.19.Final</resteasy.version>
-      <slf4j.version>1.7.22</slf4j.version>
-      <tomcat.servlet.version>8.0.36</tomcat.servlet.version>
-      <qpid.jms.version>0.42.0</qpid.jms.version>
-      <johnzon.version>0.9.5</johnzon.version>
-      <json-p.spec.version>1.0-alpha-1</json-p.spec.version>
-      <javax.inject.version>1</javax.inject.version>
-      <hawtbuff.version>1.11</hawtbuff.version>
-      <jb.logmanager.version>2.1.10.Final</jb.logmanager.version>
-      <jb.slf4j-jboss-logmanager.version>1.0.4.GA</jb.slf4j-jboss-logmanager.version>
-       <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
-      <airlift.version>0.8</airlift.version>
-      <geronimo.annotation.1.1.spec.version>1.0.1</geronimo.annotation.1.1.spec.version>
-      <geronimo.ejb.3.0.spec.version>1.0.1</geronimo.ejb.3.0.spec.version>
-      <geronimo.jta.1.1.spec.version>1.1.1</geronimo.jta.1.1.spec.version>
-      <geronimo.jms.2.spec.version>1.0-alpha-2</geronimo.jms.2.spec.version>
-      <weld.version>2.4.0.Final</weld.version>
+      <proton.version>0.33.1.redhat-00001</proton.version>
+      <resteasy.version>3.0.19.Final-redhat-1</resteasy.version>
+      <slf4j.version>1.7.22.redhat-2</slf4j.version>
+      <tomcat.servlet.version>8.0.36.redhat-45</tomcat.servlet.version>
+      <qpid.jms.version>0.42.0.redhat-00002</qpid.jms.version>
+      <johnzon.version>0.9.5.redhat-1</johnzon.version>
+      <json-p.spec.version>1.0.0.alpha-1-redhat-1</json-p.spec.version>
+      <javax.inject.version>1.0.0.redhat-00008</javax.inject.version>
+      <hawtbuff.version>1.11.0.redhat-2</hawtbuff.version>
+      <jb.logmanager.version>2.1.10.Final-redhat-00001</jb.logmanager.version>
+      <jb.slf4j-jboss-logmanager.version>1.0.4.GA-redhat-00001</jb.slf4j-jboss-logmanager.version>
+       <version.org.wildfly.common.wildfly-common>1.5.1.Final-redhat-00001</version.org.wildfly.common.wildfly-common>
+      <airlift.version>0.8.0.redhat-00001</airlift.version>
+      <geronimo.annotation.1.1.spec.version>1.0.1.redhat-2</geronimo.annotation.1.1.spec.version>
+      <geronimo.ejb.3.0.spec.version>1.0.1.redhat-3</geronimo.ejb.3.0.spec.version>
+      <geronimo.jta.1.1.spec.version>1.1.1.redhat-00003</geronimo.jta.1.1.spec.version>
+      <geronimo.jms.2.spec.version>1.0.0.alpha-2-redhat-2</geronimo.jms.2.spec.version>
+      <weld.version>2.4.0.Final-redhat-1</weld.version>
       <arquillian-weld-embedded.version>2.0.0.Beta3</arquillian-weld-embedded.version>
       <owb.version>1.7.0</owb.version>
       <arquillian.version>1.1.11.Final</arquillian.version>
@@ -123,7 +123,7 @@
       <version.org.jacoco>0.7.9</version.org.jacoco>
       <version.org.jacoco.plugin>0.7.9</version.org.jacoco.plugin>
       <version.maven.jar.plugin>2.4</version.maven.jar.plugin>
-      <version.micrometer>1.1.4</version.micrometer>
+      <version.micrometer>1.1.4.redhat-00001</version.micrometer>
       <hamcrest.version>2.1</hamcrest.version>
 
       <!-- used on tests -->
@@ -132,12 +132,12 @@
       <owasp.version>1.4.3</owasp.version>
       <spring.version>5.1.7.RELEASE</spring.version>
 
-      <activemq.version.versionName>${project.version}</activemq.version.versionName>
+      <activemq.version.versionName>2.9.0.redhat-00019</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
       <activemq.version.minorVersion>0</activemq.version.minorVersion>
       <activemq.version.microVersion>0</activemq.version.microVersion>
       <activemq.version.incrementingVersion>130,129,128,127,126,125,124,123,122</activemq.version.incrementingVersion>
-      <activemq.version.versionTag>${project.version}</activemq.version.versionTag>
+      <activemq.version.versionTag>2.9.0.redhat-00019</activemq.version.versionTag>
       <ActiveMQ-Version>${project.version}(${activemq.version.incrementingVersion})</ActiveMQ-Version>
 
       <skipUnitTests>true</skipUnitTests>
@@ -191,11 +191,11 @@
       <directory-version>2.0.0-M15</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
 
-      <cdi-api.version>1.2</cdi-api.version>
+      <cdi-api.version>1.2.0.redhat-2</cdi-api.version>
       <geronimo-annotation_1.2_spec.version>1.0</geronimo-annotation_1.2_spec.version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
-      <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
+      <netty-transport-native-kqueue-classifier />
 
       <!-- Ignore failed tests by default because there are "known" failures in the full test-suite.
            This will be set to false for the "fast-tests" profile as none of those tests should fail. -->
@@ -270,7 +270,7 @@
          <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.11-redhat-1</version>
             <scope>test</scope>
             <!-- License: CPL 1.0 -->
             <!-- There are newer versions of the JUnit but they break our tests -->
@@ -341,14 +341,14 @@
          <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
-            <version>2.2.0.Final</version>
+            <version>2.2.0.Final-redhat-00001</version>
             <optional>true</optional>
             <!-- License: LGPL-->
          </dependency>
          <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-annotations</artifactId>
-            <version>2.2.0.Final</version>
+            <version>2.2.0.Final-redhat-00001</version>
             <scope>provided</scope>
             <optional>true</optional>
             <!-- License: Apache 2.0-->
@@ -357,7 +357,7 @@
          <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>1.2.16</version>
+            <version>1.2.16.redhat-4</version>
             <scope>compile</scope>
             <!-- License: Apache 2.0 -->
          </dependency>
@@ -709,7 +709,7 @@
          <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.0.redhat-2</version>
             <!-- License: Apache 2.0 -->
          </dependency>
 
@@ -846,7 +846,7 @@
          <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jaspic_1.0_spec</artifactId>
-            <version>1.0</version>
+            <version>1.0.0.redhat-00001</version>
          </dependency>
       </dependencies>
 
@@ -890,7 +890,6 @@
                   <!-- version 3.2 is having problems with the APT processor resulting in
                     java.lang.IllegalStateException: endPosTable already set  -->
                   <version>3.1</version>
-                  <configuration combine.self="override" />
                </plugin>
                <plugin>
                   <groupId>org.apache.maven.plugins</groupId>
@@ -1518,7 +1517,6 @@
             <plugin>
                <groupId>org.codehaus.mojo</groupId>
                <artifactId>cobertura-maven-plugin</artifactId>
-               <configuration />
                <executions>
                   <execution>
                      <goals>
@@ -1536,7 +1534,7 @@
             <plugin>
                <groupId>org.apache.activemq</groupId>
                <artifactId>artemis-maven-plugin</artifactId>
-               <version>${project.version}</version>
+               <version>2.9.0.redhat-00019</version>
             </plugin>
             <plugin>
                <groupId>org.jacoco</groupId>
@@ -1762,80 +1760,6 @@
       </plugins>
    </build>
 
-   <reporting>
-      <plugins>
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>cobertura-maven-plugin</artifactId>
-            <version>2.5.2</version>
-            <configuration>
-               <check />
-               <formats>
-                  <format>html</format>
-                  <format>xml</format>
-               </formats>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-checkstyle-plugin</artifactId>
-            <version>2.17</version>
-            <configuration>
-               <configLocation>${activemq.basedir}/etc/checkstyle.xml</configLocation>
-               <suppressionsLocation>${activemq.basedir}/etc/checkstyle-suppressions.xml</suppressionsLocation>
-               <failsOnError>false</failsOnError>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>findbugs-maven-plugin</artifactId>
-            <version>2.5.2</version>
-            <configuration>
-               <excludeFilterFile>${user.dir}/etc/findbugs-exclude.xml</excludeFilterFile>
-               <effort>Max</effort>
-               <failOnError>false</failOnError>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.9</version>
-            <configuration>
-               <minmemory>128m</minmemory>
-               <maxmemory>1024m</maxmemory>
-               <quiet>false</quiet>
-               <!-- XXX FIXME 'aggregate' is deprecated -->
-               <aggregate>true</aggregate>
-               <excludePackageNames>com.restfully.*:org.jboss.resteasy.examples.*:org.jboss.resteasy.tests.*
-               </excludePackageNames>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-project-info-reports-plugin</artifactId>
-            <version>2.7</version>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-report-plugin</artifactId>
-            <version>2.14.1</version>
-         </plugin>
-         <plugin>
-            <groupId>org.owasp</groupId>
-            <artifactId>dependency-check-maven</artifactId>
-            <version>${owasp.version}</version>
-            <reportSets>
-               <reportSet>
-                  <reports>
-                     <report>aggregate</report>
-                  </reports>
-               </reportSet>
-            </reportSets>
-         </plugin>
-
-      </plugins>
-   </reporting>
-
    <!--
      un comment this session here to validate repository releases.
      <repositories>
@@ -1851,3 +1775,6 @@
    </repositories> -->
 
 </project>
+<!--
+Modified by POM Manipulation Extension for Maven 4.2 ( SHA: cfe5b3db )
+-->
