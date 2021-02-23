@@ -758,4 +758,7 @@ public interface Message {
     */
    long getPersistentSize() throws ActiveMQException;
 
+   default String getStringBody() {
+      return null;
+   }
 }

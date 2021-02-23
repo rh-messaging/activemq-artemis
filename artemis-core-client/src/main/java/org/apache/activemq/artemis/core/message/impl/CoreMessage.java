@@ -1259,4 +1259,22 @@ public class CoreMessage extends RefCountMessage implements ICoreMessage {
    public long getPersistentSize() throws ActiveMQException {
       return getEncodeSize();
    }
+
+   @Override
+   public String getStringBody() {
+      String body = null;
+
+      if (type == TEXT_TYPE) {
+         try {
+            SimpleString simpleBody = getDataBuffer().readNullableSimpleString();
+            if (simpleBody != null) {
+               body = simpleBody.toString();
+            }
+         } catch (Exception e) {
+            // ignore
+         }
+      }
+
+      return body;
+   }
 }
