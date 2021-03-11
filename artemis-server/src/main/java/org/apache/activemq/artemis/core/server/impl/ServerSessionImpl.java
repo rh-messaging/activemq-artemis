@@ -136,7 +136,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    protected final boolean strictUpdateDeliveryCount;
 
-   protected final RemotingConnection remotingConnection;
+   protected RemotingConnection remotingConnection;
 
    protected final Map<Long, ServerConsumer> consumers = new ConcurrentHashMap<>();
 
@@ -1069,6 +1069,11 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    @Override
    public RemotingConnection getRemotingConnection() {
       return remotingConnection;
+   }
+
+   @Override
+   public void transferConnection(RemotingConnection newConnection) {
+      remotingConnection = newConnection;
    }
 
    @Override
