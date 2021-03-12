@@ -223,6 +223,8 @@ public interface Message {
 
    /**
     * @deprecated do not use this, use through ICoreMessage or ClientMessage
+    * Warning: if you need to read the content of a message use getDataBuffer(). This method is intended for when you
+    *          want to make changes.
     */
    @Deprecated
    default ActiveMQBuffer getBodyBuffer() {
@@ -761,4 +763,8 @@ public interface Message {
    Object getOwner();
 
    void setOwner(Object object);
+
+   default String getStringBody() {
+      return null;
+   }
 }

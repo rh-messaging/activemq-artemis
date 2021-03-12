@@ -424,6 +424,20 @@
          <version>${vertx.version}</version>
          <scope>test</scope>
       </dependency>
+
+      <!-- need this for org.apache.activemq.filter.XalanXPathEvaluator for Xpath selectors with OpenWire JMS clients-->
+      <dependency>
+         <groupId>org.apache.activemq</groupId>
+         <artifactId>activemq-broker</artifactId>
+         <version>${activemq5-version}</version>
+         <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <groupId>com.fasterxml.jackson.core</groupId>
+               <artifactId>jackson-databind</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
    </dependencies>
 
    <build>
