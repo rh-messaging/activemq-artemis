@@ -235,12 +235,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       this.coreMessageObjectPools = null;
    }
 
-   /**
-    * Similarly to {@link MessageDataScanningStatus}, this method is made available only for testing
-    * purposes to check the message data scanning status.<br>
-    * Its access is not thread-safe and it shouldn't return {@code null}.
-    */
-   public final MessageDataScanningStatus messageDataScanned() {
+   public final MessageDataScanningStatus getDataScanningStatus() {
       return MessageDataScanningStatus.valueOf(messageDataScanned);
    }
 
@@ -432,8 +427,12 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       return scanForMessageSection(Math.max(0, remainingBodyPosition), Footer.class);
    }
 
-   @SuppressWarnings({ "unchecked", "rawtypes" })
    protected <T> T scanForMessageSection(int scanStartPosition, Class...targetTypes) {
+      return scanForMessageSection(getData().duplicate().position(0), scanStartPosition, targetTypes);
+   }
+
+   @SuppressWarnings({ "unchecked", "rawtypes" })
+   protected <T> T scanForMessageSection(ReadableBuffer buffer, int scanStartPosition, Class...targetTypes) {
       ensureMessageDataScanned();
 
       // In cases where we parsed out enough to know the value is not encoded in the message
@@ -442,7 +441,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          return null;
       }
 
-      ReadableBuffer buffer = getData().duplicate().position(0);
       final DecoderImpl decoder = TLSEncode.getDecoder();
 
       buffer.position(scanStartPosition);
@@ -470,8 +468,15 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    }
 
    protected ApplicationProperties lazyDecodeApplicationProperties() {
+      if (applicationProperties != null || applicationPropertiesPosition == VALUE_NOT_PRESENT) {
+         return applicationProperties;
+      }
+      return lazyDecodeApplicationProperties(getData().duplicate().position(0));
+   }
+
+   protected ApplicationProperties lazyDecodeApplicationProperties(ReadableBuffer data) {
       if (applicationProperties == null && applicationPropertiesPosition != VALUE_NOT_PRESENT) {
-         applicationProperties = scanForMessageSection(applicationPropertiesPosition, ApplicationProperties.class);
+         applicationProperties = scanForMessageSection(data, applicationPropertiesPosition, ApplicationProperties.class);
       }
 
       return applicationProperties;
@@ -546,7 +551,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    // re-encode should be done to update the backing data with the in memory elements.
 
    protected synchronized void ensureMessageDataScanned() {
-      final MessageDataScanningStatus state = MessageDataScanningStatus.valueOf(messageDataScanned);
+      final MessageDataScanningStatus state = getDataScanningStatus();
       switch (state) {
          case NOT_SCANNED:
             scanMessageData();
@@ -564,70 +569,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    protected int getEstimateSavedEncode() {
       return remainingBodyPosition > 0 ? remainingBodyPosition : 1024;
    }
-
-   protected void saveEncoding(ByteBuf buf) {
-
-      WritableBuffer oldBuffer = TLSEncode.getEncoder().getBuffer();
-
-      TLSEncode.getEncoder().setByteBuffer(new NettyWritable(buf));
-
-      try {
-         buf.writeInt(headerPosition);
-         buf.writeInt(encodedHeaderSize);
-         TLSEncode.getEncoder().writeObject(header);
-
-         buf.writeInt(deliveryAnnotationsPosition);
-         buf.writeInt(encodedDeliveryAnnotationsSize);
-
-         buf.writeInt(messageAnnotationsPosition);
-         TLSEncode.getEncoder().writeObject(messageAnnotations);
-
-
-         buf.writeInt(propertiesPosition);
-         TLSEncode.getEncoder().writeObject(properties);
-
-         buf.writeInt(applicationPropertiesPosition);
-         buf.writeInt(remainingBodyPosition);
-
-         TLSEncode.getEncoder().writeObject(applicationProperties);
-
-      } finally {
-         TLSEncode.getEncoder().setByteBuffer(oldBuffer);
-      }
-   }
-
-
-   protected void readSavedEncoding(ByteBuf buf) {
-      ReadableBuffer oldBuffer = TLSEncode.getDecoder().getBuffer();
-
-      TLSEncode.getDecoder().setBuffer(new NettyReadable(buf));
-
-      try {
-         messageDataScanned = MessageDataScanningStatus.SCANNED.code;
-
-         headerPosition = buf.readInt();
-         encodedHeaderSize = buf.readInt();
-         header = (Header)TLSEncode.getDecoder().readObject();
-
-         deliveryAnnotationsPosition = buf.readInt();
-         encodedDeliveryAnnotationsSize = buf.readInt();
-
-         messageAnnotationsPosition = buf.readInt();
-         messageAnnotations = (MessageAnnotations)TLSEncode.getDecoder().readObject();
-
-         propertiesPosition = buf.readInt();
-         properties = (Properties)TLSEncode.getDecoder().readObject();
-
-         applicationPropertiesPosition = buf.readInt();
-         remainingBodyPosition = buf.readInt();
-
-         applicationProperties = (ApplicationProperties)TLSEncode.getDecoder().readObject();
-      } finally {
-         TLSEncode.getDecoder().setBuffer(oldBuffer);
-      }
-   }
-
-
 
    protected synchronized void resetMessageData() {
       header = null;
@@ -647,13 +588,14 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    }
 
    protected synchronized void scanMessageData() {
-      this.messageDataScanned = MessageDataScanningStatus.SCANNED.code;
+      scanMessageData(getData());
+   }
+
+   protected synchronized void scanMessageData(ReadableBuffer data) {
       DecoderImpl decoder = TLSEncode.getDecoder();
-      decoder.setBuffer(getData().rewind());
+      decoder.setBuffer(data);
 
       resetMessageData();
-
-      ReadableBuffer data = getData();
 
       try {
          while (data.hasRemaining()) {
@@ -698,6 +640,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          decoder.setByteBuffer(null);
          data.rewind();
       }
+      this.messageDataScanned = MessageDataScanningStatus.SCANNED.code;
    }
 
    @Override
