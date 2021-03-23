@@ -312,6 +312,21 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
    }
 
    @Override
+   public int getJournalPoolFiles() {
+      if (AuditLogger.isEnabled()) {
+         AuditLogger.getJournalBufferSize(this.server);
+      }
+      checkStarted();
+
+      clearIO();
+      try {
+         return configuration.getJournalPoolFiles();
+      } finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
    public int getJournalBufferSize() {
       if (AuditLogger.isEnabled()) {
          AuditLogger.getJournalBufferSize(this.server);
@@ -4043,16 +4058,16 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
                Collection<TopologyMemberImpl> members = topology.getMembers();
                for (TopologyMemberImpl member : members) {
 
-                  JsonObjectBuilder obj = JsonLoader.createObjectBuilder();
                   TransportConfiguration live = member.getLive();
                   if (live != null) {
+                     JsonObjectBuilder obj = JsonLoader.createObjectBuilder();
                      obj.add("nodeID", member.getNodeId()).add("live", live.getParams().get("host") + ":" + live.getParams().get("port"));
                      TransportConfiguration backup = member.getBackup();
                      if (backup != null) {
                         obj.add("backup", backup.getParams().get("host") + ":" + backup.getParams().get("port"));
                      }
+                     brokers.add(obj);
                   }
-                  brokers.add(obj);
                }
             }
          }

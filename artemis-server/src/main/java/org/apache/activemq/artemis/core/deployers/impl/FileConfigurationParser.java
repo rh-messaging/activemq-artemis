@@ -281,6 +281,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String MANAGEMENT_BROWSE_PAGE_SIZE = "management-browse-page-size";
 
+   private static final String MANAGEMENT_MESSAGE_ATTRIBUTE_SIZE_LIMIT = "management-message-attribute-size-limit";
+
    private static final String MAX_CONNECTIONS_NODE_NAME = "max-connections";
 
    private static final String MAX_QUEUES_NODE_NAME = "max-queues";
@@ -1250,6 +1252,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setConfigDeleteAddresses(policy);
          } else if (MANAGEMENT_BROWSE_PAGE_SIZE.equalsIgnoreCase(name)) {
             addressSettings.setManagementBrowsePageSize(XMLUtil.parseInt(child));
+         } else if (MANAGEMENT_MESSAGE_ATTRIBUTE_SIZE_LIMIT.equalsIgnoreCase(name)) {
+            addressSettings.setManagementMessageAttributeSizeLimit(XMLUtil.parseInt(child));
          } else if (DEFAULT_PURGE_ON_NO_CONSUMERS.equalsIgnoreCase(name)) {
             addressSettings.setDefaultPurgeOnNoConsumers(XMLUtil.parseBoolean(child));
          } else if (DEFAULT_MAX_CONSUMERS.equalsIgnoreCase(name)) {
@@ -2085,6 +2089,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       ComponentConfigurationRoutingType routingType = ComponentConfigurationRoutingType.valueOf(getString(brNode, "routing-type", ActiveMQDefaultConfiguration.getDefaultBridgeRoutingType(), Validators.COMPONENT_ROUTING_TYPE));
 
+      int concurrency = getInteger(brNode, "concurrency", ActiveMQDefaultConfiguration.getDefaultBridgeConcurrency(), Validators.GT_ZERO);
 
       NodeList clusterPassNodes = brNode.getElementsByTagName("password");
       String password = null;
@@ -2151,7 +2156,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          .setHA(ha)
          .setUser(user)
          .setPassword(password)
-         .setRoutingType(routingType);
+         .setRoutingType(routingType)
+         .setConcurrency(concurrency);
 
       if (!staticConnectorNames.isEmpty()) {
          config.setStaticConnectors(staticConnectorNames);
