@@ -2752,7 +2752,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       return federationManager;
    }
 
-
    @Override
    public Divert deployDivert(DivertConfiguration config) throws Exception {
       if (config.getName() == null) {
@@ -2790,6 +2789,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                      filter, transformer, postOffice, storageManager, config.getRoutingType());
 
       Binding binding = new DivertBinding(storageManager.generateID(), sAddress, divert);
+
+      storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(config));
 
       postOffice.addBinding(binding);
 
@@ -2830,6 +2831,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (config.getRoutingType() != null && divert.getRoutingType() != config.getRoutingType()) {
          divert.setRoutingType(config.getRoutingType());
       }
+
+      storageManager.storeDivertConfiguration(new PersistedDivertConfiguration(config));
 
       return divert;
    }
@@ -3594,14 +3597,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          securityRepository.addMatch(roleItem.getAddressMatch().toString(), setRoles);
       }
-
-      List<PersistedDivertConfiguration> persistedDivertConfigurations = storageManager.recoverDivertConfigurations();
-
-      if (persistedDivertConfigurations != null) {
-         for (PersistedDivertConfiguration persistedDivertConfiguration : persistedDivertConfigurations) {
-            configuration.getDivertConfigurations().add(persistedDivertConfiguration.getDivertConfiguration());
-         }
-      }
    }
 
    @Override
@@ -4060,6 +4055,22 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    private void deployDiverts() throws Exception {
+      if (storageManager.recoverDivertConfigurations() != null) {
+
+         for (PersistedDivertConfiguration persistedDivertConfiguration : storageManager.recoverDivertConfigurations()) {
+            //has it been removed from config
+            boolean deleted = configuration.getDivertConfigurations().stream().noneMatch(divertConfiguration -> divertConfiguration.getName().equals(persistedDivertConfiguration.getName()));
+            // if it has remove it if configured to do so
+            if (deleted) {
+               if (addressSettingsRepository.getMatch(persistedDivertConfiguration.getDivertConfiguration().getAddress()).getConfigDeleteDiverts() == DeletionPolicy.FORCE) {
+                  storageManager.deleteDivertConfiguration(persistedDivertConfiguration.getName());
+               } else {
+                  deployDivert(persistedDivertConfiguration.getDivertConfiguration());
+               }
+            }
+         }
+      }
+      //deploy the configured diverts
       for (DivertConfiguration config : configuration.getDivertConfigurations()) {
          deployDivert(config);
       }
