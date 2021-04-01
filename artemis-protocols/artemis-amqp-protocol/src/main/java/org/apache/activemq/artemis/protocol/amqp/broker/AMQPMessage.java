@@ -192,6 +192,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    protected SimpleString address;
    protected volatile int memoryEstimate = -1;
    protected long expiration;
+   protected boolean expirationReload = false;
    protected long scheduledTime = -1;
 
    // The Proton based AMQP message section that are retained in memory, these are the
@@ -228,6 +229,17 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    protected AMQPMessage(AMQPMessage copy) {
       this(copy.messageFormat, copy.extraProperties, copy.coreMessageObjectPools);
+
+      this.headerPosition = copy.headerPosition;
+      this.encodedHeaderSize = copy.encodedHeaderSize;
+      this.deliveryAnnotationsPosition = copy.deliveryAnnotationsPosition;
+      this.encodedDeliveryAnnotationsSize = copy.encodedDeliveryAnnotationsSize;
+      this.messageAnnotationsPosition = copy.messageAnnotationsPosition;
+      this.propertiesPosition = copy.propertiesPosition;
+      this.applicationPropertiesPosition = copy.applicationPropertiesPosition;
+      this.remainingBodyPosition = copy.remainingBodyPosition;
+      this.applicationProperties = copy.applicationProperties;
+      this.messageDataScanned = copy.messageDataScanned;
    }
 
    protected AMQPMessage(long messageFormat) {
@@ -242,7 +254,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    /** This will return application properties without attempting to decode it.
     * That means, if applicationProperties were never parsed before, this will return null, even if there is application properties.
     *  This was created as an internal method for testing, as we need to validate if the application properties are not decoded until needed. */
-   public ApplicationProperties getDecodedApplicationProperties() {
+   protected ApplicationProperties getDecodedApplicationProperties() {
       return applicationProperties;
    }
 
@@ -468,6 +480,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    }
 
    protected ApplicationProperties lazyDecodeApplicationProperties() {
+      ensureMessageDataScanned();
       if (applicationProperties != null || applicationPropertiesPosition == VALUE_NOT_PRESENT) {
          return applicationProperties;
       }
@@ -579,7 +592,9 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       messageAnnotations = null;
       properties = null;
       applicationProperties = null;
-      expiration = 0;
+      if (!expirationReload) {
+         expiration = 0;
+      }
       encodedHeaderSize = 0;
       memoryEstimate = -1;
       scheduledTime = -1;
@@ -610,7 +625,9 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
                headerPosition = constructorPos;
                encodedHeaderSize = data.position();
                if (header.getTtl() != null) {
-                  expiration = System.currentTimeMillis() + header.getTtl().intValue();
+                  if (!expirationReload) {
+                     expiration = System.currentTimeMillis() + header.getTtl().intValue();
+                  }
                }
             } else if (DeliveryAnnotations.class.equals(constructor.getTypeClass())) {
                deliveryAnnotationsPosition = constructorPos;
@@ -624,7 +641,9 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
                properties = (Properties) constructor.readValue();
 
                if (properties.getAbsoluteExpiryTime() != null && properties.getAbsoluteExpiryTime().getTime() > 0) {
-                  expiration = properties.getAbsoluteExpiryTime().getTime();
+                  if (!expirationReload) {
+                     expiration = properties.getAbsoluteExpiryTime().getTime();
+                  }
                }
             } else if (ApplicationProperties.class.equals(constructor.getTypeClass())) {
                // Lazy decoding will start at the TypeConstructor of these ApplicationProperties
@@ -923,8 +942,15 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public final long getExpiration() {
-      ensureMessageDataScanned();
+      if (!expirationReload) {
+         ensureMessageDataScanned();
+      }
       return expiration;
+   }
+
+   public void reloadExpiration(long expiration) {
+      this.expiration = expiration;
+      this.expirationReload = true;
    }
 
    @Override

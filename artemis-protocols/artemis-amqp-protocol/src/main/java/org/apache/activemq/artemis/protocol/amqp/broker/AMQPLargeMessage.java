@@ -87,6 +87,8 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       }
    }
 
+   private boolean reencoded = false;
+
    /**
     * AMQPLargeMessagePersister will save the buffer here.
     * */
@@ -139,6 +141,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       largeBody = new LargeBody(this, copy.largeBody.getStorageManager(), fileCopy);
       largeBody.setBodySize(copy.largeBody.getStoredBodySize());
       this.storageManager = copy.largeBody.getStorageManager();
+      this.reencoded = copy.reencoded;
       setMessageID(newID);
    }
 
@@ -265,9 +268,13 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          applicationProperties = (ApplicationProperties)TLSEncode.getDecoder().readObject();
 
          if (properties != null && properties.getAbsoluteExpiryTime() != null && properties.getAbsoluteExpiryTime().getTime() > 0) {
-            expiration = properties.getAbsoluteExpiryTime().getTime();
+            if (!expirationReload) {
+               expiration = properties.getAbsoluteExpiryTime().getTime();
+            }
          } else if (header != null && header.getTtl() != null) {
-            expiration = System.currentTimeMillis() + header.getTtl().intValue();
+            if (!expirationReload) {
+               expiration = System.currentTimeMillis() + header.getTtl().intValue();
+            }
          }
 
 
@@ -325,7 +332,9 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
          if (Header.class.equals(constructor.getTypeClass())) {
             header = (Header) constructor.readValue();
             if (header.getTtl() != null) {
-               expiration = System.currentTimeMillis() + header.getTtl().intValue();
+               if (!expirationReload) {
+                  expiration = System.currentTimeMillis() + header.getTtl().intValue();
+               }
             }
          }
       } finally {
@@ -495,6 +504,7 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
       AMQPLargeMessage newMessage = new AMQPLargeMessage(this, newfile, messageID);
       newMessage.setParentRef(this);
       newMessage.setFileDurable(this.isDurable());
+      newMessage.reloadExpiration(this.expiration);
       return newMessage;
    }
 
@@ -622,7 +632,15 @@ public class AMQPLargeMessage extends AMQPMessage implements LargeServerMessage 
 
    @Override
    public void reencode() {
+      reencoded = true;
+   }
 
+   public void setReencoded(boolean reencoded) {
+      this.reencoded = reencoded;
+   }
+
+   public boolean isReencoded() {
+      return reencoded;
    }
 
    @Override
