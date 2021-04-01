@@ -18,9 +18,12 @@ package org.apache.activemq.artemis.core.io.aio;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.netty.util.internal.PlatformDependent;
@@ -38,6 +41,7 @@ import org.apache.activemq.artemis.nativo.jlibaio.LibaioFile;
 import org.apache.activemq.artemis.nativo.jlibaio.SubmitInfo;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.PowerOf2Util;
+import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
 import org.jboss.logging.Logger;
 import org.jctools.queues.MpmcArrayQueue;
@@ -60,6 +64,8 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
       }
    }
 
+   private final ReusableLatch pendingClose = new ReusableLatch(0);
+
    private final ReuseBuffersController buffersControl = new ReuseBuffersController();
 
    private volatile boolean reuseBuffers = true;
@@ -73,6 +79,14 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
    private final AtomicBoolean running = new AtomicBoolean(false);
 
    private static final String AIO_TEST_FILE = ".aio-test";
+
+   public void beforeClose() {
+      pendingClose.countUp();
+   }
+
+   public void afterClose() {
+      pendingClose.countDown();
+   }
 
    public AIOSequentialFileFactory(final File journalDir, int maxIO) {
       this(journalDir, ArtemisConstants.DEFAULT_JOURNAL_BUFFER_SIZE_AIO, ArtemisConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO, maxIO, false, null, null);
@@ -287,6 +301,15 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
       if (this.running.compareAndSet(true, false)) {
          buffersControl.stop();
 
+         try {
+            // if we stop libaioContext before we finish this, we will never get confirmation on items previously sent
+            if (!pendingClose.await(1, TimeUnit.MINUTES)) {
+               threadDump("Timeout on waiting for asynchronous close");
+            }
+         } catch (Throwable throwableToLog) {
+            logger.warn(throwableToLog.getMessage(), throwableToLog);
+         }
+
          libaioContext.close();
          libaioContext = null;
 
@@ -306,6 +329,13 @@ public final class AIOSequentialFileFactory extends AbstractSequentialFileFactor
       }
    }
 
+   static void threadDump(String message) {
+      ActiveMQJournalLogger.LOGGER.warn(message);
+      final ThreadInfo[] threads = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+      for (ThreadInfo threadInfo : threads) {
+         ActiveMQJournalLogger.LOGGER.warn(threadInfo.toString());
+      }
+   }
 
    /**
     * The same callback is used for Runnable executor.
