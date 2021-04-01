@@ -111,6 +111,23 @@ public class JournalCompatibilityTest extends VersionedBase {
    }
 
    @Test
+   public void testSendReceivePaging() throws Throwable {
+      setVariable(senderClassloader, "persistent", true);
+      startServer(serverFolder.getRoot(), senderClassloader, "journalTest", null, true);
+      evaluate(senderClassloader, "journalcompatibility/forcepaging.groovy");
+      evaluate(senderClassloader, "meshTest/sendMessages.groovy", server, sender, "sendAckMessages");
+      evaluate(senderClassloader, "journalcompatibility/ispaging.groovy");
+      stopServer(senderClassloader);
+
+      setVariable(receiverClassloader, "persistent", true);
+      startServer(serverFolder.getRoot(), receiverClassloader, "journalTest", null, false);
+      evaluate(receiverClassloader, "journalcompatibility/ispaging.groovy");
+
+      setVariable(receiverClassloader, "latch", null);
+      evaluate(receiverClassloader, "meshTest/sendMessages.groovy", server, receiver, "receiveMessages");
+   }
+
+   @Test
    public void testSendReceiveAMQPPaging() throws Throwable {
       setVariable(senderClassloader, "persistent", true);
       startServer(serverFolder.getRoot(), senderClassloader, "journalTest", null, true);
