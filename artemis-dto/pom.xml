@@ -28,9 +28,7 @@
    <name>ActiveMQ Artemis DTO</name>
 
    <properties>
-      <version.activation>1.1.1</version.activation>
       <version.jaxb>2.2.11</version.jaxb>
-      <version.jaxb-api>1.0.5.Final</version.jaxb-api>
 
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
    </properties>
@@ -46,9 +44,9 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>org.jboss.spec.javax.xml.bind</groupId>
-         <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
-         <version>${version.jaxb-api}</version>
+         <groupId>jakarta.xml.bind</groupId>
+         <artifactId>jakarta.xml.bind-api</artifactId>
+         <version>${jakarta.xml.bind-api.version}</version>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
@@ -61,9 +59,9 @@
          <version>${version.jaxb}</version>
       </dependency>
       <dependency>
-         <groupId>javax.activation</groupId>
-         <artifactId>activation</artifactId>
-         <version>${version.activation}</version>
+         <groupId>jakarta.activation</groupId>
+         <artifactId>jakarta.activation-api</artifactId>
+         <version>${jakarta.activation-api.version}</version>
       </dependency>
       <dependency>
          <groupId>junit</groupId>
@@ -125,9 +123,9 @@
             </executions>
             <dependencies>
                <dependency>
-                  <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                  <artifactId>jboss-jaxb-api_2.2_spec</artifactId>
-                  <version>${version.jaxb-api}</version>
+                  <groupId>jakarta.xml.bind</groupId>
+                  <artifactId>jakarta.xml.bind-api</artifactId>
+                  <version>${jakarta.xml.bind-api.version}</version>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
@@ -140,9 +138,9 @@
                   <version>${version.jaxb}</version>
                </dependency>
                <dependency>
-                   <groupId>javax.activation</groupId>
-                   <artifactId>activation</artifactId>
-                   <version>${version.activation}</version>
+                   <groupId>jakarta.activation</groupId>
+                   <artifactId>jakarta.activation-api</artifactId>
+                   <version>${jakarta.activation-api.version}</version>
                </dependency>
             </dependencies>
          </plugin>
