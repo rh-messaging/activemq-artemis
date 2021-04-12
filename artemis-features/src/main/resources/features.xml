@@ -141,7 +141,7 @@
 		<bundle>mvn:jakarta.ejb/jakarta.ejb-api/${jakarta.ejb-api.version}</bundle>
 		<bundle>mvn:jakarta.transaction/jakarta.transaction-api/${jakarta.transaction-api.version}</bundle>
 		<bundle>mvn:jakarta.management.j2ee/jakarta.management.j2ee-api/${jakarta.management.j2ee-api.version}</bundle>
-		<bundle>mvn:org.apache.activemq/activemq-client/${activemq5-version}</bundle>
+		<bundle>wrap:mvn:org.apache.activemq/activemq-client/${activemq5-version}</bundle>
 	</feature>
 
 </features>
