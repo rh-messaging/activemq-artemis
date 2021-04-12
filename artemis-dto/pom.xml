@@ -28,8 +28,6 @@
    <name>ActiveMQ Artemis DTO</name>
 
    <properties>
-      <version.jaxb>2.2.11</version.jaxb>
-
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
    </properties>
 
@@ -56,7 +54,7 @@
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
          <artifactId>jaxb-osgi</artifactId>
-         <version>${version.jaxb}</version>
+         <version>${version.jaxb.runtime}</version>
       </dependency>
       <dependency>
          <groupId>jakarta.activation</groupId>
@@ -135,7 +133,7 @@
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
                   <artifactId>jaxb-osgi</artifactId>
-                  <version>${version.jaxb}</version>
+                  <version>${version.jaxb.runtime}</version>
                </dependency>
                <dependency>
                    <groupId>jakarta.activation</groupId>
