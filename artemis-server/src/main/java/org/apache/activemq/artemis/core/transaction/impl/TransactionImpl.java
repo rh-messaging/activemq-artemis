@@ -35,6 +35,7 @@ import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.RefsOperation;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperation;
+import org.apache.activemq.artemis.utils.ArtemisCloseable;
 import org.jboss.logging.Logger;
 
 public class TransactionImpl implements Transaction {
@@ -205,8 +206,7 @@ public class TransactionImpl implements Transaction {
       if (logger.isTraceEnabled()) {
          logger.trace("TransactionImpl::prepare::" + this);
       }
-      storageManager.readLock();
-      try {
+      try (ArtemisCloseable lock = storageManager.closeableReadLock()) {
          synchronized (timeoutLock) {
             if (isEffective()) {
                logger.debug("TransactionImpl::prepare::" + this + " is being ignored");
@@ -254,8 +254,6 @@ public class TransactionImpl implements Transaction {
                }
             });
          }
-      } finally {
-         storageManager.readUnLock();
       }
    }
 
