@@ -337,6 +337,17 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private volatile long ringSize;
 
+   /* in certain cases we need to redeliver a message directly.
+   * it's useful for usecases last LastValueQueue */
+   protected MessageReference nextDelivery() {
+      return null;
+   }
+
+   protected void repeatNextDelivery(MessageReference reference) {
+
+   }
+
+
    /**
     * This is to avoid multi-thread races on calculating direct delivery,
     * to guarantee ordering will be always be correct
@@ -2966,11 +2977,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                holder.iter = messageReferences.iterator();
             }
 
-            if (holder.iter.hasNext()) {
-               ref = holder.iter.next();
-            } else {
-               ref = null;
+            ref = nextDelivery();
+            boolean nextDelivery = false;
+            if (ref != null) {
+               nextDelivery = true;
             }
+
+            if (ref == null && holder.iter.hasNext()) {
+               ref = holder.iter.next();
+            }
+
             if (ref == null) {
                noDelivery++;
             } else {
@@ -3017,14 +3033,18 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   handled++;
                   consumers.reset();
                } else if (status == HandleStatus.BUSY) {
-                  try {
-                     holder.iter.repeat();
-                  } catch (NoSuchElementException e) {
-                     // this could happen if there was an exception on the queue handling
-                     // and it returned BUSY because of that exception
-                     //
-                     // We will just log it as there's nothing else we can do now.
-                     logger.warn(e.getMessage(), e);
+                  if (nextDelivery) {
+                     repeatNextDelivery(ref);
+                  } else {
+                     try {
+                        holder.iter.repeat();
+                     } catch (NoSuchElementException e) {
+                        // this could happen if there was an exception on the queue handling
+                        // and it returned BUSY because of that exception
+                        //
+                        // We will just log it as there's nothing else we can do now.
+                        logger.warn(e.getMessage(), e);
+                     }
                   }
 
                   noDelivery++;
