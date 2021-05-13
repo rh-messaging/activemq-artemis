@@ -83,7 +83,7 @@
       <karaf.version>4.0.6</karaf.version>
       <pax.exam.version>4.9.1</pax.exam.version>
       <commons.config.version>2.7</commons.config.version>
-      <commons.lang.version>3.0</commons.lang.version>
+      <commons.lang.version>3.12.0</commons.lang.version>
       <commons.logging.version>1.2</commons.logging.version>
       <activemq5-version>5.11.0.redhat-630515</activemq5-version>
       <apache.derby.version>10.11.1.1</apache.derby.version>
@@ -193,7 +193,7 @@
       <skipStyleCheck>true</skipStyleCheck>
       <skipOWASP>true</skipOWASP>
 
-      <directory-version>2.0.0-M15</directory-version>
+      <directory-version>2.0.0.AM26</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
 
       <cdi-api.version>1.2</cdi-api.version>
