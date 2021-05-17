@@ -30,6 +30,7 @@
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>
       <paho.client.mqttv3.version>1.2.2</paho.client.mqttv3.version>
+      <its-surefire-extra-args/>
    </properties>
 
    <dependencies>
@@ -458,7 +459,9 @@
                      <goal>single</goal>
                   </goals>
                   <configuration>
-                     <descriptor>src/test/resources/rest/bwlist-rest-test-asm.xml</descriptor>
+                     <descriptors>
+                        <descriptor>src/test/resources/rest/bwlist-rest-test-asm.xml</descriptor>
+                     </descriptors>
                      <finalName>rest-test-bwlist</finalName>
                      <appendAssemblyId>false</appendAssemblyId>
                      <outputDirectory>target/test-classes/rest/</outputDirectory>
@@ -471,7 +474,9 @@
                      <goal>single</goal>
                   </goals>
                   <configuration>
-                     <descriptor>src/test/resources/rest/rest-test-asm.xml</descriptor>
+                     <descriptors>
+                        <descriptor>src/test/resources/rest/rest-test-asm.xml</descriptor>
+                     </descriptors>
                      <finalName>rest-test</finalName>
                      <appendAssemblyId>false</appendAssemblyId>
                      <outputDirectory>target/test-classes/rest/</outputDirectory>
@@ -500,7 +505,7 @@
                   <exclude>**/ReplicatedJMSFailoverTest.java</exclude>
                   <exclude>org.apache.activemq/tests/util/*.java</exclude>
                </excludes>
-               <argLine>-Djgroups.bind_addr=::1 ${activemq-surefire-argline}</argLine>
+               <argLine>-Djgroups.bind_addr=::1 ${activemq-surefire-argline} ${its-surefire-extra-args} -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="java.lang,javax.security,java.util,org.apache.activemq,org.fusesource.hawtbuf"</argLine>
             </configuration>
          </plugin>
          <plugin>
@@ -527,5 +532,15 @@
          </plugin>
       </plugins>
    </build>
+   <profiles>
+      <profile>
+         <id>jdk16on</id>
+            <activation>
+         <jdk>[16,)</jdk>
+         </activation>
+         <properties>
+            <its-surefire-extra-args>--add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED</its-surefire-extra-args>
+         </properties>
+      </profile>
+   </profiles>
 </project>
-
