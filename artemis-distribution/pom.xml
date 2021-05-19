@@ -334,7 +334,7 @@
                      <descriptors>
                        <descriptor>src/main/assembly/source-assembly.xml</descriptor>
                      </descriptors>
-                     <tarLongFileMode>gnu</tarLongFileMode>
+                     <tarLongFileMode>posix</tarLongFileMode>
                   </configuration>
                   <phase>package</phase>
                   <goals>
@@ -347,7 +347,7 @@
                      <descriptors>
                        <descriptor>src/main/assembly/dep.xml</descriptor>
                      </descriptors>
-                     <tarLongFileMode>gnu</tarLongFileMode>
+                     <tarLongFileMode>posix</tarLongFileMode>
                   </configuration>
                   <phase>package</phase>
                   <goals>
