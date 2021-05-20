@@ -105,7 +105,7 @@ public class ParseAppMultiThread {
    @Test
    public void testMultiThreadParsing() throws Exception {
 
-      for (int rep = 0; rep < 500; rep++) {
+      for (int rep = 0; rep < 50; rep++) {
          String randomStr = RandomUtil.randomString();
          HashMap map = new HashMap();
          map.put("color", randomStr);
@@ -134,7 +134,7 @@ public class ParseAppMultiThread {
          }
 
 
-         Thread[] threads = new Thread[0];
+         Thread[] threads = new Thread[50];
          CyclicBarrier barrier = threads.length > 0 ? new CyclicBarrier(threads.length) : null;
 
          AtomicInteger errors = new AtomicInteger(0);

@@ -479,7 +479,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @SuppressWarnings("unchecked")
    protected Map<String, Object> getApplicationPropertiesMap(boolean createIfAbsent) {
-      ensureMessageDataScanned();
       ApplicationProperties appMap = lazyDecodeApplicationProperties();
       Map<String, Object> map = null;
 
@@ -1393,7 +1392,6 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public final Object getObjectProperty(String key) {
-      ensureMessageDataScanned();
       if (key.equals(MessageUtil.TYPE_HEADER_NAME.toString())) {
          if (properties != null) {
             return properties.getSubject();

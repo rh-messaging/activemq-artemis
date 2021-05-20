@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.protocol.amqp.broker;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -250,6 +251,15 @@ public class AMQPStandardMessage extends AMQPMessage {
          encoder.setByteBuffer((WritableBuffer) null);
          buffer.release();
       }
+   }
+
+
+   // This is a fix to avoid having to bring the entire set of changes of AMQP into 7.8.1 that would fix the parsing issue
+   @SuppressWarnings("unchecked")
+   @Override
+   protected Map<String, Object> getApplicationPropertiesMap(boolean createIfAbsent) {
+      ensureMessageDataScanned();
+      return super.getApplicationPropertiesMap(createIfAbsent);
    }
 
    @Override
