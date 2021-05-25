@@ -48,7 +48,7 @@ public class SSLProviderTwoWayTest extends SSLTestBase {
 
       params.put(TransportConstants.TRUSTSTORE_PATH_PROP_NAME, SERVER_SIDE_TRUSTSTORE);
       params.put(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME, PASSWORD);
-      params.put(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME, "JKS");
+      params.put(TransportConstants.TRUSTSTORE_TYPE_PROP_NAME, "JKS");
       params.put(TransportConstants.NEED_CLIENT_AUTH_PROP_NAME, true);
    }
 
@@ -71,10 +71,10 @@ public class SSLProviderTwoWayTest extends SSLTestBase {
 
       uri.append("?").append(TransportConstants.SSL_ENABLED_PROP_NAME).append("=true");
       uri.append("&").append(TransportConstants.SSL_PROVIDER).append("=").append(clientSslProvider);
-      uri.append("&").append(TransportConstants.KEYSTORE_PROVIDER_PROP_NAME).append("=").append("JKS");
+      uri.append("&").append(TransportConstants.KEYSTORE_TYPE_PROP_NAME).append("=").append("JKS");
       uri.append("&").append(TransportConstants.KEYSTORE_PATH_PROP_NAME).append("=").append(CLIENT_SIDE_KEYSTORE);
       uri.append("&").append(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME).append("=").append(PASSWORD);
-      uri.append("&").append(TransportConstants.TRUSTSTORE_PROVIDER_PROP_NAME).append("=JKS");
+      uri.append("&").append(TransportConstants.TRUSTSTORE_TYPE_PROP_NAME).append("=JKS");
       uri.append("&").append(TransportConstants.TRUSTSTORE_PATH_PROP_NAME).append("=").append(CLIENT_SIDE_TRUSTSTORE);
       uri.append("&").append(TransportConstants.TRUSTSTORE_PASSWORD_PROP_NAME).append("=").append(PASSWORD);
 
