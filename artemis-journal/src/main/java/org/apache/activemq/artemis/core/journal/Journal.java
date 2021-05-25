@@ -58,6 +58,10 @@ public interface Journal extends ActiveMQComponent {
       LOADED;
    }
 
+   void setRemoveExtraFilesOnLoad(boolean removeExtraFilesOnLoad);
+
+   boolean isRemoveExtraFilesOnLoad();
+
    // Non transactional operations
 
    void appendAddRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception;
@@ -81,6 +85,9 @@ public interface Journal extends ActiveMQComponent {
                         boolean sync,
                         IOCompletion completionCallback) throws Exception {
       appendAddRecord(id, recordType, EncoderPersister.getInstance(), record, sync, completionCallback);
+   }
+
+   default void replaceableRecord(int recordType) {
    }
 
    void appendUpdateRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception;

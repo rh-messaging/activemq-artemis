@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,15 +91,45 @@ import static org.apache.activemq.artemis.core.journal.impl.Reclaimer.scan;
  * <p>Look at {@link JournalImpl#load(LoaderCallback)} for the file layout
  */
 public class JournalImpl extends JournalBase implements TestableJournal, JournalRecordProvider {
+   private static final Logger logger = Logger.getLogger(JournalImpl.class);
 
-   // Constants -----------------------------------------------------
+
+   /**
+    * this is a factor where when you have more than UPDATE_FACTOR updates for every ADD.
+    *
+    * When this happens we should issue a compacting event.
+    *
+    * I don't foresee users needing to configure this value. However if this ever happens we would have a system property aligned for this.
+    *
+    * With that being said, if you needed this, please raise an issue on why you needed to use this, so we may eventually add it to broker.xml when a real
+    * use case would determine the configuration exposed in there.
+    *
+    * To update this value, define a System Property org.apache.activemq.artemis.core.journal.impl.JournalImpl.UPDATE_FACTOR=YOUR VALUE
+    *
+    * */
+   public static final double UPDATE_FACTOR;
+
+   static {
+      String UPDATE_FACTOR_STR = System.getProperty(JournalImpl.class.getName() + ".UPDATE_FACTOR");
+      double value;
+      try {
+         if (UPDATE_FACTOR_STR == null) {
+            value = 100;
+         } else {
+            value = Double.parseDouble(UPDATE_FACTOR_STR);
+         }
+      } catch (Throwable e) {
+         logger.warn(e.getMessage(), e);
+         value = 100;
+      }
+
+      UPDATE_FACTOR = value;
+   }
 
    public static final int FORMAT_VERSION = 2;
 
    private static final int[] COMPATIBLE_VERSIONS = new int[]{1};
 
-   // Static --------------------------------------------------------
-   private static final Logger logger = Logger.getLogger(JournalImpl.class);
 
    // The sizes of primitive types
 
@@ -208,6 +239,20 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
     */
    private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
    private final ReadWriteLock compactorLock = new ReentrantReadWriteLock();
+
+   HashSet<Integer> replaceableRecords;
+
+
+   /** This will declare a record type as being replaceable on updates.
+    * Certain update records only need the last value, and they could be replaceable during compacting.
+    * */
+   @Override
+   public void replaceableRecord(int recordType) {
+      if (replaceableRecords == null) {
+         replaceableRecords = new HashSet<>();
+      }
+      replaceableRecords.add(recordType);
+   }
 
    private volatile JournalFile currentFile;
 
@@ -1712,6 +1757,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                }
             }
 
+            compactor.flushUpdates();
             compactor.flush();
 
             // pointcut for tests
@@ -1846,6 +1892,10 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          }
 
          compactor = new JournalCompactor(fileFactory, this, filesRepository, records.keysLongHashSet(), dataFilesToProcess.get(0).getFileID());
+
+         if (replaceableRecords != null) {
+            replaceableRecords.forEach((i) -> compactor.replaceableRecord(i));
+         }
 
          transactions.forEach((id, pendingTransaction) -> {
             compactor.addPendingTransaction(id, pendingTransaction.getPositiveArray());
@@ -2175,7 +2225,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          } else {
             if (changeData) {
                // Empty dataFiles with no data
-               filesRepository.addFreeFile(file, false, false);
+               filesRepository.addFreeFile(file, false, isRemoveExtraFilesOnLoad());
             }
          }
       }
@@ -2292,9 +2342,30 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       long totalLiveSize = 0;
 
+      long updateCount = 0, addRecord = 0;
+
       for (JournalFile file : dataFiles) {
          totalLiveSize += file.getLiveSize();
+         updateCount += file.getPosCount();
+         addRecord += file.getAddRecord();
       }
+
+
+      if (dataFiles.length > compactMinFiles && addRecord > 0 && updateCount > 0) {
+         double updateFactor = updateCount / addRecord;
+
+         if (updateFactor > UPDATE_FACTOR) { // this means every add records with at least 10 records
+            if (logger.isDebugEnabled()) {
+               logger.debug("There are " + addRecord + " records, with " + updateCount + " towards them. UpdateCound / AddCount = " + updateFactor + ", being greater than " + UPDATE_FACTOR + " meaning we have to schedule compacting");
+            }
+            return true;
+         } else {
+            if (logger.isDebugEnabled()) {
+               logger.debug("There are " + addRecord + " records, with " + updateCount + " towards them. UpdateCound / AddCount = " + updateFactor + ", which is lower than " + UPDATE_FACTOR + " meaning we are ok to leave these records");
+            }
+         }
+      }
+
 
       long totalBytes = dataFiles.length * (long) fileSize;
 
