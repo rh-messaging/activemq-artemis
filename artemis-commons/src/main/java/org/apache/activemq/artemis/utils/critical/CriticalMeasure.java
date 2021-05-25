@@ -17,7 +17,7 @@
 
 package org.apache.activemq.artemis.utils.critical;
 
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jboss.logging.Logger;
 
@@ -28,12 +28,14 @@ public class CriticalMeasure {
    // this is used on enterCritical, if the logger is in trace mode
    private volatile Exception traceEnter;
 
-   //uses updaters to avoid creates many AtomicLong instances
-   static final AtomicLongFieldUpdater<CriticalMeasure> TIME_ENTER_UPDATER = AtomicLongFieldUpdater.newUpdater(CriticalMeasure.class, "timeEnter");
-   static final AtomicLongFieldUpdater<CriticalMeasure> TIME_LEFT_UPDATER = AtomicLongFieldUpdater.newUpdater(CriticalMeasure.class, "timeLeft");
+   static final AtomicReferenceFieldUpdater<CriticalMeasure, Thread> CURRENT_THREAD_UDPATER = AtomicReferenceFieldUpdater.newUpdater(CriticalMeasure.class, Thread.class, "currentThread");
 
-   private volatile long timeEnter;
-   private volatile long timeLeft;
+   // While resetting the leaveMethod, I want to make sure no enter call would reset the value.
+   // so I set the Current Thread to this Ghost Thread, to then set it back to null
+   private static final Thread GHOST_THREAD = new Thread();
+
+   private volatile Thread currentThread;
+   protected volatile long timeEnter;
 
    private final int id;
    private final CriticalComponent component;
@@ -41,38 +43,46 @@ public class CriticalMeasure {
    public CriticalMeasure(CriticalComponent component, int id) {
       this.id = id;
       this.component = component;
-      //prefer this approach instead of using some fixed value because System::nanoTime could change sign
-      //with long running processes
-      long time = System.nanoTime();
-      TIME_LEFT_UPDATER.set(this, time);
-      TIME_ENTER_UPDATER.set(this, time);
+      this.timeEnter = 0;
    }
 
    public void enterCritical() {
-      //prefer lazySet in order to avoid heavy-weight full barriers on x86
-      TIME_ENTER_UPDATER.lazySet(this, System.nanoTime());
 
-      if (logger.isTraceEnabled()) {
-         traceEnter = new Exception("entered");
+      // a sampling of a single thread at a time will be sufficient for the analyser,
+      // typically what causes one thread to stall will repeat on another
+      if (CURRENT_THREAD_UDPATER.compareAndSet(this, null, Thread.currentThread())) {
+         timeEnter = System.nanoTime();
+
+         if (logger.isTraceEnabled()) {
+            traceEnter = new Exception("entered");
+         }
       }
    }
 
    public void leaveCritical() {
 
-      if (logger.isTraceEnabled()) {
+      if (CURRENT_THREAD_UDPATER.compareAndSet(this, Thread.currentThread(), GHOST_THREAD)) {
+         // NULL_THREAD here represents a state where I would be ignoring any call to enterCritical or leaveCritical, while I reset the Time Enter Update
+         // This is to avoid replacing time Enter by a new Value, right after current Thread is set to Null.
+         // So we set to this ghost value while we are setting
 
-         CriticalAnalyzer analyzer = component != null ? component.getCriticalAnalyzer() : null;
-         if (analyzer != null) {
-            long nanoTimeout = analyzer.getTimeoutNanoSeconds();
-            if (checkExpiration(nanoTimeout, false)) {
-               logger.trace("Path " + id + " on component " + getComponentName() + " is taking too long, leaving at", new Exception("left"));
-               logger.trace("Path " + id + " on component " + getComponentName() + " is taking too long, entered at", traceEnter);
+         if (logger.isTraceEnabled()) {
+
+            CriticalAnalyzer analyzer = component != null ? component.getCriticalAnalyzer() : null;
+            if (analyzer != null) {
+               long nanoTimeout = analyzer.getTimeoutNanoSeconds();
+               if (checkExpiration(nanoTimeout, false)) {
+                  logger.trace("Path " + id + " on component " + getComponentName() + " is taking too long, leaving at", new Exception("left"));
+                  logger.trace("Path " + id + " on component " + getComponentName() + " is taking too long, entered at", traceEnter);
+               }
             }
+            traceEnter = null;
          }
-         traceEnter = null;
-      }
+         this.timeEnter = 0;
 
-      TIME_LEFT_UPDATER.lazySet(this, System.nanoTime());
+         // I am pretty sure this is single threaded by now.. I don't need compareAndSet here
+         CURRENT_THREAD_UDPATER.set(this, null);
+      }
    }
 
    protected String getComponentName() {
@@ -84,12 +94,10 @@ public class CriticalMeasure {
    }
 
    public boolean checkExpiration(long timeout, boolean reset) {
-      long time = System.nanoTime();
-      final long timeLeft = TIME_LEFT_UPDATER.get(this);
-      final long timeEnter = TIME_ENTER_UPDATER.get(this);
-      //due to how System::nanoTime works is better to use differences to prevent numerical overflow while comparing
-      if (timeLeft - timeEnter < 0) {
-         boolean expired = System.nanoTime() - timeEnter > timeout;
+      final long timeEnter = this.timeEnter;
+      if (timeEnter != 0L) {
+         long time = System.nanoTime();
+         boolean expired = time - timeEnter > timeout;
 
          if (expired) {
             Exception lastTraceEnter = this.traceEnter;
@@ -101,20 +109,12 @@ public class CriticalMeasure {
             }
 
             if (reset) {
-               TIME_LEFT_UPDATER.lazySet(this, time);
-               TIME_ENTER_UPDATER.lazySet(this, time);
+               this.timeEnter = 0;
             }
+
          }
          return expired;
       }
       return false;
-   }
-
-   public long enterTime() {
-      return TIME_ENTER_UPDATER.get(this);
-   }
-
-   public long leaveTime() {
-      return TIME_LEFT_UPDATER.get(this);
    }
 }
