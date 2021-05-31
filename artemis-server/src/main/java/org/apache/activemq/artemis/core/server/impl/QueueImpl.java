@@ -46,6 +46,7 @@ import java.util.function.ToLongFunction;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQNullRefException;
+import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
@@ -94,6 +95,7 @@ import org.apache.activemq.artemis.core.settings.HierarchicalRepository;
 import org.apache.activemq.artemis.core.settings.HierarchicalRepositoryChangeListener;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.SlowConsumerPolicy;
+import org.apache.activemq.artemis.core.settings.impl.SlowConsumerThresholdMeasurementUnit;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.core.transaction.TransactionPropertyIndexes;
@@ -337,6 +339,17 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private volatile boolean nonDestructive;
 
    private volatile long ringSize;
+
+   /* in certain cases we need to redeliver a message directly.
+   * it's useful for usecases last LastValueQueue */
+   protected MessageReference nextDelivery() {
+      return null;
+   }
+
+   protected void repeatNextDelivery(MessageReference reference) {
+
+   }
+
 
    /**
     * This is to avoid multi-thread races on calculating direct delivery,
@@ -2542,9 +2555,25 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                                           final SimpleString toAddress,
                                           final boolean rejectDuplicates,
                                           final Binding binding) throws Exception {
+      return moveReferences(flushLimit, filter, toAddress, rejectDuplicates, -1, binding);
+   }
+
+   @Override
+   public int moveReferences(final int flushLimit,
+                             final Filter filter,
+                             final SimpleString toAddress,
+                             final boolean rejectDuplicates,
+                             final int messageCount,
+                             final Binding binding) throws Exception {
+      final Integer expectedHits = messageCount > 0 ? messageCount : null;
       final DuplicateIDCache targetDuplicateCache = postOffice.getDuplicateIDCache(toAddress);
 
       return iterQueue(flushLimit, filter, new QueueIterateAction() {
+         @Override
+         public Integer expectedHits() {
+            return expectedHits;
+         }
+
          @Override
          public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
             boolean ignored = false;
@@ -2951,12 +2980,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                holder.iter = messageReferences.iterator();
             }
 
-            if (holder.iter.hasNext()) {
-               ref = holder.iter.next();
-            } else {
-               ref = null;
-               existingMemoryEstimate = 0;
+            ref = nextDelivery();
+            boolean nextDelivery = false;
+            if (ref != null) {
+               nextDelivery = true;
             }
+
+            if (ref == null && holder.iter.hasNext()) {
+               ref = holder.iter.next();
+            }
+
             if (ref == null) {
                noDelivery++;
             } else {
@@ -3004,14 +3037,18 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   handled++;
                   consumers.reset();
                } else if (status == HandleStatus.BUSY) {
-                  try {
-                     holder.iter.repeat();
-                  } catch (NoSuchElementException e) {
-                     // this could happen if there was an exception on the queue handling
-                     // and it returned BUSY because of that exception
-                     //
-                     // We will just log it as there's nothing else we can do now.
-                     logger.warn(e.getMessage(), e);
+                  if (nextDelivery) {
+                     repeatNextDelivery(ref);
+                  } else {
+                     try {
+                        holder.iter.repeat();
+                     } catch (NoSuchElementException e) {
+                        // this could happen if there was an exception on the queue handling
+                        // and it returned BUSY because of that exception
+                        //
+                        // We will just log it as there's nothing else we can do now.
+                        logger.warn(e.getMessage(), e);
+                     }
                   }
 
                   noDelivery++;
@@ -3049,7 +3086,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (handledconsumer != null) {
             proceedDeliver(handledconsumer, ref);
          }
-
       }
 
       return true;
@@ -3571,22 +3607,24 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private void createDeadLetterResources() throws Exception {
       AddressSettings addressSettings = server.getAddressSettingsRepository().getMatch(getAddress().toString());
-      if (addressSettings.isAutoCreateDeadLetterResources() && !getAddress().equals(addressSettings.getDeadLetterAddress())) {
-         if (addressSettings.getDeadLetterAddress() != null && addressSettings.getDeadLetterAddress().length() != 0) {
-            SimpleString dlqName = addressSettings.getDeadLetterQueuePrefix().concat(getAddress()).concat(addressSettings.getDeadLetterQueueSuffix());
-            SimpleString dlqFilter = new SimpleString(String.format("%s = '%s'", Message.HDR_ORIGINAL_ADDRESS, getAddress()));
-            server.createQueue(new QueueConfiguration(dlqName).setAddress(addressSettings.getDeadLetterAddress()).setFilterString(dlqFilter).setAutoCreated(true).setAutoCreateAddress(true), true);
-         }
-      }
+      createResources(addressSettings.isAutoCreateDeadLetterResources(), addressSettings.getDeadLetterAddress(), addressSettings.getDeadLetterQueuePrefix(), addressSettings.getDeadLetterQueueSuffix());
    }
 
    private void createExpiryResources() throws Exception {
       AddressSettings addressSettings = server.getAddressSettingsRepository().getMatch(getAddress().toString());
-      if (addressSettings.isAutoCreateExpiryResources() && !getAddress().equals(addressSettings.getExpiryAddress())) {
-         if (addressSettings.getExpiryAddress() != null && addressSettings.getExpiryAddress().length() != 0) {
-            SimpleString expiryQueueName = addressSettings.getExpiryQueuePrefix().concat(getAddress()).concat(addressSettings.getExpiryQueueSuffix());
-            SimpleString expiryFilter = new SimpleString(String.format("%s = '%s'", Message.HDR_ORIGINAL_ADDRESS, getAddress()));
-            server.createQueue(new QueueConfiguration(expiryQueueName).setAddress(addressSettings.getExpiryAddress()).setFilterString(expiryFilter).setAutoCreated(true).setAutoCreateAddress(true), true);
+      createResources(addressSettings.isAutoCreateExpiryResources(), addressSettings.getExpiryAddress(), addressSettings.getExpiryQueuePrefix(), addressSettings.getExpiryQueueSuffix());
+   }
+
+   private void createResources(boolean isAutoCreate, SimpleString destinationAddress, SimpleString prefix, SimpleString suffix) throws Exception {
+      if (isAutoCreate && !getAddress().equals(destinationAddress)) {
+         if (destinationAddress != null && destinationAddress.length() != 0) {
+            SimpleString destinationQueueName = prefix.concat(getAddress()).concat(suffix);
+            SimpleString filter = new SimpleString(String.format("%s = '%s'", Message.HDR_ORIGINAL_ADDRESS, getAddress()));
+            try {
+               server.createQueue(new QueueConfiguration(destinationQueueName).setAddress(destinationAddress).setFilterString(filter).setAutoCreated(true).setAutoCreateAddress(true), true);
+            } catch (ActiveMQQueueExistsException e) {
+               // ignore
+            }
          }
       }
    }
@@ -4344,7 +4382,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       } else {
          if (slowConsumerReaperRunnable == null) {
             scheduleSlowConsumerReaper(settings);
-         } else if (slowConsumerReaperRunnable.checkPeriod != settings.getSlowConsumerCheckPeriod() || slowConsumerReaperRunnable.threshold != settings.getSlowConsumerThreshold() || !slowConsumerReaperRunnable.policy.equals(settings.getSlowConsumerPolicy())) {
+         } else if (slowConsumerReaperRunnable.checkPeriod != settings.getSlowConsumerCheckPeriod() || slowConsumerReaperRunnable.thresholdInMsgPerSecond != settings.getSlowConsumerThreshold() || !slowConsumerReaperRunnable.policy.equals(settings.getSlowConsumerPolicy())) {
             if (slowConsumerReaperFuture != null) {
                slowConsumerReaperFuture.cancel(false);
                slowConsumerReaperFuture = null;
@@ -4355,12 +4393,12 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    void scheduleSlowConsumerReaper(AddressSettings settings) {
-      slowConsumerReaperRunnable = new SlowConsumerReaperRunnable(settings.getSlowConsumerCheckPeriod(), settings.getSlowConsumerThreshold(), settings.getSlowConsumerPolicy());
+      slowConsumerReaperRunnable = new SlowConsumerReaperRunnable(settings.getSlowConsumerCheckPeriod(), settings.getSlowConsumerThreshold(), settings.getSlowConsumerThresholdMeasurementUnit(), settings.getSlowConsumerPolicy());
 
       slowConsumerReaperFuture = scheduledExecutor.scheduleWithFixedDelay(slowConsumerReaperRunnable, settings.getSlowConsumerCheckPeriod(), settings.getSlowConsumerCheckPeriod(), TimeUnit.SECONDS);
 
       if (logger.isDebugEnabled()) {
-         logger.debug("Scheduled slow-consumer-reaper thread for queue \"" + getName() + "\"; slow-consumer-check-period=" + settings.getSlowConsumerCheckPeriod() + ", slow-consumer-threshold=" + settings.getSlowConsumerThreshold() + ", slow-consumer-policy=" + settings.getSlowConsumerPolicy());
+         logger.debug("Scheduled slow-consumer-reaper thread for queue \"" + getName() + "\"; slow-consumer-check-period=" + settings.getSlowConsumerCheckPeriod() + ", slow-consumer-threshold=" + settings.getSlowConsumerThreshold() + ", slow-consumer-threshold-measurement-unit=" + settings.getSlowConsumerThresholdMeasurementUnit().toString() + ", slow-consumer-policy=" + settings.getSlowConsumerPolicy());
       }
    }
 
@@ -4424,13 +4462,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private final class SlowConsumerReaperRunnable implements Runnable {
 
       private final SlowConsumerPolicy policy;
-      private final float threshold;
+      private final float thresholdInMsgPerSecond;
       private final long checkPeriod;
 
-      private SlowConsumerReaperRunnable(long checkPeriod, float threshold, SlowConsumerPolicy policy) {
+      private SlowConsumerReaperRunnable(long checkPeriod, float slowConsumerThreshold, SlowConsumerThresholdMeasurementUnit unit, SlowConsumerPolicy policy) {
          this.checkPeriod = checkPeriod;
          this.policy = policy;
-         this.threshold = threshold;
+         this.thresholdInMsgPerSecond = slowConsumerThreshold / unit.getValue();
       }
 
       @Override
@@ -4447,7 +4485,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             logger.debug("There are no consumers, no need to check slow consumer's rate");
             return;
          } else {
-            float queueThreshold = threshold * consumers.size();
+            float queueThreshold = thresholdInMsgPerSecond * consumers.size();
 
             if (queueRate < queueThreshold && queueMessages < queueThreshold) {
                if (logger.isDebugEnabled()) {
@@ -4462,7 +4500,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             if (consumer instanceof ServerConsumerImpl) {
                ServerConsumerImpl serverConsumer = (ServerConsumerImpl) consumer;
                float consumerRate = serverConsumer.getRate();
-               if (consumerRate < threshold) {
+               if (consumerRate < thresholdInMsgPerSecond) {
                   RemotingConnection connection = null;
                   ActiveMQServer server = ((PostOfficeImpl) postOffice).getServer();
                   RemotingService remotingService = server.getRemotingService();
@@ -4476,7 +4514,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   serverConsumer.fireSlowConsumer();
 
                   if (connection != null) {
-                     ActiveMQServerLogger.LOGGER.slowConsumerDetected(serverConsumer.getSessionID(), serverConsumer.getID(), getName().toString(), connection.getRemoteAddress(), threshold, consumerRate);
+                     ActiveMQServerLogger.LOGGER.slowConsumerDetected(serverConsumer.getSessionID(), serverConsumer.getID(), getName().toString(), connection.getRemoteAddress(),
+                                                                      thresholdInMsgPerSecond, consumerRate);
                      if (policy.equals(SlowConsumerPolicy.KILL)) {
                         connection.killMessage(server.getNodeID());
                         remotingService.removeConnection(connection.getID());
