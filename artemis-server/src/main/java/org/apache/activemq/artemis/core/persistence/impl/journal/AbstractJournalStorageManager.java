@@ -356,7 +356,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void confirmPendingLargeMessage(long recordID) throws Exception {
       readLock();
       try {
-         messageJournal.appendDeleteRecord(recordID, true, getContext());
+         messageJournal.tryAppendDeleteRecord(recordID, true, this::messageUpdateCallback, getContext());
       } finally {
          readUnLock();
       }
@@ -388,7 +388,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void storeReference(final long queueID, final long messageID, final boolean last) throws Exception {
       readLock();
       try {
-         messageJournal.appendUpdateRecord(messageID, JournalRecordIds.ADD_REF, new RefEncoding(queueID), last && syncNonTransactional, getContext(last && syncNonTransactional));
+         messageJournal.tryAppendUpdateRecord(messageID, JournalRecordIds.ADD_REF, new RefEncoding(queueID), last && syncNonTransactional, this::messageUpdateCallback, getContext(last && syncNonTransactional));
       } finally {
          readUnLock();
       }
@@ -420,7 +420,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void storeAcknowledge(final long queueID, final long messageID) throws Exception {
       readLock();
       try {
-         messageJournal.appendUpdateRecord(messageID, JournalRecordIds.ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional, getContext(syncNonTransactional));
+         messageJournal.tryAppendUpdateRecord(messageID, JournalRecordIds.ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional, this::messageUpdateCallback, getContext(syncNonTransactional));
       } finally {
          readUnLock();
       }
@@ -439,25 +439,40 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    }
 
    @Override
-   public boolean deleteMessage(final long messageID) throws Exception {
+   public void deleteMessage(final long messageID) throws Exception {
       readLock();
       try {
          // Messages are deleted on postACK, one after another.
          // If these deletes are synchronized, we would build up messages on the Executor
          // increasing chances of losing deletes.
          // The StorageManager should verify messages without references
-         return messageJournal.tryAppendDeleteRecord(messageID, false, getContext(false));
+         messageJournal.tryAppendDeleteRecord(messageID, false, this::messageUpdateCallback, getContext(false));
       } finally {
          readUnLock();
       }
    }
 
+   private void messageUpdateCallback(long id, boolean found) {
+      if (!found) {
+         ActiveMQServerLogger.LOGGER.cannotFindMessageOnJournal(new Exception(), id);
+      }
+   }
+
+   private void recordNotFoundCallback(long id, boolean found) {
+      if (!found) {
+         if (logger.isDebugEnabled()) {
+            logger.debug("Record " + id + " not found");
+         }
+      }
+   }
+
+
    @Override
-   public boolean updateScheduledDeliveryTime(final MessageReference ref) throws Exception {
+   public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception {
       ScheduledDeliveryEncoding encoding = new ScheduledDeliveryEncoding(ref.getScheduledDeliveryTime(), ref.getQueue().getID());
       readLock();
       try {
-         return messageJournal.tryAppendUpdateRecord(ref.getMessage().getMessageID(), JournalRecordIds.SET_SCHEDULED_DELIVERY_TIME, encoding, syncNonTransactional, getContext(syncNonTransactional));
+         messageJournal.tryAppendUpdateRecord(ref.getMessage().getMessageID(), JournalRecordIds.SET_SCHEDULED_DELIVERY_TIME, encoding, syncNonTransactional, this::recordNotFoundCallback, getContext(syncNonTransactional));
       } finally {
          readUnLock();
       }
@@ -479,7 +494,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteDuplicateID(final long recordID) throws Exception {
       readLock();
       try {
-         messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getContext(syncNonTransactional));
+         messageJournal.tryAppendDeleteRecord(recordID, syncNonTransactional, this::recordNotFoundCallback, getContext(syncNonTransactional));
       } finally {
          readUnLock();
       }
@@ -573,7 +588,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void deletePageComplete(long ackID) throws Exception {
-      messageJournal.appendDeleteRecord(ackID, false);
+      messageJournal.tryAppendDeleteRecord(ackID, this::recordNotFoundCallback, false);
    }
 
    @Override
@@ -588,7 +603,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void deleteCursorAcknowledge(long ackID) throws Exception {
-      messageJournal.appendDeleteRecord(ackID, false);
+      messageJournal.tryAppendDeleteRecord(ackID, this::recordNotFoundCallback, false);
    }
 
    @Override
@@ -608,8 +623,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteHeuristicCompletion(final long id) throws Exception {
       readLock();
       try {
-
-         messageJournal.appendDeleteRecord(id, true, getContext(true));
+         messageJournal.tryAppendDeleteRecord(id, true, this::recordNotFoundCallback, getContext(true));
       } finally {
          readUnLock();
       }
@@ -619,7 +633,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deletePageTransactional(final long recordID) throws Exception {
       readLock();
       try {
-         messageJournal.appendDeleteRecord(recordID, false);
+         messageJournal.tryAppendDeleteRecord(recordID, this::recordNotFoundCallback, false);
       } finally {
          readUnLock();
       }
@@ -739,11 +753,11 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    // Other operations
 
    @Override
-   public boolean updateDeliveryCount(final MessageReference ref) throws Exception {
+   public void updateDeliveryCount(final MessageReference ref) throws Exception {
       // no need to store if it's the same value
       // otherwise the journal will get OME in case of lots of redeliveries
       if (ref.getDeliveryCount() == ref.getPersistedCount()) {
-         return true;
+         return;
       }
 
       ref.setPersistedCount(ref.getDeliveryCount());
@@ -751,7 +765,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
       readLock();
       try {
-         return messageJournal.tryAppendUpdateRecord(ref.getMessage().getMessageID(), JournalRecordIds.UPDATE_DELIVERY_COUNT, updateInfo, syncNonTransactional, getContext(syncNonTransactional));
+         messageJournal.tryAppendUpdateRecord(ref.getMessage().getMessageID(), JournalRecordIds.UPDATE_DELIVERY_COUNT, updateInfo, syncNonTransactional, this::messageUpdateCallback, getContext(syncNonTransactional));
       } finally {
          readUnLock();
       }
@@ -816,7 +830,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (oldDivert != null) {
          readLock();
          try {
-            bindingsJournal.appendDeleteRecord(oldDivert.getStoreId(), false);
+            bindingsJournal.tryAppendDeleteRecord(oldDivert.getStoreId(), this::recordNotFoundCallback, false);
          } finally {
             readUnLock();
          }
@@ -848,7 +862,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (oldUser != null) {
          readLock();
          try {
-            bindingsJournal.appendDeleteRecord(oldUser.getStoreId(), false);
+            bindingsJournal.tryAppendDeleteRecord(oldUser.getStoreId(), this::recordNotFoundCallback, false);
          } finally {
             readUnLock();
          }
@@ -880,7 +894,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (oldRole != null) {
          readLock();
          try {
-            bindingsJournal.appendDeleteRecord(oldRole.getStoreId(), false);
+            bindingsJournal.tryAppendDeleteRecord(oldRole.getStoreId(), this::recordNotFoundCallback, false);
          } finally {
             readUnLock();
          }
@@ -906,7 +920,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteID(long journalD) throws Exception {
       readLock();
       try {
-         bindingsJournal.appendDeleteRecord(journalD, false);
+         bindingsJournal.tryAppendDeleteRecord(journalD, this::recordNotFoundCallback, false);
       } finally {
          readUnLock();
       }
@@ -918,7 +932,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (oldSetting != null) {
          readLock();
          try {
-            bindingsJournal.appendDeleteRecord(oldSetting.getStoreId(), false);
+            bindingsJournal.tryAppendDeleteRecord(oldSetting.getStoreId(), this::recordNotFoundCallback, false);
          } finally {
             readUnLock();
          }
@@ -931,7 +945,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       if (oldRoles != null) {
          readLock();
          try {
-            bindingsJournal.appendDeleteRecord(oldRoles.getStoreId(), false);
+            bindingsJournal.tryAppendDeleteRecord(oldRoles.getStoreId(), this::recordNotFoundCallback, false);
          } finally {
             readUnLock();
          }
@@ -1203,7 +1217,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                         sub.reloadACK(encoding.position);
                      } else {
                         ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloading(encoding.queueID);
-                        messageJournal.appendDeleteRecord(record.id, false);
+                        messageJournal.tryAppendDeleteRecord(record.id, this::recordNotFoundCallback, false);
 
                      }
 
@@ -1220,7 +1234,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                         sub.getCounter().loadValue(record.id, encoding.getValue(), encoding.getPersistentSize());
                      } else {
                         ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingPage(encoding.getQueueID());
-                        messageJournal.appendDeleteRecord(record.id, false);
+                        messageJournal.tryAppendDeleteRecord(record.id, this::recordNotFoundCallback, false);
                      }
 
                      break;
@@ -1237,7 +1251,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                         sub.getCounter().loadInc(record.id, encoding.getValue(), encoding.getPersistentSize());
                      } else {
                         ActiveMQServerLogger.LOGGER.journalCannotFindQueueReloadingPageCursor(encoding.getQueueID());
-                        messageJournal.appendDeleteRecord(record.id, false);
+                        messageJournal.tryAppendDeleteRecord(record.id, this::recordNotFoundCallback, false);
                      }
 
                      break;
@@ -1256,11 +1270,11 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                            if (logger.isDebugEnabled()) {
                               logger.debug("Complete page " + encoding.position.getPageNr() + " doesn't exist on page manager " + sub.getPagingStore().getAddress());
                            }
-                           messageJournal.appendDeleteRecord(record.id, false);
+                           messageJournal.tryAppendDeleteRecord(record.id, this::recordNotFoundCallback, false);
                         }
                      } else {
                         ActiveMQServerLogger.LOGGER.cantFindQueueOnPageComplete(encoding.queueID);
-                        messageJournal.appendDeleteRecord(record.id, false);
+                        messageJournal.tryAppendDeleteRecord(record.id, this::recordNotFoundCallback, false);
                      }
 
                      break;
@@ -1460,7 +1474,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteQueueStatus(long recordID) throws Exception {
       readLock();
       try {
-         bindingsJournal.appendDeleteRecord(recordID, true);
+         bindingsJournal.tryAppendDeleteRecord(recordID, this::recordNotFoundCallback, true);
       } finally {
          readUnLock();
       }
@@ -1485,7 +1499,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    public void deleteAddressStatus(long recordID) throws Exception {
       readLock();
       try {
-         bindingsJournal.appendDeleteRecord(recordID, true);
+         bindingsJournal.tryAppendDeleteRecord(recordID, this::recordNotFoundCallback, true);
       } finally {
          readUnLock();
       }

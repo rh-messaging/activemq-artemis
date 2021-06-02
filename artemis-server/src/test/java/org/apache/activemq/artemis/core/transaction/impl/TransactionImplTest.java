@@ -359,8 +359,7 @@ public class TransactionImplTest extends ActiveMQTestBase {
       }
 
       @Override
-      public boolean deleteMessage(long messageID) throws Exception {
-         return true;
+      public void deleteMessage(long messageID) throws Exception {
       }
 
       @Override
@@ -374,13 +373,11 @@ public class TransactionImplTest extends ActiveMQTestBase {
       }
 
       @Override
-      public boolean updateDeliveryCount(MessageReference ref) throws Exception {
-         return true;
+      public void updateDeliveryCount(MessageReference ref) throws Exception {
       }
 
       @Override
-      public boolean updateScheduledDeliveryTime(MessageReference ref) throws Exception {
-         return true;
+      public void updateScheduledDeliveryTime(MessageReference ref) throws Exception {
       }
 
       @Override
