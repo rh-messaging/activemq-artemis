@@ -58,7 +58,7 @@ public class OpenWireMessageConverterTest {
          msg.getBodyBuffer().writeBytes(content);
          msg.setAddress(address);
 
-         MessageReference messageReference = new MessageReferenceImpl(msg, Mockito.mock(Queue.class));
+         MessageReference messageReference = new MessageReferenceImpl(msg, Mockito.mock(Queue.class), null);
          AMQConsumer amqConsumer = Mockito.mock(AMQConsumer.class);
          Mockito.when(amqConsumer.getOpenwireDestination()).thenReturn(destination);
 
@@ -80,7 +80,7 @@ public class OpenWireMessageConverterTest {
          msg.getProperties().putProperty(MessageUtil.CONNECTION_ID_PROPERTY_NAME, "MyClient");
 
 
-         MessageReference messageReference = new MessageReferenceImpl(msg, Mockito.mock(Queue.class));
+         MessageReference messageReference = new MessageReferenceImpl(msg, Mockito.mock(Queue.class), null);
          AMQConsumer amqConsumer = Mockito.mock(AMQConsumer.class);
          Mockito.when(amqConsumer.getOpenwireDestination()).thenReturn(destination);
 
