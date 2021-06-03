@@ -134,7 +134,7 @@ public class ScaleDownTest extends ClusterTestBase {
 
       // consume a message from queue 2
       addConsumer(1, 0, queueName2, null, false);
-      ClientMessage clientMessage = consumers[1].getConsumer().receive(250);
+      ClientMessage clientMessage = consumers[1].getConsumer().receive(1000);
       Assert.assertNotNull(clientMessage);
       clientMessage.acknowledge();
       consumers[1].getSession().commit();
@@ -149,26 +149,26 @@ public class ScaleDownTest extends ClusterTestBase {
 
       // get the 2 messages from queue 1
       addConsumer(0, 1, queueName1, null);
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receive(1000);
       Assert.assertNotNull(clientMessage);
       clientMessage.acknowledge();
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receive(1000);
       Assert.assertNotNull(clientMessage);
       clientMessage.acknowledge();
 
       // ensure there are no more messages on queue 1
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
 
       // get the 1 message from queue 2
       addConsumer(0, 1, queueName2, null);
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receive(1000);
       Assert.assertNotNull(clientMessage);
       clientMessage.acknowledge();
 
       // ensure there are no more messages on queue 1
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
    }
@@ -322,7 +322,7 @@ public class ScaleDownTest extends ClusterTestBase {
          clientMessage.acknowledge();
       }
 
-      ClientMessage clientMessage = consumers[0].getConsumer().receive(250);
+      ClientMessage clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
 
@@ -333,7 +333,7 @@ public class ScaleDownTest extends ClusterTestBase {
          clientMessage.acknowledge();
       }
 
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
    }
@@ -373,7 +373,7 @@ public class ScaleDownTest extends ClusterTestBase {
       clientMessage.acknowledge();
 
       // ensure there are no more messages on queue 1
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
 
@@ -384,7 +384,7 @@ public class ScaleDownTest extends ClusterTestBase {
       clientMessage.acknowledge();
 
       // ensure there are no more messages on queue 1
-      clientMessage = consumers[0].getConsumer().receive(250);
+      clientMessage = consumers[0].getConsumer().receiveImmediate();
       Assert.assertNull(clientMessage);
       removeConsumer(0);
    }
@@ -644,7 +644,7 @@ public class ScaleDownTest extends ClusterTestBase {
          Assert.assertNotNull(consumers[0].getConsumer().receive(250));
       }
 
-      Assert.assertNull(consumers[0].getConsumer().receive(250));
+      Assert.assertNull(consumers[0].getConsumer().receiveImmediate());
       removeConsumer(0);
    }
 
@@ -683,7 +683,7 @@ public class ScaleDownTest extends ClusterTestBase {
          Assert.assertEquals(i, consumers[0].getConsumer().receive(250).getIntProperty("order").intValue());
       }
 
-      Assert.assertNull(consumers[0].getConsumer().receive(250));
+      Assert.assertNull(consumers[0].getConsumer().receiveImmediate());
       removeConsumer(0);
    }
 
@@ -730,8 +730,8 @@ public class ScaleDownTest extends ClusterTestBase {
          Assert.assertEquals(compare, message.getStringProperty(ClusterTestBase.FILTER_PROP));
       }
 
-      Assert.assertNull(consumers[0].getConsumer().receive(250));
-      Assert.assertNull(consumers[1].getConsumer().receive(250));
+      Assert.assertNull(consumers[0].getConsumer().receiveImmediate());
+      Assert.assertNull(consumers[1].getConsumer().receiveImmediate());
       removeConsumer(0);
       removeConsumer(1);
    }
