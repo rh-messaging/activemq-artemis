@@ -59,11 +59,11 @@ public final class CompactJournal extends LockAbstract {
                                final int poolFiles,
                                final int fileSize,
                                final IOCriticalErrorListener listener,
-                               int... replaceableRecords) throws Exception {
+                               byte... replaceableRecords) throws Exception {
       NIOSequentialFileFactory nio = new NIOSequentialFileFactory(directory, listener, 1);
 
       JournalImpl journal = new JournalImpl(fileSize, minFiles, poolFiles, 0, 0, nio, journalPrefix, journalSuffix, 1);
-      for (int i : replaceableRecords) {
+      for (byte i : replaceableRecords) {
          journal.replaceableRecord(i);
       }
       journal.setRemoveExtraFilesOnLoad(true);

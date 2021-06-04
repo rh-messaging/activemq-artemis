@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 
+import io.netty.util.collection.ByteObjectHashMap;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
 import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
@@ -106,6 +106,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
     *
     * To update this value, define a System Property org.apache.activemq.artemis.core.journal.impl.JournalImpl.UPDATE_FACTOR=YOUR VALUE
     *
+    * We only calculate this against replaceable updates, on this case for redelivery counts and rescheduled redelivery in artemis server
+    *
     * */
    public static final double UPDATE_FACTOR;
 
@@ -114,7 +116,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       double value;
       try {
          if (UPDATE_FACTOR_STR == null) {
-            value = 100;
+            value = 10;
          } else {
             value = Double.parseDouble(UPDATE_FACTOR_STR);
          }
@@ -240,19 +242,25 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    private final ReadWriteLock journalLock = new ReentrantReadWriteLock();
    private final ReadWriteLock compactorLock = new ReentrantReadWriteLock();
 
-   HashSet<Integer> replaceableRecords;
+   ByteObjectHashMap<Boolean> replaceableRecords;
 
 
    /** This will declare a record type as being replaceable on updates.
     * Certain update records only need the last value, and they could be replaceable during compacting.
     * */
    @Override
-   public void replaceableRecord(int recordType) {
+   public void replaceableRecord(byte recordType) {
       if (replaceableRecords == null) {
-         replaceableRecords = new HashSet<>();
+         replaceableRecords = new ByteObjectHashMap<>();
       }
-      replaceableRecords.add(recordType);
+      replaceableRecords.put(recordType, Boolean.TRUE);
    }
+
+   @Override
+   public boolean isReplaceableRecord(byte recordType) {
+      return replaceableRecords != null && replaceableRecords.containsKey(recordType);
+   }
+
 
    private volatile JournalFile currentFile;
 
@@ -999,9 +1007,9 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                // record==null here could only mean there is a compactor
                // computing the delete should be done after compacting is done
                if (jrnRecord == null) {
-                  compactor.addCommandUpdate(id, usedFile, updateRecord.getEncodeSize());
+                  compactor.addCommandUpdate(id, usedFile, updateRecord.getEncodeSize(), recordType);
                } else {
-                  jrnRecord.addUpdateFile(usedFile, updateRecord.getEncodeSize());
+                  jrnRecord.addUpdateFile(usedFile, updateRecord.getEncodeSize(), isReplaceableRecord(recordType));
                }
 
                result.set(true);
@@ -1158,7 +1166,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                                   usedFile);
                }
 
-               tx.addPositive(usedFile, id, encodeSize);
+               tx.addPositive(usedFile, id, encodeSize, recordType);
             } catch (Throwable e) {
                logger.error("appendAddRecordTransactional:" + e, e);
                setErrorCondition(null, tx, e);
@@ -1260,7 +1268,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                           usedFile );
                }
 
-               tx.addPositive( usedFile, id, updateRecordTX.getEncodeSize() );
+               tx.addPositive( usedFile, id, updateRecordTX.getEncodeSize(), recordType);
             } catch (Throwable e ) {
                logger.error("appendUpdateRecordTransactional:" +  e.getMessage(), e );
                setErrorCondition(null, tx, e );
@@ -1894,7 +1902,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          compactor = new JournalCompactor(fileFactory, this, filesRepository, records.keysLongHashSet(), dataFilesToProcess.get(0).getFileID());
 
          if (replaceableRecords != null) {
-            replaceableRecords.forEach((i) -> compactor.replaceableRecord(i));
+            replaceableRecords.forEach((k, v) -> compactor.replaceableRecord(k));
          }
 
          transactions.forEach((id, pendingTransaction) -> {
@@ -2029,7 +2037,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                   // have been deleted
                   // just leaving some updates in this file
 
-                  posFiles.addUpdateFile(file, info.data.length + JournalImpl.SIZE_ADD_RECORD + 1); // +1 = compact
+                  posFiles.addUpdateFile(file, info.data.length + JournalImpl.SIZE_ADD_RECORD + 1, isReplaceableRecord(info.userRecordType)); // +1 = compact
                   // count
                }
             }
@@ -2077,7 +2085,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                   transactions.put(transactionID, tnp);
                }
 
-               tnp.addPositive(file, info.id, info.data.length + JournalImpl.SIZE_ADD_RECORD_TX + 1); // +1 = compact
+               tnp.addPositive(file, info.id, info.data.length + JournalImpl.SIZE_ADD_RECORD_TX + 1, info.userRecordType); // +1 = compact
                // count
             }
 
@@ -2346,7 +2354,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       for (JournalFile file : dataFiles) {
          totalLiveSize += file.getLiveSize();
-         updateCount += file.getPosCount();
+         updateCount += file.getReplaceableCount();
          addRecord += file.getAddRecord();
       }
 
