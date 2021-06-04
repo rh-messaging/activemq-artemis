@@ -59,7 +59,7 @@ public final class FileWrapperJournal extends JournalBase {
    protected volatile JournalFile currentFile;
 
    @Override
-   public void replaceableRecord(int recordType) {
+   public void replaceableRecord(byte recordType) {
       journal.replaceableRecord(recordType);
    }
 
