@@ -253,12 +253,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       replaceableRecords.put(recordType, Boolean.TRUE);
    }
 
-   @Override
-   public boolean isReplaceableRecord(byte recordType) {
-      return replaceableRecords != null && replaceableRecords.containsKey(recordType);
-   }
-
-
    private volatile JournalFile currentFile;
 
    private volatile JournalState state = JournalState.STOPPED;
@@ -546,10 +540,26 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       return buffer;
    }
 
-   static int readJournalFile(final SequentialFileFactory fileFactory,
+   public static int readJournalFile(final SequentialFileFactory fileFactory,
                               final JournalFile file,
                               final JournalReaderCallback reader,
                               final AtomicReference<ByteBuffer> wholeFileBufferReference) throws Exception {
+      return readJournalFile(fileFactory, file, reader, wholeFileBufferReference, false);
+   }
+
+   public static int readJournalFile(final SequentialFileFactory fileFactory,
+                                     final JournalFile file,
+                                     final JournalReaderCallback reader,
+                                     final AtomicReference<ByteBuffer> wholeFileBufferReference,
+                                     boolean reclaimed) throws Exception {
+      return readJournalFile(fileFactory, file, reader, wholeFileBufferReference, reclaimed, null);
+   }
+
+   public static int readJournalFile(final SequentialFileFactory fileFactory,
+                              final JournalFile file,
+                              final JournalReaderCallback reader,
+                              final AtomicReference<ByteBuffer> wholeFileBufferReference,
+                              boolean reclaimed, ByteObjectHashMap<Boolean> replaceableRecords) throws Exception {
       file.getFile().open(1, false);
       ByteBuffer wholeFileBuffer = null;
       try {
@@ -777,14 +787,16 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                logger.trace("reading " + recordID + ", userRecordType=" + userRecordType + ", compactCount=" + compactCount);
             }
 
+            boolean replaceableUpdate =  replaceableRecords != null ? replaceableRecords.containsKey(userRecordType) : false;
+
             switch (recordType) {
                case ADD_RECORD: {
-                  reader.onReadAddRecord(new RecordInfo(recordID, userRecordType, record, false, compactCount));
+                  reader.onReadAddRecord(new RecordInfo(recordID, userRecordType, record, false, false, compactCount));
                   break;
                }
 
                case UPDATE_RECORD: {
-                  reader.onReadUpdateRecord(new RecordInfo(recordID, userRecordType, record, true, compactCount));
+                  reader.onReadUpdateRecord(new RecordInfo(recordID, userRecordType, record, true, replaceableUpdate, compactCount));
                   break;
                }
 
@@ -794,17 +806,17 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                }
 
                case ADD_RECORD_TX: {
-                  reader.onReadAddRecordTX(transactionID, new RecordInfo(recordID, userRecordType, record, false, compactCount));
+                  reader.onReadAddRecordTX(transactionID, new RecordInfo(recordID, userRecordType, record, false, false, compactCount));
                   break;
                }
 
                case UPDATE_RECORD_TX: {
-                  reader.onReadUpdateRecordTX(transactionID, new RecordInfo(recordID, userRecordType, record, true, compactCount));
+                  reader.onReadUpdateRecordTX(transactionID, new RecordInfo(recordID, userRecordType, record, true, replaceableUpdate, compactCount));
                   break;
                }
 
                case DELETE_RECORD_TX: {
-                  reader.onReadDeleteRecordTX(transactionID, new RecordInfo(recordID, (byte) 0, record, true, compactCount));
+                  reader.onReadDeleteRecordTX(transactionID, new RecordInfo(recordID, (byte) 0, record, true, false, compactCount));
                   break;
                }
 
@@ -869,7 +881,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    public static int readJournalFile(final SequentialFileFactory fileFactory,
                                      final JournalFile file,
                                      final JournalReaderCallback reader) throws Exception {
-      return readJournalFile(fileFactory, file, reader, null);
+      return readJournalFile(fileFactory, file, reader, null, false, null);
    }
 
    // Journal implementation
@@ -953,7 +965,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       SimpleFuture<Boolean> future = new SimpleFutureImpl<>();
 
-      internalAppendUpdateRecord(id, recordType, persister, record, sync, (t, v) -> future.set(v), callback);
+      internalAppendUpdateRecord(id, recordType, persister, record, sync, false, (t, v) -> future.set(v), callback);
 
       if (!future.get()) {
          throw new IllegalStateException("Cannot find add info " + id);
@@ -967,6 +979,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                                      final Persister persister,
                                      final Object record,
                                      final boolean sync,
+                                     final boolean replaceableUpdate,
                                      JournalUpdateCallback updateCallback,
                                      final IOCompletion callback) throws Exception {
       checkJournalIsLoaded();
@@ -979,7 +992,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       }
 
 
-      internalAppendUpdateRecord(id, recordType, persister, record, sync, updateCallback, callback);
+      internalAppendUpdateRecord(id, recordType, persister, record, sync, replaceableUpdate, updateCallback, callback);
    }
 
 
@@ -988,6 +1001,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                                            Persister persister,
                                            Object record,
                                            boolean sync,
+                                           boolean replaceableUpdate,
                                            JournalUpdateCallback updateCallback,
                                            IOCompletion callback) throws InterruptedException, java.util.concurrent.ExecutionException {
       appendExecutor.execute(new Runnable() {
@@ -1029,10 +1043,10 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                // computing the delete should be done after compacting is done
                if (jrnRecord == null) {
                   if (compactor != null) {
-                     compactor.addCommandUpdate(id, usedFile, updateRecord.getEncodeSize(), recordType);
+                     compactor.addCommandUpdate(id, usedFile, updateRecord.getEncodeSize(), replaceableUpdate);
                   }
                } else {
-                  jrnRecord.addUpdateFile(usedFile, updateRecord.getEncodeSize(), isReplaceableRecord(recordType));
+                  jrnRecord.addUpdateFile(usedFile, updateRecord.getEncodeSize(), replaceableUpdate);
                }
 
                if (updateCallback != null) {
@@ -1211,7 +1225,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                                   usedFile);
                }
 
-               tx.addPositive(usedFile, id, encodeSize, recordType);
+               tx.addPositive(usedFile, id, encodeSize, false);
             } catch (Throwable e) {
                logger.error("appendAddRecordTransactional:" + e, e);
                setErrorCondition(null, tx, e);
@@ -1274,7 +1288,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                           usedFile );
                }
 
-               tx.addPositive( usedFile, id, updateRecordTX.getEncodeSize(), recordType);
+               tx.addPositive( usedFile, id, updateRecordTX.getEncodeSize(), false);
             } catch (Throwable e ) {
                logger.error("appendUpdateRecordTransactional:" +  e.getMessage(), e );
                setErrorCondition(null, tx, e );
@@ -1758,7 +1772,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
             try {
                for (final JournalFile file : dataFilesToProcess) {
                   try {
-                     JournalImpl.readJournalFile(fileFactory, file, compactor, wholeFileBufferRef);
+                     JournalImpl.readJournalFile(fileFactory, file, compactor, wholeFileBufferRef, false, this.replaceableRecords);
                   } catch (Throwable e) {
                      ActiveMQJournalLogger.LOGGER.compactReadError(file);
                      throw new Exception("Error on reading compacting for " + file, e);
@@ -2045,7 +2059,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                   // have been deleted
                   // just leaving some updates in this file
 
-                  posFiles.addUpdateFile(file, info.data.length + JournalImpl.SIZE_ADD_RECORD + 1, isReplaceableRecord(info.userRecordType)); // +1 = compact
+                  posFiles.addUpdateFile(file, info.data.length + JournalImpl.SIZE_ADD_RECORD + 1, info.replaceableUpdate); // +1 = compact
                   // count
                }
             }
@@ -2093,7 +2107,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                   transactions.put(transactionID, tnp);
                }
 
-               tnp.addPositive(file, info.id, info.data.length + JournalImpl.SIZE_ADD_RECORD_TX + 1, info.userRecordType); // +1 = compact
+               tnp.addPositive(file, info.id, info.data.length + JournalImpl.SIZE_ADD_RECORD_TX + 1, info.replaceableUpdate); // +1 = compact
                // count
             }
 
@@ -2233,7 +2247,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                hasData.lazySet(true);
             }
 
-         }, wholeFileBufferRef);
+         }, wholeFileBufferRef, false, this.replaceableRecords);
 
          if (hasData.get()) {
             lastDataPos = resultLastPost;
