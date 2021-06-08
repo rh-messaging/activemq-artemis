@@ -104,7 +104,6 @@
       <mockito.version>3.9.0</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.65.Final</netty.version>
-      <commons.io.version>2.6</commons.io.version>
 
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.39.Final</netty-tcnative-version>
