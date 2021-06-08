@@ -51,7 +51,6 @@
         <slf4j-api-version>1.6.6</slf4j-api-version>
         <slf4j-version>1.7.21</slf4j-version>
 
-        <war-plugin-version>3.2.3</war-plugin-version>
     </properties>
 
     <dependencyManagement>
@@ -77,12 +76,6 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j-version}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
                 <version>${slf4j-version}</version>
                 <scope>provided</scope>
             </dependency>
