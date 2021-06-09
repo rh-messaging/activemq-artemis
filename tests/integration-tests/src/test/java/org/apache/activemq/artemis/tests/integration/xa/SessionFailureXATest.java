@@ -109,15 +109,20 @@ public class SessionFailureXATest extends ActiveMQTestBase {
 
    @Test
    public void testFailureWithXAEnd() throws Exception {
-      testFailure(true);
+      testFailure(true, false);
    }
 
    @Test
    public void testFailureWithoutXAEnd() throws Exception {
-      testFailure(false);
+      testFailure(false, false);
    }
 
-   public void testFailure(boolean xaEnd) throws Exception {
+   @Test
+   public void testFailureWithXAPrepare() throws Exception {
+      testFailure(true, true);
+   }
+
+   public void testFailure(boolean xaEnd, boolean xaPrepare) throws Exception {
 
       ClientSession clientSession2 = sessionFactory.createSession(false, true, true);
       try {
@@ -159,6 +164,10 @@ public class SessionFailureXATest extends ActiveMQTestBase {
          // We are validating both cases, where xaEnd succeeded and didn't succeed
          // so this tests is parameterized to validate both cases.
          clientSession.end(xid, XAResource.TMSUCCESS);
+
+         if (xaPrepare) {
+            clientSession.prepare(xid);
+         }
       }
 
       Wait.assertEquals(1, () -> messagingService.getSessions().size());
@@ -170,7 +179,11 @@ public class SessionFailureXATest extends ActiveMQTestBase {
 
       Wait.assertEquals(0, () -> messagingService.getSessions().size());
 
-      Wait.assertEquals(0, messagingService.getResourceManager()::size);
+      if (xaPrepare) {
+         Wait.assertEquals(1, messagingService.getResourceManager()::size);
+      } else {
+         Wait.assertEquals(0, messagingService.getResourceManager()::size);
+      }
 
       locator = createInVMNonHALocator();
       sessionFactory = createSessionFactory(locator);
@@ -185,21 +198,24 @@ public class SessionFailureXATest extends ActiveMQTestBase {
       clientSession.start();
       clientConsumer = clientSession.createConsumer(atestq);
       m = clientConsumer.receive(1000);
-      Assert.assertNotNull(m);
-      m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m1");
-      m = clientConsumer.receive(1000);
-      Assert.assertNotNull(m);
-      m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m2");
-      m = clientConsumer.receive(1000);
-      Assert.assertNotNull(m);
-      m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m3");
-      m = clientConsumer.receive(1000);
-      Assert.assertNotNull(m);
-      m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m4");
-
+      if (xaPrepare) {
+         Assert.assertNull(m);
+      } else {
+         Assert.assertNotNull(m);
+         m.acknowledge();
+         Assert.assertEquals(m.getBodyBuffer().readString(), "m1");
+         m = clientConsumer.receive(1000);
+         Assert.assertNotNull(m);
+         m.acknowledge();
+         Assert.assertEquals(m.getBodyBuffer().readString(), "m2");
+         m = clientConsumer.receive(1000);
+         Assert.assertNotNull(m);
+         m.acknowledge();
+         Assert.assertEquals(m.getBodyBuffer().readString(), "m3");
+         m = clientConsumer.receive(1000);
+         Assert.assertNotNull(m);
+         m.acknowledge();
+         Assert.assertEquals(m.getBodyBuffer().readString(), "m4");
+      }
    }
 }
