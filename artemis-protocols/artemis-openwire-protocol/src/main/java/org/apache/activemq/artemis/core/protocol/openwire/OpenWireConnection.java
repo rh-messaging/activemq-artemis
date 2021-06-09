@@ -686,7 +686,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    public void fail(ActiveMQException me, String message) {
 
       for (Transaction tx : txMap.values()) {
-         tx.rollbackIfPossible();
+         tx.tryRollback();
       }
 
       if (me != null) {
