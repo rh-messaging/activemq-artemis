@@ -358,16 +358,17 @@ public class TransactionImpl implements Transaction {
    }
 
    @Override
-   public void rollbackIfPossible() {
+   public boolean tryRollback() {
       synchronized (timeoutLock) {
          if (state == State.ROLLEDBACK) {
             // I don't think this could happen, but just in case
             logger.debug("TransactionImpl::rollbackIfPossible::" + this + " is being ignored");
-            return;
+            return true;
          }
          if (state != State.PREPARED) {
             try {
                internalRollback(sorted);
+               return true;
             } catch (Exception e) {
                // nothing we can do beyond logging
                // no need to special handler here as this was not even supposed to happen at this point
@@ -376,6 +377,7 @@ public class TransactionImpl implements Transaction {
             }
          }
       }
+      return false;
    }
 
    @Override
