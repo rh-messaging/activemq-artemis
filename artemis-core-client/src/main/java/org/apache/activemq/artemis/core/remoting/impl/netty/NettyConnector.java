@@ -106,6 +106,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
 import org.apache.activemq.artemis.core.client.ActiveMQClientMessageBundle;
 import org.apache.activemq.artemis.core.protocol.core.impl.ActiveMQClientProtocolManager;
@@ -588,16 +589,19 @@ public class NettyConnector extends AbstractConnector {
 
          realKeyStorePath = forceSSLParameters && keyStorePath != null ? keyStorePath : Stream.of(System.getProperty(JAVAX_KEYSTORE_PATH_PROP_NAME), System.getProperty(ACTIVEMQ_KEYSTORE_PATH_PROP_NAME), keyStorePath).map(v -> useDefaultSslContext ? keyStorePath : v).filter(Objects::nonNull).findFirst().orElse(null);
          realKeyStorePassword = forceSSLParameters && keyStorePassword != null ? keyStorePassword : Stream.of(System.getProperty(JAVAX_KEYSTORE_PASSWORD_PROP_NAME), System.getProperty(ACTIVEMQ_KEYSTORE_PASSWORD_PROP_NAME), keyStorePassword).map(v -> useDefaultSslContext ? keyStorePassword : v).filter(Objects::nonNull).findFirst().orElse(null);
-         realKeyStoreProvider = forceSSLParameters && keyStoreProvider != null ? keyStoreProvider : Stream.of(System.getProperty(JAVAX_KEYSTORE_PROVIDER_PROP_NAME), System.getProperty(ACTIVEMQ_KEYSTORE_PROVIDER_PROP_NAME), keyStoreProvider).map(v -> useDefaultSslContext ? keyStoreProvider : v).filter(Objects::nonNull).findFirst().orElse(null);
-         realKeyStoreType = forceSSLParameters && keyStoreType != null ? keyStoreType : Stream.of(System.getProperty(JAVAX_KEYSTORE_TYPE_PROP_NAME), System.getProperty(ACTIVEMQ_KEYSTORE_TYPE_PROP_NAME), keyStoreType).map(v -> useDefaultSslContext ? keyStoreType : v).filter(Objects::nonNull).findFirst().orElse(null);
 
-
+         Pair<String, String> keyStoreCompat = SSLSupport.getValidProviderAndType(forceSSLParameters && keyStoreProvider != null ? keyStoreProvider : Stream.of(System.getProperty(ACTIVEMQ_KEYSTORE_PROVIDER_PROP_NAME), System.getProperty(JAVAX_KEYSTORE_PROVIDER_PROP_NAME), keyStoreProvider).map(v -> useDefaultSslContext ? keyStoreProvider : v).filter(Objects::nonNull).findFirst().orElse(null),
+                                                                                  forceSSLParameters && keyStoreType != null ? keyStoreType : Stream.of(System.getProperty(ACTIVEMQ_KEYSTORE_TYPE_PROP_NAME), System.getProperty(JAVAX_KEYSTORE_TYPE_PROP_NAME), keyStoreType).map(v -> useDefaultSslContext ? keyStoreType : v).filter(Objects::nonNull).findFirst().orElse(null));
+         realKeyStoreProvider = keyStoreCompat.getA();
+         realKeyStoreType = keyStoreCompat.getB();
 
          realTrustStorePath = forceSSLParameters && trustStorePath != null ? trustStorePath : Stream.of(System.getProperty(JAVAX_TRUSTSTORE_PATH_PROP_NAME), System.getProperty(ACTIVEMQ_TRUSTSTORE_PATH_PROP_NAME), trustStorePath).map(v -> useDefaultSslContext ? trustStorePath : v).filter(Objects::nonNull).findFirst().orElse(null);
          realTrustStorePassword = forceSSLParameters && trustStorePassword != null ? trustStorePassword : Stream.of(System.getProperty(JAVAX_TRUSTSTORE_PASSWORD_PROP_NAME), System.getProperty(ACTIVEMQ_TRUSTSTORE_PASSWORD_PROP_NAME), trustStorePassword).map(v -> useDefaultSslContext ? trustStorePassword : v).filter(Objects::nonNull).findFirst().orElse(null);
-         realTrustStoreProvider = forceSSLParameters && trustStoreProvider != null ? trustStoreProvider : Stream.of(System.getProperty(JAVAX_TRUSTSTORE_PROVIDER_PROP_NAME), System.getProperty(ACTIVEMQ_TRUSTSTORE_PROVIDER_PROP_NAME), trustStoreProvider).map(v -> useDefaultSslContext ? trustStoreProvider : v).filter(Objects::nonNull).findFirst().orElse(null);
-         realTrustStoreType = forceSSLParameters && trustStoreType != null ? trustStoreType : Stream.of(System.getProperty(JAVAX_TRUSTSTORE_TYPE_PROP_NAME), System.getProperty(ACTIVEMQ_TRUSTSTORE_TYPE_PROP_NAME), trustStoreType).map(v -> useDefaultSslContext ? trustStoreType : v).filter(Objects::nonNull).findFirst().orElse(null);
 
+         Pair<String, String> trustStoreCompat = SSLSupport.getValidProviderAndType(forceSSLParameters && trustStoreProvider != null ? trustStoreProvider : Stream.of(System.getProperty(ACTIVEMQ_TRUSTSTORE_PROVIDER_PROP_NAME), System.getProperty(JAVAX_TRUSTSTORE_PROVIDER_PROP_NAME), trustStoreProvider).map(v -> useDefaultSslContext ? trustStoreProvider : v).filter(Objects::nonNull).findFirst().orElse(null),
+                                                                                    forceSSLParameters && trustStoreType != null ? trustStoreType : Stream.of(System.getProperty(ACTIVEMQ_TRUSTSTORE_TYPE_PROP_NAME), System.getProperty(JAVAX_TRUSTSTORE_TYPE_PROP_NAME), trustStoreType).map(v -> useDefaultSslContext ? trustStoreType : v).filter(Objects::nonNull).findFirst().orElse(null));
+         realTrustStoreProvider = trustStoreCompat.getA();
+         realTrustStoreType = trustStoreCompat.getB();
       } else {
          realKeyStorePath = null;
          realKeyStoreProvider = null;
