@@ -1117,7 +1117,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                       * recreate the queue (JMS semantics). However, if the corresponding queue is managed via the
                       * configuration then we don't want to change it
                       */
-                     if (!result.isConfigurationManaged() && (!Objects.equals(result.getAddress(), addressToUse) || !Objects.equals(result.getFilterString(), simpleStringSelector))) {
+                     if (!result.isConfigurationManaged() && (!Objects.equals(result.getFilterString(), simpleStringSelector) || (sender.getSource() != null && !sender.getSource().getAddress().equals(result.getAddress().toString())))) {
 
                         if (result.getConsumerCount() == 0) {
                            sessionSPI.deleteQueue(queue);
