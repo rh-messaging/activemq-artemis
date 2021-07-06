@@ -70,6 +70,7 @@ import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Header;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Properties;
@@ -701,7 +702,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
          try {
             int proposedPosition = writeHeaderAndAnnotations(context, deliveryAnnotationsToEncode);
             if (message.isReencoded()) {
-               proposedPosition = writePropertiesAndApplicationProperties(context, message);
+               proposedPosition = writeMessageAnnotationsPropertiesAndApplicationProperties(context, message);
             }
 
             context.position(proposedPosition);
@@ -716,14 +717,20 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
       /**
        * Write properties and application properties when the message is flagged as re-encoded.
        */
-      private int writePropertiesAndApplicationProperties(LargeBodyReader context, AMQPLargeMessage message) throws Exception {
+      private int writeMessageAnnotationsPropertiesAndApplicationProperties(LargeBodyReader context, AMQPLargeMessage message) throws Exception {
          int bodyPosition = AMQPMessageBrokerAccessor.getRemainingBodyPosition(message);
          assert bodyPosition > 0;
-         writePropertiesAndApplicationPropertiesInternal(message);
+         writeMessageAnnotationsPropertiesAndApplicationPropertiesInternal(message);
          return bodyPosition;
       }
 
-      private void writePropertiesAndApplicationPropertiesInternal(AMQPLargeMessage message) {
+      private void writeMessageAnnotationsPropertiesAndApplicationPropertiesInternal(AMQPLargeMessage message) {
+         MessageAnnotations messageAnnotations = AMQPMessageBrokerAccessor.getDecodedMessageAnnotations(message);
+
+         if (messageAnnotations != null) {
+            TLSEncode.getEncoder().writeObject(messageAnnotations);
+         }
+
          Properties amqpProperties = AMQPMessageBrokerAccessor.getCurrentProperties(message);
          if (amqpProperties != null) {
             TLSEncode.getEncoder().writeObject(amqpProperties);
@@ -1098,9 +1105,12 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                   queue = createQueueName(connection.isUseCoreSubscriptionNaming(), clientId, pubId, shared, global, false);
                   QueueQueryResult result = sessionSPI.queueQuery(queue, routingTypeToUse, false);
                   if (result.isExists()) {
-                     // If a client reattaches to a durable subscription with a different no-local
-                     // filter value, selector or address then we must recreate the queue (JMS semantics).
-                     if (!Objects.equals(result.getFilterString(), simpleStringSelector) || (sender.getSource() != null && !sender.getSource().getAddress().equals(result.getAddress().toString()))) {
+                     /*
+                      * If a client reattaches to a durable subscription with a different filter or address then we must
+                      * recreate the queue (JMS semantics). However, if the corresponding queue is managed via the
+                      * configuration then we don't want to change it
+                      */
+                     if (!result.isConfigurationManaged() && (!Objects.equals(result.getFilterString(), simpleStringSelector) || (sender.getSource() != null && !sender.getSource().getAddress().equals(result.getAddress().toString())))) {
 
                         if (result.getConsumerCount() == 0) {
                            sessionSPI.deleteQueue(queue);

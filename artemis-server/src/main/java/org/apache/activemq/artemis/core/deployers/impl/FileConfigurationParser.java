@@ -311,6 +311,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String ENABLE_METRICS = "enable-metrics";
 
+   private static final String ENABLE_INGRESS_TIMESTAMP = "enable-ingress-timestamp";
 
    // Attributes ----------------------------------------------------
 
@@ -997,8 +998,13 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
          Element node = (Element) elements.item(0);
          NodeList list = node.getElementsByTagName("address-setting");
          for (int i = 0; i < list.getLength(); i++) {
-            Pair<String, AddressSettings> addressSettings = parseAddressSettings(list.item(i));
-            config.getAddressesSettings().put(addressSettings.getA(), addressSettings.getB());
+            Pair<String, AddressSettings> newAddressSettings = parseAddressSettings(list.item(i));
+            Map<String, AddressSettings> addressSettings = config.getAddressesSettings();
+            if (addressSettings.containsKey(newAddressSettings.getA())) {
+               ActiveMQServerLogger.LOGGER.duplicateAddressSettingMatch(newAddressSettings.getA());
+            } else {
+               config.getAddressesSettings().put(newAddressSettings.getA(), newAddressSettings.getB());
+            }
          }
       }
    }
@@ -1356,6 +1362,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             addressSettings.setExpiryQueueSuffix(new SimpleString(getTrimmedTextContent(child)));
          } else if (ENABLE_METRICS.equalsIgnoreCase(name)) {
             addressSettings.setEnableMetrics(XMLUtil.parseBoolean(child));
+         } else if (ENABLE_INGRESS_TIMESTAMP.equalsIgnoreCase(name)) {
+            addressSettings.setEnableIngressTimestamp(XMLUtil.parseBoolean(child));
          }
       }
       return setting;
