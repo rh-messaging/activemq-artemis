@@ -98,13 +98,6 @@ public class SecureConfigurationTest extends ActiveMQTestBase {
       } catch (JMSSecurityException j) {
          //Expected exception
       }
-
-      try {
-         sendAndReceiveTextUsingTopic(connectionFactory, null, message, "secured_topic_shared_durable", (t, s) -> s.createSharedDurableConsumer(t, "secured_topic_shared_durable/queue", "age < 10"));
-         Assert.fail("Security exception expected, but did not occur, excepetion expected as not permissioned to dynamically create queue");
-      } catch (JMSSecurityException j) {
-         //Expected exception
-      }
    }
 
    @Test
@@ -124,17 +117,10 @@ public class SecureConfigurationTest extends ActiveMQTestBase {
       } catch (JMSSecurityException j) {
          //Expected exception
       }
-
-      try {
-         sendAndReceiveTextUsingTopic(connectionFactory, null, message, "secured_topic_shared", (t, s) -> s.createSharedConsumer(t, "secured_topic_shared/queue", "age < 10"));
-         Assert.fail("Security exception expected, but did not occur, excepetion expected as not permissioned to dynamically create queue");
-      } catch (JMSSecurityException j) {
-         //Expected exception
-      }
    }
 
    @Test
-   public void testSecureDurableSubscriber() throws Exception {
+   public void testCreateSecureDurableSubscriber() throws Exception {
       ConnectionFactory connectionFactory = getConnectionFactory("b", "b");
       String message = "blah";
 
@@ -148,17 +134,20 @@ public class SecureConfigurationTest extends ActiveMQTestBase {
       } catch (JMSSecurityException j) {
          //Expected exception
       }
+   }
+
+   @Test
+   public void testDeleteSecureDurableSubscriber() throws Exception {
+      ConnectionFactory connectionFactory = getConnectionFactory("c", "c");
+      String message = "blah";
+
+      //Expect to be able to create durable queue for subscription
+      String messageRecieved = sendAndReceiveTextUsingTopic(connectionFactory, "clientId", message, "secured_topic_durable", (t, s) -> s.createDurableSubscriber(t, "secured_topic_durable/non-existant-queue"));
+      Assert.assertEquals(message, messageRecieved);
 
       try {
-         sendAndReceiveTextUsingTopic(connectionFactory, "clientId", message, "secured_topic_durable", (t, s) -> s.createDurableSubscriber(t, "secured_topic_durable/queue", "age < 10", false));
-         Assert.fail("Security exception expected, but did not occur, excepetion expected as not permissioned to dynamically create queue");
-      } catch (JMSSecurityException j) {
-         //Expected exception
-      }
-
-      try {
-         sendAndReceiveTextUsingTopic(connectionFactory, "clientId", message, "secured_topic_durable", (t, s) -> s.createDurableSubscriber(t, "secured_topic_durable/queue", "age < 10", true));
-         Assert.fail("Security exception expected, but did not occur, excepetion expected as not permissioned to dynamically create queue");
+         sendAndReceiveTextUsingTopic(connectionFactory, "clientId", message, "secured_topic_durable", (t, s) -> s.createDurableSubscriber(t, "secured_topic_durable/non-existant-queue", "age > 10", false));
+         Assert.fail("Security exception expected, but did not occur, excepetion expected as not permissioned to dynamically delete queue");
       } catch (JMSSecurityException j) {
          //Expected exception
       }
