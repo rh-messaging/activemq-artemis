@@ -40,6 +40,9 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.Wait;
@@ -214,6 +217,47 @@ public class JMSMessageConsumerTest extends JMSClientTestSupport {
          assertEquals(m.getStringProperty("color"), "RED");
       } finally {
          connection.close();
+      }
+   }
+
+   @Test(timeout = 60000)
+   public void testDurableSubscriptionWithConfigurationManagedQueueWithCore() throws Exception {
+      testDurableSubscriptionWithConfigurationManagedQueue(() -> createCoreConnection(false));
+
+   }
+
+   @Test(timeout = 60000)
+   public void testDurableSubscriptionWithConfigurationManagedQueueWithOpenWire() throws Exception {
+      testDurableSubscriptionWithConfigurationManagedQueue(() -> createOpenWireConnection(false));
+
+   }
+
+   @Test(timeout = 60000)
+   public void testDurableSubscriptionWithConfigurationManagedQueueWithAMQP() throws Exception {
+      testDurableSubscriptionWithConfigurationManagedQueue(() -> JMSMessageConsumerTest.super.createConnection(false));
+   }
+
+   private void testDurableSubscriptionWithConfigurationManagedQueue(ConnectionSupplier connectionSupplier) throws Exception {
+      final String clientId = "bar";
+      final String subName = "foo";
+      final String queueName = createQueueNameForSubscription(true, clientId, subName).toString();
+      server.stop();
+      server.getConfiguration().addQueueConfiguration(new QueueConfiguration(queueName).setAddress("myTopic").setFilterString("color = 'BLUE'").setRoutingType(RoutingType.MULTICAST));
+      server.getConfiguration().setAmqpUseCoreSubscriptionNaming(true);
+      server.start();
+
+      try (Connection connection = connectionSupplier.createConnection()) {
+         connection.setClientID(clientId);
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         Topic destination = session.createTopic("myTopic");
+
+         MessageConsumer messageConsumer = session.createDurableSubscriber(destination, subName);
+         messageConsumer.close();
+
+         Queue queue = server.locateQueue(queueName);
+         assertNotNull(queue);
+         assertNotNull(queue.getFilter());
+         assertEquals("color = 'BLUE'", queue.getFilter().getFilterString().toString());
       }
    }
 
@@ -914,5 +958,38 @@ public class JMSMessageConsumerTest extends JMSClientTestSupport {
          connection1.close();
          connection2.close();
       }
+   }
+
+   private static final char SEPARATOR = '.';
+
+   private static String escape(final String input) {
+      if (input == null) {
+         return "";
+      }
+      return input.replace("\\", "\\\\").replace(".", "\\.");
+   }
+
+   private static SimpleString createQueueNameForSubscription(final boolean isDurable,
+                                                              final String clientID,
+                                                              final String subscriptionName) {
+      final String queueName;
+      if (clientID != null) {
+         if (isDurable) {
+            queueName = escape(clientID) + SEPARATOR +
+               escape(subscriptionName);
+         } else {
+            queueName = "nonDurable" + SEPARATOR +
+               escape(clientID) + SEPARATOR +
+               escape(subscriptionName);
+         }
+      } else {
+         if (isDurable) {
+            queueName = escape(subscriptionName);
+         } else {
+            queueName = "nonDurable" + SEPARATOR +
+               escape(subscriptionName);
+         }
+      }
+      return SimpleString.toSimpleString(queueName);
    }
 }
