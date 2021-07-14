@@ -97,9 +97,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -1798,7 +1800,14 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          // This is to avoid leaks on PostOffice between stops and starts
          for (Queue queue : iterableOf(getLocalQueues())) {
             try {
-               queue.expireReferences();
+               CountDownLatch latch = new CountDownLatch(1);
+               queue.expireReferences(latch::countDown);
+               // the idea is in fact to block the Reaper while the Queue is executing reaping.
+               // This would avoid another eventual expiry to be called if the period for reaping is too small
+               // This should also avoid bursts in CPU consumption because of the expiry reaping
+               if (!latch.await(10, TimeUnit.SECONDS)) {
+                  ActiveMQServerLogger.LOGGER.errorExpiringMessages(new TimeoutException(queue.getName().toString()));
+               }
             } catch (Exception e) {
                ActiveMQServerLogger.LOGGER.errorExpiringMessages(e);
             }
