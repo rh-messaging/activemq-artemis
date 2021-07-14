@@ -3545,17 +3545,22 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * @throws Exception
     */
    private void recoverStoredConfigs() throws Exception {
+      recoverStoredAddressSettings();
+      recoverStoredSecuritySettings();
+   }
+
+   private void recoverStoredSecuritySettings() throws Exception {
+      List<PersistedSecuritySetting> roles = storageManager.recoverSecuritySettings();
+      for (PersistedSecuritySetting roleItem : roles) {
+         Set<Role> setRoles = SecurityFormatter.createSecurity(roleItem.getSendRoles(), roleItem.getConsumeRoles(), roleItem.getCreateDurableQueueRoles(), roleItem.getDeleteDurableQueueRoles(), roleItem.getCreateNonDurableQueueRoles(), roleItem.getDeleteNonDurableQueueRoles(), roleItem.getManageRoles(), roleItem.getBrowseRoles(), roleItem.getCreateAddressRoles(), roleItem.getDeleteAddressRoles());
+         securityRepository.addMatch(roleItem.getAddressMatch().toString(), setRoles);
+      }
+   }
+
+   private void recoverStoredAddressSettings() throws Exception {
       List<PersistedAddressSetting> adsettings = storageManager.recoverAddressSettings();
       for (PersistedAddressSetting set : adsettings) {
          addressSettingsRepository.addMatch(set.getAddressMatch().toString(), set.getSetting());
-      }
-
-      List<PersistedSecuritySetting> roles = storageManager.recoverSecuritySettings();
-
-      for (PersistedSecuritySetting roleItem : roles) {
-         Set<Role> setRoles = SecurityFormatter.createSecurity(roleItem.getSendRoles(), roleItem.getConsumeRoles(), roleItem.getCreateDurableQueueRoles(), roleItem.getDeleteDurableQueueRoles(), roleItem.getCreateNonDurableQueueRoles(), roleItem.getDeleteNonDurableQueueRoles(), roleItem.getManageRoles(), roleItem.getBrowseRoles(), roleItem.getCreateAddressRoles(), roleItem.getDeleteAddressRoles());
-
-         securityRepository.addMatch(roleItem.getAddressMatch().toString(), setRoles);
       }
    }
 
@@ -4019,6 +4024,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    private void deployDiverts() throws Exception {
+      recoverStoredDiverts();
+      //deploy the configured diverts
+      for (DivertConfiguration config : configuration.getDivertConfigurations()) {
+         deployDivert(config);
+      }
+   }
+
+   private void recoverStoredDiverts() throws Exception {
       if (storageManager.recoverDivertConfigurations() != null) {
          for (PersistedDivertConfiguration persistedDivertConfiguration : storageManager.recoverDivertConfigurations()) {
             boolean deleted = true;
@@ -4033,9 +4046,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                deployDivert(persistedDivertConfiguration.getDivertConfiguration());
             }
          }
-      }
-      for (DivertConfiguration config : configuration.getDivertConfigurations()) {
-         deployDivert(config);
       }
    }
 
@@ -4269,9 +4279,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (configurationReloadDeployed.compareAndSet(false, true)) {
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("security");
          securityRepository.swap(configuration.getSecurityRoles().entrySet());
+         recoverStoredSecuritySettings();
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("address settings");
          addressSettingsRepository.swap(configuration.getAddressesSettings().entrySet());
+         recoverStoredAddressSettings();
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("diverts");
          final Set<SimpleString> divertsToRemove = postOffice.getAllBindings()
@@ -4291,6 +4303,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                logger.warn("Divert " + divertName + " could not be removed", e);
             }
          }
+         recoverStoredDiverts();
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("addresses");
          undeployAddressesAndQueueNotInConfiguration(configuration);
