@@ -3,7 +3,7 @@
 The Apache ActiveMQ Artemis REST interface allows you to leverage the reliability and
 scalability features of Apache ActiveMQ Artemis over a simple REST/HTTP interface.
 The REST Interface implementation sits on top of an Apache ActiveMQ Artemis JMS API and
-as such exposes JMS like concepts via REST.
+as such exposes JMS-like concepts via REST.
 
 Using the REST interface Messages can be produced and consumed by sending 
 and receiving simple HTTP messages that contain the content you want to push around. For instance,
@@ -27,6 +27,25 @@ When the XML is received on the server is it processed within Apache ActiveMQ Ar
 as a JMS message and distributed through core Apache ActiveMQ Artemis. Simple and easy.
 Consuming messages from a queue or topic looks very similar. We'll
 discuss the entire interface in detail later.
+
+## Caveats of Using the REST Interface
+
+Before adopting the REST interface it's important to recognize the potential trade-offs.
+
+* **There is no standard for REST messaging.** Any application which integrates with the
+  ActiveMQ Artemis REST messaging interface cannot then integrate with any other broker's
+  REST messaging interface without significant effort because every REST messaging 
+  interface is different. Even the ActiveMQ Classic broker has its own REST messaging 
+  interface which is different from Artemis'.
+* **For most use-cases STOMP is better.** In just about any environment where a simple
+  HTTP client might be advantageous for messaging there usually also exists a STOMP client 
+  implementation. STOMP is ubiquitous and *standardized* (i.e. it conforms to a public 
+  specification) which means it can be used across various broker implementations with
+  few, if any, client changes.
+
+Messaging is almost always leveraged for _integrating_ disparate applications. Protocol 
+flexibility and interoperability are vital to such solutions. Consider these caveats
+carefully before committing to a solution.
 
 ## Goals of REST Interface
 
@@ -275,6 +294,36 @@ Let's give an explanation of each config option.
 
 - `url`. The URL the Apache ActiveMQ Artemis REST implementation should use
   to connect to the Apache ActiveMQ Artemis instance. Default to "vm://0".
+
+### Broker Configuration
+
+If you are _only_ dealing with REST clients (i.e. no other remote messaging 
+clients using JMS, AMQP, STOMP, etc.) the simplest broker configuration
+involves a single in-vm acceptor, e.g.:
+```xml
+<acceptor name="invm">vm://0</acceptor>
+```
+Then set `<security-enabled>false</security-enabled>`. Be sure to remove any
+other `acceptor` elements so no remote clients can connect insecurely.
+
+If you must support other remote clients then configure an in-vm `acceptor`
+with its own `securityDomain` that will allow unsecured access from the REST
+implementation's in-vm connector, e.g.:
+```xml
+<acceptor name="invm">vm://0?securityDomain=invm</acceptor>
+```
+Then configure a new entry in your `login.config` that will allow access with
+no credentials. The name of the entry should match the value of the `securityDomain`
+on your in-vm acceptor, e.g.:
+```
+invm {
+    org.apache.activemq.artemis.spi.core.security.jaas.GuestLoginModule required
+        debug=true
+        org.apache.activemq.jaas.guest.user="restUser"
+        org.apache.activemq.jaas.guest.role="activemq";
+};
+```
+See the [security](security.md) chapter for more details on the `GuestLoginModule`.
 
 ## Apache ActiveMQ Artemis REST Interface Basics
 
