@@ -498,4 +498,7 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229233, value = "Cannot set ActiveMQSecurityManager during startup or while started")
    IllegalStateException cannotSetSecurityManager();
+
+   @Message(id = 229235, value = "Incompatible binding with name {0} already exists: {1}", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQIllegalStateException bindingAlreadyExists(String name, String binding);
 }
