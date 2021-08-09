@@ -108,7 +108,6 @@
       <mockito.version>3.11.2</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.66.Final</netty.version>
-      <commons.io.version>2.6</commons.io.version>
       <curator.version>5.1.0</curator.version>
       <!-- While waiting https://issues.apache.org/jira/browse/CURATOR-595 fix -->
       <zookeeper.version>3.6.3</zookeeper.version>
@@ -274,11 +273,6 @@
    <dependencyManagement>
       <dependencies>
          <!--needed for PNC and product alignement-->
-         <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-jms</artifactId>
-            <version>${qpid.jms.version}</version>
-         </dependency>
          <dependency>
            <groupId>org.apache.qpid</groupId>
            <artifactId>qpid-jms-client</artifactId>
