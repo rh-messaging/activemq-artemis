@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.16.0-PATCH-3132</version>
+      <version>2.16.0-PATCH-3136</version>
    </parent>
 
    <artifactId>artemis-core-client-all</artifactId>
