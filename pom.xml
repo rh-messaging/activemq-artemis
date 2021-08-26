@@ -181,7 +181,6 @@
       <skipStressTests>true</skipStressTests>
       <skipSoakTests>true</skipSoakTests>
       <skipPerformanceTests>true</skipPerformanceTests>
-      <skipConcurrentTests>true</skipConcurrentTests>
       <skipRestTests>true</skipRestTests>
       <skipActiveMQ5Tests>true</skipActiveMQ5Tests>
 
@@ -215,6 +214,7 @@
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
+      <bcprov-jdk15on-version>1.69</bcprov-jdk15on-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
@@ -364,6 +364,14 @@
                </exclusion>
             </exclusions>
          </dependency>
+
+         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${bcprov-jdk15on-version}</version>
+            <scope>test</scope>
+         </dependency>
+
          <!-- ## End Test Dependencies ## -->
 
          <!-- ### Build Time Dependencies ### -->
@@ -1198,7 +1206,6 @@
             <skipCompatibilityTests>false</skipCompatibilityTests>
             <skipSmokeTests>false</skipSmokeTests>
             <skipTimingTests>true</skipTimingTests>
-            <skipConcurrentTests>false</skipConcurrentTests>
             <skipRestTests>false</skipRestTests>
             <skipStressTests>true</skipStressTests>
             <skipSoakTests>true</skipSoakTests>
@@ -1214,7 +1221,6 @@
             <skipUnitTests>false</skipUnitTests>
             <skipJmsTests>false</skipJmsTests>
             <skipJoramTests>false</skipJoramTests>
-            <skipConcurrentTests>false</skipConcurrentTests>
             <skipCompatibilityTests>false</skipCompatibilityTests>
             <testFailureIgnore>false</testFailureIgnore>
             <!-- This enables the karaf-client-integration-tests and
