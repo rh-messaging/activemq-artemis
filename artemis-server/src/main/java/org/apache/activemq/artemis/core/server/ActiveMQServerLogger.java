@@ -1481,7 +1481,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void unableToFlushDeliveries(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-   @Message(id = 222237, value = "Unable to flush deliveries", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 222237, value = "Unable to stop redistributor", format = Message.Format.MESSAGE_FORMAT)
    void unableToCancelRedistributor(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
@@ -1754,6 +1754,10 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.WARN)
    @Message(id = 222302, value = "Failed to deal with property {0} when converting message from core to OpenWire: {1}", format = Message.Format.MESSAGE_FORMAT)
    void failedToDealWithObjectProperty(SimpleString property, String exceptionMessage);
+
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222303, value = "Redistribution by {0} of messageID = {1} failed", format = Message.Format.MESSAGE_FORMAT)
+   void errorRedistributing(@Cause Throwable t, String queueName, long m);
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
