@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.16.0-PATCH-3140</version>
+      <version>2.16.0-PATCH-3142</version>
    </parent>
 
    <artifactId>artemis-journal</artifactId>
