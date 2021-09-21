@@ -74,6 +74,7 @@ public class MQTTConnectionManager {
          return;
       }
 
+      boolean sessionPresent = session.getProtocolManager().getSessionStates().containsKey(clientId);
       MQTTSessionState sessionState = getSessionState(clientId);
       synchronized (sessionState) {
          session.setSessionState(sessionState);
@@ -104,7 +105,7 @@ public class MQTTConnectionManager {
          }
 
          session.getConnection().setConnected(true);
-         session.getProtocolHandler().sendConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED);
+         session.getProtocolHandler().sendConnack(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent && !cleanSession);
          // ensure we don't publish before the CONNACK
          session.start();
       }

@@ -187,8 +187,16 @@ public class MQTTProtocolHandler extends ChannelInboundHandlerAdapter {
    }
 
    void sendConnack(MqttConnectReturnCode returnCode) {
+      sendConnack(returnCode, true);
+   }
+
+   void sendConnack(MqttConnectReturnCode returnCode, boolean sessionPresent) {
       MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-      MqttConnAckVariableHeader varHeader = new MqttConnAckVariableHeader(returnCode, true);
+      // [MQTT-3.2.2-4] If a server sends a CONNACK packet containing a non-zero return code it MUST set Session Present to 0.
+      if (returnCode.byteValue() != (byte) 0x00) {
+         sessionPresent = false;
+      }
+      MqttConnAckVariableHeader varHeader = new MqttConnAckVariableHeader(returnCode, sessionPresent);
       MqttConnAckMessage message = new MqttConnAckMessage(fixedHeader, varHeader);
       sendToClient(message);
    }
