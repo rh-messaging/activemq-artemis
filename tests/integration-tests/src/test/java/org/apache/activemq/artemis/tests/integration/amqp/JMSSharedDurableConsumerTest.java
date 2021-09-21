@@ -29,7 +29,10 @@ import javax.jms.Topic;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
+import org.apache.activemq.artemis.core.server.impl.QueueImpl;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -137,5 +140,32 @@ public class JMSSharedDurableConsumerTest extends JMSClientTestSupport {
 
       testSharedDurableConsumer(connection, connection2);
 
+   }
+
+   @Test(timeout = 30000)
+   public void testSharedDurableConsumerWithSelectorChange() throws Exception {
+      SimpleString qName = amqpUseCoreSubscriptionNaming ? new SimpleString("SharedConsumer") : new SimpleString("SharedConsumer:global");
+      Connection connection = createConnection(true);
+      try {
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         Topic topic = session.createTopic(getTopicName());
+
+         MessageConsumer consumer = session.createSharedDurableConsumer(topic, "SharedConsumer", "a='1'");
+         MessageProducer producer = session.createProducer(session.createTopic(getTopicName()));
+         Message message = session.createMessage();
+         message.setStringProperty("a", "1");
+         producer.send(message);
+         QueueImpl queue = (QueueImpl) server.getPostOffice().getBinding(qName).getBindable();
+         Wait.assertEquals(1, queue::getMessageCount);
+         assertEquals(-1, queue.getMaxConsumers());
+         consumer.close();
+         MessageConsumer consumer2 = session.createSharedDurableConsumer(topic, "SharedConsumer", "a=b and b=c");
+         queue = (QueueImpl) server.getPostOffice().getBinding(qName).getBindable();
+         Wait.assertEquals(0, queue::getMessageCount);
+         assertEquals(-1, queue.getMaxConsumers());
+      } finally {
+         connection.close();
+      }
    }
 }
