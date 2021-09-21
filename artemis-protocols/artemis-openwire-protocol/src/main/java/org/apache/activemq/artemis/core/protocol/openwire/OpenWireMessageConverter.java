@@ -47,6 +47,7 @@ import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.persistence.CoreMessageObjectPools;
 import org.apache.activemq.artemis.core.protocol.openwire.amq.AMQConsumer;
 import org.apache.activemq.artemis.core.protocol.openwire.util.OpenWireUtil;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.reader.MessageUtil;
 import org.apache.activemq.artemis.utils.DataConstants;
@@ -529,7 +530,7 @@ public final class OpenWireMessageConverter {
                                                AMQConsumer consumer, UUID serverNodeUUID) throws IOException {
       final ActiveMQMessage amqMsg;
       final byte coreType = coreMessage.getType();
-      final Boolean compressProp = (Boolean) coreMessage.getObjectProperty(AMQ_MSG_COMPRESSED);
+      final Boolean compressProp = getObjectProperty(coreMessage, Boolean.class, AMQ_MSG_COMPRESSED);
       final boolean isCompressed = compressProp != null && compressProp;
       final byte[] bytes;
       final ActiveMQBuffer buffer = coreMessage.getDataBuffer();
@@ -564,7 +565,7 @@ public final class OpenWireMessageConverter {
             throw new IllegalStateException("Unknown message type: " + coreMessage.getType());
       }
 
-      final String type = coreMessage.getStringProperty(JMS_TYPE_PROPERTY);
+      final String type = getObjectProperty(coreMessage, String.class, JMS_TYPE_PROPERTY);
       if (type != null) {
          amqMsg.setJMSType(type);
       }
@@ -573,7 +574,7 @@ public final class OpenWireMessageConverter {
       amqMsg.setPriority(coreMessage.getPriority());
       amqMsg.setTimestamp(coreMessage.getTimestamp());
 
-      Long brokerInTime = (Long) coreMessage.getObjectProperty(AMQ_MSG_BROKER_IN_TIME);
+      Long brokerInTime = getObjectProperty(coreMessage, Long.class, AMQ_MSG_BROKER_IN_TIME);
       if (brokerInTime == null) {
          brokerInTime = 0L;
       }
@@ -583,35 +584,35 @@ public final class OpenWireMessageConverter {
 
       //we need check null because messages may come from other clients
       //and those amq specific attribute may not be set.
-      Long arrival = (Long) coreMessage.getObjectProperty(AMQ_MSG_ARRIVAL);
+      Long arrival = getObjectProperty(coreMessage, Long.class, AMQ_MSG_ARRIVAL);
       if (arrival == null) {
          //messages from other sources (like core client) may not set this prop
          arrival = 0L;
       }
       amqMsg.setArrival(arrival);
 
-      final Object brokerPath = coreMessage.getObjectProperty(AMQ_MSG_BROKER_PATH);
-      if (brokerPath instanceof SimpleString && ((SimpleString)brokerPath).length() > 0) {
-         setAMQMsgBrokerPath(amqMsg, ((SimpleString)brokerPath).toString());
+      final SimpleString brokerPath = getObjectProperty(coreMessage, SimpleString.class, AMQ_MSG_BROKER_PATH);
+      if (brokerPath != null && brokerPath.length() > 0) {
+         setAMQMsgBrokerPath(amqMsg, brokerPath.toString());
       }
 
-      final Object clusterPath = coreMessage.getObjectProperty(AMQ_MSG_CLUSTER);
-      if (clusterPath instanceof SimpleString && ((SimpleString)clusterPath).length() > 0) {
-         setAMQMsgClusterPath(amqMsg, ((SimpleString)clusterPath).toString());
+      final SimpleString clusterPath = getObjectProperty(coreMessage, SimpleString.class, AMQ_MSG_CLUSTER);
+      if (clusterPath != null && clusterPath.length() > 0) {
+         setAMQMsgClusterPath(amqMsg, clusterPath.toString());
       }
 
-      Integer commandId = (Integer) coreMessage.getObjectProperty(AMQ_MSG_COMMAND_ID);
+      Integer commandId = getObjectProperty(coreMessage, Integer.class, AMQ_MSG_COMMAND_ID);
       if (commandId == null) {
          commandId = -1;
       }
       amqMsg.setCommandId(commandId);
 
-      final SimpleString corrId = (SimpleString) coreMessage.getObjectProperty(JMS_CORRELATION_ID_PROPERTY);
+      final SimpleString corrId = getObjectProperty(coreMessage, SimpleString.class, JMS_CORRELATION_ID_PROPERTY);
       if (corrId != null) {
          amqMsg.setCorrelationId(corrId.toString());
       }
 
-      final byte[] dsBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_DATASTRUCTURE);
+      final byte[] dsBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_DATASTRUCTURE);
       if (dsBytes != null) {
          setAMQMsgDataStructure(amqMsg, marshaller, dsBytes);
       }
@@ -626,7 +627,7 @@ public final class OpenWireMessageConverter {
 
       amqMsg.setGroupSequence(coreMessage.getGroupSequence());
 
-      final byte[] midBytes = coreMessage.getBytesProperty(AMQ_MSG_MESSAGE_ID);
+      final byte[] midBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_MESSAGE_ID);
       final MessageId mid;
       if (midBytes != null) {
          ByteSequence midSeq = new ByteSequence(midBytes);
@@ -639,45 +640,45 @@ public final class OpenWireMessageConverter {
 
       amqMsg.setMessageId(mid);
 
-      final byte[] origDestBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_ORIG_DESTINATION);
+      final byte[] origDestBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_ORIG_DESTINATION);
       if (origDestBytes != null) {
          setAMQMsgOriginalDestination(amqMsg, marshaller, origDestBytes);
       }
 
-      final byte[] origTxIdBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_ORIG_TXID);
+      final byte[] origTxIdBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_ORIG_TXID);
       if (origTxIdBytes != null) {
          setAMQMsgOriginalTransactionId(amqMsg, marshaller, origTxIdBytes);
       }
 
-      final byte[] producerIdBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_PRODUCER_ID);
+      final byte[] producerIdBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_PRODUCER_ID);
       if (producerIdBytes != null) {
          ProducerId producerId = (ProducerId) marshaller.unmarshal(new ByteSequence(producerIdBytes));
          amqMsg.setProducerId(producerId);
       }
 
-      final byte[] marshalledBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_MARSHALL_PROP);
+      final byte[] marshalledBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_MARSHALL_PROP);
       if (marshalledBytes != null) {
          amqMsg.setMarshalledProperties(new ByteSequence(marshalledBytes));
       }
 
       amqMsg.setRedeliveryCounter(reference.getDeliveryCount() - 1);
 
-      final byte[] replyToBytes = (byte[]) coreMessage.getObjectProperty(AMQ_MSG_REPLY_TO);
+      final byte[] replyToBytes = getObjectProperty(coreMessage, byte[].class, AMQ_MSG_REPLY_TO);
       if (replyToBytes != null) {
          setAMQMsgReplyTo(amqMsg, marshaller, replyToBytes);
       }
 
-      final Object userId = coreMessage.getObjectProperty(AMQ_MSG_USER_ID);
-      if (userId instanceof SimpleString && ((SimpleString)userId).length() > 0) {
-         amqMsg.setUserID(((SimpleString)userId).toString());
+      final SimpleString userId = getObjectProperty(coreMessage, SimpleString.class, AMQ_MSG_USER_ID);
+      if (userId != null && userId.length() > 0) {
+         amqMsg.setUserID(userId.toString());
       }
 
-      final Boolean isDroppable = (Boolean) coreMessage.getObjectProperty(AMQ_MSG_DROPPABLE);
+      final Boolean isDroppable = getObjectProperty(coreMessage, Boolean.class, AMQ_MSG_DROPPABLE);
       if (isDroppable != null) {
          amqMsg.setDroppable(isDroppable);
       }
 
-      final SimpleString dlqCause = (SimpleString) coreMessage.getObjectProperty(AMQ_MSG_DLQ_DELIVERY_FAILURE_CAUSE_PROPERTY);
+      final SimpleString dlqCause = getObjectProperty(coreMessage, SimpleString.class, AMQ_MSG_DLQ_DELIVERY_FAILURE_CAUSE_PROPERTY);
       if (dlqCause != null) {
          setAMQMsgDlqDeliveryFailureCause(amqMsg, dlqCause);
       }
@@ -697,6 +698,17 @@ public final class OpenWireMessageConverter {
          amqMsg.setContent(content);
       }
       return amqMsg;
+   }
+
+   private static <T> T getObjectProperty(ICoreMessage message, Class<T> type, SimpleString property) {
+      if (message.getPropertyNames().contains(property)) {
+         try {
+            return type.cast(message.getObjectProperty(property));
+         } catch (ClassCastException e) {
+            ActiveMQServerLogger.LOGGER.failedToDealWithObjectProperty(property, e.getMessage());
+         }
+      }
+      return null;
    }
 
    private static byte[] toAMQMessageTextType(final ActiveMQBuffer buffer,
@@ -959,7 +971,7 @@ public final class OpenWireMessageConverter {
                amqMsg.setObjectProperty(keyStr, prop);
             }
          } catch (JMSException e) {
-            throw new IOException("exception setting property " + s + " : " + prop, e);
+            ActiveMQServerLogger.LOGGER.failedToDealWithObjectProperty(s, e.getMessage());
          }
       }
    }
