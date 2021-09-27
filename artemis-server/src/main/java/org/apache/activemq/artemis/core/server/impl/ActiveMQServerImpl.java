@@ -2384,13 +2384,16 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          if (hasBrokerQueuePlugins()) {
             callBrokerQueuePlugins(plugin -> plugin.afterDestroyQueue(queue, address, session, checkConsumerCount, removeConsumers, autoDeleteAddress));
          }
-         AddressInfo addressInfo = getAddressInfo(address);
 
-         if (autoDeleteAddress && postOffice != null && addressInfo != null && addressInfo.isAutoCreated() && !isAddressBound(address.toString()) && addressSettingsRepository.getMatch(address.toString()).getAutoDeleteAddressesDelay() == 0) {
-            try {
-               removeAddressInfo(address, session);
-            } catch (ActiveMQDeleteAddressException e) {
-               // Could be thrown if the address has bindings or is not deletable.
+         if (queue.isTemporary()) {
+            AddressInfo addressInfo = getAddressInfo(address);
+
+            if (autoDeleteAddress && postOffice != null && addressInfo != null && addressInfo.isAutoCreated() && !isAddressBound(address.toString()) && addressSettingsRepository.getMatch(address.toString()).getAutoDeleteAddressesDelay() == 0) {
+               try {
+                  removeAddressInfo(address, session);
+               } catch (ActiveMQDeleteAddressException e) {
+                  // Could be thrown if the address has bindings or is not deletable.
+               }
             }
          }
 
@@ -3599,25 +3602,40 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public void autoRemoveAddressInfo(SimpleString address, SecurityAuth auth) throws Exception {
+      if (logger.isDebugEnabled()) {
+         logger.debug("deleting auto-created address \"" + address + ".\"");
+      }
+
+      ActiveMQServerLogger.LOGGER.autoRemoveAddress("" + address);
+
+      removeAddressInfo(address, auth);
+   }
+
+   @Override
    public void removeAddressInfo(final SimpleString address, final SecurityAuth auth, boolean force) throws Exception {
       if (auth != null) {
          securityStore.check(address, CheckType.DELETE_ADDRESS, auth);
       }
 
-      AddressInfo addressInfo = getAddressInfo(address);
-      if (postOffice.removeAddressInfo(address, force) == null) {
-         throw ActiveMQMessageBundle.BUNDLE.addressDoesNotExist(address);
-      }
+      try {
+         AddressInfo addressInfo = getAddressInfo(address);
+         if (postOffice.removeAddressInfo(address, force) == null) {
+            throw ActiveMQMessageBundle.BUNDLE.addressDoesNotExist(address);
+         }
 
-      if (addressInfo.getRepositoryChangeListener() != null) {
-         addressSettingsRepository.unRegisterListener(addressInfo.getRepositoryChangeListener());
-         addressInfo.setRepositoryChangeListener(null);
-      }
+         if (addressInfo.getRepositoryChangeListener() != null) {
+            addressSettingsRepository.unRegisterListener(addressInfo.getRepositoryChangeListener());
+            addressInfo.setRepositoryChangeListener(null);
+         }
 
-      long txID = storageManager.generateID();
-      storageManager.deleteAddressBinding(txID, addressInfo.getId());
-      storageManager.commitBindings(txID);
-      pagingManager.deletePageStore(address);
+         long txID = storageManager.generateID();
+         storageManager.deleteAddressBinding(txID, addressInfo.getId());
+         storageManager.commitBindings(txID);
+         pagingManager.deletePageStore(address);
+      } finally {
+         clearAddressCache();
+      }
    }
 
    @Override
@@ -3693,104 +3711,110 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public Queue createQueue(final QueueConfiguration queueConfiguration, boolean ignoreIfExists) throws Exception {
-      if (queueConfiguration.getName() == null || queueConfiguration.getName().length() == 0) {
-         throw ActiveMQMessageBundle.BUNDLE.invalidQueueName(queueConfiguration.getName());
+      final PostOffice postOfficeInUse = postOffice;
+      if (postOfficeInUse == null) {
+         return null;
       }
-
-      final QueueBinding binding = (QueueBinding) postOffice.getBinding(queueConfiguration.getName());
-      if (binding != null) {
-         if (ignoreIfExists) {
-            return binding.getQueue();
-         } else {
-            throw ActiveMQMessageBundle.BUNDLE.queueAlreadyExists(queueConfiguration.getName(), binding.getAddress());
+      synchronized (postOfficeInUse) {
+         if (queueConfiguration.getName() == null || queueConfiguration.getName().length() == 0) {
+            throw ActiveMQMessageBundle.BUNDLE.invalidQueueName(queueConfiguration.getName());
          }
-      }
 
-      QueueConfigurationUtils.applyDynamicQueueDefaults(queueConfiguration, addressSettingsRepository.getMatch(getRuntimeTempQueueNamespace(queueConfiguration.isTemporary()) + queueConfiguration.getAddress().toString()));
+         final QueueBinding binding = (QueueBinding) postOffice.getBinding(queueConfiguration.getName());
+         if (binding != null) {
+            if (ignoreIfExists) {
+               return binding.getQueue();
+            } else {
+               throw ActiveMQMessageBundle.BUNDLE.queueAlreadyExists(queueConfiguration.getName(), binding.getAddress());
+            }
+         }
 
-      AddressInfo info = postOffice.getAddressInfo(queueConfiguration.getAddress());
-      if (queueConfiguration.isAutoCreateAddress() || queueConfiguration.isTemporary()) {
-         if (info == null) {
-            addAddressInfo(new AddressInfo(queueConfiguration.getAddress(), queueConfiguration.getRoutingType())
-                              .setAutoCreated(true)
-                              .setTemporary(queueConfiguration.isTemporary())
-                              .setInternal(queueConfiguration.isInternal()));
+         QueueConfigurationUtils.applyDynamicQueueDefaults(queueConfiguration, addressSettingsRepository.getMatch(getRuntimeTempQueueNamespace(queueConfiguration.isTemporary()) + queueConfiguration.getAddress().toString()));
+
+         AddressInfo info = postOffice.getAddressInfo(queueConfiguration.getAddress());
+         if (queueConfiguration.isAutoCreateAddress() || queueConfiguration.isTemporary()) {
+            if (info == null) {
+               addAddressInfo(new AddressInfo(queueConfiguration.getAddress(), queueConfiguration.getRoutingType())
+                                 .setAutoCreated(true)
+                                 .setTemporary(queueConfiguration.isTemporary())
+                                 .setInternal(queueConfiguration.isInternal()));
+            } else if (!info.getRoutingTypes().contains(queueConfiguration.getRoutingType())) {
+               EnumSet<RoutingType> routingTypes = EnumSet.copyOf(info.getRoutingTypes());
+               routingTypes.add(queueConfiguration.getRoutingType());
+               updateAddressInfo(info.getName(), routingTypes);
+            }
+         } else if (info == null) {
+            throw ActiveMQMessageBundle.BUNDLE.addressDoesNotExist(queueConfiguration.getAddress());
          } else if (!info.getRoutingTypes().contains(queueConfiguration.getRoutingType())) {
-            EnumSet<RoutingType> routingTypes = EnumSet.copyOf(info.getRoutingTypes());
-            routingTypes.add(queueConfiguration.getRoutingType());
-            updateAddressInfo(info.getName(), routingTypes);
+            throw ActiveMQMessageBundle.BUNDLE.invalidRoutingTypeForAddress(queueConfiguration.getRoutingType(), info.getName().toString(), info.getRoutingTypes());
          }
-      } else if (info == null) {
-         throw ActiveMQMessageBundle.BUNDLE.addressDoesNotExist(queueConfiguration.getAddress());
-      } else if (!info.getRoutingTypes().contains(queueConfiguration.getRoutingType())) {
-         throw ActiveMQMessageBundle.BUNDLE.invalidRoutingTypeForAddress(queueConfiguration.getRoutingType(), info.getName().toString(), info.getRoutingTypes());
-      }
 
-      if (hasBrokerQueuePlugins()) {
-         callBrokerQueuePlugins(plugin -> plugin.beforeCreateQueue(queueConfiguration));
-      }
+         if (hasBrokerQueuePlugins()) {
+            callBrokerQueuePlugins(plugin -> plugin.beforeCreateQueue(queueConfiguration));
+         }
 
-      if (mirrorControllerService != null) {
-         mirrorControllerService.createQueue(queueConfiguration);
-      }
+         if (mirrorControllerService != null) {
+            mirrorControllerService.createQueue(queueConfiguration);
+         }
 
-      queueConfiguration.setId(storageManager.generateID());
+         queueConfiguration.setId(storageManager.generateID());
 
-      // preemptive check to ensure the filterString is good
-      FilterImpl.createFilter(queueConfiguration.getFilterString());
+         // preemptive check to ensure the filterString is good
+         FilterImpl.createFilter(queueConfiguration.getFilterString());
 
-      final Queue queue = queueFactory.createQueueWith(queueConfiguration, pagingManager);
+         final Queue queue = queueFactory.createQueueWith(queueConfiguration, pagingManager);
 
-      if (queueConfiguration.isTransient()) {
-         queue.setConsumersRefCount(new TransientQueueManagerImpl(this, queue.getName()));
-      } else {
-         queue.setConsumersRefCount(new QueueManagerImpl(this, queue.getName()));
-      }
+         if (queueConfiguration.isTransient()) {
+            queue.setConsumersRefCount(new TransientQueueManagerImpl(this, queue.getName()));
+         } else {
+            queue.setConsumersRefCount(new QueueManagerImpl(this, queue.getName()));
+         }
 
-      final QueueBinding localQueueBinding = new LocalQueueBinding(queue.getAddress(), queue, nodeManager.getNodeId());
+         final QueueBinding localQueueBinding = new LocalQueueBinding(queue.getAddress(), queue, nodeManager.getNodeId());
 
-      long txID = 0;
-      if (queue.isDurable()) {
-         txID = storageManager.generateID();
-         storageManager.addQueueBinding(txID, localQueueBinding);
-      }
-
-      try {
-         postOffice.addBinding(localQueueBinding);
+         long txID = 0;
          if (queue.isDurable()) {
-            storageManager.commitBindings(txID);
+            txID = storageManager.generateID();
+            storageManager.addQueueBinding(txID, localQueueBinding);
          }
-      } catch (Exception e) {
+
          try {
-            if (queueConfiguration.isDurable()) {
-               storageManager.rollbackBindings(txID);
+            postOffice.addBinding(localQueueBinding);
+            if (queue.isDurable()) {
+               storageManager.commitBindings(txID);
             }
+         } catch (Exception e) {
             try {
-               queue.close();
-            } finally {
-               if (queue.getPageSubscription() != null) {
-                  queue.getPageSubscription().destroy();
+               if (queueConfiguration.isDurable()) {
+                  storageManager.rollbackBindings(txID);
                }
+               try {
+                  queue.close();
+               } finally {
+                  if (queue.getPageSubscription() != null) {
+                     queue.getPageSubscription().destroy();
+                  }
+               }
+            } catch (Throwable ignored) {
+               logger.debug(ignored.getMessage(), ignored);
             }
-         } catch (Throwable ignored) {
-            logger.debug(ignored.getMessage(), ignored);
+            throw e;
          }
-         throw e;
+
+         if (!queueConfiguration.isInternal()) {
+            managementService.registerQueue(queue, queue.getAddress(), storageManager);
+         }
+
+         copyRetroactiveMessages(queue);
+
+         if (hasBrokerQueuePlugins()) {
+            callBrokerQueuePlugins(plugin -> plugin.afterCreateQueue(queue));
+         }
+
+         callPostQueueCreationCallbacks(queue.getName());
+
+         return queue;
       }
-
-      if (!queueConfiguration.isInternal()) {
-         managementService.registerQueue(queue, queue.getAddress(), storageManager);
-      }
-
-      copyRetroactiveMessages(queue);
-
-      if (hasBrokerQueuePlugins()) {
-         callBrokerQueuePlugins(plugin -> plugin.afterCreateQueue(queue));
-      }
-
-      callPostQueueCreationCallbacks(queue.getName());
-
-      return queue;
    }
 
    public String getRuntimeTempQueueNamespace(boolean temporary) {

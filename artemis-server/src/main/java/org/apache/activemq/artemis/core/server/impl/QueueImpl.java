@@ -327,6 +327,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    private final boolean autoDelete;
 
+   private volatile boolean swept;
+
    private final long autoDeleteDelay;
 
    private final long autoDeleteMessageCount;
@@ -347,6 +349,15 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
    }
 
+   @Override
+   public boolean isSwept() {
+      return swept;
+   }
+
+   @Override
+   public void setSwept(boolean swept) {
+      this.swept = swept;
+   }
 
    /**
     * This is to avoid multi-thread races on calculating direct delivery,
@@ -1410,6 +1421,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (logger.isDebugEnabled()) {
          logger.debug(this + " adding consumer " + consumer);
       }
+
+      this.setSwept(false);
 
       enterCritical(CRITICAL_CONSUMER);
       try {
