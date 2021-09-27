@@ -204,8 +204,8 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
    public void testSecurityCacheSizes() throws Exception {
       ActiveMQServerControl serverControl = createManagementControl();
 
-      Assert.assertEquals(usingCore() ? 1 : 0, serverControl.getAuthenticationCacheSize());
-      Assert.assertEquals(usingCore() ? 7 : 0, serverControl.getAuthorizationCacheSize());
+      Wait.assertEquals(usingCore() ? 1 : 0, serverControl::getAuthenticationCacheSize);
+      Wait.assertEquals(usingCore() ? 7 : 0, serverControl::getAuthorizationCacheSize);
 
       ServerLocator loc = createInVMNonHALocator();
       ClientSessionFactory csf = createSessionFactory(loc);
@@ -223,7 +223,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       producer.send(m);
 
       Assert.assertEquals(usingCore() ? 2 : 1, serverControl.getAuthenticationCacheSize());
-      Assert.assertEquals(usingCore() ? 8 : 1, serverControl.getAuthorizationCacheSize());
+      Wait.assertEquals(usingCore() ? 8 : 1, () -> serverControl.getAuthorizationCacheSize());
    }
 
    @Test
@@ -793,7 +793,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       Assert.assertTrue(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
 
       serverControl.destroyQueue(name.toString(), true, true);
-      Assert.assertFalse(ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
+      Wait.assertFalse(() -> ActiveMQServerControlTest.contains(address.toString(), serverControl.getAddressNames()));
    }
 
    @Test
@@ -4066,6 +4066,7 @@ public class ActiveMQServerControlTest extends ManagementTestBase {
       securityConfiguration.setDefaultUser("guest");
       ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), securityConfiguration);
       server = addServer(ActiveMQServers.newActiveMQServer(conf, mbeanServer, securityManager, true));
+      server.getConfiguration().setAddressQueueScanPeriod(100);
       server.start();
 
       HashSet<Role> role = new HashSet<>();

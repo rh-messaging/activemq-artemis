@@ -26,6 +26,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 
 /**
@@ -82,5 +83,9 @@ public interface AddressManager {
    void updateMessageLoadBalancingTypeForAddress(SimpleString address, MessageLoadBalancingType messageLoadBalancingType) throws Exception;
 
    void scanAddresses(MirrorController mirrorController) throws Exception;
+
+   boolean checkAutoRemoveAddress(SimpleString address,
+                                  AddressInfo addressInfo,
+                                  AddressSettings settings) throws Exception;
 
 }
