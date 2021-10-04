@@ -520,6 +520,12 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
          }
       };
 
+      AtomicInteger criticalErrors = new AtomicInteger(0);
+      journal.setCriticalErrorListener((a, b, c) -> {
+         System.out.println("Error");
+         criticalErrors.incrementAndGet();
+      });
+
       journal.setAutoReclaim(false);
 
       startJournal();
@@ -719,6 +725,12 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
       createJournal();
       startJournal();
       loadAndCheck();
+
+      if (createControlFile) {
+         Assert.assertEquals(0, criticalErrors.get());
+      } else {
+         Assert.assertEquals(1, criticalErrors.get());
+      }
 
    }
 
@@ -1218,6 +1230,73 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
       createJournal();
       startJournal();
       loadAndCheck();
+
+   }
+
+
+   @Test
+   public void testReconfigureJournalSize() throws Exception {
+      setup(2, 60 * 1024, false);
+
+      createJournal();
+      startJournal();
+      load();
+
+      int NUMBER_OF_RECORDS = 1000;
+
+      // add and remove some data to force reclaiming
+      {
+         ArrayList<Long> ids = new ArrayList<>();
+         for (int i = 0; i < NUMBER_OF_RECORDS; i++) {
+            long id = idGenerator.generateID();
+            ids.add(id);
+            add(id);
+            if (i > 0 && i % 100 == 0) {
+               journal.forceMoveNextFile();
+            }
+         }
+
+         journal.forceMoveNextFile();
+
+         journal.checkReclaimStatus();
+      }
+
+      journal.testCompact();
+
+      stopJournal();
+
+      // expanding the size once
+      setup(2, 120 * 1024, false);
+      createJournal();
+      startJournal();
+      loadAndCheck();
+
+      // add and remove some data to force reclaiming
+      {
+         ArrayList<Long> ids = new ArrayList<>();
+         for (int i = 0; i < NUMBER_OF_RECORDS; i++) {
+            long id = idGenerator.generateID();
+            ids.add(id);
+            add(id);
+            if (i > 0 && i % 100 == 0) {
+               journal.forceMoveNextFile();
+            }
+         }
+
+         journal.forceMoveNextFile();
+
+         journal.checkReclaimStatus();
+      }
+      stopJournal();
+
+      // shrinking the size later
+      setup(2, 30 * 1024, false);
+      createJournal();
+      startJournal();
+      loadAndCheck();
+
+      journal.testCompact();
+
 
    }
 
@@ -1842,6 +1921,29 @@ public class NIOJournalCompactTest extends JournalImplTestBase {
       }
 
    }
+
+   @Test
+   public void testLargeCompacting() throws Exception {
+      setup(2, 4 * 1024, false);
+
+      createJournal();
+
+      startJournal();
+
+      load();
+
+
+      for (int i = 0; i < 250; i += 2) {
+         addTx(i, i + 1);
+
+         commit(i);
+
+         journal.forceMoveNextFile();
+      }
+
+      journal.testCompact();
+   }
+
 
    @Override
    @After
