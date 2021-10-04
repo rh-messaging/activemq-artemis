@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.impl.JournalFile;
 import org.apache.activemq.artemis.core.persistence.Persister;
@@ -123,6 +124,14 @@ public interface Journal extends ActiveMQComponent {
    void appendUpdateRecord(long id, byte recordType, Persister persister, Object record, boolean sync) throws Exception;
 
    void tryAppendUpdateRecord(long id, byte recordType, Persister persister, Object record, JournalUpdateCallback updateCallback, boolean sync, boolean replaceableUpdate) throws Exception;
+
+   default IOCriticalErrorListener getCriticalErrorListener() {
+      return null;
+   }
+
+   default Journal setCriticalErrorListener(IOCriticalErrorListener criticalErrorListener) {
+      return this;
+   }
 
    default void appendUpdateRecord(long id,
                                    byte recordType,
