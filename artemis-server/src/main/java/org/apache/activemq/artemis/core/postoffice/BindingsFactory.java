@@ -24,4 +24,8 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 public interface BindingsFactory {
 
    Bindings createBindings(SimpleString address) throws Exception;
+
+   default boolean isAddressBound(SimpleString address) throws Exception {
+      return false;
+   }
 }
