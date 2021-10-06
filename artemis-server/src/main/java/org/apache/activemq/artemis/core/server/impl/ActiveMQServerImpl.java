@@ -3770,13 +3770,13 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
          final Queue queue = queueFactory.createQueueWith(queueConfiguration, pagingManager);
 
-      if (queueConfiguration.isTransient()) {
-         queue.setConsumersRefCount(new TransientQueueManagerImpl(this, queue.getName()));
-      } else {
-         queue.setConsumersRefCount(new QueueManagerImpl(this, queue.getName()));
-      }
+         if (queueConfiguration.isTransient()) {
+            queue.setConsumersRefCount(new TransientQueueManagerImpl(this, queue.getName()));
+         } else {
+            queue.setConsumersRefCount(new QueueManagerImpl(this, queue.getName()));
+         }
 
-      final QueueBinding localQueueBinding = new LocalQueueBinding(queue.getAddress(), queue, nodeManager.getNodeId());
+         final QueueBinding localQueueBinding = new LocalQueueBinding(queue.getAddress(), queue, nodeManager.getNodeId());
 
          long txID = 0;
          if (queue.isDurable()) {
