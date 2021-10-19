@@ -1749,6 +1749,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
       format = Message.Format.MESSAGE_FORMAT)
    void failedToLoadPreparedTX(@Cause Throwable e, String message);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 222305, value = "Error federating message {0}.",
+      format = Message.Format.MESSAGE_FORMAT)
+   void federationDispatchError(@Cause Throwable e, String message);
+
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224000, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
    void initializationError(@Cause Throwable e);
