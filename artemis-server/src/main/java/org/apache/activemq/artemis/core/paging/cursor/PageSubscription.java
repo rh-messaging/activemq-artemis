@@ -16,6 +16,9 @@
  */
 package org.apache.activemq.artemis.core.paging.cursor;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.ToIntFunction;
+
 import org.apache.activemq.artemis.core.paging.PagedMessage;
 import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.impl.Page;
@@ -85,12 +88,14 @@ public interface PageSubscription {
    // for internal (cursor) classes
    void confirmPosition(Transaction tx, PagePosition position) throws Exception;
 
-
-   // Add a scan function to be performed. It will be completed when you call performScan
-   void addScanAck(Comparable<PagedReference> scanFunction, Runnable found, Runnable notfound);
-
-   // it will schedule a scan on pages for everything that was added through addScanAck
-   void performScanAck();
+   /**
+    * This method will schedule scanning over Paging, however a retry should be done before the scanning.
+    * @param retryBeforeScan if this function is called and returns true, the scan for this element will not be called. It would be caller's responsibility to call found.
+    * @param scanFunction
+    * @param found
+    * @param notFound
+    */
+   void scanAck(BooleanSupplier retryBeforeScan, ToIntFunction<PagedReference> scanFunction, Runnable found, Runnable notFound);
 
 
       /**
