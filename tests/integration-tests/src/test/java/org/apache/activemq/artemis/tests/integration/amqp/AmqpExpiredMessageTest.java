@@ -407,9 +407,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
       sender.send(message);
       sender.close();
 
-      Thread.sleep(50);
-
-      assertEquals(1, queueView.getMessageCount());
+      Wait.assertEquals(1, queueView::getMessageCount);
 
       // Now try and get the message
       AmqpReceiver receiver = session.createReceiver(getQueueName());
@@ -417,7 +415,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
       AmqpMessage received = receiver.receive(5, TimeUnit.SECONDS);
       assertNotNull(received);
 
-      assertEquals(0, queueView.getMessagesExpired());
+      Wait.assertEquals(0, queueView::getMessagesExpired);
 
       connection.close();
    }
@@ -645,6 +643,17 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
          server.start();
       }
 
+      final Queue serverQueue = server.locateQueue(getQueueName());
+
+      try (LinkedListIterator<MessageReference> referenceIterator = serverQueue.iterator()) {
+         while (referenceIterator.hasNext()) {
+            MessageReference ref = referenceIterator.next();
+            Assert.assertEquals(ref.getMessage().getExpiration(), ref.getMessage().toCore().getExpiration());
+            Assert.assertTrue(ref.getMessage().getExpiration() > 0);
+            Assert.assertTrue(ref.getMessage().toCore().getExpiration() > 0);
+         }
+      }
+
       final Queue dlqView = getProxyToQueue(getDeadLetterAddress());
 
       Wait.assertEquals(2, dlqView::getMessageCount);
@@ -730,8 +739,5 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
 
 
    }
-
-
-
 
 }
