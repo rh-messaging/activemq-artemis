@@ -1674,11 +1674,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                       final boolean autoCreateQueues,
                                       final OperationContext context,
                                       final Map<SimpleString, RoutingType> prefixes,
-                                      final String securityDomain) throws Exception {
-      String validatedUser = "";
-
-      if (securityStore != null) {
-         validatedUser = securityStore.authenticate(username, password, connection, securityDomain);
+                                      final String securityDomain,
+                                      String validatedUser) throws Exception {
+      if (validatedUser == null) {
+         validatedUser = validateUser(username, password, connection, securityDomain);
       }
 
       checkSessionLimit(validatedUser);
@@ -1691,6 +1690,16 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain);
 
       return session;
+   }
+
+   @Override
+   public String validateUser(String username, String password, RemotingConnection connection, String securityDomain) throws Exception {
+      String validatedUser = "";
+
+      if (securityStore != null) {
+         validatedUser = securityStore.authenticate(username, password, connection, securityDomain);
+      }
+      return validatedUser;
    }
 
    @Override
