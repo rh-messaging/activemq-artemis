@@ -169,7 +169,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
    private final CoreMessageObjectPools coreMessageObjectPools = new CoreMessageObjectPools();
 
-   private ConnectionState state;
+   private volatile ConnectionState state;
 
    private volatile boolean noLocal;
 
@@ -991,15 +991,17 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
       this.useKeepAlive = useKeepAlive;
       this.maxInactivityDuration = inactivityDuration;
 
-      protocolManager.getScheduledPool().schedule(new Runnable() {
-         @Override
-         public void run() {
-            if (inactivityDuration >= 0) {
-               connectionEntry.ttl = inactivityDuration;
+      if (this.useKeepAlive) {
+         protocolManager.getScheduledPool().schedule(new Runnable() {
+            @Override
+            public void run() {
+               if (inactivityDuration >= 0) {
+                  connectionEntry.ttl = inactivityDuration;
+               }
             }
-         }
-      }, inactivityDurationInitialDelay, TimeUnit.MILLISECONDS);
-      checkInactivity();
+         }, inactivityDurationInitialDelay, TimeUnit.MILLISECONDS);
+         checkInactivity();
+      }
    }
 
    public void addKnownDestination(final SimpleString address) {
