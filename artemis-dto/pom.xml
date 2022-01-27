@@ -33,10 +33,6 @@
 
    <dependencies>
       <dependency>
-          <groupId>com.google.errorprone</groupId>
-          <artifactId>error_prone_core</artifactId>
-      </dependency>
-      <dependency>
          <groupId>org.apache.activemq</groupId>
          <artifactId>artemis-commons</artifactId>
          <version>${project.version}</version>
@@ -50,11 +46,18 @@
          <groupId>com.sun.xml.bind</groupId>
          <artifactId>jaxb-impl</artifactId>
          <version>${version.jaxb.runtime}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>com.sun.activation</groupId>
+               <artifactId>jakarta.activation</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
          <artifactId>jaxb-osgi</artifactId>
          <version>${version.jaxb.runtime}</version>
+         <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>jakarta.activation</groupId>
@@ -129,6 +132,12 @@
                   <groupId>com.sun.xml.bind</groupId>
                   <artifactId>jaxb-impl</artifactId>
                   <version>${version.jaxb.runtime}</version>
+                  <exclusions>
+                     <exclusion>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
+                     </exclusion>
+                  </exclusions>
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
