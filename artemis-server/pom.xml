@@ -183,6 +183,12 @@
          <groupId>org.apache.directory.server</groupId>
          <artifactId>apacheds-core-annotations</artifactId>
          <version>${directory-version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+            </exclusions>
          <scope>test</scope>
       </dependency>
       <dependency>

@@ -120,6 +120,12 @@
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-partition</artifactId>
          <version>${activemq5.project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
 
       <dependency>
@@ -264,6 +270,12 @@
          <groupId>org.apache.directory.server</groupId>
          <artifactId>apacheds-server-integ</artifactId>
          <version>${directory-version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
          <scope>test</scope>
       </dependency>
 
@@ -464,4 +476,3 @@
    </build>
 
 </project>
-

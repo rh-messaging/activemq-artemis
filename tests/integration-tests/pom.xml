@@ -315,6 +315,10 @@
                <groupId>org.apache.directory.api</groupId>
                <artifactId>api-ldap-schema-data</artifactId>
             </exclusion>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
          </exclusions>
       </dependency>
       <dependency>
