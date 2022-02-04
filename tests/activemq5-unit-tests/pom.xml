@@ -120,6 +120,12 @@
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-partition</artifactId>
          <version>${activemq5.project.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
 
       <dependency>
@@ -221,18 +227,6 @@
       </dependency>
 
       <dependency>
-         <groupId>org.slf4j</groupId>
-         <artifactId>slf4j-log4j12</artifactId>
-         <scope>test</scope>
-      </dependency>
-
-      <dependency>
-         <groupId>log4j</groupId>
-         <artifactId>log4j</artifactId>
-         <scope>test</scope>
-       </dependency>
-
-      <dependency>
          <groupId>org.springframework</groupId>
          <artifactId>spring-test</artifactId>
          <version>${spring-version}</version>
@@ -276,6 +270,12 @@
          <groupId>org.apache.directory.server</groupId>
          <artifactId>apacheds-server-integ</artifactId>
          <version>${directory-version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
          <scope>test</scope>
       </dependency>
 
@@ -476,4 +476,3 @@
    </build>
 
 </project>
-
