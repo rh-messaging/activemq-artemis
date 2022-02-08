@@ -40,6 +40,12 @@
 			<groupId>org.amqphub.spring</groupId>
 			<artifactId>amqp-10-jms-spring-boot-starter</artifactId>
 			<version>${amqp-10-jms-spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-to-slf4j</artifactId>
+				</exclusion>
+			 </exclusions>
 		</dependency>
 	</dependencies>
 	<build>
