@@ -134,11 +134,6 @@
            <groupId>org.apache.activemq</groupId>
            <artifactId>activemq-openwire-legacy</artifactId>
        </dependency>
-       <dependency>
-          <groupId>org.apache.tomcat</groupId>
-          <artifactId>tomcat-servlet-api</artifactId>
-          <version>${tomcat.servlet.version}</version>
-       </dependency>
       <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-api</artifactId>
