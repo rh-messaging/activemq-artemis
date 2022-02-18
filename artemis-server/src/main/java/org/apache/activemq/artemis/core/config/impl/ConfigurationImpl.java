@@ -96,6 +96,7 @@ import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerResourcePlug
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerSessionPlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.Env;
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
@@ -387,6 +388,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    private long mqttSessionScanInterval = ActiveMQDefaultConfiguration.getMqttSessionScanInterval();
 
+   private boolean suppressSessionNotifications = ActiveMQDefaultConfiguration.getDefaultSuppressSessionNotifications();
 
    /**
     * Parent folder for all data folders.
@@ -506,6 +508,14 @@ public class ConfigurationImpl implements Configuration, Serializable {
             return (T) SimpleString.toSimpleString(value.toString());
          }
       }, SimpleString.class);
+      // support 25K or 25m etc like xml config
+      beanUtils.getConvertUtils().register(new Converter() {
+         @Override
+         public <T> T convert(Class<T> type, Object value) {
+            return (T) (Long) ByteUtil.convertTextBytes(value.toString());
+         }
+      }, Long.TYPE);
+
       BeanSupport.customise(beanUtils);
 
       beanUtils.populate(this, beanProperties);
@@ -2687,6 +2697,17 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public Configuration setMqttSessionScanInterval(long mqttSessionScanInterval) {
       this.mqttSessionScanInterval = mqttSessionScanInterval;
+      return this;
+   }
+
+   @Override
+   public boolean isSuppressSessionNotifications() {
+      return suppressSessionNotifications;
+   }
+
+   @Override
+   public Configuration setSuppressSessionNotifications(boolean suppressSessionNotifications) {
+      this.suppressSessionNotifications = suppressSessionNotifications;
       return this;
    }
 
