@@ -8,6 +8,12 @@ This chapter provides the following information for each release:
   - **Note:** Follow the general upgrade procedure outlined in the [Upgrading the Broker](upgrading.md) 
     chapter in addition to any version-specific upgrade instructions outlined here.
 
+## 2.20.0
+[Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12350581&projectId=12315920).
+
+Highlights:
+- **Java 11 is now required.**
+
 ## 2.19.0
 [Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12350519).
 
@@ -508,7 +514,7 @@ Highlights:
 
 1. Create `<ARTEMIS_INSTANCE>/etc/management.xml`. At the very least, the file must contain this:
    ```xml
-   <management-context xmlns="http://activemq.org/schema"/>
+   <management-context xmlns="http://activemq.apache.org/schema"/>
    ```
    This configures role based authorisation for JMX. Read more in the [Management](management.md) documentation.
 1. If configured, remove the Jolokia war file from the `web` element in `<ARTEMIS_INSTANCE>/etc/bootstrap.xml`:

@@ -474,6 +474,9 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
    }
 
    private void sendSessionNotification(final CoreNotificationType type) throws Exception {
+      if (server.getConfiguration().isSuppressSessionNotifications()) {
+         return;
+      }
       final TypedProperties props = new TypedProperties();
       if (this.getConnectionID() != null) {
          props.putSimpleStringProperty(ManagementHelper.HDR_CONNECTION_NAME, SimpleString.toSimpleString(this.getConnectionID().toString()));
@@ -2017,6 +2020,13 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public void connectionFailed(final ActiveMQException me, boolean failedOver) {
+      /*
+       * This can be invoked from Netty (via channelInactive) when the connection has already been closed causing
+       * spurious logging about clearing up resources for failed client connections.
+       */
+      if (closed)
+         return;
+
       try {
          ActiveMQServerLogger.LOGGER.clientConnectionFailed(name);
 

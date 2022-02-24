@@ -18,9 +18,9 @@ package org.apache.activemq.artemis.utils;
 
 public class SecureHashProcessor implements HashProcessor {
 
-   private DefaultSensitiveStringCodec codec;
+   private SensitiveDataCodec<String> codec;
 
-   public SecureHashProcessor(DefaultSensitiveStringCodec codec) {
+   public SecureHashProcessor(SensitiveDataCodec<String> codec) {
       this.codec = codec;
    }
 

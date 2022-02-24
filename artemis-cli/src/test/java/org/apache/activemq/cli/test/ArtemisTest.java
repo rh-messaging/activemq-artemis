@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -1737,6 +1738,80 @@ public class ArtemisTest extends CliTestBase {
    }
 
    @Test
+   public void testQstatColumnWidth() throws Exception {
+
+      File instanceQstat = new File(temporaryFolder.getRoot(), "instanceQStat");
+      setupAuth(instanceQstat);
+      Run.setEmbedded(true);
+      Artemis.main("create", instanceQstat.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      System.setProperty("artemis.instance", instanceQstat.getAbsolutePath());
+      Artemis.internalExecute("run");
+
+      try (ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory("tcp://localhost:61616"); Connection connection = cf.createConnection("admin", "admin");) {
+
+         //set up some queues with messages and consumers
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         connection.start();
+         final String NAME = "012345678901234567890123456789";
+         sendMessages(session, NAME, 1);
+
+         TestActionContext context = new TestActionContext();
+         StatQueue statQueue = new StatQueue();
+         statQueue.setUser("admin");
+         statQueue.setPassword("admin");
+         statQueue.setQueueName(NAME);
+         statQueue.execute(context);
+         ArrayList<String> lines = getOutputLines(context, false);
+         Assert.assertEquals("rows returned", 2, lines.size());
+         String[] split = lines.get(1).split("\\|");
+         Assert.assertEquals(StatQueue.DEFAULT_MAX_COLUMN_SIZE, split[1].length());
+
+         context = new TestActionContext();
+         statQueue = new StatQueue();
+         statQueue.setUser("admin");
+         statQueue.setPassword("admin");
+         statQueue.setQueueName(NAME);
+         statQueue.setMaxColumnSize(15);
+         statQueue.execute(context);
+         lines = getOutputLines(context, false);
+         Assert.assertEquals("rows returned", 2, lines.size());
+         split = lines.get(1).split("\\|");
+         Assert.assertEquals(15, split[1].length());
+
+         context = new TestActionContext();
+         statQueue = new StatQueue();
+         statQueue.setUser("admin");
+         statQueue.setPassword("admin");
+         statQueue.setQueueName(NAME);
+         statQueue.setMaxColumnSize(50);
+         statQueue.execute(context);
+         lines = getOutputLines(context, false);
+         Assert.assertEquals("rows returned", 2, lines.size());
+         split = lines.get(1).split("\\|");
+         Assert.assertEquals(NAME.length(), split[1].length());
+
+         context = new TestActionContext();
+         statQueue = new StatQueue();
+         statQueue.setUser("admin");
+         statQueue.setPassword("admin");
+         statQueue.setQueueName(NAME);
+         statQueue.setMaxColumnSize(-1);
+         statQueue.execute(context);
+         lines = getOutputLines(context, false);
+         for (String line : lines) {
+            System.out.println(line);
+         }
+         Assert.assertEquals("rows returned", 2, lines.size());
+         split = lines.get(1).split("\\|");
+         Assert.assertEquals(NAME.length(), split[1].length());
+         Assert.assertEquals("CONSUMER_COUNT".length(), split[3].length());
+      } finally {
+         stopServer();
+      }
+
+   }
+
+   @Test
    public void testQstatErrors() throws Exception {
 
       File instanceQstat = new File(temporaryFolder.getRoot(), "instanceQStatErrors");
@@ -1918,6 +1993,39 @@ public class ArtemisTest extends CliTestBase {
          stopServer();
       }
 
+   }
+
+   @Test
+   public void testRunPropertiesArgumentSetsAcceptorPort() throws Exception {
+      File instanceFile = new File(temporaryFolder.getRoot(), "testRunPropertiesArgumentSetsAcceptorPort");
+      setupAuth(instanceFile);
+      Run.setEmbedded(true);
+      Artemis.main("create", instanceFile.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      System.setProperty("artemis.instance", instanceFile.getAbsolutePath());
+
+      // configure
+      URL brokerPropertiesFromClasspath = this.getClass().getClassLoader().getResource(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_SYSTEM_PROPERTY_NAME);
+      Artemis.internalExecute("run", "--properties", new File(brokerPropertiesFromClasspath.toURI()).getAbsolutePath());
+
+      // verify
+      try (ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory("tcp://localhost:61618"); Connection connection = cf.createConnection("admin", "admin");) {
+         connection.start();
+      } finally {
+         stopServer();
+      }
+   }
+
+   @Test
+   public void testRunPropertiesDudArgument() throws Exception {
+      File instanceFile = new File(temporaryFolder.getRoot(), "testRunPropertiesDudArgument");
+      setupAuth(instanceFile);
+      Run.setEmbedded(true);
+      Artemis.main("create", instanceFile.getAbsolutePath(), "--silent", "--no-fsync", "--no-autotune", "--no-web", "--require-login");
+      System.setProperty("artemis.instance", instanceFile.getAbsolutePath());
+
+      // verify error
+      Object ret = Artemis.internalExecute("run", "--properties", "https://www.apache.org");
+      assertTrue(ret instanceof IllegalStateException);
    }
 
    @Test

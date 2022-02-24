@@ -17,8 +17,11 @@
 package org.apache.activemq.artemis.core.server.embedded;
 
 import javax.management.MBeanServer;
+import java.io.File;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.config.FileDeploymentManager;
 import org.apache.activemq.artemis.core.config.impl.FileConfiguration;
@@ -39,6 +42,7 @@ public class EmbeddedActiveMQ {
    protected Configuration configuration;
    protected ActiveMQServer activeMQServer;
    protected MBeanServer mbeanServer;
+   protected String propertiesResourcePath = ActiveMQDefaultConfiguration.BROKER_PROPERTIES_SYSTEM_PROPERTY_NAME;
 
    /**
     * Classpath resource for activemq server config.  Defaults to 'broker.xml'.
@@ -47,6 +51,16 @@ public class EmbeddedActiveMQ {
     */
    public EmbeddedActiveMQ setConfigResourcePath(String filename) {
       configResourcePath = filename;
+      return this;
+   }
+
+   /**
+    * Classpath resource for broker properties file.  Defaults to 'broker.properties'.
+    *
+    * @param filename
+    */
+   public EmbeddedActiveMQ setPropertiesResourcePath(String filename) {
+      propertiesResourcePath = filename;
       return this;
    }
 
@@ -140,10 +154,19 @@ public class EmbeddedActiveMQ {
       } else {
          activeMQServer = new ActiveMQServerImpl(configuration, mbeanServer, securityManager);
       }
+
+      if (propertiesResourcePath != null) {
+         URL brokerPropertiesFromClasspath = this.getClass().getClassLoader().getResource(propertiesResourcePath);
+         if (brokerPropertiesFromClasspath != null) {
+            activeMQServer.setProperties(new File(brokerPropertiesFromClasspath.toURI()).getAbsolutePath());
+         }
+      }
    }
 
    public EmbeddedActiveMQ stop() throws Exception {
-      activeMQServer.stop();
+      if (activeMQServer != null) {
+         activeMQServer.stop();
+      }
       return this;
    }
 }

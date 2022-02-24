@@ -22,8 +22,8 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.postoffice.PostOffice;
-import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType;
+import org.apache.activemq.artemis.core.server.Divert;
 import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.transformer.Transformer;
 import org.jboss.logging.Logger;
@@ -40,6 +40,8 @@ public class DivertImpl implements Divert {
    private final SimpleString address;
 
    private volatile SimpleString forwardAddress;
+
+   private volatile SimpleString[] forwardAddresses;
 
    private final SimpleString uniqueName;
 
@@ -67,7 +69,7 @@ public class DivertImpl implements Divert {
                      final ComponentConfigurationRoutingType routingType) {
       this.address = address;
 
-      this.forwardAddress = forwardAddress;
+      this.setForwardAddress(forwardAddress);
 
       this.uniqueName = uniqueName;
 
@@ -91,51 +93,53 @@ public class DivertImpl implements Divert {
       // We must make a copy of the message, otherwise things like returning credits to the page won't work
       // properly on ack, since the original address will be overwritten
 
-      if (logger.isTraceEnabled()) {
-         logger.trace("Diverting message " + message + " into " + this);
-      }
-
-      context.setReusable(false);
-
-      Message copy = null;
-
-      // Shouldn't copy if it's not routed anywhere else
-      if (!forwardAddress.equals(context.getAddress(message))) {
-         long id = storageManager.generateID();
-         copy = message.copy(id);
-
-         // This will set the original MessageId, and the original address
-         copy.referenceOriginalMessage(message, this.getUniqueName());
-
-         copy.setAddress(forwardAddress);
-
-         copy.setExpiration(message.getExpiration());
-
-         switch (routingType) {
-            case ANYCAST:
-               copy.setRoutingType(RoutingType.ANYCAST);
-               break;
-            case MULTICAST:
-               copy.setRoutingType(RoutingType.MULTICAST);
-               break;
-            case STRIP:
-               copy.setRoutingType(null);
-               break;
-            case PASS:
-               break;
+      for (SimpleString forwardAddress : forwardAddresses) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("Diverting message " + message + " into " + this);
          }
 
-         if (transformer != null) {
-            copy = transformer.transform(copy);
+         context.setReusable(false);
+
+         Message copy = null;
+
+         // Shouldn't copy if it's not routed anywhere else
+         if (!forwardAddress.equals(context.getAddress(message))) {
+            long id = storageManager.generateID();
+            copy = message.copy(id);
+
+            // This will set the original MessageId, and the original address
+            copy.referenceOriginalMessage(message, this.getUniqueName());
+
+            copy.setAddress(forwardAddress);
+
+            copy.setExpiration(message.getExpiration());
+
+            switch (routingType) {
+               case ANYCAST:
+                  copy.setRoutingType(RoutingType.ANYCAST);
+                  break;
+               case MULTICAST:
+                  copy.setRoutingType(RoutingType.MULTICAST);
+                  break;
+               case STRIP:
+                  copy.setRoutingType(null);
+                  break;
+               case PASS:
+                  break;
+            }
+
+            if (transformer != null) {
+               copy = transformer.transform(copy);
+            }
+
+            // We call reencode at the end only, in a single call.
+            copy.reencode();
+         } else {
+            copy = message;
          }
 
-         // We call reencode at the end only, in a single call.
-         copy.reencode();
-      } else {
-         copy = message;
+         postOffice.route(copy, new RoutingContextImpl(context.getTransaction()).setReusable(false).setRoutingType(copy.getRoutingType()), false);
       }
-
-      postOffice.route(copy, new RoutingContextImpl(context.getTransaction()).setReusable(false).setRoutingType(copy.getRoutingType()), false);
    }
 
    @Override
@@ -196,6 +200,14 @@ public class DivertImpl implements Divert {
    @Override
    public void setForwardAddress(SimpleString forwardAddress) {
       this.forwardAddress = forwardAddress;
+
+      String[] split = forwardAddress.toString().split(",");
+      SimpleString[] forwardAddresses = new SimpleString[split.length];
+      for (int i = 0; i < split.length; i++) {
+         forwardAddresses[i] = new SimpleString(split[i].trim());
+      }
+
+      this.forwardAddresses = forwardAddresses;
    }
 
    @Override

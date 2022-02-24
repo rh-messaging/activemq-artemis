@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -87,9 +86,7 @@ public interface Configuration {
     */
    String getSystemPropertyPrefix();
 
-   Configuration parseSystemProperties() throws Exception;
-
-   Configuration parseSystemProperties(Properties properties) throws Exception;
+   Configuration parseProperties(String optionalUrlToPropertiesFile) throws Exception;
 
    boolean isCriticalAnalyzer();
 
@@ -1382,5 +1379,26 @@ public interface Configuration {
    String getTemporaryQueueNamespace();
 
    Configuration setTemporaryQueueNamespace(String temporaryQueueNamespace);
+
+   /**
+    * This is specific to MQTT, and it's necessary because the session scan interval is a broker-wide setting and can't
+    * be set on a per-connector basis like the rest of the MQTT-specific settings.
+    */
+   Configuration setMqttSessionScanInterval(long mqttSessionScanInterval);
+
+   /**
+    * @see Configuration#setMqttSessionScanInterval(long)
+    *
+    * @return
+    */
+   long getMqttSessionScanInterval();
+
+   /**
+    * Returns whether suppression of session-notifications is enabled for this server. <br>
+    * Default value is {@link org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration#DEFAULT_SUPPRESS_SESSION_NOTIFICATIONS}.
+    */
+   boolean isSuppressSessionNotifications();
+
+   Configuration setSuppressSessionNotifications(boolean suppressSessionNotifications);
 
 }

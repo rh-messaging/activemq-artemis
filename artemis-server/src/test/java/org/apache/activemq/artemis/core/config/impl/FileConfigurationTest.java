@@ -136,6 +136,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       Assert.assertEquals("somedir", conf.getBindingsDirectory());
       Assert.assertEquals(false, conf.isCreateBindingsDir());
       Assert.assertEquals(true, conf.isAmqpUseCoreSubscriptionNaming());
+      Assert.assertEquals(false, conf.isSuppressSessionNotifications());
 
       Assert.assertEquals("max concurrent io", 17, conf.getPageMaxConcurrentIO());
       Assert.assertEquals(true, conf.isReadWholePage());
@@ -160,6 +161,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       Assert.assertEquals(12345, conf.getGracefulShutdownTimeout());
       Assert.assertEquals(true, conf.isPopulateValidatedUser());
       Assert.assertEquals(false, conf.isRejectEmptyValidatedUser());
+      Assert.assertEquals(123456, conf.getMqttSessionScanInterval());
       Assert.assertEquals(98765, conf.getConnectionTtlCheckInterval());
       Assert.assertEquals(1234567, conf.getConfigurationFileRefreshPeriod());
       Assert.assertEquals("TEMP", conf.getTemporaryQueueNamespace());
@@ -300,7 +302,9 @@ public class FileConfigurationTest extends ConfigurationImplTest {
          } else {
             Assert.assertEquals(bc.getTargetKey(), TargetKey.SOURCE_IP);
             Assert.assertEquals("least-connections-balancer", bc.getName());
-            Assert.assertEquals(60000, bc.getCacheTimeout());
+            Assert.assertNotNull(bc.getCacheConfiguration());
+            Assert.assertEquals(true, bc.getCacheConfiguration().isPersisted());
+            Assert.assertEquals(60000, bc.getCacheConfiguration().getTimeout());
             Assert.assertEquals(bc.getPolicyConfiguration().getName(), LeastConnectionsPolicy.NAME);
             Assert.assertEquals(3000, bc.getPoolConfiguration().getCheckPeriod());
             Assert.assertEquals(2, bc.getPoolConfiguration().getQuorumSize());

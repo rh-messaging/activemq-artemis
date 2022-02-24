@@ -428,6 +428,14 @@
             </xsd:annotation>
          </xsd:element>
 
+         <xsd:element name="mqtt-session-scan-interval" type="xsd:long" default="5000" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  how often (in ms) to scan for expired MQTT sessions
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
          <xsd:element name="connectors" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
@@ -988,6 +996,16 @@
                <xsd:documentation>
                   The timeout (in nanoseconds) used to sync pages. The exact default value
                   depend on whether the journal is ASYNCIO or NIO.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="suppress-session-notifications" type="xsd:boolean" default="false" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Whether or not to suppress SESSION_CREATED and SESSION_CLOSED notifications.
+                  Set to true to reduce notification overhead. However, these are required to
+                  enforce unique client ID utilization in a cluster for MQTT clients.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -2115,7 +2133,7 @@
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
-         <xsd:element name="cache-timeout" type="xsd:long" default="-1" maxOccurs="1" minOccurs="0">
+         <xsd:element name="cache" type="brokerBalancerCacheType" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
                   the time period for a cache entry to remain active
@@ -2162,6 +2180,26 @@
          <xsd:enumeration value="USER_NAME"/>
       </xsd:restriction>
    </xsd:simpleType>
+
+   <xsd:complexType name="brokerBalancerCacheType">
+      <xsd:sequence maxOccurs="unbounded">
+         <xsd:element name="persisted" type="xsd:boolean" default="false" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  true means that the cache entries are persisted
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element name="timeout" type="xsd:long" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  the timeout (in milliseconds) before removing cache entries
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+      </xsd:sequence>
+      <xsd:attributeGroup ref="xml:specialAttrs"/>
+   </xsd:complexType>
 
    <xsd:complexType name="brokerBalancerPolicyType">
       <xsd:sequence>

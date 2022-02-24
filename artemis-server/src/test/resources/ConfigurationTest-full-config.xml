@@ -56,6 +56,7 @@
       <persist-id-cache>true</persist-id-cache>
       <populate-validated-user>true</populate-validated-user>
       <reject-empty-validated-user>false</reject-empty-validated-user>
+      <mqtt-session-scan-interval>123456</mqtt-session-scan-interval>
       <connection-ttl-check-interval>98765</connection-ttl-check-interval>
       <configuration-file-refresh-period>1234567</configuration-file-refresh-period>
       <temporary-queue-namespace>TEMP</temporary-queue-namespace>
@@ -66,6 +67,7 @@
       <critical-analyzer-check-period>333</critical-analyzer-check-period>
       <critical-analyzer-timeout>777</critical-analyzer-timeout>
       <critical-analyzer>false</critical-analyzer>
+      <suppress-session-notifications>false</suppress-session-notifications>
       <remoting-incoming-interceptors>
          <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor1</class-name>
          <class-name>org.apache.activemq.artemis.tests.unit.core.config.impl.TestInterceptor2</class-name>
@@ -187,7 +189,10 @@
             </pool>
          </broker-balancer>
          <broker-balancer name="least-connections-balancer">
-            <cache-timeout>60000</cache-timeout>
+            <cache>
+               <persisted>true</persisted>
+               <timeout>60000</timeout>
+            </cache>
             <policy name="LEAST_CONNECTIONS"/>
             <pool>
                <check-period>3000</check-period>

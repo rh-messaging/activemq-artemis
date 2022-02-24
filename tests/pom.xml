@@ -18,7 +18,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.20.0</version>
+      <version>2.21.0-SNAPSHOT</version>
    </parent>
 
    <name>ActiveMQ Artemis Tests POM</name>
@@ -29,6 +29,7 @@
 
    <properties>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>
+      <byteman.version>4.0.18</byteman.version>
    </properties>
 
    <dependencyManagement>

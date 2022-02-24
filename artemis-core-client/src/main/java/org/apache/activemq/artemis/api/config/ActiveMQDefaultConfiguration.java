@@ -557,6 +557,12 @@ public final class ActiveMQDefaultConfiguration {
 
    public static final String DEFAULT_SYSTEM_PROPERTY_PREFIX = "brokerconfig.";
 
+   public static final String BROKER_PROPERTIES_SYSTEM_PROPERTY_NAME = "broker.properties";
+
+   public static final String BROKER_PROPERTIES_KEY_SURROUND = "\"";
+
+   public static final String BROKER_PROPERTIES_KEY_SURROUND_PROPERTY = "key.surround";
+
    public static String DEFAULT_NETWORK_CHECK_LIST = null;
 
    public static String DEFAULT_NETWORK_CHECK_URL_LIST = null;
@@ -637,6 +643,12 @@ public final class ActiveMQDefaultConfiguration {
 
    // Whether or not to report Netty pool metrics
    private static final boolean DEFAULT_NETTY_POOL_METRICS = false;
+
+   // How often (in ms) to scan for expired MQTT sessions
+   private static long DEFAULT_MQTT_SESSION_SCAN_INTERVAL = 500;
+
+   // If SESSION-notifications should be suppressed or not
+   public static boolean DEFAULT_SUPPRESS_SESSION_NOTIFICATIONS = false;
 
    /**
     * If true then the ActiveMQ Artemis Server will make use of any Protocol Managers that are in available on the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can inject their own Protocol Managers.
@@ -1587,6 +1599,10 @@ public final class ActiveMQDefaultConfiguration {
       return DEFAULT_SYSTEM_PROPERTY_PREFIX;
    }
 
+   public static String getDefaultBrokerPropertiesKeySurround() {
+      return BROKER_PROPERTIES_KEY_SURROUND;
+   }
+
    public static String getDefaultNetworkCheckList() {
       return DEFAULT_NETWORK_CHECK_LIST;
    }
@@ -1752,4 +1768,16 @@ public final class ActiveMQDefaultConfiguration {
    public static Boolean getDefaultNettyPoolMetrics() {
       return DEFAULT_NETTY_POOL_METRICS;
    }
+
+   /**
+    * How often (in ms) to scan for expired MQTT sessions
+    */
+   public static long getMqttSessionScanInterval() {
+      return DEFAULT_MQTT_SESSION_SCAN_INTERVAL;
+   }
+
+   public static boolean getDefaultSuppressSessionNotifications() {
+      return DEFAULT_SUPPRESS_SESSION_NOTIFICATIONS;
+   }
+
 }

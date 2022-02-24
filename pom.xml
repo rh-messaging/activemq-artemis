@@ -99,28 +99,30 @@
       <commons.codec.version>1.15</commons.codec.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <guava.version>30.1-jre</guava.version>
+      <hawtio.version>2.14.2</hawtio.version>
+      <jsr305.version>3.0.2</jsr305.version>
       <jboss.logging.version>3.4.2.Final</jboss.logging.version>
       <jetty.version>9.4.44.v20210927</jetty.version>
-      <jgroups.version>3.6.13.Final</jgroups.version>
-      <errorprone.version>2.9.0</errorprone.version>
+      <jgroups.version>5.2.0.Final</jgroups.version>
+      <errorprone.version>2.10.0</errorprone.version>
       <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
       <maven.bundle.plugin.version>5.1.2</maven.bundle.plugin.version>
       <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-      <maven.checkstyle.plugin.version>3.1.1</maven.checkstyle.plugin.version>
+      <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
       <sevntu.checks.version>1.39.0</sevntu.checks.version>
-      <checkstyle.version>8.43</checkstyle.version>
+      <checkstyle.version>9.2.1</checkstyle.version>
       <mockito.version>3.12.4</mockito.version>
       <jctools.version>2.1.2</jctools.version>
-      <netty.version>4.1.72.Final</netty.version>
+      <netty.version>4.1.74.Final</netty.version>
       <curator.version>5.2.0</curator.version>
       <zookeeper.version>3.6.3</zookeeper.version>
 
       <!-- this is basically for tests -->
-      <netty-tcnative-version>2.0.46.Final</netty-tcnative-version>
+      <netty-tcnative-version>2.0.48.Final</netty-tcnative-version>
       <proton.version>0.33.10</proton.version>
       <resteasy.version>3.15.0.Final</resteasy.version>
-      <slf4j.version>1.7.21</slf4j.version>
-      <qpid.jms.version>1.0.0.redhat-00004</qpid.jms.version>
+      <slf4j.version>1.7.36</slf4j.version>
+      <qpid.jms.version>1.5.0</qpid.jms.version>
       <johnzon.version>0.9.5</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <jb.logmanager.version>2.1.10.Final</jb.logmanager.version>
@@ -152,13 +154,15 @@
       <junit.version>4.13.2</junit.version>
       <surefire.version>2.22.2</surefire.version>
       <version.jaxb.runtime>2.3.3</version.jaxb.runtime>
-      <paho.client.mqttv3.version>1.2.5</paho.client.mqttv3.version>
+      <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
+      <postgresql.version>42.3.3</postgresql.version>
       <!-- for JakrtaEE -->
       <version.batavia>1.0.10.Final</version.batavia>
 
       <!-- used on tests -->
-      <groovy.version>2.5.10</groovy.version>
+      <groovy.version>4.0.0</groovy.version>
       <vertx.version>3.9.4</vertx.version>
+      <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
 
       <owasp.version>6.1.0</owasp.version>
       <spring.version>5.1.7.RELEASE</spring.version>
@@ -209,6 +213,7 @@
          -Dlogging.configuration="file:${activemq.basedir}/tests/config/${logging.config}"
          -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686" -Djgroups.bind_addr=localhost
          -Djava.net.preferIPv4Stack=true -Dbasedir=${basedir}
+         -Djdk.attach.allowAttachSelf=true
       </activemq-surefire-argline>
       <activemq.basedir>${project.basedir}</activemq.basedir>
       <skipOWASP>true</skipOWASP>
@@ -230,7 +235,7 @@
       <connection>scm:git:https://gitbox.apache.org/repos/asf/activemq-artemis.git</connection>
       <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/activemq-artemis.git</developerConnection>
       <url>https://github.com/apache/activemq-artemis</url>
-      <tag>2.20.0</tag>
+      <tag>2.19.0</tag>
    </scm>
 
    <distributionManagement>
@@ -290,9 +295,14 @@
 
          <!-- ### For MQTT Tests && Examples -->
          <dependency>
-           <groupId>org.eclipse.paho</groupId>
-           <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-           <version>${paho.client.mqttv3.version}</version>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+            <version>${paho.client.mqtt.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.eclipse.paho</groupId>
+            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
+            <version>${paho.client.mqtt.version}</version>
          </dependency>
          <dependency>
             <groupId>org.fusesource.mqtt-client</groupId>
@@ -317,7 +327,7 @@
          <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.19</version>
+            <version>${postgresql.version}</version>
             <scope>provided</scope>
             <!-- postgresql license -->
          </dependency>
@@ -338,10 +348,15 @@
          </dependency>
 
          <dependency>
-            <groupId>org.apache.kerby</groupId>
-            <artifactId>token-provider</artifactId>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+            <version>${hadoop.minikdc.version}</version>
             <scope>test</scope>
             <exclusions>
+               <exclusion>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-log4j12</artifactId>
+               </exclusion>
                <exclusion>
                   <groupId>com.nimbusds</groupId>
                   <artifactId>nimbus-jose-jwt</artifactId>
@@ -366,6 +381,7 @@
             <artifactId>jboss-logging-processor</artifactId>
             <version>2.2.0.Final</version>
             <optional>true</optional>
+            <scope>provided</scope>
             <!-- License: LGPL-->
          </dependency>
          <dependency>
@@ -381,7 +397,6 @@
              <artifactId>error_prone_core</artifactId>
              <version>${errorprone.version}</version>
              <scope>provided</scope>
-            <optional>true</optional>
          </dependency>
          <dependency>
             <groupId>org.springframework</groupId>
@@ -549,6 +564,10 @@
                   <groupId>javax.inject</groupId>
                   <artifactId>javax.inject</artifactId>
                </exclusion>
+               <exclusion>
+                  <groupId>com.google.code.findbugs</groupId>
+                  <artifactId>jsr305</artifactId>
+               </exclusion>
             </exclusions>
             <!-- License: Apache 2.0 -->
          </dependency>
@@ -616,6 +635,12 @@
          <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-resolver</artifactId>
+            <version>${netty.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-unix-common</artifactId>
             <version>${netty.version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
@@ -725,11 +750,6 @@
             <classifier>uber</classifier>
             <!-- License: (Joint): Apache 2.0 & EPL 1.0 -->
         </dependency>
-         <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>tomcat-servlet-api</artifactId>
-            <version>8.5.5</version>
-         </dependency>
          <!-- ## End Jetty Wed Dependencies ## -->
 
          <!-- for URL reflection. Using Populate on URI Factory at activemq-commons -->
@@ -787,6 +807,16 @@
             <artifactId>micrometer-core</artifactId>
             <version>${version.micrometer}</version>
             <optional>true</optional> <!-- keep optional as "true" at least until micrometer supports OSGi -->
+            <exclusions>
+               <exclusion>
+                  <groupId>org.hdrhistogram</groupId>
+                  <artifactId>HdrHistogram</artifactId>
+               </exclusion>
+               <exclusion>
+                  <groupId>org.latencyutils</groupId>
+                  <artifactId>LatencyUtils</artifactId>
+               </exclusion>
+            </exclusions>
             <!-- license Apache 2 -->
          </dependency>
 
@@ -878,6 +908,11 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>${jsr305.version}</version>
+         </dependency>
+         <dependency>
             <groupId>jakarta.security.auth.message</groupId>
             <artifactId>jakarta.security.auth.message-api</artifactId>
             <version>${jakarta.security.auth.message-api.version}</version>
@@ -914,6 +949,10 @@
                <exclusion>
                   <groupId>io.netty</groupId>
                   <artifactId>netty-transport-native-epoll</artifactId>
+               </exclusion>
+               <exclusion>
+                  <groupId>org.apache.yetus</groupId>
+                  <artifactId>audience-annotations</artifactId>
                </exclusion>
             </exclusions>
          </dependency>
@@ -970,6 +1009,12 @@
                   <name>errorprone</name>
               </property>
           </activation>
+          <dependencies>
+              <dependency>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+              </dependency>
+          </dependencies>
           <build>
               <plugins>
                   <plugin>
@@ -996,6 +1041,12 @@
                   <name>errorprone</name>
               </property>
           </activation>
+          <dependencies>
+              <dependency>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+              </dependency>
+          </dependencies>
           <build>
               <plugins>
                   <plugin>

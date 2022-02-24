@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.20.0</version>
+      <version>2.21.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-quorum-ri</artifactId>
@@ -48,6 +48,7 @@
          <groupId>org.apache.curator</groupId>
          <artifactId>curator-test</artifactId>
          <version>${curator.version}</version>
+         <scope>test</scope>
          <exclusions>
             <exclusion>
                <groupId>org.junit.jupiter</groupId>
@@ -73,10 +74,7 @@
          <artifactId>artemis-commons</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <dependency>
-         <groupId>com.google.errorprone</groupId>
-         <artifactId>error_prone_core</artifactId>
-      </dependency>
+
       <!-- tests -->
       <dependency>
          <groupId>junit</groupId>

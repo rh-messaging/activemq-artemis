@@ -705,7 +705,7 @@ public interface ActiveMQServer extends ServiceComponent {
 
    ConnectorsService getConnectorsService();
 
-   void deployBridge(BridgeConfiguration config) throws Exception;
+   boolean deployBridge(BridgeConfiguration config) throws Exception;
 
    void destroyBridge(String name) throws Exception;
 
@@ -961,4 +961,7 @@ public interface ActiveMQServer extends ServiceComponent {
    BrokerBalancerManager getBalancerManager();
 
    String validateUser(String username, String password, RemotingConnection connection, String securityDomain) throws Exception;
+
+   default void setProperties(String fileUrltoBrokerProperties) {
+   }
 }

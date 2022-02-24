@@ -166,7 +166,7 @@ address with multiple queues:
 
 You may want to limit consumption from `q1` to one role and consumption from
 `q2` to another role. You can do this using the fully qualified queue name (i.e.
-fqqn") in the `match` of the `security-setting`, e.g.:
+FQQN) in the `match` of the `security-setting`, e.g.:
 
 ```xml
 <security-setting match="foo::q1">
@@ -176,6 +176,8 @@ fqqn") in the `match` of the `security-setting`, e.g.:
    <permission type="consume" roles="q2Role"/>
 </security-setting>
 ```
+**Note:** Wildcard matching doesn't work in conjuction with FQQN. The explicit
+goal of using FQQN here is to be *exact*.
 
 ## Security Setting Plugin
 
@@ -564,6 +566,10 @@ integration with LDAP is preferable. It is implemented by
 
 - `org.apache.activemq.jaas.properties.role` - the path to the file which
   contains user and role properties
+
+- `org.apache.activemq.jaas.properties.password.codec` - the fully qualified
+  class name of the password codec to use. See the [password masking](masking-passwords.md)
+  documentation for more details on how this works.
 
 - `reload` - boolean flag; whether or not to reload the properties files when a
   modification occurs; default is `false`
@@ -1130,7 +1136,7 @@ Kerberos credentials.
 
 #### GSSAPI SASL Mechanism
 
-Using SASL over [AMQP](using-AMQP.md), Kerberos authentication is supported
+Using SASL over [AMQP](amqp.md), Kerberos authentication is supported
 using the `GSSAPI` SASL mechanism.  With SASL doing Kerberos authentication,
 TLS can be used to provide integrity and confidentially to the communications
 channel in the normal way.
@@ -1256,7 +1262,7 @@ either:
 Here's an example of the single bootstrap user configuration:
 
 ```xml
-<broker xmlns="http://activemq.org/schema">
+<broker xmlns="http://activemq.apache.org/schema">
 
    <security-manager class-name="org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager">
       <property key="bootstrapUser" value="myUser"/>
@@ -1276,7 +1282,7 @@ If your use-case requires *multiple* users to be available when the broker
 starts then you can use a configuration like this:
 
 ```xml
-<broker xmlns="http://activemq.org/schema">
+<broker xmlns="http://activemq.apache.org/schema">
 
    <security-manager class-name="org.apache.activemq.artemis.spi.core.security.ActiveMQBasicSecurityManager">
       <property key="bootstrapUserFile" value="artemis-users.properties"/>
@@ -1341,7 +1347,7 @@ Note: Role mapping is additive. That means the user will keep the original role(
 Note: This role mapping only affects the roles which are used to authorize queue access through the configured acceptors. It can not be used to map the role required to access the web console.
 
 ## SASL
-[AMQP](using-AMQP.md) supports SASL. The following mechanisms are supported:
+[AMQP](amqp.md) supports SASL. The following mechanisms are supported:
  PLAIN, EXTERNAL, ANONYMOUS, GSSAPI, SCRAM-SHA-256, SCRAM-SHA-512.
 The published list can be constrained via the amqp acceptor `saslMechanisms` property. 
 Note: EXTERNAL will only be chosen if a subject is available from the TLS client certificate.
@@ -1560,7 +1566,7 @@ provide JAAS integration, but users can provide their own implementation of
 configure it in `bootstrap.xml` using the `security-manager` element, e.g.:
 
 ```xml
-<broker xmlns="http://activemq.org/schema">
+<broker xmlns="http://activemq.apache.org/schema">
 
    <security-manager class-name="com.foo.MySecurityManager">
       <property key="myKey1" value="myValue1"/>

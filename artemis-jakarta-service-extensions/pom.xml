@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.20.0</version>
+      <version>2.21.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>artemis-jakarta-service-extensions</artifactId>
@@ -64,10 +64,6 @@
          <artifactId>jboss-logging-annotations</artifactId>
          <scope>provided</scope>
          <optional>true</optional>
-      </dependency>
-      <dependency>
-          <groupId>com.google.errorprone</groupId>
-          <artifactId>error_prone_core</artifactId>
       </dependency>
       <dependency>
          <groupId>org.jboss.logmanager</groupId>

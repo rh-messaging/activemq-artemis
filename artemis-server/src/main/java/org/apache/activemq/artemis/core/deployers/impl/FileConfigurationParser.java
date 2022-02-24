@@ -47,6 +47,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.api.core.UDPBroadcastEndpointFactory;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.core.config.balancing.BrokerBalancerConfiguration;
+import org.apache.activemq.artemis.core.config.balancing.CacheConfiguration;
 import org.apache.activemq.artemis.core.config.balancing.NamedPropertyConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
@@ -322,6 +323,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String ENABLE_INGRESS_TIMESTAMP = "enable-ingress-timestamp";
 
+   private static final String SUPPRESS_SESSION_NOTIFICATIONS = "suppress-session-notifications";
 
    private boolean validateAIO = false;
 
@@ -433,6 +435,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       config.setConfigurationFileRefreshPeriod(getLong(e, "configuration-file-refresh-period", config.getConfigurationFileRefreshPeriod(), Validators.MINUS_ONE_OR_GT_ZERO));
 
       config.setTemporaryQueueNamespace(getString(e, "temporary-queue-namespace", config.getTemporaryQueueNamespace(), Validators.NOT_NULL_OR_EMPTY));
+
+      config.setMqttSessionScanInterval(getLong(e, "mqtt-session-scan-interval", config.getMqttSessionScanInterval(), Validators.GT_ZERO));
 
       long globalMaxSize = getTextBytesAsLongBytes(e, GLOBAL_MAX_SIZE, -1, Validators.MINUS_ONE_OR_GT_ZERO);
 
@@ -765,6 +769,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       config.setCriticalAnalyzerPolicy(CriticalAnalyzerPolicy.valueOf(getString(e, "critical-analyzer-policy", config.getCriticalAnalyzerPolicy().name(), Validators.NOT_NULL_OR_EMPTY)));
 
       config.setPageSyncTimeout(getInteger(e, "page-sync-timeout", config.getJournalBufferTimeout_NIO(), Validators.GE_ZERO));
+
+      config.setSuppressSessionNotifications(getBoolean(e, "suppress-session-notifications", config.isSuppressSessionNotifications()));
 
       parseAddressSettings(e, config);
 
@@ -2052,7 +2058,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       String uri = e.getAttribute("uri");
 
       int retryInterval = getAttributeInteger(e, "retry-interval", 5000, Validators.GT_ZERO);
-      int reconnectAttemps = getAttributeInteger(e, "reconnect-attempts", -1, Validators.MINUS_ONE_OR_GT_ZERO);
+      int reconnectAttempts = getAttributeInteger(e, "reconnect-attempts", -1, Validators.MINUS_ONE_OR_GT_ZERO);
       String user = getAttributeValue(e, "user");
       String password = getAttributeValue(e, "password");
       boolean autoStart = getBooleanAttribute(e, "auto-start", true);
@@ -2061,7 +2067,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       AMQPBrokerConnectConfiguration config = new AMQPBrokerConnectConfiguration(name, uri);
       config.parseURI();
-      config.setRetryInterval(retryInterval).setReconnectAttempts(reconnectAttemps).setUser(user).setPassword(password).setAutostart(autoStart);
+      config.setRetryInterval(retryInterval).setReconnectAttempts(reconnectAttempts).setUser(user).setPassword(password).setAutostart(autoStart);
 
       mainConfig.addAMQPConnection(config);
 
@@ -2651,9 +2657,6 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       brokerBalancerConfiguration.setLocalTargetFilter(getString(e, "local-target-filter", brokerBalancerConfiguration.getLocalTargetFilter(), Validators.NO_CHECK));
 
-      brokerBalancerConfiguration.setCacheTimeout(getInteger(e, "cache-timeout",
-         brokerBalancerConfiguration.getCacheTimeout(), Validators.MINUS_ONE_OR_GE_ZERO));
-
       NamedPropertyConfiguration policyConfiguration = null;
       PoolConfiguration poolConfiguration = null;
       NodeList children = e.getChildNodes();
@@ -2661,7 +2664,11 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       for (int j = 0; j < children.getLength(); j++) {
          Node child = children.item(j);
 
-         if (child.getNodeName().equals("policy")) {
+         if (child.getNodeName().equals("cache")) {
+            CacheConfiguration cacheConfiguration = new CacheConfiguration();
+            parseCacheConfiguration((Element) child, cacheConfiguration);
+            brokerBalancerConfiguration.setCacheConfiguration(cacheConfiguration);
+         } else if (child.getNodeName().equals("policy")) {
             policyConfiguration = new NamedPropertyConfiguration();
             parsePolicyConfiguration((Element) child, policyConfiguration);
             brokerBalancerConfiguration.setPolicyConfiguration(policyConfiguration);
@@ -2677,6 +2684,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       }
 
       config.getBalancerConfigurations().add(brokerBalancerConfiguration);
+   }
+
+   private void parseCacheConfiguration(final Element e, final CacheConfiguration cacheConfiguration) throws ClassNotFoundException {
+      cacheConfiguration.setPersisted(getBoolean(e, "persisted",
+         cacheConfiguration.isPersisted()));
+
+      cacheConfiguration.setTimeout(getInteger(e, "timeout",
+         cacheConfiguration.getTimeout(), Validators.GE_ZERO));
    }
 
    private void parseTransformerConfiguration(final Element e, final NamedPropertyConfiguration policyConfiguration) throws ClassNotFoundException {

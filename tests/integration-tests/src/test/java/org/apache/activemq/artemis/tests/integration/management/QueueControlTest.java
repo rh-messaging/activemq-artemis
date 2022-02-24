@@ -86,6 +86,7 @@ import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.Base64;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.RetryRule;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -3725,6 +3726,49 @@ public class QueueControlTest extends ManagementTestBase {
 
       // filer could match all
       assertEquals(5, queueControl.countMessages("AMQSize > 0"));
+
+      session.deleteQueue(queue);
+   }
+
+   @Test
+   public void testBrowseWithNullPropertyValue() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(new QueueConfiguration(queue).setAddress(address).setDurable(durable));
+
+      ClientProducer producer = session.createProducer(address);
+      ClientMessage m = session.createMessage(true);
+      m.putStringProperty(RandomUtil.randomString(), null);
+      producer.send(m);
+      producer.close();
+
+      QueueControl queueControl = createManagementControl(address, queue);
+
+      assertEquals(1, queueControl.browse().length);
+
+      session.deleteQueue(queue);
+   }
+
+   @Test
+   public void testBrowseWithNullPropertyValueWithAMQP() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(new QueueConfiguration(queue).setAddress(address).setDurable(durable).setRoutingType(RoutingType.ANYCAST));
+
+      JmsConnectionFactory cf = new JmsConnectionFactory("amqp://localhost:61616");
+      Connection c = cf.createConnection();
+      Session s = c.createSession();
+      MessageProducer p = s.createProducer(s.createQueue(address.toString()));
+      javax.jms.Message m = s.createMessage();
+      m.setStringProperty("foo", null);
+      p.send(m);
+      c.close();
+
+      QueueControl queueControl = createManagementControl(address, queue, RoutingType.ANYCAST);
+
+      assertEquals(1, queueControl.browse().length);
 
       session.deleteQueue(queue);
    }
