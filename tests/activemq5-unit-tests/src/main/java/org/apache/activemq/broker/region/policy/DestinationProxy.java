@@ -195,10 +195,11 @@ public class DestinationProxy implements Destination {
             throw new UnsupportedOperationException("Not implemented yet");
          }
 
-         @Override
-         public int getNumUsageListeners() {
-            throw new UnsupportedOperationException("Not implemented yet");
-         }
+         // There is no getNumUsageListeners in activemq-client-5.11.
+         //@Override
+         //public int getNumUsageListeners() {
+         //   throw new UnsupportedOperationException("Not implemented yet");
+         //}
 
          @Override
          public long getLimit() {
@@ -353,10 +354,11 @@ public class DestinationProxy implements Destination {
 
    }
 
-   @Override
-   public TempUsage getTempUsage() {
-      throw new UnsupportedOperationException("Not implemented yet");
-   }
+   // There is no getNumUsageListeners in activemq-client-5.11.
+   //@Override
+   //public TempUsage getTempUsage() {
+   //   throw new UnsupportedOperationException("Not implemented yet");
+   //}
 
    @Override
    public void dispose(ConnectionContext context) throws IOException {
