@@ -272,7 +272,8 @@ public class OrderPendingListTest {
 
       private final LinkedList<MessageReference> theList = new LinkedList<>();
 
-      @Override
+      // There is no messageSize in activemq-client-5.11.
+      //@Override
       public long messageSize() {
          return 0;
       }

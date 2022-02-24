@@ -38,17 +38,20 @@ public class StubTransport extends TransportSupport {
    protected void doStop(ServiceStopper stopper) throws Exception {
    }
 
-   @Override
+   // There is no getPeerCertificates in activemq-client-5.11.
+   //@Override
    public X509Certificate[] getPeerCertificates() {
       return new X509Certificate[0];
    }
 
-   @Override
+   // There is no setPeerCertificates in activemq-client-5.11.
+   //@Override
    public void setPeerCertificates(X509Certificate[] x509Certificates) {
 
    }
 
-   @Override
+   // There is no getWireFormat in activemq-client-5.11.
+   //@Override
    public WireFormat getWireFormat() {
       return null;
    }

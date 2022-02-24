@@ -193,7 +193,8 @@ public class SubscriptionAddRemoveQueueTest extends TestCase {
       private SubscriptionStatistics subscriptionStatistics = new SubscriptionStatistics();
       List<MessageReference> dispatched = Collections.synchronizedList(new ArrayList<MessageReference>());
 
-      @Override
+      // There is no getPendingMessageSize in activemq-client-5.11.
+      //@Override
       public long getPendingMessageSize() {
          return 0;
       }

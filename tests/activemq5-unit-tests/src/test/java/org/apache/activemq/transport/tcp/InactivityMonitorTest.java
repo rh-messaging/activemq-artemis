@@ -202,7 +202,9 @@ public class InactivityMonitorTest extends CombinationTestSupport implements Tra
 
       clientTransport.start();
       WireFormatInfo info = new WireFormatInfo();
-      info.setVersion(OpenWireFormat.DEFAULT_LEGACY_VERSION);
+      // There is no OpenWireFormat.DEFAULT_LEGACY_VERSION in activemq-client-5.11.
+      //info.setVersion(OpenWireFormat.DEFAULT_LEGACY_VERSION);
+      info.setVersion(OpenWireFormat.DEFAULT_VERSION);
       info.setMaxInactivityDuration(1000);
       clientTransport.oneway(info);
 

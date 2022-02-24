@@ -135,7 +135,8 @@ public class QueueDuplicatesFromStoreTest extends TestCase {
 
          private SubscriptionStatistics subscriptionStatistics = new SubscriptionStatistics();
 
-         @Override
+         // There is no getPendingMessageSize in activemq-client-5.11.
+         //@Override
          public long getPendingMessageSize() {
             return 0;
          }
