@@ -115,6 +115,7 @@
       <mockito.version>3.12.4</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.74.Final</netty.version>
+      <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.2.0</curator.version>
       <zookeeper.version>3.6.3</zookeeper.version>
 
@@ -604,6 +605,12 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
+            <groupId>org.hdrhistogram</groupId>
+            <artifactId>HdrHistogram</artifactId>
+            <version>${hdrhistogram.version}</version>
+            <!-- Licence: BSD 2-Clause -->
+         </dependency>
+         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-buffer</artifactId>
             <version>${netty.version}</version>
@@ -1049,6 +1056,7 @@
                           <compilerArgs>
                               <arg>-Xdiags:verbose</arg>
                               <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
+                              <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
                               <arg>-XDcompilePolicy=simple</arg>
                               <arg>-Xplugin:ErrorProne -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -XepExcludedPaths:.*/generated-sources/.*</arg>
                           </compilerArgs>
@@ -1082,6 +1090,7 @@
                           <compilerArgs>
                               <arg>-Xdiags:verbose</arg>
                               <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
+                              <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
                               <arg>-XDcompilePolicy=simple</arg>
                               <arg>-Xplugin:ErrorProne -Xep:MissingOverride:WARN -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -XepExcludedPaths:.*/generated-sources/.*</arg>
                               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
@@ -1516,7 +1525,10 @@
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-compiler-plugin</artifactId>
                <configuration>
-                   <showWarnings>true</showWarnings>
+                  <showWarnings>true</showWarnings>
+                  <compilerArgs>
+                     <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
+                  </compilerArgs>
                </configuration>
             </plugin>
             <plugin>
