@@ -1939,9 +1939,6 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
          journalLock.writeLock().unlock();
       }
 
-      for (JournalFile file : dataFilesToProcess) {
-         file.getFile().waitNotPending();
-      }
       return dataFilesToProcess;
    }
 

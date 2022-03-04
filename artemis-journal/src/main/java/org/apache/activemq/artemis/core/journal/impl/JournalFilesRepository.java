@@ -149,16 +149,7 @@ public class JournalFilesRepository {
    }
 
    public void clear() throws Exception {
-      for (JournalFile file : dataFiles) {
-         file.getFile().waitNotPending();
-      }
-
       dataFiles.clear();
-
-
-      for (JournalFile file : freeFiles) {
-         file.getFile().waitNotPending();
-      }
 
       freeFiles.clear();
 
