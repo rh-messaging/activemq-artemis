@@ -19,24 +19,23 @@ package org.apache.activemq.artemis.core.protocol.core.impl.wireformat;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.utils.DataConstants;
 
-public class SessionXAResponseMessage_V2 extends SessionXAResponseMessage {
+public class SessionCommitMessage_V2 extends SessionCommitMessage {
 
    private long correlationID;
-
-   public SessionXAResponseMessage_V2(final long correlationID, final boolean isError, final int responseCode, final String message) {
-      super(isError, responseCode, message);
-      this.correlationID = correlationID;
-   }
-
-   public SessionXAResponseMessage_V2() {
-      super();
-   }
-
-   // Public --------------------------------------------------------
 
    @Override
    public long getCorrelationID() {
       return correlationID;
+   }
+
+   @Override
+   public void setCorrelationID(long correlationID) {
+      this.correlationID = correlationID;
+   }
+
+   @Override
+   public boolean isResponseAsync() {
+      return true;
    }
 
    @Override
@@ -56,24 +55,8 @@ public class SessionXAResponseMessage_V2 extends SessionXAResponseMessage {
    }
 
    @Override
-   public final boolean isResponse() {
-      return true;
-   }
-
-   @Override
-   public final boolean isResponseAsync() {
-      return true;
-   }
-
-   @Override
-   public String toString() {
-      StringBuffer buff = new StringBuffer(getParentString());
-      buff.append(", error=" + error);
-      buff.append(", message=" + message);
-      buff.append(", responseCode=" + responseCode);
-      buff.append(", correlationID=" + correlationID);
-      buff.append("]");
-      return buff.toString();
+   public int expectedEncodeSize() {
+      return super.expectedEncodeSize() + DataConstants.SIZE_LONG;
    }
 
    @Override
@@ -92,10 +75,10 @@ public class SessionXAResponseMessage_V2 extends SessionXAResponseMessage {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof SessionXAResponseMessage_V2)) {
+      if (!(obj instanceof SessionCommitMessage_V2)) {
          return false;
       }
-      SessionXAResponseMessage_V2 other = (SessionXAResponseMessage_V2) obj;
+      SessionCommitMessage_V2 other = (SessionCommitMessage_V2) obj;
       if (correlationID != other.correlationID) {
          return false;
       }

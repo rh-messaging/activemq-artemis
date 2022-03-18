@@ -653,10 +653,9 @@ public class ServerSessionPacketHandler implements ChannelHandler {
       return RoutingType.MULTICAST;
    }
 
-
    private Packet createNullResponseMessage(Packet packet) {
       final Packet response;
-      if (!packet.isResponseAsync() || channel.getConnection().isVersionBeforeAsyncResponseChange()) {
+      if (channel.getConnection().isVersionBeforeAsyncResponseChange()) {
          response = new NullResponseMessage();
       } else {
          response = new NullResponseMessage_V2(packet.getCorrelationID());
