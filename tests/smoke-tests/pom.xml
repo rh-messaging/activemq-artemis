@@ -19,7 +19,7 @@
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.21.0-SNAPSHOT</version>
+      <version>2.22.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>smoke-tests</artifactId>
@@ -29,6 +29,7 @@
    <properties>
       <activemq.basedir>${project.basedir}/../../</activemq.basedir>
       <sts-surefire-extra-args />
+      <artemis-distribuiton-lib-dir>-Ddistribution.lib="${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}/lib"</artemis-distribuiton-lib-dir>
    </properties>
 
    <dependencies>
@@ -915,7 +916,6 @@
                   </goals>
                   <configuration>
                      <!-- this makes it easier in certain envs -->
-                     <configuration>${basedir}/target/classes/servers/pagingGlobalMaxMessages</configuration>
                      <allowAnonymous>true</allowAnonymous>
                      <user>admin</user>
                      <password>admin</password>
@@ -924,6 +924,8 @@
                         <!-- this is needed to run the server remotely -->
                         <arg>--java-options</arg>
                         <arg>-Djava.rmi.server.hostname=localhost</arg>
+                        <arg>--global-max-messages</arg>
+                        <arg>1000</arg>
                      </args>
                   </configuration>
                </execution>
@@ -1214,7 +1216,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
                <skipTests>${skipSmokeTests}</skipTests>
-               <argLine>${sts-surefire-extra-args} ${activemq-surefire-argline}</argLine>
+               <argLine>${sts-surefire-extra-args} ${activemq-surefire-argline} ${artemis-distribuiton-lib-dir}</argLine>
             </configuration>
          </plugin>
       </plugins>

@@ -516,7 +516,7 @@
          <xsd:element name="queues" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  a list of pre configured queues to create
+                  DEPRECATED: a list of pre configured queues to create
                </xsd:documentation>
             </xsd:annotation>
             <xsd:complexType>
@@ -2163,10 +2163,10 @@
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
-         <xsd:element name="local-target-key-transformer" type="connectionRouterKeyTransformerType" maxOccurs="1" minOccurs="0">
+         <xsd:element name="key-transformer" type="connectionRouterKeyTransformerType" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  the local target key transformer configuration
+                  the key transformer configuration
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
