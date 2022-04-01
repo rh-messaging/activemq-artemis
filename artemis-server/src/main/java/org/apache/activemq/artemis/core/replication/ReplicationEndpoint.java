@@ -846,7 +846,7 @@ public final class ReplicationEndpoint implements ChannelHandler, ActiveMQCompon
 
       if (page == null) {
          page = pageManager.getPageStore(storeName).createPage(pageId);
-         page.open();
+         page.open(true);
          map.put(pageId, page);
       }
 
