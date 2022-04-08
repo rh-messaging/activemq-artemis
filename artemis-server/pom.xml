@@ -168,6 +168,10 @@
          <scope>test</scope>
          <exclusions>
             <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-log4j12</artifactId>
+            </exclusion>
+            <exclusion>
                <groupId>xml-apis</groupId>
                <artifactId>xml-apis</artifactId>
             </exclusion>
@@ -183,6 +187,16 @@
          <groupId>org.apache.directory.server</groupId>
          <artifactId>apacheds-core-annotations</artifactId>
          <version>${directory-version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-log4j12</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>log4j</groupId>
+               <artifactId>log4j</artifactId>
+            </exclusion>
+         </exclusions>
          <scope>test</scope>
       </dependency>
       <dependency>
