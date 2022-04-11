@@ -113,7 +113,7 @@
       <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
       <sevntu.checks.version>1.39.0</sevntu.checks.version>
       <checkstyle.version>9.2.1</checkstyle.version>
-      <mockito.version>3.12.4</mockito.version>
+      <mockito.version>4.4.0</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.75.Final</netty.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
@@ -130,7 +130,7 @@
       <resteasy.version>3.15.0.Final</resteasy.version>
       <slf4j.version>1.7.36</slf4j.version>
       <tomcat.servlet.version>8.0.36</tomcat.servlet.version>
-      <qpid.jms.version>1.5.0</qpid.jms.version>
+      <qpid.jms.version>1.6.0</qpid.jms.version>
       <johnzon.version>1.2.16</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <jb.logmanager.version>2.1.10.Final</jb.logmanager.version>
@@ -177,6 +177,9 @@
 
       <owasp.version>6.1.0</owasp.version>
       <spring.version>5.3.18</spring.version>
+
+      <jackson.version>2.13.2</jackson.version>
+      <jackson-databind.version>2.13.2.2</jackson-databind.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
@@ -1074,6 +1077,40 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
          </dependency>
+
+
+         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-databind.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>${jackson.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.jr</groupId>
+            <artifactId>jackson-jr-objects</artifactId>
+            <version>${jackson.version}</version>
+         </dependency>
+
+
       </dependencies>
 
    </dependencyManagement>
