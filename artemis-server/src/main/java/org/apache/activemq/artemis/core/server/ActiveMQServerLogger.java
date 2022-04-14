@@ -498,7 +498,7 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 222009, value = "Unable to announce backup for replication. Trying to stop the server.", format = Message.Format.MESSAGE_FORMAT)
    void replicationStartProblem(@Cause Exception e);
 
-   @LogMessage(level = Logger.Level.WARN)
+   @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 222010, value = "Critical IO Error, shutting down the server. file={1}, message={0}", format = Message.Format.MESSAGE_FORMAT)
    void ioCriticalIOError(String message, String file, @Cause Throwable code);
 
@@ -1822,10 +1822,6 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224012, value = "error releasing resources", format = Message.Format.MESSAGE_FORMAT)
    void largeMessageErrorReleasingResources(@Cause Exception e);
-
-   @LogMessage(level = Logger.Level.ERROR)
-   @Message(id = 224013, value = "failed to expire messages for queue", format = Message.Format.MESSAGE_FORMAT)
-   void errorExpiringMessages(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.ERROR)
    @Message(id = 224014, value = "Failed to close session", format = Message.Format.MESSAGE_FORMAT)
