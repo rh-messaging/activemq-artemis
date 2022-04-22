@@ -55,7 +55,6 @@ import org.apache.activemq.artemis.core.server.ActiveMQServers;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
 import org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory;
-import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.Wait;
@@ -89,6 +88,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       ctx.lookup("TCPConnectionFactory");
       ctx.lookup("UDPConnectionFactory");
       ctx.lookup("JGroupsConnectionFactory");
+      ctx.close();
    }
 
    @Test
@@ -101,6 +101,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup("ConnectionFactory");
 
       connectionFactory.createConnection().close();
+      ctx.close();
    }
 
    @Test
@@ -111,23 +112,8 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
 
       //IIB v10 assumes this property is mandatory and sets it to an empty string when not specified
       props.put("java.naming.provider.url", "");
-      new InitialContext(props);//Must not throw an exception
-
-   }
-
-   @Test
-   public void testConnectionFactoryStringWithInvalidParameter() throws Exception {
-      Hashtable<String, String> props = new Hashtable<>();
-      props.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory");
-      props.put("connectionFactory.ConnectionFactory", "tcp://localhost:61616?foo=too");
-
-      AssertionLoggerHandler.startCapture();
-      try {
-         new InitialContext(props);
-         assertTrue("Expected to find AMQ212078", AssertionLoggerHandler.findText("AMQ212078"));
-      } finally {
-         AssertionLoggerHandler.stopCapture();
-      }
+      Context ctx = new InitialContext(props);//Must not throw an exception
+      ctx.close();
    }
 
    @Test
@@ -267,6 +253,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup("myConnectionFactory");
 
       connectionFactory.createConnection().close();
+      ctx.close();
    }
 
    @Test
@@ -292,6 +279,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       Assert.assertNotEquals(1198, udpBroadcastEndpointFactory.getLocalBindPort());
       Assert.assertEquals(getUDPDiscoveryAddress(), udpBroadcastEndpointFactory.getGroupAddress());
       Assert.assertEquals(getUDPDiscoveryPort(), udpBroadcastEndpointFactory.getGroupPort());
+      ctx.close();
    }
 
    @Test
@@ -304,6 +292,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       ConnectionFactory connectionFactory = (ConnectionFactory) ctx.lookup("myConnectionFactory");
 
       connectionFactory.createConnection().close();
+      ctx.close();
    }
 
    @Test
@@ -379,6 +368,7 @@ public class SimpleJNDIClientTest extends ActiveMQTestBase {
       Assert.assertEquals(parametersFromJNDI.get(ActiveMQDefaultConfiguration.getPropMaskPassword()), "myPropMaskPassword");
       Assert.assertEquals(parametersFromJNDI.get(ActiveMQDefaultConfiguration.getPropPasswordCodec()), "myPropPasswordCodec");
       Assert.assertEquals(parametersFromJNDI.get(TransportConstants.NETTY_CONNECT_TIMEOUT), "myNettyConnectTimeout");
+      ctx.close();
    }
 
    @Override
