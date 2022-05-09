@@ -1214,11 +1214,12 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
 
       }
 
-    /*  @Override
-      public Response processBrokerSubscriptionInfo(BrokerSubscriptionInfo brokerSubscriptionInfo) throws Exception {
-         // TBD
-         return null;
-      }*/
+      // There is no processBrokerSubscriptionInfo in activemq-client-5.11.
+      //@Override
+      //public Response processBrokerSubscriptionInfo(BrokerSubscriptionInfo brokerSubscriptionInfo) throws Exception {
+      //   // TBD
+      //   return null;
+      //}
 
       @Override
       public Response processAddProducer(ProducerInfo info) throws Exception {

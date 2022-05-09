@@ -55,7 +55,7 @@
       </dependency>
       <dependency>
          <groupId>com.sun.xml.bind</groupId>
-         <artifactId>jaxb-osgi</artifactId>
+         <artifactId>jaxb-jxc</artifactId>
          <version>${version.jaxb.runtime}</version>
          <scope>provided</scope>
       </dependency>
@@ -141,7 +141,7 @@
                </dependency>
                <dependency>
                   <groupId>com.sun.xml.bind</groupId>
-                  <artifactId>jaxb-osgi</artifactId>
+                  <artifactId>jaxb-jxc</artifactId>
                   <version>${version.jaxb.runtime}</version>
                </dependency>
                <dependency>
