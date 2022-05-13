@@ -115,6 +115,8 @@
       <mockito.version>3.12.4</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.75.Final</netty.version>
+      <netty.transport.native.epoll.ppcle.version>${netty.version}</netty.transport.native.epoll.ppcle.version>
+      <netty.transport.native.epoll.s390x.version>${netty.version}</netty.transport.native.epoll.s390x.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.2.0</curator.version>
       <zookeeper.version>3.6.3</zookeeper.version>
@@ -688,6 +690,20 @@
             <artifactId>netty-transport-native-epoll</artifactId>
             <version>${netty.version}</version>
             <classifier>${netty-transport-native-epoll-classifier}</classifier>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll-ppcle</artifactId>
+            <version>${netty.transport.native.epoll.ppcle.version}</version>
+            <classifier>linux-ppcle_64</classifier>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll-s390x</artifactId>
+            <version>${netty.transport.native.epoll.s390x.version}</version>
+            <classifier>linux-s390_64</classifier>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
