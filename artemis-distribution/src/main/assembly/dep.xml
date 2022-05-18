@@ -196,13 +196,14 @@
          <outputDirectory>examples</outputDirectory>
          <lineEnding>keep</lineEnding>
          <excludes>
-            <exclude>features/standard/camel/**</exclude>
-            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
             <exclude>**/target/**</exclude>
             <exclude>**/**/*.iml</exclude>
             <exclude>**/**/*.dat</exclude>
             <exclude>**/**/*.md</exclude>
             <exclude>**/**/*.sh</exclude>
+            <exclude>features/standard/camel/**</exclude>
+            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
+            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
          </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
@@ -216,6 +217,9 @@
          </includes>
          <excludes>
             <exclude>**/target/**</exclude>
+            <exclude>features/standard/camel/**</exclude>
+            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
+            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
          </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0755</fileMode>
@@ -224,6 +228,11 @@
          <directory>${project.build.directory}/markdown-pages/examples</directory>
          <outputDirectory>examples</outputDirectory>
          <lineEnding>keep</lineEnding>
+         <excludes>
+            <exclude>features/standard/camel/**</exclude>
+            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
+            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
+         </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
       </fileSet>
