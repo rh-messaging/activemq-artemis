@@ -722,22 +722,41 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals("TF", configuration.getConnectionRouters().get(0).getKeyFilter());
    }
 
+
+   @Test
+   public void testAddressViaProperties() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new Properties();
+
+      properties.put("addressConfigurations.\"LB.TEST\".queueConfigs.\"LB.TEST\".routingType", "ANYCAST");
+      properties.put("addressConfigurations.\"LB.TEST\".queueConfigs.\"LB.TEST\".durable", "false");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(1, configuration.getAddressConfigurations().size());
+      Assert.assertEquals(1, configuration.getAddressConfigurations().get(0).getQueueConfigs().size());
+      Assert.assertEquals(SimpleString.toSimpleString("LB.TEST"), configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).getAddress());
+      Assert.assertEquals(false, configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).isDurable());
+   }
+
+
    @Test
    public void testAddressSettingsViaProperties() throws Throwable {
       ConfigurationImpl configuration = new ConfigurationImpl();
 
       Properties properties = new Properties();
 
-      properties.put("addressesSettings.#.expiryAddress", "sharedExpiry");
-      properties.put("addressesSettings.NeedToTrackExpired.expiryAddress", "important");
-      properties.put("addressesSettings.\"Name.With.Dots\".expiryAddress", "moreImportant");
+      properties.put("addressesSettings.#.expiryAddress", "sharedExpiry"); // verify @Deprecation double plural still works
+      properties.put("addressSettings.NeedToTrackExpired.expiryAddress", "important");
+      properties.put("addressSettings.\"Name.With.Dots\".expiryAddress", "moreImportant");
 
       configuration.parsePrefixedProperties(properties, null);
 
-      Assert.assertEquals(3, configuration.getAddressesSettings().size());
-      Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressesSettings().get("#").getExpiryAddress());
-      Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressesSettings().get("NeedToTrackExpired").getExpiryAddress());
-      Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressesSettings().get("Name.With.Dots").getExpiryAddress());
+      Assert.assertEquals(3, configuration.getAddressSettings().size());
+      Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressSettings().get("#").getExpiryAddress());
+      Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressSettings().get("NeedToTrackExpired").getExpiryAddress());
+      Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressSettings().get("Name.With.Dots").getExpiryAddress());
    }
 
    @Test
@@ -910,10 +929,10 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
 
       configuration.parsePrefixedProperties(properties, null);
 
-      Assert.assertEquals(3, configuration.getAddressesSettings().size());
-      Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressesSettings().get("#").getExpiryAddress());
-      Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressesSettings().get("NeedToTrackExpired").getExpiryAddress());
-      Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressesSettings().get("Name.With.Dots").getExpiryAddress());
+      Assert.assertEquals(3, configuration.getAddressSettings().size());
+      Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressSettings().get("#").getExpiryAddress());
+      Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressSettings().get("NeedToTrackExpired").getExpiryAddress());
+      Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressSettings().get("Name.With.Dots").getExpiryAddress());
    }
 
    /**
