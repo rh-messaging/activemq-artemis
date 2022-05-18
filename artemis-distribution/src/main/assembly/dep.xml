@@ -196,6 +196,8 @@
          <outputDirectory>examples</outputDirectory>
          <lineEnding>keep</lineEnding>
          <excludes>
+            <exclude>features/standard/camel/**</exclude>
+            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
             <exclude>**/target/**</exclude>
             <exclude>**/**/*.iml</exclude>
             <exclude>**/**/*.dat</exclude>
