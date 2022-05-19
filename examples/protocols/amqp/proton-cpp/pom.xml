@@ -32,9 +32,6 @@ under the License.
    <name>ActiveMQ Artemis AMQP CPP Example</name>
 
    <properties>
-      <netty.version>4.1.75.Final-redhat-00001</netty.version>
-      <netty.transport.native.epoll.ppcle.version>${netty.version}</netty.transport.native.epoll.ppcle.version>
-      <netty.transport.native.epoll.s390x.version>${netty.version}</netty.transport.native.epoll.s390x.version>
       <activemq.basedir>${project.basedir}/../../../..</activemq.basedir>
    </properties>
 

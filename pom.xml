@@ -115,8 +115,8 @@
       <mockito.version>3.12.4</mockito.version>
       <jctools.version>2.1.2</jctools.version>
       <netty.version>4.1.75.Final</netty.version>
-      <netty.transport.native.epoll.ppcle.version>${netty.version}</netty.transport.native.epoll.ppcle.version>
-      <netty.transport.native.epoll.s390x.version>${netty.version}</netty.transport.native.epoll.s390x.version>
+      <netty.transport.native.epoll.ppcle.version>4.1.75.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
+      <netty.transport.native.epoll.s390x.version>4.1.75.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.2.0</curator.version>
       <zookeeper.version>3.6.3</zookeeper.version>
