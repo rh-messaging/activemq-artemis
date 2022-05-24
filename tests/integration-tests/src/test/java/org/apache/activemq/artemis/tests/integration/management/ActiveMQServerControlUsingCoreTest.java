@@ -588,6 +588,11 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          }
 
          @Override
+         public String getName() {
+            return (String) proxy.retrieveAttributeValue("name");
+         }
+
+         @Override
          public String getVersion() {
             return proxy.retrieveAttributeValue("version").toString();
          }
@@ -1660,6 +1665,31 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
                             String target,
                             String filter) throws Exception {
             proxy.invokeOperation("replay", startScan, endScan, address, target, filter);
+         }
+
+         @Override
+         public void stopEmbeddedWebServer() throws Exception {
+            proxy.invokeOperation("stopEmbeddedWebServer");
+         }
+
+         @Override
+         public void startEmbeddedWebServer() throws Exception {
+            proxy.invokeOperation("startEmbeddedWebServer");
+         }
+
+         @Override
+         public void restartEmbeddedWebServer() throws Exception {
+            proxy.invokeOperation("restartEmbeddedWebServer");
+         }
+
+         @Override
+         public void restartEmbeddedWebServer(long timeout) throws Exception {
+            proxy.invokeOperation("restartEmbeddedWebServer", timeout);
+         }
+
+         @Override
+         public boolean isEmbeddedWebServerStarted() {
+            return (boolean) proxy.retrieveAttributeValue("embeddedWebServerStarted");
          }
       };
    }

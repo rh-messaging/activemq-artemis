@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.api.core.management;
 import javax.management.MBeanOperationInfo;
 import java.util.Map;
 
+import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 
 /**
@@ -30,6 +31,12 @@ public interface ActiveMQServerControl {
    String ADDRESS_MEMORY_USAGE_DESCRIPTION = "Memory used by all the addresses on broker for in-memory messages";
    String ADDRESS_MEMORY_USAGE_PERCENTAGE_DESCRIPTION = "Memory used by all the addresses on broker as a percentage of the global-max-size";
    String DISK_STORE_USAGE_DESCRIPTION = "Fraction of total disk store used";
+
+   /**
+    * Returns this server's name.
+    */
+   @Attribute(desc = "Server's name")
+   String getName();
 
    /**
     * Returns this server's version.
@@ -1971,5 +1978,20 @@ public interface ActiveMQServerControl {
                @Parameter(name = "address", desc = "Name of the address to replay") String address,
                @Parameter(name = "target", desc = "Where the replay data should be sent") String target,
                @Parameter(name = "filter", desc = "Filter to apply on message selection. Null means everything matching the address") String filter) throws Exception;
+
+   @Operation(desc = "stop the embedded web server", impact = MBeanOperationInfo.ACTION)
+   void stopEmbeddedWebServer() throws Exception;
+
+   @Operation(desc = "start the embedded web server", impact = MBeanOperationInfo.ACTION)
+   void startEmbeddedWebServer() throws Exception;
+
+   @Operation(desc = "restart the embedded web server; wait the default " + ActiveMQDefaultConfiguration.DEFAULT_EMBEDDED_WEB_SERVER_RESTART_TIMEOUT + " milliseconds to ensure restart completes successfully", impact = MBeanOperationInfo.ACTION)
+   void restartEmbeddedWebServer() throws Exception;
+
+   @Operation(desc = "restart the embedded web server; wait specified time (in milliseconds) to ensure restart completes successfully", impact = MBeanOperationInfo.ACTION)
+   void restartEmbeddedWebServer(@Parameter(name = "timeout", desc = "how long to wait (in milliseconds) to ensure restart completes successfully") long timeout) throws Exception;
+
+   @Attribute(desc = "Whether the embedded web server is started")
+   boolean isEmbeddedWebServerStarted();
 }
 
