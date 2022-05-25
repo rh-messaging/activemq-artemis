@@ -170,7 +170,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       Assert.assertTrue(storeImpl.isPaging());
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      Assert.assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName()), lock));
+      Assert.assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
 
       Assert.assertEquals(1, storeImpl.getNumberOfPages());
 
@@ -213,7 +213,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
          Message msg = createMessage(i, storeImpl, destination, buffer);
          final RoutingContextImpl ctx = new RoutingContextImpl(null);
-         Assert.assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName()), lock));
+         Assert.assertTrue(storeImpl.page(msg, ctx.getTransaction(), ctx.getContextListing(storeImpl.getStoreName())));
 
       }
 
@@ -281,7 +281,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
          Message msg = createMessage(i, store, destination, buffer);
 
          final RoutingContextImpl ctx = new RoutingContextImpl(null);
-         Assert.assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName()), lock));
+         Assert.assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
       }
 
       Assert.assertEquals(2, store.getNumberOfPages());
@@ -316,7 +316,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       Message msg = createMessage(1, store, destination, buffers.get(0));
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      Assert.assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName()), lock));
+      Assert.assertTrue(store.page(msg, ctx.getTransaction(), ctx.getContextListing(store.getStoreName())));
 
       Page newPage = store.depage();
 
@@ -336,14 +336,14 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
 
       {
          final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-         Assert.assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName()), lock));
+         Assert.assertFalse(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName())));
       }
 
       store.startPaging();
 
       {
          final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-         Assert.assertTrue(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName()), lock));
+         Assert.assertTrue(store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName())));
       }
 
       Page page = store.depage();
@@ -426,7 +426,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                   // Just using the internal API to remove it from the page file system
                   Message msg = createMessage(id, storeImpl, destination, createRandomBuffer(id, 5));
                   final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-                  if (storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName()), lock)) {
+                  if (storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName()))) {
                      buffers.put(id, msg);
                   } else {
                      break;
@@ -543,7 +543,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       storeImpl2.forceAnotherPage();
 
       final RoutingContextImpl ctx = new RoutingContextImpl(null);
-      storeImpl2.page(lastMsg, ctx.getTransaction(), ctx.getContextListing(storeImpl2.getStoreName()), lock);
+      storeImpl2.page(lastMsg, ctx.getTransaction(), ctx.getContextListing(storeImpl2.getStoreName()));
       buffers2.put(lastMessageId, lastMsg);
 
       Page lastPage = null;
@@ -665,7 +665,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
                   msg.putLongProperty("count", i);
 
                   final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-                  while (!store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName()), lock)) {
+                  while (!store.page(msg, ctx2.getTransaction(), ctx2.getContextListing(store.getStoreName()))) {
                      store.startPaging();
                   }
 
@@ -879,7 +879,7 @@ public class PagingStoreImplTest extends ActiveMQTestBase {
       msg.putLongProperty("count", id);
 
       final RoutingContextImpl ctx2 = new RoutingContextImpl(null);
-      storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName()), lock);
+      storeImpl.page(msg, ctx2.getTransaction(), ctx2.getContextListing(storeImpl.getStoreName()));
    }
 
    private CoreMessage createMessage(final long id,
