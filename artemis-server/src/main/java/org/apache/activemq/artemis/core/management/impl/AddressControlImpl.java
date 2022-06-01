@@ -382,7 +382,7 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
    }
 
    @Override
-   public int getNumberOfPages() {
+   public long getNumberOfPages() {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.getNumberOfPages(this.addressInfo);
       }

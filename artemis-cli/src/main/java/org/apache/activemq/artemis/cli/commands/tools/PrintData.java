@@ -61,6 +61,8 @@ import org.apache.activemq.artemis.spi.core.protocol.MessagePersister;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
+import org.apache.activemq.artemis.utils.collections.LinkedList;
+import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 
 @Command(name = "print", description = "Print data records information (WARNING: don't use while a production server is running)")
 public class PrintData extends DBOption {
@@ -120,7 +122,7 @@ public class PrintData extends DBOption {
 
       DescribeJournal describeJournal = DescribeJournal.printSurvivingRecords(storageManager.getMessageJournal(), out, safe);
 
-      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages);
+      printPages(describeJournal, storageManager, pagingmanager, out, safe, maxPages, null);
 
       cleanup();
 
@@ -160,11 +162,13 @@ public class PrintData extends DBOption {
       }
 
       printBanner(out, BINDINGS_BANNER);
+      DescribeJournal bindingsDescribe;
       if (skipBindings) {
          out.println(".... skipping");
          out.println();
+         bindingsDescribe = null;
       } else {
-         printBindings(bindingsDirectory, out, safe, true, true, reclaimed);
+         bindingsDescribe = printBindings(bindingsDirectory, out, safe, true, true, reclaimed);
       }
 
       printBanner(out, MESSAGES_BANNER);
@@ -185,7 +189,7 @@ public class PrintData extends DBOption {
             out.println(".... skipping");
             out.println();
          } else {
-            printPages(pagingDirectory, describeJournal, out, safe, maxPages);
+            printPages(pagingDirectory, describeJournal, out, safe, maxPages, bindingsDescribe);
          }
       } catch (Exception e) {
          e.printStackTrace();
@@ -205,11 +209,12 @@ public class PrintData extends DBOption {
       return describeJournal;
    }
 
-   public static void printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed) {
+   public static DescribeJournal printBindings(File bindingsDirectory, PrintStream out, boolean safe, boolean printRecords, boolean printSurviving, boolean reclaimed) {
       try {
-         DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed);
+         return DescribeJournal.describeBindingsJournal(bindingsDirectory, out, safe, printRecords, printSurviving, reclaimed);
       } catch (Exception e) {
          e.printStackTrace();
+         return null;
       }
    }
 
@@ -220,11 +225,7 @@ public class PrintData extends DBOption {
       out.println("********************************************");
    }
 
-   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe) {
-      printPages(pageDirectory, describeJournal, out, safe, -1);
-   }
-
-   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages) {
+   private static void printPages(File pageDirectory, DescribeJournal describeJournal, PrintStream out, boolean safe, int maxPages, DescribeJournal bindingsDescribe) {
       ActiveMQThreadFactory daemonFactory = new ActiveMQThreadFactory("cli", true, PrintData.class.getClassLoader());
       final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1, daemonFactory);
       final ExecutorService executor = Executors.newFixedThreadPool(10, daemonFactory);
@@ -242,7 +243,7 @@ public class PrintData extends DBOption {
          addressSettingsRepository.setDefault(new AddressSettings());
          PagingManager manager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository);
 
-         printPages(describeJournal, sm, manager, out, safe, maxPages);
+         printPages(describeJournal, sm, manager, out, safe, maxPages, bindingsDescribe);
       } catch (Exception e) {
          e.printStackTrace();
       } finally {
@@ -255,8 +256,14 @@ public class PrintData extends DBOption {
                                   StorageManager sm,
                                   PagingManager manager,
                                   PrintStream out,
-                                  boolean safe, int maxPages) throws Exception {
+                                  boolean safe, int maxPages,
+                                  DescribeJournal bindingsDescribe) throws Exception {
       PageCursorsInfo cursorACKs = calculateCursorsInfo(describeJournal.getRecords());
+
+      HashSet<Long> existingQueues = new HashSet<>();
+      if (bindingsDescribe != null && bindingsDescribe.getBindingEncodings() != null) {
+         bindingsDescribe.getBindingEncodings().forEach(e -> existingQueues.add(e.getId()));
+      }
 
       Set<Long> pgTXs = cursorACKs.getPgTXs();
 
@@ -278,69 +285,85 @@ public class PrintData extends DBOption {
                   out.println("******* Giving up at Page " + pgid + ", System has a total of " + pgStore.getNumberOfPages() + " pages");
                   break;
                }
+               Page page = pgStore.newPageObject(pgid);
+               while (!page.getFile().exists() && pgid < pgStore.getCurrentWritingPage()) {
+                  pgid++;
+                  page = pgStore.newPageObject(pgid);
+               }
                out.println("*******   Page " + pgid);
                Page page = pgStore.createPage(pgid);
                page.open(false);
-               List<PagedMessage> msgs = page.read(sm);
+               LinkedList<PagedMessage> msgs = page.read(sm);
                page.close(false, false);
 
                int msgID = 0;
 
-               for (PagedMessage msg : msgs) {
-                  msg.initMessage(sm);
-                  if (safe) {
-                     try {
-                        out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ", msg=" + msg.getMessage().getClass().getSimpleName() + "(safe data, size=" + msg.getMessage().getPersistentSize() + ")");
-                     } catch (Exception e) {
-                        out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ", msg=" + msg.getMessage().getClass().getSimpleName() + "(safe data)");
+               try (LinkedListIterator<PagedMessage> iter = msgs.iterator()) {
+                  while (iter.hasNext()) {
+                     PagedMessage msg = iter.next();
+                     msg.initMessage(sm);
+                     if (safe) {
+                        try {
+                           out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ", msg=" + msg.getMessage().getClass().getSimpleName() + "(safe data, size=" + msg.getMessage().getPersistentSize() + ")");
+                        } catch (Exception e) {
+                           out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ", msg=" + msg.getMessage().getClass().getSimpleName() + "(safe data)");
+                        }
+                     } else {
+                        out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ",userMessageID=" + (msg.getMessage().getUserID() != null ? msg.getMessage().getUserID() : "") + ", msg=" + msg.getMessage());
                      }
-                  } else {
-                     out.print("pg=" + pgid + ", msg=" + msgID + ",pgTX=" + msg.getTransactionID() + ",userMessageID=" + (msg.getMessage().getUserID() != null ? msg.getMessage().getUserID() : "") + ", msg=" + msg.getMessage());
-                  }
-                  out.print(",Queues = ");
-                  long[] q = msg.getQueueIDs();
-                  int ackCount = 0;
-                  for (int i = 0; i < q.length; i++) {
-                     out.print(q[i]);
+                     out.print(",Queues = ");
+                     long[] q = msg.getQueueIDs();
+                     int ackCount = 0;
+                     for (int i = 0; i < q.length; i++) {
+                        out.print(q[i]);
 
-                     PagePosition posCheck = new PagePositionImpl(pgid, msgID);
+                        PagePosition posCheck = new PagePositionImpl(pgid, msgID);
 
-                     boolean acked = false;
+                        boolean acked = false;
 
-                     Set<PagePosition> positions = cursorACKs.getCursorRecords().get(q[i]);
-                     if (positions != null) {
-                        acked = positions.contains(posCheck);
+                        Set<PagePosition> positions = cursorACKs.getCursorRecords().get(q[i]);
+                        if (positions != null) {
+                           acked = positions.contains(posCheck);
+                        }
+
+                        if (acked) {
+                           out.print(" (ACK)");
+                        }
+
+                        if (cursorACKs.getCompletePages(q[i]).contains(Long.valueOf(pgid))) {
+                           acked = true;
+                           out.print(" (PG-COMPLETE)");
+                        }
+
+                        if (!existingQueues.contains(q[i])) {
+                           out.print(" (N/A) ");
+                           acked = true;
+                        }
+
+                        if (acked) {
+                           ackCount++;
+                        } else {
+                           out.print(" (OK) ");
+                        }
+
+                        if (i + 1 < q.length) {
+                           out.print(",");
+                        }
                      }
-
-                     if (acked) {
-                        out.print(" (ACK)");
+                     if (msg.getTransactionID() >= 0 && !pgTXs.contains(msg.getTransactionID())) {
+                        out.print(", **PG_TX_NOT_FOUND**");
                      }
-
-                     if (cursorACKs.getCompletePages(q[i]).contains(Long.valueOf(pgid))) {
-                        acked = true;
-                        out.print(" (PG-COMPLETE)");
-                     }
-
-                     if (acked) {
-                        ackCount++;
-                     }
-
-                     if (i + 1 < q.length) {
-                        out.print(",");
-                     }
-                  }
-                  if (msg.getTransactionID() >= 0 && !pgTXs.contains(msg.getTransactionID())) {
-                     out.print(", **PG_TX_NOT_FOUND**");
-                  }
-                  out.println();
-
-                  if (ackCount != q.length) {
-                     out.println("^^^ Previous record has " + ackCount + " acked queues and " + q.length + " queues routed");
                      out.println();
+
+                     if (ackCount != q.length) {
+                        out.println("^^^ Previous record has " + ackCount + " acked queues and " + q.length + " queues routed");
+                        out.println();
+                     }
+                     msgID++;
+
                   }
-                  msgID++;
+                  pgid++;
                }
-               pgid++;
             }
          }
       }

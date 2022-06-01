@@ -21,8 +21,8 @@ import org.apache.activemq.artemis.core.server.Queue;
 
 public class QueueImplTestAccessor {
 
-   public static int getQueueMemorySize(Queue queue) {
-      return ((QueueImpl)queue).queueMemorySize.get();
+   public static long getQueueMemorySize(Queue queue) {
+      return ((QueueImpl)queue).queueMemorySize.getSize();
    }
 
 }
