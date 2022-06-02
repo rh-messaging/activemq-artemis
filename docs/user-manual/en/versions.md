@@ -8,6 +8,76 @@ This chapter provides the following information for each release:
   - **Note:** Follow the general upgrade procedure outlined in the [Upgrading the Broker](upgrading.md) 
     chapter in addition to any version-specific upgrade instructions outlined here.
 
+## 2.24.0
+[Full release notes](TBD).
+
+Highlights:
+- TBD
+
+#### Upgrading from older versions
+
+Due to [ARTEMIS-3851](https://issues.apache.org/jira/browse/ARTEMIS-3851) the queue
+created for an MQTT 3.x subscriber using `CleanSession=1` is now **non-durable**
+rather than durable. This may impact `security-settings` for MQTT clients which
+previously only had `createDurableQueue` for their role. They will now need
+`createNonDurableQueue` as well. Again, this only has potential impact for MQTT 3.x
+clients using `CleanSession=1`.
+
+## 2.23.0
+[Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12351677).
+
+Highlights:
+- [management operations](web-server.md#management) for the embedded web server.
+- [JakartaEE 10 Support](https://issues.apache.org/jira/browse/ARTEMIS-3700)
+- [BugFix: High cpu usage on ReadWrite locks](https://issues.apache.org/jira/browse/ARTEMIS-3848)
+
+## 2.22.0
+[Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12351488).
+
+Highlights:
+- The default `producer-window-size` on `cluster-connection` was changed to 1MB to
+  mitigate potential OutOfMemoryErrors in environments with with high latency
+  networking.
+
+## 2.21.0
+[Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12351083&projectId=12315920).
+
+Highlights:
+- [MQTT 5](mqtt.md) is now supported.
+- A new set of [performance tools](perf-tools.md) are now available to evaluate
+  throughput and Response Under Load performance of Artemis
+- Diverts now support [multiple addresses](diverts.md#composite-divert)
+- [Runtime configuration reloading](config-reload.md) now supports bridges.
+- [Paging](paging.md#paging-mode) can now be configured by message count.
+
+#### Upgrading from older versions
+
+1. Due to XML schema changes to correct an inaccurate domain name 2 files will need to
+   be updated:
+
+    1. `etc/bootstrap.xml`
+    2. `etc/management.xml`
+
+    In both files change the XML namespace from `activemq.org` to `activemq.apache.org`,
+    e.g. in `bootsrap.xml` use:
+    ```xml
+    <broker xmlns="http://activemq.apache.org/schema">
+    ```
+    And in `management.xml` use:
+    ```xml
+    <management-context xmlns="http://activemq.apache.org/schema">
+    ```
+   
+2. **If you're using [JDBC persistence](persistence.md#jdbc-persistence)** then due
+   to the changes in [ARTEMIS-3679](https://issues.apache.org/jira/browse/ARTEMIS-3679)
+   you'll need to update your database. The column `HOLDER_EXPIRATION_TIME` on the
+   `NODE_MANAGER_STORE`changed from a `TIMESTAMP` to a `BIGINT` (or `NUMBER(19)` on
+   Oracle). You will have to stop any broker that is accessing that table and either
+   drop it or execute the proper `ALTER TABLE` statement for your database. If you
+   drop the table then it will be automatically recreated when broker restarts and
+   repopulated with a new, auto-generated node ID.
+   
+
 ## 2.20.0
 [Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12350581&projectId=12315920).
 
