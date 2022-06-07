@@ -511,6 +511,10 @@ public class LinkedListImpl<E> implements LinkedList<E> {
                   current = current.prev;
 
                   current.iterCount++;
+
+                  if (last == node) {
+                     last = current;
+                  }
                } else {
                   current = null;
                }
