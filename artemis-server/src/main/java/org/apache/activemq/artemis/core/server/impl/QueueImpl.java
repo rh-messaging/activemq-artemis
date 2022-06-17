@@ -2983,6 +2983,37 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
    }
 
+   /** This method is to only be used during deliveryAsync when the queue was destroyed
+    and the async process left more messages to be delivered
+    This is a race between destroying the queue and async sends that came after
+    the deleteQueue already happened. */
+   private void removeMessagesWhileDelivering() throws Exception {
+      assert queueDestroyed : "Method to be used only when the queue was destroyed";
+      Transaction tx = new TransactionImpl(storageManager);
+      int txCount = 0;
+
+      try (LinkedListIterator<MessageReference> iter = iterator()) {
+         while (iter.hasNext()) {
+            MessageReference ref = iter.next();
+
+            if (ref.isPaged()) {
+               // this means the queue is being removed
+               // hence paged references are just going away through
+               // page cleanup
+               continue;
+            }
+            acknowledge(tx, ref, AckReason.KILLED, null);
+            iter.remove();
+            refRemoved(ref);
+            txCount++;
+         }
+
+         if (txCount > 0) {
+            tx.commit();
+         }
+      }
+   }
+
    /**
     * This method will deliver as many messages as possible until all consumers are busy or there
     * are no more matching or available messages.
@@ -3032,6 +3063,18 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          Consumer handledconsumer = null;
 
          synchronized (this) {
+
+            if (queueDestroyed) {
+               if (messageReferences.size() == 0) {
+                  return false;
+               }
+               try {
+                  removeMessagesWhileDelivering();
+               } catch (Exception e) {
+                  logger.warn(e.getMessage(), e);
+               }
+               return false;
+            }
 
             // Need to do these checks inside the synchronized
             if (isPaused() || !canDispatch() && redistributor == null) {
@@ -3184,7 +3227,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    private void checkDepage(boolean noWait) {
-      if (pageIterator != null && pageSubscription.isPaging() && !depagePending && needsDepage() && (noWait ? pageIterator.tryNext() > 0 : pageIterator.hasNext())) {
+      if (queueDestroyed) {
+         return;
+      }
+      if (pageIterator != null && pageSubscription.isPaging() && !depagePending && needsDepage() && pageIterator.tryNext() != PageIterator.NextResult.noElements) {
          scheduleDepage(false);
       }
    }
