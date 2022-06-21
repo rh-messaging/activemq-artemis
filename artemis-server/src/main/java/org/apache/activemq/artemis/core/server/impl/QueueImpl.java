@@ -3230,7 +3230,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (queueDestroyed) {
          return;
       }
-      if (pageIterator != null && pageSubscription.isPaging() && !depagePending && needsDepage() && pageIterator.tryNext() != PageIterator.NextResult.noElements) {
+      if (pageIterator != null && pageSubscription.isPaging() && !depagePending && needsDepage() && (noWait ? pageIterator.tryNext() > 0 : pageIterator.hasNext())) {
          scheduleDepage(false);
       }
    }
