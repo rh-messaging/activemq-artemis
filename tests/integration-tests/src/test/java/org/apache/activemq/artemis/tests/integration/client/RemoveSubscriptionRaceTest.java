@@ -83,7 +83,7 @@ public class RemoveSubscriptionRaceTest extends ActiveMQTestBase {
    public void internalTest(String protocol, boolean realFiles, int threads, int numberOfMessages) throws Exception {
       server = createServer(realFiles, true);
       server.getConfiguration().addAddressConfiguration(new CoreAddressConfiguration().setName(SUB_NAME).addRoutingType(RoutingType.MULTICAST));
-      server.getConfiguration().addQueueConfiguration(new QueueConfiguration().setName("Sub_1").setAddress(SUB_NAME).setRoutingType(RoutingType.MULTICAST));
+      server.getConfiguration().addQueueConfiguration(new QueueConfiguration("Sub_1").setAddress(SUB_NAME).setRoutingType(RoutingType.MULTICAST));
       server.start();
 
       CountDownLatch runningLatch = new CountDownLatch(threads);
@@ -92,64 +92,67 @@ public class RemoveSubscriptionRaceTest extends ActiveMQTestBase {
 
       ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, threads)); // I'm using the max here, because I may set threads=0 while hacking the test
 
-      runAfter(() -> executorService.shutdownNow());
-
-      ConnectionFactory factory = CFUtil.createConnectionFactory(protocol, "tcp://localhost:61616");
-
-      CyclicBarrier flagStart = new CyclicBarrier(threads + 1);
-
-      for (int i = 0; i < threads; i++) {
-         executorService.execute(() -> {
-            try {
-               flagStart.await(10, TimeUnit.SECONDS);
-               for (int n = 0; n < numberOfMessages && running.get(); n++) {
-                  Connection connection = factory.createConnection();
-                  connection.start();
-                  Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                  Topic topic = session.createTopic(SUB_NAME);
-                  MessageConsumer consumer = session.createConsumer(topic);
-                  Message message = consumer.receiveNoWait();
-                  if (message != null) {
-                     message.acknowledge();
-                  }
-                  connection.close();
-               }
-            } catch (Throwable e) {
-               e.printStackTrace();
-               errors.incrementAndGet();
-
-            } finally {
-               runningLatch.countDown();
-            }
-         });
-      }
-
-      Connection connection = factory.createConnection();
-      connection.start();
-
-      Queue queue = server.locateQueue("Sub_1");
-      Assert.assertNotNull(queue);
-
-      Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      Topic topic = session.createTopic(SUB_NAME);
-      MessageProducer producer = session.createProducer(topic);
-      MessageConsumer consumer = session.createConsumer(session.createQueue(SUB_NAME + "::" + "Sub_1"));
-
-      flagStart.await(10, TimeUnit.SECONDS);
       try {
-         for (int i = 0; i < numberOfMessages; i++) {
-            producer.send(session.createTextMessage("a"));
-            Assert.assertNotNull(consumer.receive(5000));
+
+         ConnectionFactory factory = CFUtil.createConnectionFactory(protocol, "tcp://localhost:61616");
+
+         CyclicBarrier flagStart = new CyclicBarrier(threads + 1);
+
+         for (int i = 0; i < threads; i++) {
+            executorService.execute(() -> {
+               try {
+                  flagStart.await(10, TimeUnit.SECONDS);
+                  for (int n = 0; n < numberOfMessages && running.get(); n++) {
+                     Connection connection = factory.createConnection();
+                     connection.start();
+                     Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                     Topic topic = session.createTopic(SUB_NAME);
+                     MessageConsumer consumer = session.createConsumer(topic);
+                     Message message = consumer.receiveNoWait();
+                     if (message != null) {
+                        message.acknowledge();
+                     }
+                     connection.close();
+                  }
+               } catch (Throwable e) {
+                  e.printStackTrace();
+                  errors.incrementAndGet();
+
+               } finally {
+                  runningLatch.countDown();
+               }
+            });
          }
-         connection.close();
+
+         Connection connection = factory.createConnection();
+         connection.start();
+
+         Queue queue = server.locateQueue("Sub_1");
+         Assert.assertNotNull(queue);
+
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         Topic topic = session.createTopic(SUB_NAME);
+         MessageProducer producer = session.createProducer(topic);
+         MessageConsumer consumer = session.createConsumer(session.createQueue(SUB_NAME + "::" + "Sub_1"));
+
+         flagStart.await(10, TimeUnit.SECONDS);
+         try {
+            for (int i = 0; i < numberOfMessages; i++) {
+               producer.send(session.createTextMessage("a"));
+               Assert.assertNotNull(consumer.receive(5000));
+            }
+            connection.close();
+         } finally {
+            running.set(false);
+            Assert.assertTrue(runningLatch.await(10, TimeUnit.SECONDS));
+         }
+
+         Wait.assertEquals(0, this::countAddMessage, 5000, 100);
+
+         Wait.assertEquals(0L, queue.getPagingStore()::getAddressSize, 2000, 100);
       } finally {
-         running.set(false);
-         Assert.assertTrue(runningLatch.await(10, TimeUnit.SECONDS));
+         executorService.shutdownNow();
       }
-
-      Wait.assertEquals(0, this::countAddMessage, 5000, 100);
-
-      Wait.assertEquals(0L, queue.getPagingStore()::getAddressSize, 2000, 100);
    }
 
    int countAddMessage() throws Exception {
