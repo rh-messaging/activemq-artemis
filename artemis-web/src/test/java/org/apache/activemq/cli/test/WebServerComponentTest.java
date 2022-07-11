@@ -58,6 +58,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
+import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.cli.factory.xml.XmlBrokerFactoryHandler;
 import org.apache.activemq.artemis.component.WebServerComponent;
 import org.apache.activemq.artemis.core.remoting.impl.ssl.SSLSupport;
@@ -436,11 +437,11 @@ public class WebServerComponentTest extends Assert {
       testedComponents.add(webServerComponent);
       webServerComponent.configure(webServerDTO, "./target", "./target");
       //create some garbage
-      List<WebAppContext> contexts = webServerComponent.getWebContexts();
+      List<Pair<WebAppContext, String>> contexts = webServerComponent.getWebContextData();
 
       WebInfConfiguration cfg = new WebInfConfiguration();
       assertEquals(1, contexts.size());
-      WebAppContext ctxt = contexts.get(0);
+      WebAppContext ctxt = contexts.get(0).getA();
       List<File> garbage = new ArrayList<>();
 
 
