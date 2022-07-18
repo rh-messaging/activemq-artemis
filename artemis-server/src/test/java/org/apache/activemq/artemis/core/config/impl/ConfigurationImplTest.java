@@ -44,6 +44,7 @@ import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirror
 import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser;
 import org.apache.activemq.artemis.core.security.Role;
+import org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.plugin.impl.LoggingActiveMQServerPlugin;
@@ -617,19 +618,7 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
    public void testSetConnectionRoutersPolicyConfiguration() throws Throwable {
       ConfigurationImpl configuration = new ConfigurationImpl();
 
-      Properties insertionOrderedProperties = new Properties() {
-         final LinkedHashMap<Object, Object> orderedMap = new LinkedHashMap<>();
-
-         @Override
-         public Object put(Object key, Object value) {
-            return orderedMap.put(key.toString(), value.toString());
-         }
-
-         @Override
-         public Set<Map.Entry<Object, Object>> entrySet() {
-            return orderedMap.entrySet();
-         }
-      };
+      Properties insertionOrderedProperties = new InsertionOrderedProperties();
       insertionOrderedProperties.put("connectionRouters.autoShard.localTargetFilter", "NULL|$STATEFUL_SET_ORDINAL");
       insertionOrderedProperties.put("connectionRouters.autoShard.keyType", KeyType.CLIENT_ID);
       insertionOrderedProperties.put("connectionRouters.autoShard.policyConfiguration", ConsistentHashModuloPolicy.NAME);
@@ -640,6 +629,38 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals(1, configuration.getConnectionRouters().size());
       Assert.assertEquals(KeyType.CLIENT_ID, configuration.getConnectionRouters().get(0).getKeyType());
       Assert.assertEquals("2", configuration.getConnectionRouters().get(0).getPolicyConfiguration().getProperties().get(ConsistentHashModuloPolicy.MODULO));
+   }
+
+   @Test
+   public void testCoreBridgeConfiguration() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      final String queueName = "q";
+      final String forwardingAddress = "fa";
+
+      Properties properties = new InsertionOrderedProperties();
+
+      properties.put("bridgeConfigurations.b1.queueName", queueName);
+      properties.put("bridgeConfigurations.b1.forwardingAddress", forwardingAddress);
+      properties.put("bridgeConfigurations.b1.confirmationWindowSize", "10");
+      properties.put("bridgeConfigurations.b1.routingType", "STRIP");  // enum
+      // this is a List<String> from comma sep value
+      properties.put("bridgeConfigurations.b1.staticConnectors", "a,b");
+      // flip b in place
+      properties.put("bridgeConfigurations.b1.staticConnectors[1]", "c");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(1, configuration.getBridgeConfigurations().size());
+      Assert.assertEquals(queueName, configuration.getBridgeConfigurations().get(0).getQueueName());
+
+      Assert.assertEquals(forwardingAddress, configuration.getBridgeConfigurations().get(0).getForwardingAddress());
+      Assert.assertEquals(10, configuration.getBridgeConfigurations().get(0).getConfirmationWindowSize());
+      Assert.assertEquals(2, configuration.getBridgeConfigurations().get(0).getStaticConnectors().size());
+      Assert.assertEquals("a", configuration.getBridgeConfigurations().get(0).getStaticConnectors().get(0));
+      Assert.assertEquals("c", configuration.getBridgeConfigurations().get(0).getStaticConnectors().get(1));
+
+      Assert.assertEquals(ComponentConfigurationRoutingType.STRIP, configuration.getBridgeConfigurations().get(0).getRoutingType());
    }
 
    @Test
@@ -762,6 +783,37 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressSettings().get("#").getExpiryAddress());
       Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressSettings().get("NeedToTrackExpired").getExpiryAddress());
       Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressSettings().get("Name.With.Dots").getExpiryAddress());
+   }
+
+   @Test
+   public void testDivertViaProperties() throws Exception {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+
+      final String routingName = "divert1";
+      final String address = "testAddress";
+      final String forwardAddress = "forwardAddress";
+      final String className = "s.o.m.e.class";
+
+      Properties properties = new InsertionOrderedProperties();
+
+      properties.put("divertConfigurations.divert1.routingName", routingName);
+      properties.put("divertConfigurations.divert1.address", address);
+      properties.put("divertConfigurations.divert1.forwardingAddress", forwardAddress);
+      properties.put("divertConfigurations.divert1.transformerConfiguration", className);
+      properties.put("divertConfigurations.divert1.transformerConfiguration.properties.a", "va");
+      properties.put("divertConfigurations.divert1.transformerConfiguration.properties.b", "vb");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(1, configuration.getDivertConfigurations().size());
+      Assert.assertEquals(routingName, configuration.getDivertConfigurations().get(0).getRoutingName());
+      Assert.assertEquals(address, configuration.getDivertConfigurations().get(0).getAddress());
+      Assert.assertEquals(forwardAddress, configuration.getDivertConfigurations().get(0).getForwardingAddress());
+
+      Assert.assertEquals(className, configuration.getDivertConfigurations().get(0).getTransformerConfiguration().getClassName());
+      Assert.assertEquals("va", configuration.getDivertConfigurations().get(0).getTransformerConfiguration().getProperties().get("a"));
+      Assert.assertEquals("vb", configuration.getDivertConfigurations().get(0).getTransformerConfiguration().getProperties().get("b"));
    }
 
    @Test
@@ -1077,5 +1129,20 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
 
    protected Configuration createConfiguration() throws Exception {
       return new ConfigurationImpl();
+   }
+
+   private static class InsertionOrderedProperties extends Properties {
+
+      final LinkedHashMap<Object, Object> orderedMap = new LinkedHashMap<>();
+
+      @Override
+      public Object put(Object key, Object value) {
+         return orderedMap.put(key.toString(), value.toString());
+      }
+
+      @Override
+      public Set<Map.Entry<Object, Object>> entrySet() {
+         return orderedMap.entrySet();
+      }
    }
 }

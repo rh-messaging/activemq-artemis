@@ -55,6 +55,7 @@ import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
+import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
@@ -540,6 +541,25 @@ public class ConfigurationImpl implements Configuration, Serializable {
             return (T) instance;
          }
       }, NamedPropertyConfiguration.class);
+
+      beanUtils.getConvertUtils().register(new Converter() {
+         @Override
+         public <T> T convert(Class<T> type, Object value) {
+            TransformerConfiguration instance = new TransformerConfiguration(value.toString());
+            return (T) instance;
+         }
+      }, TransformerConfiguration.class);
+
+      beanUtils.getConvertUtils().register(new Converter() {
+         @Override
+         public <T> T convert(Class<T> type, Object value) {
+            List convertedValue = new ArrayList<String>();
+            for (String entry : value.toString().split(",")) {
+               convertedValue.add(entry);
+            }
+            return (T) convertedValue;
+         }
+      }, java.util.List.class);
 
       // support 25K or 25m etc like xml config
       beanUtils.getConvertUtils().register(new Converter() {
@@ -2937,7 +2957,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
                // create one and initialise with name
                try {
-                  Object instance = candidate.getParameterTypes()[candidate.getParameterCount() - 1].getDeclaredConstructor().newInstance(null);
+                  Object instance = candidate.getParameterTypes()[candidate.getParameterCount() - 1].getDeclaredConstructor().newInstance();
                   beanUtilsBean.setProperty(instance, "name", name);
 
                   // this is always going to be a little hacky b/c our config is not natively property friendly
