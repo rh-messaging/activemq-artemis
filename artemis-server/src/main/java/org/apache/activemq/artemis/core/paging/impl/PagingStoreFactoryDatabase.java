@@ -73,6 +73,8 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
 
    private ExecutorFactory executorFactory;
 
+   private ExecutorFactory ioExecutorFactory;
+
    private JDBCSequentialFileFactory pagingFactoryFileFactory;
 
    private final boolean readWholePage;
@@ -98,9 +100,10 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
                                      final long syncTimeout,
                                      final ScheduledExecutorService scheduledExecutor,
                                      final ExecutorFactory executorFactory,
+                                     final ExecutorFactory ioExecutorFactory,
                                      final boolean syncNonTransactional,
                                      final IOCriticalErrorListener criticalErrorListener) throws Exception {
-      this(dbConf, storageManager, syncTimeout, scheduledExecutor, executorFactory, syncNonTransactional, criticalErrorListener, false);
+      this(dbConf, storageManager, syncTimeout, scheduledExecutor, executorFactory, ioExecutorFactory, syncNonTransactional, criticalErrorListener, false);
    }
 
    public PagingStoreFactoryDatabase(final DatabaseStorageConfiguration dbConf,
@@ -108,11 +111,13 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
                                      final long syncTimeout,
                                      final ScheduledExecutorService scheduledExecutor,
                                      final ExecutorFactory executorFactory,
+                                     final ExecutorFactory ioExecutorFactory,
                                      final boolean syncNonTransactional,
                                      final IOCriticalErrorListener criticalErrorListener,
                                      final boolean readWholePage) throws Exception {
       this.storageManager = storageManager;
       this.executorFactory = executorFactory;
+      this.ioExecutorFactory = ioExecutorFactory;
       this.syncNonTransactional = syncNonTransactional;
       this.scheduledExecutor = scheduledExecutor;
       this.syncTimeout = syncTimeout;
@@ -162,8 +167,7 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
 
    @Override
    public synchronized PagingStore newStore(final SimpleString address, final AddressSettings settings) {
-
-      return new PagingStoreImpl(address, scheduledExecutor, syncTimeout, pagingManager, storageManager, null, this, address, settings, executorFactory.getExecutor(), syncNonTransactional);
+      return new PagingStoreImpl(address, scheduledExecutor, syncTimeout, pagingManager, storageManager, null, this, address, settings, executorFactory.getExecutor(), ioExecutorFactory.getExecutor().setFair(true), syncNonTransactional);
    }
 
    @Override
@@ -243,7 +247,7 @@ public class PagingStoreFactoryDatabase implements PagingStoreFactory {
 
          AddressSettings settings = addressSettingsRepository.getMatch(address.toString());
 
-         PagingStore store = new PagingStoreImpl(address, scheduledExecutor, syncTimeout, pagingManager, storageManager, factory, this, address, settings, executorFactory.getExecutor(), syncNonTransactional);
+         PagingStore store = new PagingStoreImpl(address, scheduledExecutor, syncTimeout, pagingManager, storageManager, factory, this, address, settings, executorFactory.getExecutor().setFair(true), ioExecutorFactory.getExecutor(), syncNonTransactional);
 
          storesReturn.add(store);
       }
