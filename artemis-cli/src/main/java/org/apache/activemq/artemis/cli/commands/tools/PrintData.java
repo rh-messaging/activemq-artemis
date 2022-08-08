@@ -238,7 +238,7 @@ public class PrintData extends DBOption {
       try {
 
          final StorageManager sm = new NullStorageManager();
-         PagingStoreFactory pageStoreFactory = new PagingStoreFactoryNIO(sm, pageDirectory, 1000L, scheduled, execfactory, false, null);
+         PagingStoreFactory pageStoreFactory = new PagingStoreFactoryNIO(sm, pageDirectory, 1000L, scheduled, execfactory, execfactory, false, null);
          HierarchicalRepository<AddressSettings> addressSettingsRepository = new HierarchicalObjectRepository<>();
          addressSettingsRepository.setDefault(new AddressSettings());
          PagingManager manager = new PagingManagerImpl(pageStoreFactory, addressSettingsRepository);
@@ -291,7 +291,6 @@ public class PrintData extends DBOption {
                   page = pgStore.newPageObject(pgid);
                }
                out.println("*******   Page " + pgid);
-               Page page = pgStore.createPage(pgid);
                page.open(false);
                LinkedList<PagedMessage> msgs = page.read(sm);
                page.close(false, false);
