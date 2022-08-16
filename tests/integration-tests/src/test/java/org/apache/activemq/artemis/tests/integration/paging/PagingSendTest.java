@@ -235,25 +235,13 @@ public class PagingSendTest extends ActiveMQTestBase {
       // Give time Queue.deliverAsync to deliver messages
       Assert.assertTrue("Messages were not propagated to internal structures.", waitForMessages(queue, batchSize, 3000));
 
-      AtomicInteger errors = new AtomicInteger(0);
-      CountDownLatch done = new CountDownLatch(1);
+      checkBatchMessagesAreNotPagedTwice(queue);
 
-      queue.getPagingStore().getExecutor().execute(() -> {
-         try {
-            checkBatchMessagesAreNotPagedTwice(queue);
-            for (int i = 0; i < 10; i++) {
-               // execute the same count a couple times. This is to make sure the iterators have no impact regardless
-               // the number of times they are called
-               assertEquals(batchSize, processCountThroughIterator(queue));
-            }
-
-         } catch (Throwable e) {
-            e.printStackTrace();
-            errors.incrementAndGet();
-         }
-         done.countDown();
-      });
-      Assert.assertEquals(0, errors.get());
+      for (int i = 0; i < 10; i++) {
+         // execute the same count a couple times. This is to make sure the iterators have no impact regardless
+         // the number of times they are called
+         assertEquals(batchSize, processCountThroughIterator(queue));
+      }
 
    }
 
@@ -324,7 +312,6 @@ public class PagingSendTest extends ActiveMQTestBase {
 
       Set<String> messageOrderSet = new HashSet<>();
 
-
       int duplicates = 0;
       while (pageIterator.hasNext()) {
          MessageReference reference = pageIterator.next();
@@ -333,11 +320,10 @@ public class PagingSendTest extends ActiveMQTestBase {
 
          // If add(id) returns true it means that this id was already added to this set.  Hence a duplicate is found.
          if (!messageOrderSet.add(id)) {
-            System.out.println("Received a duplicate on " + id);
             duplicates++;
          }
       }
-      Assert.assertEquals(0, duplicates);
+      assertTrue(duplicates == 0);
    }
 
    public boolean waitForMessages(Queue queue, int count, long timeout) throws Exception {
