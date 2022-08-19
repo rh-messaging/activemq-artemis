@@ -49,6 +49,8 @@ public abstract class ProcessorBase<T> extends HandlerBase {
    private volatile boolean requestedForcedShutdown = false;
    // Request of educated shutdown:
    private volatile boolean requestedShutdown = false;
+   // Request to yield to another thread
+   private volatile boolean yielded = false;
 
    private static final AtomicIntegerFieldUpdater<ProcessorBase> stateUpdater = AtomicIntegerFieldUpdater.newUpdater(ProcessorBase.class, "state");
 
@@ -61,7 +63,7 @@ public abstract class ProcessorBase<T> extends HandlerBase {
                T task;
                //while the queue is not empty we process in order:
                //if requestedForcedShutdown==true than no new tasks will be drained from the tasks q.
-               while (!requestedForcedShutdown && (task = tasks.poll()) != null) {
+               while (!yielded && !requestedForcedShutdown && (task = tasks.poll()) != null) {
                   doTask(task);
                }
             } finally {
@@ -79,7 +81,12 @@ public abstract class ProcessorBase<T> extends HandlerBase {
          //but poll() has returned null, so a submitting thread will believe that it does not need re-execute.
          //this check fixes the issue
       }
-      while (!tasks.isEmpty() && !requestedShutdown);
+      while (!tasks.isEmpty() && !requestedShutdown && !yielded);
+
+      if (yielded) {
+         yielded = false;
+         delegate.execute(task);
+      }
    }
 
    /**
@@ -98,11 +105,16 @@ public abstract class ProcessorBase<T> extends HandlerBase {
       }
    }
 
+   public void yield() {
+      this.yielded = true;
+   }
+
    /** It will shutdown the executor however it will not wait for finishing tasks*/
    public int shutdownNow(Consumer<? super T> onPendingItem, int timeout, TimeUnit unit) {
       //alert anyone that has been requested (at least) an immediate shutdown
       requestedForcedShutdown = true;
       requestedShutdown = true;
+      yielded = false;
 
       if (!inHandler()) {
          // We don't have an option where we could do an immediate timeout

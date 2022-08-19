@@ -3093,7 +3093,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
 
       if (serviceRegistry.getPageExecutorService() != null) {
-         this.pageExecutorFactory = new OrderedExecutorFactory(serviceRegistry.getPageExecutorService());
+         this.pageExecutorFactory = new OrderedExecutorFactory(serviceRegistry.getPageExecutorService()).setFair(true);
       } else {
          ThreadFactory tFactory = AccessController.doPrivileged(new PrivilegedAction<ThreadFactory>() {
             @Override
