@@ -28,8 +28,6 @@ public final class OrderedExecutorFactory implements ExecutorFactory {
 
    final Executor parent;
 
-   private boolean fair;
-
    public static boolean flushExecutor(Executor executor) {
       return flushExecutor(executor, 30, TimeUnit.SECONDS);
    }
@@ -60,21 +58,12 @@ public final class OrderedExecutorFactory implements ExecutorFactory {
     */
    @Override
    public ArtemisExecutor getExecutor() {
-      return new OrderedExecutor(parent).setFair(fair);
+      return new OrderedExecutor(parent);
    }
 
    /** I couldn't figure out how to make a new method to return a generic Actor with a given type */
    public Executor getParent() {
       return parent;
-   }
-
-   public boolean isFair() {
-      return fair;
-   }
-
-   public OrderedExecutorFactory setFair(boolean fair) {
-      this.fair = fair;
-      return this;
    }
 }
 
