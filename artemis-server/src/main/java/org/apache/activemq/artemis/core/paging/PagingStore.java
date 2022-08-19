@@ -30,6 +30,7 @@ import org.apache.activemq.artemis.core.server.RouteContextList;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
+import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 
 /**
  * <p>
@@ -169,6 +170,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
     * We will wait any pending runnable to finish its execution
     */
    void flushExecutors();
+
+   void execute(Runnable runnable);
+
+   ArtemisExecutor getExecutor();
 
    /**
     * Files to synchronize with a remote backup.

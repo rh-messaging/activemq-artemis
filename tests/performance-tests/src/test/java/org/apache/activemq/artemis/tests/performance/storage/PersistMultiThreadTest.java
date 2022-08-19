@@ -42,6 +42,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -244,6 +245,16 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
    }
 
    class FakePagingStore implements PagingStore {
+
+      @Override
+      public void execute(Runnable runnable) {
+         runnable.run();
+      }
+
+      @Override
+      public ArtemisExecutor getExecutor() {
+         return null;
+      }
 
       @Override
       public void durableDown(Message message, int durableCount) {

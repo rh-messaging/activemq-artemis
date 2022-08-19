@@ -408,6 +408,16 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
+   public ArtemisExecutor getExecutor() {
+      return executor;
+   }
+
+   @Override
+   public void execute(Runnable run) {
+      executor.execute(run);
+   }
+
+   @Override
    public void flushExecutors() {
       cursorProvider.flushExecutors();
 
