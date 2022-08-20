@@ -165,11 +165,11 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
 
    private SimpleString expiryAddress = null;
 
-   private Long expiryDelay = AddressSettings.DEFAULT_EXPIRY_DELAY;
+   private Long expiryDelay = null;
 
-   private Long minExpiryDelay = AddressSettings.DEFAULT_MIN_EXPIRY_DELAY;
+   private Long minExpiryDelay = null;
 
-   private Long maxExpiryDelay = AddressSettings.DEFAULT_MAX_EXPIRY_DELAY;
+   private Long maxExpiryDelay = null;
 
    private Boolean defaultLastValueQueue = null;
 
@@ -730,7 +730,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
    }
 
    public Long getExpiryDelay() {
-      return expiryDelay;
+      return expiryDelay != null ? expiryDelay : AddressSettings.DEFAULT_EXPIRY_DELAY;
    }
 
    public AddressSettings setExpiryDelay(final Long expiryDelay) {
@@ -739,7 +739,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
    }
 
    public Long getMinExpiryDelay() {
-      return minExpiryDelay;
+      return minExpiryDelay != null ? minExpiryDelay : AddressSettings.DEFAULT_MIN_EXPIRY_DELAY;
    }
 
    public AddressSettings setMinExpiryDelay(final Long minExpiryDelay) {
@@ -748,7 +748,7 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
    }
 
    public Long getMaxExpiryDelay() {
-      return maxExpiryDelay;
+      return maxExpiryDelay != null ? maxExpiryDelay : AddressSettings.DEFAULT_MAX_EXPIRY_DELAY;
    }
 
    public AddressSettings setMaxExpiryDelay(final Long maxExpiryDelay) {
