@@ -53,12 +53,10 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void scheduledFlush() {
-
    }
 
    @Override
    public void addFailureListener(FailureListener listener) {
-
    }
 
    @Override
@@ -68,7 +66,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void addCloseListener(CloseListener listener) {
-
    }
 
    @Override
@@ -83,7 +80,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void setCloseListeners(List<CloseListener> listeners) {
-
    }
 
    @Override
@@ -98,7 +94,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void setFailureListeners(List<FailureListener> listeners) {
-
    }
 
    @Override
@@ -108,7 +103,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void fail(ActiveMQException me) {
-
    }
 
    @Override
@@ -118,12 +112,10 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void fail(ActiveMQException me, String scaleDownTargetNodeID) {
-
    }
 
    @Override
    public void destroy() {
-
    }
 
    @Override
@@ -143,12 +135,10 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void disconnect(boolean criticalError) {
-
    }
 
    @Override
    public void disconnect(String scaleDownNodeID, boolean criticalError) {
-
    }
 
    @Override
@@ -158,7 +148,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void flush() {
-
    }
 
    @Override
@@ -168,7 +157,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void killMessage(SimpleString nodeID) {
-
    }
 
    @Override
@@ -182,13 +170,7 @@ public class ManagementRemotingConnection implements RemotingConnection {
    }
 
    @Override
-   public void setAuditSubject(Subject subject) {
-
-   }
-
-   @Override
-   public Subject getAuditSubject() {
-      return null;
+   public void setSubject(Subject subject) {
    }
 
    @Override
@@ -203,7 +185,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public void setClientID(String cID) {
-
    }
 
    @Override
@@ -213,12 +194,11 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
    @Override
    public String getTransportLocalAddress() {
-      return "Manaement";
+      return "Management";
    }
 
    @Override
    public void bufferReceived(Object connectionID, ActiveMQBuffer buffer) {
-
    }
 
    public SessionCallback callback = new SessionCallback() {
@@ -229,7 +209,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
       @Override
       public void afterDelivery() throws Exception {
-
       }
 
       @Override
@@ -239,12 +218,10 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
       @Override
       public void sendProducerCreditsMessage(int credits, SimpleString address) {
-
       }
 
       @Override
       public void sendProducerCreditsFailMessage(int credits, SimpleString address) {
-
       }
 
       @Override
@@ -276,7 +253,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
       @Override
       public void disconnect(ServerConsumer consumerId, SimpleString queueName) {
-
       }
 
       @Override
@@ -286,7 +262,6 @@ public class ManagementRemotingConnection implements RemotingConnection {
 
       @Override
       public void browserFinished(ServerConsumer consumer) {
-
       }
    };
 }
