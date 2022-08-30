@@ -35,9 +35,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.activemq.artemis.tests.soak.SoakTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.ReusableLatch;
-import org.apache.activemq.artemis.utils.SpawnedVMSupport;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,13 +45,8 @@ import org.junit.runners.Parameterized;
 
 import static org.apache.activemq.artemis.tests.soak.TestParameters.testProperty;
 
-/** It is recommended to set the following System properties before running this test:
- *
- * export TEST_HORIZONTAL_DESTINATIONS=500
- * export TEST_HORIZONTAL_MESSAGES=500
- * export TEST_HORIZONTAL_COMMIT_INTERVAL=100
- * export TEST_HORIZONTAL_SIZE=60000
- *
+/**
+ * Refer to ./scripts/parameters-paging.sh for suggested parameters
  * #You may choose to use zip files to save some time on producing if you want to run this test over and over when debugging
  * export TEST_HORIZONTAL_ZIP_LOCATION=a folder
  * */
@@ -61,7 +56,8 @@ public class HorizontalPagingTest extends SoakTestBase {
    private static final String TEST_NAME = "HORIZONTAL";
 
    private final String protocol;
-   private static final String ZIP_LOCATION = testProperty(TEST_NAME, "ZIP_LOCATION", null);
+   private static final boolean TEST_ENABLED = Boolean.parseBoolean(testProperty(TEST_NAME, "TEST_ENABLED", "true"));
+   private static final String ZIP_LOCATION = testProperty(null, "ZIP_LOCATION", null);
    private static final int SERVER_START_TIMEOUT = testProperty(TEST_NAME, "SERVER_START_TIMEOUT", 300_000);
    private static final int TIMEOUT_MINUTES = testProperty(TEST_NAME, "TIMEOUT_MINUTES", 120);
    private static final String PROTOCOL_LIST = testProperty(TEST_NAME, "PROTOCOL_LIST", "OPENWIRE,CORE,AMQP");
@@ -109,11 +105,12 @@ public class HorizontalPagingTest extends SoakTestBase {
    boolean unzipped = false;
 
    private String getZipName() {
-      return "data-" + protocol + "-" + DESTINATIONS + "-" + MESSAGES + "-" + MESSAGE_SIZE + ".zip";
+      return "horizontal-" + protocol + "-" + DESTINATIONS + "-" + MESSAGES + "-" + MESSAGE_SIZE + ".zip";
    }
 
    @Before
    public void before() throws Exception {
+      Assume.assumeTrue(TEST_ENABLED);
       cleanupData(SERVER_NAME_0);
 
       boolean useZip = ZIP_LOCATION != null;
@@ -122,12 +119,7 @@ public class HorizontalPagingTest extends SoakTestBase {
 
       if (ZIP_LOCATION  != null && zipFile.exists()) {
          unzipped = true;
-         System.out.println("Invoking unzip");
-         ProcessBuilder zipBuilder = new ProcessBuilder("unzip", zipFile.getAbsolutePath()).directory(new File(getServerLocation(SERVER_NAME_0)));
-
-         Process process = zipBuilder.start();
-         SpawnedVMSupport.startLogger("zip", process);
-         System.out.println("Zip finished with " + process.waitFor());
+         unzip(zipFile, new File(getServerLocation(SERVER_NAME_0)));
       }
 
       serverProcess = startServer(SERVER_NAME_0, 0, SERVER_START_TIMEOUT);
@@ -168,7 +160,9 @@ public class HorizontalPagingTest extends SoakTestBase {
                   logger.info("*******************************************************************************************************************************\ndestination " + queue.getQueueName());
                   MessageProducer producer = session.createProducer(queue);
                   for (int m = 0; m < MESSAGES; m++) {
-                     producer.send(session.createTextMessage(text));
+                     TextMessage message = session.createTextMessage(text);
+                     message.setIntProperty("m", m);
+                     producer.send(message);
                      if (m > 0 && m % COMMIT_INTERVAL == 0) {
                         logger.info("Sent " + m + " " + protocol + " messages on queue " + queue.getQueueName());
                         session.commit();
@@ -198,13 +192,10 @@ public class HorizontalPagingTest extends SoakTestBase {
       }
 
 
+
       if (ZIP_LOCATION != null && !unzipped) {
          String fileName = getZipName();
-         logger.info("Zipping data folder for " + protocol + " as " + fileName);
-         ProcessBuilder zipBuilder = new ProcessBuilder("zip", "-r", ZIP_LOCATION + "/" + getZipName(), "data").directory(new File(getServerLocation(SERVER_NAME_0)));
-         Process process = zipBuilder.start();
-         SpawnedVMSupport.startLogger("zip", process);
-         System.out.println("Zip finished with " + process.waitFor());
+         zip(new File(ZIP_LOCATION, fileName), new File(getServerLocation(SERVER_NAME_0)));
       }
 
       serverProcess = startServer(SERVER_NAME_0, 0, SERVER_START_TIMEOUT);
@@ -239,6 +230,8 @@ public class HorizontalPagingTest extends SoakTestBase {
                   if (PRINT_INTERVAL > 0 && m % PRINT_INTERVAL == 0) {
                      logger.info("Destination " + destination + " received " + m + " " + protocol + " messages");
                   }
+
+                  Assert.assertEquals(m, message.getIntProperty("m"));
 
                   if (RECEIVE_COMMIT_INTERVAL > 0 && (m + 1) % RECEIVE_COMMIT_INTERVAL == 0) {
                      sessionConsumer.commit();
