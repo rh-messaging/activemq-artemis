@@ -18,9 +18,13 @@
 
 # this script contains a suggest set of variables to run the HorizontalPagingTest in a medium environment and hit some issues we used to have with paging
 
+## Generic variable:
 # It is possible to save the producer's time. If you set this variable the test will reuse previously sent data by zip and unzipping the data folder
-export TEST_HORIZONTAL_ZIP_LOCATION=/tmp
+#export TEST_ZIP_LOCATION=~/zipTest/
 
+#HorizontalPagingTest
+
+export TEST_HORIZONTAL_TEST_ENABLED=true
 export TEST_HORIZONTAL_SERVER_START_TIMEOUT=300000
 export TEST_HORIZONTAL_TIMEOUT_MINUTES=120
 export TEST_HORIZONTAL_PROTOCOL_LIST=OPENWIRE,CORE,AMQP
