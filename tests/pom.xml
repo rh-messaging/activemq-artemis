@@ -79,14 +79,6 @@
    </build>
 
    <profiles>
-       <profile>
-         <id>extra-tests</id>
-         <modules>
-            <!-- to run extra-tests you must define -DskipExtraTests=false
-                 or run it with the tests profile -->
-            <module>extra-tests</module>
-         </modules>
-      </profile>
       <profile>
          <id>jmh</id>
          <modules>
@@ -121,7 +113,6 @@
               the the Prod Gate GC-M2 failure
               <module>activemq5-unit-tests</module>
             -->
-            <module>extra-tests</module>
             <module>performance-jmh</module>
          </modules>
          <properties>
