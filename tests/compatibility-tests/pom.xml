@@ -158,11 +158,6 @@
          <type>pom</type>
       </dependency>
       <dependency>
-         <groupId>org.apache.activemq.rest</groupId>
-         <artifactId>artemis-rest</artifactId>
-         <version>2.21.0</version>
-      </dependency>
-      <dependency>
          <groupId>org.apache.groovy</groupId>
          <artifactId>groovy-all</artifactId>
          <version>${groovy.version}</version>
