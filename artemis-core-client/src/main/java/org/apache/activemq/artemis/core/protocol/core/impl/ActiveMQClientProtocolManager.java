@@ -490,6 +490,9 @@ public class ActiveMQClientProtocolManager implements ClientProtocolManager {
        * @param topMessage
        */
       protected void notifyTopologyChange(final ClusterTopologyChangeMessage topMessage) {
+          if (logger.isTraceEnabled()) {
+               logger.trace("notifyTopologyChange: ");
+            }          
          final long eventUID;
          final String backupGroupName;
          final String scaleDownGroupName;

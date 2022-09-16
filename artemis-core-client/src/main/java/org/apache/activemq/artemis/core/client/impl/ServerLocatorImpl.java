@@ -303,7 +303,19 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                              final DiscoveryGroupConfiguration discoveryGroupConfiguration,
                              final TransportConfiguration[] transportConfigs) {
       traceException.fillInStackTrace();
-
+        if (logger.isTraceEnabled()) {
+            logger.trace("ServerLocatorImpl::ServerLocatorImpl:", new Exception("trace"));
+            logger.trace("ServerLocatorImpl::ServerLocatorImpl:useHA" + useHA);
+            logger.trace("ServerLocatorImpl::ServerLocatorImpl:transportConfigs" + transportConfigs.length);
+            if (transportConfigs != null && transportConfigs.length > 0) {
+                for (TransportConfiguration transportConfiguration : transportConfigs) {
+                    logger.trace("TransportConfiguration: " + transportConfiguration.toString());
+                }
+            }
+            if (discoveryGroupConfiguration != null) {
+                logger.trace("ServerLocatorImpl::ServerLocatorImpl:discoveryGroupConfiguration" + discoveryGroupConfiguration.toString());
+            }
+        }
       this.topology = topology == null ? new Topology(this) : topology;
 
       this.ha = useHA;
@@ -426,6 +438,20 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       flushTopology();
 
       synchronized (topologyArrayGuard) {
+
+            if (logger.isTraceEnabled()) {
+                if (topologyArray != null) {
+                    logger.trace("TransportConfigs: " + topologyArray.length);
+                    for (Pair<TransportConfiguration, TransportConfiguration> pair : topologyArray) {
+                        if (pair != null && pair.getA() != null) {
+                            logger.trace("TransportConfig A: " + pair.getA().toString());
+                        }
+                        if (pair != null && pair.getB() != null) {
+                            logger.trace("TransportConfig B: " + pair.getB().toString());
+                        }
+                    }
+                }
+            }          
          usedTopology = topologyArray;
       }
 
@@ -663,7 +689,13 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
          boolean topologyArrayTried = !config.useTopologyForLoadBalancing || topologyArray == null || topologyArray.length == 0;
          boolean staticTried = false;
          boolean shouldTryStatic = !config.useTopologyForLoadBalancing || !receivedTopology || topologyArray == null || topologyArray.length == 0;
-
+         if (logger.isTraceEnabled()) {
+            logger.trace("shouldTryStatic:" + shouldTryStatic);
+            logger.trace("useTopologyForLoadBalancing:" + config.useTopologyForLoadBalancing);
+            logger.trace("HA: " + this.ha);
+            logger.trace("receivedTopology:" + receivedTopology);
+            logger.trace("topologyArray == null:" + topologyArray == null);
+         }
          while (retry && !isClosed()) {
             retry = false;
 

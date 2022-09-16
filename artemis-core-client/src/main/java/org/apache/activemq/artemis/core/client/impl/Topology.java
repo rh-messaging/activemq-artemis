@@ -411,6 +411,9 @@ public final class Topology {
    }
 
    public Collection<TopologyMemberImpl> getMembers() {
+       if (logger.isTraceEnabled()) {
+           logger.trace(this.describe());
+       } 
       ArrayList<TopologyMemberImpl> members;
       synchronized (this) {
          members = new ArrayList<>(topology.values());
@@ -448,6 +451,9 @@ public final class Topology {
    }
 
    private int members() {
+       if(logger.isTraceEnabled()) { 
+         logger.trace("Topology Size: " + topology.size());
+       }       
       return topology.size();
    }
 
@@ -463,6 +469,13 @@ public final class Topology {
    public TransportConfiguration getBackupForConnector(final Connector connector) {
       for (TopologyMemberImpl member : topology.values()) {
          if (member.getLive() != null && connector.isEquivalent(member.getLive().getParams())) {
+            if(logger.isTraceEnabled()) { 
+                if (member.getBackup() != null) {
+                    logger.trace("Backup:" + member.getBackup().toString());
+                } else {
+                    logger.trace("Backup: [null]");
+                }
+            }             
             return member.getBackup();
          }
       }

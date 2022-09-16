@@ -304,6 +304,9 @@ public final class ActiveMQClient {
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(TransportConfiguration... transportConfigurations) {
+        if (ActiveMQClientLogger.LOGGER.isTraceEnabled()) {
+            ActiveMQClientLogger.LOGGER.trace("ActiveMQClient::createServerLocatorWithoutHA:", new Exception("trace"));
+        }       
       return new ServerLocatorImpl(false, transportConfigurations);
    }
 
@@ -330,6 +333,9 @@ public final class ActiveMQClient {
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(final DiscoveryGroupConfiguration groupConfiguration) {
+        if (ActiveMQClientLogger.LOGGER.isTraceEnabled()) {
+            ActiveMQClientLogger.LOGGER.trace("ActiveMQClient::createServerLocatorWithoutHA:", new Exception("trace"));
+        }       
       return new ServerLocatorImpl(false, groupConfiguration);
    }
 
@@ -385,6 +391,9 @@ public final class ActiveMQClient {
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithHA(final DiscoveryGroupConfiguration groupConfiguration) {
+        if (ActiveMQClientLogger.LOGGER.isTraceEnabled()) {
+            ActiveMQClientLogger.LOGGER.trace("ActiveMQClient::createServerLocatorWithHA:", new Exception("trace"));
+        }       
       return new ServerLocatorImpl(true, groupConfiguration);
    }
 

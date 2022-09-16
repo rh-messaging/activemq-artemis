@@ -202,6 +202,11 @@ public final class ActiveMQRaUtils {
       String[] topElements = replaced.split(",");
 
       for (String topElement : topElements) {
+          
+         if (ActiveMQRALogger.LOGGER.isTraceEnabled()) {
+            ActiveMQRALogger.LOGGER.trace("Connection Parameter Element: " + topElement);
+         }
+            
          HashMap<String, Object> map = new HashMap<>();
          result.add(map);
 
