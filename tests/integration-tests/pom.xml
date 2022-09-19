@@ -20,7 +20,7 @@
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.26.0-SNAPSHOT</version>
+      <version>3.0.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>integration-tests</artifactId>
@@ -142,11 +142,6 @@
          <artifactId>artemis-features</artifactId>
          <version>${project.version}</version>
          <type>pom</type>
-      </dependency>
-      <dependency>
-         <groupId>org.apache.activemq.rest</groupId>
-         <artifactId>artemis-rest</artifactId>
-         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.apache.activemq</groupId>
@@ -351,19 +346,6 @@
          <scope>test</scope>
       </dependency>
 
-      <!-- rest test -->
-      <dependency>
-         <groupId>org.apache.tomcat</groupId>
-         <artifactId>tomcat-servlet-api</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.eclipse.jetty</groupId>
-         <artifactId>jetty-server</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.jboss.resteasy</groupId>
-         <artifactId>resteasy-jaxrs</artifactId>
-      </dependency>
       <dependency>
          <groupId>org.codehaus.woodstox</groupId>
          <artifactId>woodstox-core-asl</artifactId>
@@ -426,7 +408,7 @@
          <scope>test</scope>
       </dependency>
 
-      <!-- need this for org.apache.activemq.filter.XalanXPathEvaluator for Xpath selectors with OpenWire JMS clients-->
+      <!-- need this for org.apache.activemq.filter.JAXPXPathEvaluator for Xpath selectors with OpenWire JMS clients-->
       <dependency>
          <groupId>org.apache.activemq</groupId>
          <artifactId>activemq-broker</artifactId>
@@ -468,9 +450,6 @@
          <testResource>
             <directory>src/test/resources</directory>
             <filtering>true</filtering>
-            <excludes>
-               <exclude>**/rest/*.xml</exclude>
-            </excludes>
          </testResource>
       </testResources>
       <plugins>
@@ -495,42 +474,6 @@
                            <directory>../security-resources</directory>
                         </resource>
                      </resources>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
-               <execution>
-                  <phase>process-test-classes</phase>
-                  <id>bwlist-rest-test-war</id>
-                  <goals>
-                     <goal>single</goal>
-                  </goals>
-                  <configuration>
-                     <descriptors>
-                        <descriptor>src/test/resources/rest/bwlist-rest-test-asm.xml</descriptor>
-                     </descriptors>
-                     <finalName>rest-test-bwlist</finalName>
-                     <appendAssemblyId>false</appendAssemblyId>
-                     <outputDirectory>target/test-classes/rest/</outputDirectory>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>process-test-classes</phase>
-                  <id>rest-test-war</id>
-                  <goals>
-                     <goal>single</goal>
-                  </goals>
-                  <configuration>
-                     <descriptors>
-                        <descriptor>src/test/resources/rest/rest-test-asm.xml</descriptor>
-                     </descriptors>
-                     <finalName>rest-test</finalName>
-                     <appendAssemblyId>false</appendAssemblyId>
-                     <outputDirectory>target/test-classes/rest/</outputDirectory>
                   </configuration>
                </execution>
             </executions>

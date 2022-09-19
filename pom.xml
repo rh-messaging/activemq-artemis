@@ -20,7 +20,7 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-pom</artifactId>
    <packaging>pom</packaging>
-   <version>2.26.0-SNAPSHOT</version>
+   <version>3.0.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -54,7 +54,6 @@
       <module>artemis-journal</module>
       <module>artemis-ra</module>
       <module>artemis-jakarta-ra</module>
-      <module>artemis-rest</module>
       <module>artemis-service-extensions</module>
       <module>artemis-jakarta-service-extensions</module>
       <module>artemis-jdbc-store</module>
@@ -126,7 +125,7 @@
 
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.54.Final</netty-tcnative-version>
-      <proton.version>0.33.10</proton.version>
+      <proton.version>0.34.0</proton.version>
       <resteasy.version>3.15.0.Final</resteasy.version>
       <slf4j.version>1.7.36</slf4j.version>
       <qpid.jms.version>1.6.0</qpid.jms.version>
@@ -176,7 +175,7 @@
 
       <!-- used on tests -->
       <groovy.version>4.0.0</groovy.version>
-      <vertx.version>3.9.4</vertx.version>
+      <vertx.version>4.3.3</vertx.version>
       <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
 
       <owasp.version>6.1.0</owasp.version>
@@ -1487,7 +1486,6 @@
                                        <fileset dir="${activemq.basedir}/artemis-journal/target/classes" />
                                        <fileset dir="${activemq.basedir}/activemq-artemis-native/target/classes" />
                                        <fileset dir="${activemq.basedir}/artemis-ra/target/classes" />
-                                       <fileset dir="${activemq.basedir}/artemis-rest/target/classes" />
                                        <fileset dir="${activemq.basedir}/artemis-selector/target/classes" />
                                        <fileset dir="${activemq.basedir}/artemis-server/target/classes" />
                                        <fileset dir="${activemq.basedir}/artemis-server-osgi/target/classes" />
@@ -1507,7 +1505,6 @@
                                        <fileset dir="${activemq.basedir}/artemis-journal/src/main/java" />
                                        <fileset dir="${activemq.basedir}/activemq-artemis-native/src/main/java" />
                                        <fileset dir="${activemq.basedir}/artemis-ra/src/main/java" />
-                                       <fileset dir="${activemq.basedir}/artemis-rest/src/main/java" />
                                        <fileset dir="${activemq.basedir}/artemis-selector/src/main/java" />
                                        <fileset dir="${activemq.basedir}/artemis-server/src/main/java" />
                                        <fileset dir="${activemq.basedir}/artemis-server-osgi/src/main/java" />

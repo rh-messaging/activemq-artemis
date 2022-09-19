@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.clustered</groupId>
       <artifactId>broker-features</artifactId>
-      <version>2.26.0-SNAPSHOT</version>
+      <version>3.0.0-SNAPSHOT</version>
    </parent>
 
    <groupId>org.apache.activemq.examples.broker</groupId>
@@ -88,7 +88,6 @@ under the License.
             <module>queue-requestor</module>
             <module>queue-selector</module>
             <module>reattach-node</module>
-            <module>rest</module>
             <module>request-reply</module>
             <module>scheduled-message</module>
             <module>security</module>
@@ -164,7 +163,6 @@ under the License.
             <module>queue-requestor</module>
             <module>queue-selector</module>
             <module>reattach-node</module>
-            <module>rest</module>
             <module>request-reply</module>
             <module>scheduled-message</module>
             <module>security</module>

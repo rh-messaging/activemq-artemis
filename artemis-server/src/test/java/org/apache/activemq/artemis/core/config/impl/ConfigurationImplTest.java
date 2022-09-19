@@ -40,10 +40,14 @@ import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
+import org.apache.activemq.artemis.core.config.ConfigurationUtils;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectionAddressType;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectionElement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
+import org.apache.activemq.artemis.core.config.federation.FederationAddressPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.federation.FederationPolicySet;
+import org.apache.activemq.artemis.core.config.federation.FederationQueuePolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.deployers.impl.FileConfigurationParser;
 import org.apache.activemq.artemis.core.security.Role;
@@ -673,8 +677,15 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
 
    @Test
    public void testSetConnectionRoutersPolicyConfiguration() throws Throwable {
-      ConfigurationImpl configuration = new ConfigurationImpl();
+      testSetConnectionRoutersPolicyConfiguration(new ConfigurationImpl());
+   }
 
+   @Test
+   public void testSetConnectionRoutersPolicyFileConfiguration() throws Throwable {
+      testSetConnectionRoutersPolicyConfiguration(new FileConfiguration());
+   }
+
+   private void testSetConnectionRoutersPolicyConfiguration(ConfigurationImpl configuration) throws Throwable {
       Properties insertionOrderedProperties = new ConfigurationImpl.InsertionOrderedProperties();
       insertionOrderedProperties.put("connectionRouters.autoShard.localTargetFilter", "NULL|$STATEFUL_SET_ORDINAL");
       insertionOrderedProperties.put("connectionRouters.autoShard.keyType", KeyType.CLIENT_ID);
@@ -756,6 +767,56 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals("c", configuration.getBridgeConfigurations().get(0).getStaticConnectors().get(1));
 
       Assert.assertEquals(ComponentConfigurationRoutingType.STRIP, configuration.getBridgeConfigurations().get(0).getRoutingType());
+   }
+
+   @Test
+   public void testFederationUpstreamConfiguration() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+
+      properties.put("federationConfigurations.f1.upstreamConfigurations.joe.connectionConfiguration.reconnectAttempts", "1");
+      properties.put("federationConfigurations.f1.upstreamConfigurations.joe.connectionConfiguration.staticConnectors", "a,b,c");
+      properties.put("federationConfigurations.f1.upstreamConfigurations.joe.policyRefs", "pq1,pq2");
+
+      properties.put("federationConfigurations.f1.queuePolicies.qp1.transformerRef", "simpleTransform");
+      properties.put("federationConfigurations.f1.queuePolicies.qp2.includes.all-N.queueMatch", "N#");
+
+      properties.put("federationConfigurations.f1.addressPolicies.a1.transformerRef", "simpleTransform");
+      properties.put("federationConfigurations.f1.addressPolicies.a1.excludes.just-b.addressMatch", "b");
+
+      properties.put("federationConfigurations.f1.policySets.combined.policyRefs", "qp1,qp2,a1");
+
+      properties.put("federationConfigurations.f1.transformerConfigurations.simpleTransform.transformerConfiguration.className", "a.b");
+      properties.put("federationConfigurations.f1.transformerConfigurations.simpleTransform.transformerConfiguration.properties.a", "b");
+
+      properties.put("federationConfigurations.f1.credentials.user", "u");
+      properties.put("federationConfigurations.f1.credentials.password", "ENC(2a7c211d21c295cdbcde3589c205decb)");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(1, configuration.getFederationConfigurations().size());
+      Assert.assertEquals(1, configuration.getFederationConfigurations().get(0).getUpstreamConfigurations().get(0).getConnectionConfiguration().getReconnectAttempts());
+      Assert.assertEquals(3, configuration.getFederationConfigurations().get(0).getUpstreamConfigurations().get(0).getConnectionConfiguration().getStaticConnectors().size());
+
+      Assert.assertEquals(2, configuration.getFederationConfigurations().get(0).getUpstreamConfigurations().get(0).getPolicyRefs().size());
+
+      Assert.assertEquals(4, configuration.getFederationConfigurations().get(0).getFederationPolicyMap().size());
+      Assert.assertEquals("qp1", configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("qp1").getName());
+
+      Assert.assertEquals("combined", configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("combined").getName());
+      Assert.assertEquals(3, ((FederationPolicySet)configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("combined")).getPolicyRefs().size());
+
+      Assert.assertEquals("simpleTransform", ((FederationQueuePolicyConfiguration)configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("qp1")).getTransformerRef());
+
+      Assert.assertEquals("N#", ((FederationQueuePolicyConfiguration.Matcher)((FederationQueuePolicyConfiguration)configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("qp2")).getIncludes().toArray()[0]).getQueueMatch());
+      Assert.assertEquals("b", ((FederationAddressPolicyConfiguration.Matcher)((FederationAddressPolicyConfiguration)configuration.getFederationConfigurations().get(0).getFederationPolicyMap().get("a1")).getExcludes().toArray()[0]).getAddressMatch());
+
+      Assert.assertEquals("b", configuration.getFederationConfigurations().get(0).getTransformerConfigurations().get("simpleTransform").getTransformerConfiguration().getProperties().get("a"));
+      Assert.assertEquals("a.b", configuration.getFederationConfigurations().get(0).getTransformerConfigurations().get("simpleTransform").getTransformerConfiguration().getClassName());
+
+      Assert.assertEquals("u", configuration.getFederationConfigurations().get(0).getCredentials().getUser());
+      Assert.assertEquals("secureexample", configuration.getFederationConfigurations().get(0).getCredentials().getPassword());
    }
 
    @Test
@@ -859,6 +920,38 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals(1, configuration.getAddressConfigurations().get(0).getQueueConfigs().size());
       Assert.assertEquals(SimpleString.toSimpleString("LB.TEST"), configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).getAddress());
       Assert.assertEquals(false, configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).isDurable());
+   }
+
+
+   @Test
+   public void testAcceptorViaProperties() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      configuration.getAcceptorConfigurations().add(ConfigurationUtils.parseAcceptorURI(
+         "artemis", "tcp://0.0.0.0:61616?protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;supportAdvisory=false;suppressInternalManagementObjects=false").get(0));
+
+      Properties properties = new Properties();
+
+      properties.put("acceptorConfigurations.artemis.extraParams.supportAdvisory", "true");
+      properties.put("acceptorConfigurations.new.extraParams.supportAdvisory", "true");
+
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(2, configuration.getAcceptorConfigurations().size());
+
+      TransportConfiguration artemisTransportConfiguration = configuration.getAcceptorConfigurations().stream().filter(
+         transportConfiguration -> transportConfiguration.getName().equals("artemis")).findFirst().get();
+      Assert.assertTrue(artemisTransportConfiguration.getParams().containsKey("protocols"));
+      Assert.assertEquals("CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE", artemisTransportConfiguration.getParams().get("protocols"));
+      Assert.assertTrue(artemisTransportConfiguration.getExtraParams().containsKey("supportAdvisory"));
+      Assert.assertEquals("true", artemisTransportConfiguration.getExtraParams().get("supportAdvisory"));
+      Assert.assertTrue(artemisTransportConfiguration.getExtraParams().containsKey("suppressInternalManagementObjects"));
+      Assert.assertEquals("false", artemisTransportConfiguration.getExtraParams().get("suppressInternalManagementObjects"));
+
+      TransportConfiguration newTransportConfiguration = configuration.getAcceptorConfigurations().stream().filter(
+         transportConfiguration -> transportConfiguration.getName().equals("new")).findFirst().get();
+      Assert.assertTrue(newTransportConfiguration.getExtraParams().containsKey("supportAdvisory"));
+      Assert.assertEquals("true", newTransportConfiguration.getExtraParams().get("supportAdvisory"));
    }
 
 
