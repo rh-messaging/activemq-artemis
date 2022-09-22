@@ -17,6 +17,8 @@
 
 package org.apache.activemq.artemis.core.server.impl.jdbc;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +36,7 @@ import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfigurat
 import org.apache.activemq.artemis.core.server.NodeManager.LockListener;
 import org.apache.activemq.artemis.jdbc.store.drivers.JDBCUtils;
 import org.apache.activemq.artemis.jdbc.store.sql.SQLProvider;
+import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
@@ -83,7 +86,8 @@ public class JdbcLeaseLockTest extends ActiveMQTestBase {
                UUID.randomUUID().toString(),
                jdbcSharedStateManager.getJdbcConnectionProvider(),
                sqlProvider,
-               acquireMillis);
+               acquireMillis,
+               dbConf.getJdbcAllowedTimeDiff());
       } catch (Exception e) {
          throw new IllegalStateException(e);
       }
@@ -97,7 +101,23 @@ public class JdbcLeaseLockTest extends ActiveMQTestBase {
                jdbcSharedStateManager.getJdbcConnectionProvider(),
                sqlProvider,
                acquireMillis,
-               queryTimeoutMillis);
+               queryTimeoutMillis,
+               dbConf.getJdbcAllowedTimeDiff());
+      } catch (Exception e) {
+         throw new IllegalStateException(e);
+      }
+   }
+
+   private LeaseLock lock(long acquireMillis, long queryTimeoutMillis, long allowedTimeDiff) {
+      try {
+         return JdbcSharedStateManager
+            .createLiveLock(
+               UUID.randomUUID().toString(),
+               jdbcSharedStateManager.getJdbcConnectionProvider(),
+               sqlProvider,
+               acquireMillis,
+               queryTimeoutMillis,
+               allowedTimeDiff);
       } catch (Exception e) {
          throw new IllegalStateException(e);
       }
@@ -124,6 +144,7 @@ public class JdbcLeaseLockTest extends ActiveMQTestBase {
          .usingConnectionProvider(
             UUID.randomUUID().toString(),
             dbConf.getJdbcLockExpirationMillis(),
+            dbConf.getJdbcAllowedTimeDiff(),
             dbConf.getConnectionProvider(),
             sqlProvider);
    }
@@ -401,6 +422,39 @@ public class JdbcLeaseLockTest extends ActiveMQTestBase {
       scheduledLeaseLock.stop();
       executorService.shutdown();
       scheduledExecutorService.shutdown();
+   }
+
+   @Test
+   public void validateTimeDiffsOnLeaseLock() {
+      AssertionLoggerHandler.startCapture();
+      runAfter(AssertionLoggerHandler::stopCapture);
+
+      AtomicInteger diff = new AtomicInteger(0);
+
+      JdbcLeaseLock hackLock = new JdbcLeaseLock("SomeID", jdbcSharedStateManager.getJdbcConnectionProvider(), sqlProvider.tryAcquireLiveLockSQL(),
+                               sqlProvider.tryReleaseLiveLockSQL(), sqlProvider.renewLiveLockSQL(),
+                               sqlProvider.isLiveLockedSQL(), sqlProvider.currentTimestampSQL(),
+                               sqlProvider.currentTimestampTimeZoneId(), -1, 1000,
+                               "LIVE", 1000) {
+         @Override
+         protected long fetchDatabaseTime(Connection connection) throws SQLException {
+            return System.currentTimeMillis() + diff.get();
+         }
+      };
+
+      diff.set(10_000);
+      hackLock.dbCurrentTimeMillis();
+      Assert.assertTrue(AssertionLoggerHandler.findText("AMQ224118"));
+
+      diff.set(-10_000);
+      AssertionLoggerHandler.clear();
+      hackLock.dbCurrentTimeMillis();
+      Assert.assertTrue(AssertionLoggerHandler.findText("AMQ224118"));
+
+      diff.set(0);
+      AssertionLoggerHandler.clear();
+      hackLock.dbCurrentTimeMillis();
+      Assert.assertFalse(AssertionLoggerHandler.findText("AMQ224118"));
    }
 }
 
