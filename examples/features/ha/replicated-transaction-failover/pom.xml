@@ -24,7 +24,7 @@ under the License.
    <parent>
       <groupId>org.apache.activemq.examples.failover</groupId>
       <artifactId>broker-failover</artifactId>
-      <version>2.16.0.1.WAS.SNAPSHOT</version>
+      <version>2.16.0.3.WAS.SNAPSHOT</version>
    </parent>
 
    <artifactId>replicated-transaction-failover</artifactId>

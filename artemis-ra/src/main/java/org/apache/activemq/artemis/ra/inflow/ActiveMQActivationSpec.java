@@ -670,6 +670,10 @@ public class ActiveMQActivationSpec extends ConnectionFactoryProperties implemen
    public void setUseLocalTx(final Boolean localTx) {
       this.localTx = localTx;
    }
+   
+      public Boolean getRebalanceConnections() {
+      return rebalanceConnections;
+   }
 
    public Boolean isRebalanceConnections() {
       return rebalanceConnections;
