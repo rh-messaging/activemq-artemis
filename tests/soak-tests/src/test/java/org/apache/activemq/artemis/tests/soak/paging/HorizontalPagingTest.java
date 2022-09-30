@@ -46,7 +46,7 @@ import org.junit.runners.Parameterized;
 import static org.apache.activemq.artemis.tests.soak.TestParameters.testProperty;
 
 /**
- * Refer to ./scripts/parameters-paging.sh for suggested parameters
+ * Refer to ./scripts/parameters.sh for suggested parameters
  * #You may choose to use zip files to save some time on producing if you want to run this test over and over when debugging
  * export TEST_HORIZONTAL_ZIP_LOCATION=a folder
  * */

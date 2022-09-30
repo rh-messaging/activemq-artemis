@@ -117,6 +117,92 @@
                      </args>
                   </configuration>
                </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-flow-paging</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <role>amq</role>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <allowAnonymous>true</allowAnonymous>
+                     <noWeb>false</noWeb>
+                     <instance>${basedir}/target/flowControlPaging</instance>
+                     <configuration>${basedir}/target/classes/servers/flowControlPaging</configuration>
+                     <args>
+                        <arg>--java-memory</arg>
+                        <!-- some limited memory to make it more likely to fail -->
+                        <arg>512M</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-subscription-paging</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <role>amq</role>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <allowAnonymous>true</allowAnonymous>
+                     <noWeb>false</noWeb>
+                     <instance>${basedir}/target/subscriptionPaging</instance>
+                     <configuration>${basedir}/target/classes/servers/subscriptionPaging</configuration>
+                     <args>
+                        <arg>--java-memory</arg>
+                        <!-- some limited memory to make it more likely to fail -->
+                        <arg>512M</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-mmfactory</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <!-- this makes it easier in certain envs -->
+                     <configuration>${basedir}/target/classes/servers/mmfactory</configuration>
+                     <allowAnonymous>true</allowAnonymous>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <instance>${basedir}/target/mmfactory</instance>
+                     <noWeb>false</noWeb>
+                     <args>
+                        <arg>--java-options</arg>
+                        <arg>-Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote=true
+                           -Dcom.sun.management.jmxremote.port=11099 -Dcom.sun.management.jmxremote.rmi.port=11098
+                           -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false
+                        </arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-openwire-leaktest</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <role>amq</role>
+                     <user>admin</user>
+                     <password>admin</password>
+                     <allowAnonymous>true</allowAnonymous>
+                     <noWeb>false</noWeb>
+                     <instance>${basedir}/target/openwire-leaktest</instance>
+                     <configuration>${basedir}/target/classes/servers/openwire-leaktest</configuration>
+                     <args>
+                        <arg>--java-memory</arg>
+                        <arg>3G</arg>
+                     </args>
+                  </configuration>
+               </execution>
+
             </executions>
          </plugin>
 
