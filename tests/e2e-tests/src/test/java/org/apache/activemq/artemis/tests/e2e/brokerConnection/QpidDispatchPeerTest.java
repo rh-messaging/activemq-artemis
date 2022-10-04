@@ -27,12 +27,14 @@ import javax.jms.Session;
 
 import org.apache.activemq.artemis.tests.e2e.common.E2ETestBase;
 import org.apache.activemq.artemis.tests.e2e.common.ContainerService;
-import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * You need to build the Artemis Centos image before this test is executed.
@@ -40,7 +42,7 @@ import org.junit.Test;
  */
 public class QpidDispatchPeerTest extends E2ETestBase {
 
-   private static final Logger logger = Logger.getLogger(QpidDispatchPeerTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    static Object network;
    static Object qpidServer;
@@ -109,7 +111,7 @@ public class QpidDispatchPeerTest extends E2ETestBase {
             producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
             for (int i = 0; i < numberOfMessages; i++) {
-               logger.debug("Sending " + i);
+               logger.debug("Sending {}", i);
                producer.send(session.createTextMessage("hello " + i));
             }
             connection.close();
@@ -152,7 +154,7 @@ public class QpidDispatchPeerTest extends E2ETestBase {
          producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
          for (int i = 0; i < numberOfMessages; i++) {
-            logger.debug("Sending " + i);
+            logger.debug("Sending {}", i);
             producer.send(session.createTextMessage("hello " + i));
          }
          connection.close();

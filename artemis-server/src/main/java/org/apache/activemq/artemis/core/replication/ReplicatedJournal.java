@@ -35,7 +35,9 @@ import org.apache.activemq.artemis.core.journal.impl.dataformat.ByteArrayEncodin
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.replication.ReplicationManager.ADD_OPERATION_TYPE;
 import org.apache.activemq.artemis.utils.collections.SparseArrayLinkedList;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Used by the {@link org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageManager} to replicate journal calls.
@@ -47,7 +49,7 @@ import org.jboss.logging.Logger;
  */
 public class ReplicatedJournal implements Journal {
 
-   private static final Logger log = Logger.getLogger(ReplicatedJournal.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final ReplicationManager replicationManager;
 

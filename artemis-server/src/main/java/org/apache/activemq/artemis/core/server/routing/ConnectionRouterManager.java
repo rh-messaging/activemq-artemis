@@ -43,7 +43,9 @@ import org.apache.activemq.artemis.core.server.routing.targets.LocalTarget;
 import org.apache.activemq.artemis.core.server.routing.targets.Target;
 import org.apache.activemq.artemis.core.server.routing.targets.TargetFactory;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +54,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 public final class ConnectionRouterManager implements ActiveMQComponent {
-   private static final Logger logger = Logger.getLogger(ConnectionRouterManager.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String CACHE_ID_PREFIX = "$.BC.";
 
@@ -87,9 +89,7 @@ public final class ConnectionRouterManager implements ActiveMQComponent {
    }
 
    public void deployConnectionRouter(ConnectionRouterConfiguration config) throws Exception {
-      if (logger.isDebugEnabled()) {
-         logger.debugf("Deploying ConnectionRouter " + config.getName());
-      }
+      logger.debug("Deploying ConnectionRouter {}", config.getName());
 
       Target localTarget = new LocalTarget(null, server);
 

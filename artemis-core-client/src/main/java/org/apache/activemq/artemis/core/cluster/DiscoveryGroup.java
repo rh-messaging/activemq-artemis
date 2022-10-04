@@ -40,7 +40,9 @@ import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationService;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * This class is used to search for members on the cluster through the opaque interface {@link BroadcastEndpoint}.
@@ -52,7 +54,7 @@ import org.jboss.logging.Logger;
  */
 public final class DiscoveryGroup implements ActiveMQComponent {
 
-   private static final Logger logger = Logger.getLogger(DiscoveryGroup.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final List<DiscoveryListener> listeners = new ArrayList<>();
 
@@ -360,7 +362,7 @@ public final class DiscoveryGroup implements ActiveMQComponent {
                   if (logger.isTraceEnabled()) {
                      logger.trace("Connectors changed on Discovery:");
                      for (DiscoveryEntry connector : connectors.values()) {
-                        logger.trace(connector);
+                        logger.trace("{}", connector);
                      }
                   }
                   if (logger.isDebugEnabled()) {

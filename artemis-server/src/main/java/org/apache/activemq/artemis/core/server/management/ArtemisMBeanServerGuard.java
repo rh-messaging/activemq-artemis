@@ -17,8 +17,10 @@
 package org.apache.activemq.artemis.core.server.management;
 
 
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.logs.AuditLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -38,6 +40,8 @@ import java.security.Principal;
 import java.util.List;
 
 public class ArtemisMBeanServerGuard implements InvocationHandler {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private JMXAccessControlList jmxAccessControlList = JMXAccessControlList.createDefaultList();
 
@@ -125,7 +129,7 @@ public class ArtemisMBeanServerGuard implements InvocationHandler {
       try {
          objectName = ObjectName.getInstance(object);
       } catch (MalformedObjectNameException e) {
-         ActiveMQServerLogger.LOGGER.debug("can't check invoke rights as object name invalid: " + object);
+         logger.debug("can't check invoke rights as object name invalid: " + object, e);
          return false;
       }
       if (canBypassRBAC(objectName)) {
@@ -137,7 +141,7 @@ public class ArtemisMBeanServerGuard implements InvocationHandler {
             return true;
          }
       }
-      ActiveMQServerLogger.LOGGER.debug(object + " " + operationName + " " + false);
+      logger.debug("{} {} false", object, operationName);
       return false;
    }
 

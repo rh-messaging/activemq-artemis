@@ -59,10 +59,12 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.jboss.logging.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * A test of the XML export/import functionality
@@ -70,7 +72,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 public class XmlImportExportTest extends ActiveMQTestBase {
 
-   private static final Logger logger = Logger.getLogger(XmlImportExportTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private boolean forceLongs;
 
@@ -144,7 +146,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -241,7 +245,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -297,7 +303,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -342,7 +350,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -389,7 +399,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -427,7 +439,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -492,7 +506,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -565,7 +581,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -636,7 +654,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -689,7 +709,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -755,7 +777,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -822,7 +846,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -960,7 +986,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -1006,7 +1034,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -1062,7 +1092,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -1110,7 +1142,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();
@@ -1173,7 +1207,9 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
       XmlDataExporter xmlDataExporter = new XmlDataExporter();
       xmlDataExporter.process(xmlOutputStream, server.getConfiguration().getBindingsDirectory(), server.getConfiguration().getJournalDirectory(), server.getConfiguration().getPagingDirectory(), server.getConfiguration().getLargeMessagesDirectory());
-      if (logger.isDebugEnabled()) logger.debug(new String(xmlOutputStream.toByteArray()));
+      if (logger.isDebugEnabled()) {
+         logger.debug(new String(xmlOutputStream.toByteArray()));
+      }
 
       clearDataRecreateServerDirs();
       server.start();

@@ -37,18 +37,19 @@ import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.utils.Wait;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class PageCleanupWhileReplicaCatchupTest extends FailoverTestBase {
 
-   private static final int PACE_TIME = 500; // Wait in millisecond for each worker
    private static final int NUMBER_OF_WORKERS = 5;
    private static final int NUMBER_OF_RESTARTS = 5;
 
-   private static final Logger logger = Logger.getLogger(PageCleanupWhileReplicaCatchupTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    volatile boolean running = true;
 
    @Override
@@ -97,7 +98,7 @@ public class PageCleanupWhileReplicaCatchupTest extends FailoverTestBase {
       }
 
       for (int i = 0; i < NUMBER_OF_RESTARTS; i++) {
-         logger.debug("Starting replica " + i);
+         logger.debug("Starting replica {}", i);
          backupServer.start();
          Wait.assertTrue(backupServer.getServer()::isReplicaSync);
          backupServer.stop();

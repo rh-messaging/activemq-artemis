@@ -55,17 +55,19 @@ import org.apache.activemq.artemis.tests.integration.stomp.util.ClientStompFrame
 import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConnection;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RetryRule;
-import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 @RunWith(Parameterized.class)
 public abstract class StompTestBase extends ActiveMQTestBase {
 
-   private static final Logger log = Logger.getLogger(StompTestBase.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Parameterized.Parameter
    public String scheme;
@@ -637,7 +639,7 @@ public abstract class StompTestBase extends ActiveMQTestBase {
          assertEquals(uuid, frame.getHeader(Stomp.Headers.Response.RECEIPT_ID));
       }
 
-      log.debug("Received: " + frame);
+      log.debug("Received: {}", frame);
 
       return frame;
    }

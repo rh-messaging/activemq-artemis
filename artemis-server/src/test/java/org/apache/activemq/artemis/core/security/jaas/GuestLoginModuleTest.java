@@ -30,13 +30,15 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 import org.apache.activemq.artemis.spi.core.security.jaas.UserPrincipal;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class GuestLoginModuleTest extends Assert {
 
-   private static final Logger logger = Logger.getLogger(GuestLoginModuleTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    static {
       String path = System.getProperty("java.security.auth.login.config");

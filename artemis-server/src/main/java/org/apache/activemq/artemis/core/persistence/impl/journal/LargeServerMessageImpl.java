@@ -30,7 +30,9 @@ import org.apache.activemq.artemis.core.server.CoreLargeServerMessage;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.utils.DataConstants;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class LargeServerMessageImpl extends CoreMessage implements CoreLargeServerMessage {
 
@@ -78,7 +80,7 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
       return lsm.toMessage();
    }
 
-   private static final Logger logger = Logger.getLogger(LargeServerMessageImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 
    private final StorageManager storageManager;
@@ -306,7 +308,7 @@ public final class LargeServerMessageImpl extends CoreMessage implements CoreLar
          return newMessage.toMessage();
 
       } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.lareMessageErrorCopying(e, this);
+         ActiveMQServerLogger.LOGGER.lareMessageErrorCopying(this, e);
          return null;
       }
    }

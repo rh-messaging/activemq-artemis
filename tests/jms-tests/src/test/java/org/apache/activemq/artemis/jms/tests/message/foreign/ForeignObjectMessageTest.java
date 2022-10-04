@@ -24,11 +24,16 @@ import org.apache.activemq.artemis.jms.tests.message.SimpleJMSObjectMessage;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Tests the delivery/receipt of a foreign object message
  */
 public class ForeignObjectMessageTest extends ForeignMessageTest {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private ForeignTestObject testObj;
 
@@ -51,7 +56,7 @@ public class ForeignObjectMessageTest extends ForeignMessageTest {
    protected Message createForeignMessage() throws Exception {
       SimpleJMSObjectMessage m = new SimpleJMSObjectMessage();
 
-      log.debug("creating JMS Message type " + m.getClass().getName());
+      logger.debug("creating JMS Message type " + m.getClass().getName());
 
       m.setObject(testObj);
 

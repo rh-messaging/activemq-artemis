@@ -22,17 +22,22 @@ import javax.jms.StreamMessage;
 
 import org.apache.activemq.artemis.jms.tests.message.SimpleJMSStreamMessage;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Tests the delivery/receipt of a foreign stream message
  */
 public class ForeignStreamMessageTest extends ForeignMessageTest {
 
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
    @Override
    protected Message createForeignMessage() throws Exception {
       SimpleJMSStreamMessage m = new SimpleJMSStreamMessage();
 
-      log.debug("creating JMS Message type " + m.getClass().getName());
+      logger.debug("creating JMS Message type " + m.getClass().getName());
 
       m.writeBoolean(true);
       m.writeBytes("jboss".getBytes());

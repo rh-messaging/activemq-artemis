@@ -23,11 +23,13 @@ import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.QueueManager;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.utils.ReferenceCounterUtil;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class QueueManagerImpl extends ReferenceCounterUtil implements QueueManager {
 
-   private static final Logger logger = Logger.getLogger(QueueManagerImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final SimpleString queueName;
 
@@ -58,7 +60,7 @@ public class QueueManagerImpl extends ReferenceCounterUtil implements QueueManag
       try {
          queue.deleteMatchingReferences(QueueImpl.DEFAULT_FLUSH_LIMIT, null, AckReason.KILLED);
       } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.failedToPurgeQueue(e, queue.getName());
+         ActiveMQServerLogger.LOGGER.failedToPurgeQueue(queue.getName(), e);
       }
    }
 
@@ -74,7 +76,7 @@ public class QueueManagerImpl extends ReferenceCounterUtil implements QueueManag
       try {
          server.destroyQueue(queueName, null, true, false, false, true);
       } catch (Exception e) {
-         ActiveMQServerLogger.LOGGER.errorRemovingAutoCreatedDestination(e, queueName, "queue");
+         ActiveMQServerLogger.LOGGER.errorRemovingAutoCreatedDestination("queue", queueName, e);
       }
    }
 

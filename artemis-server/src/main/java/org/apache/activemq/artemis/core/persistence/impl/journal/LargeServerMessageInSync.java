@@ -27,11 +27,13 @@ import org.apache.activemq.artemis.core.persistence.StorageManager.LargeMessageE
 import org.apache.activemq.artemis.core.replication.ReplicatedLargeMessage;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class LargeServerMessageInSync implements ReplicatedLargeMessage {
 
-   private static final Logger logger = Logger.getLogger(LargeServerMessageInSync.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final LargeServerMessage mainLM;
    private final StorageManager storageManager;

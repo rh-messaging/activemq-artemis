@@ -40,7 +40,9 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * A queue that will discard messages if a newer message with the same
@@ -53,7 +55,7 @@ import org.jboss.logging.Logger;
 @SuppressWarnings("ALL")
 public class LastValueQueue extends QueueImpl {
 
-   private static final Logger logger = Logger.getLogger(LastValueQueue.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    private final Map<SimpleString, MessageReference> map = new ConcurrentHashMap<>();
    private final SimpleString lastValueKey;
 

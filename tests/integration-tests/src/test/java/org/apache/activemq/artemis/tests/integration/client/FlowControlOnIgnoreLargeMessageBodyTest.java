@@ -28,14 +28,16 @@ import javax.jms.TopicSubscriber;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.activemq.artemis.tests.util.JMSTestBase;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
 
-   private static final Logger log = Logger.getLogger(FlowControlOnIgnoreLargeMessageBodyTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private Topic topic;
 
@@ -106,7 +108,7 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
          Connection connection = null;
          Session session = null;
          MessageProducer prod;
-         log.debug("Starting producer for " + topic + " - " + getName());
+         log.debug("Starting producer for {} - {}", topic, getName());
          try {
             connection = cf.createConnection();
             session = connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -127,10 +129,10 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
                   session.commit();
                }
                if (i % 100 == 0) {
-                  log.debug("Address " + topic + " sent " + i + " messages");
+                  log.debug("Address {} sent {} messages", topic, i);
                }
             }
-            log.debug("Ending producer for " + topic + " - " + getName() + " messages " + sentMessages);
+            log.debug("Ending producer for {} - {} messages {}", topic, getName(), sentMessages);
          } catch (Exception e) {
             error = true;
             e.printStackTrace();
@@ -204,7 +206,7 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
          Session session = null;
          stopped = false;
          requestForStop = false;
-         instanceLog.debug("Starting consumer for " + topic + " - " + getName());
+         log.debug("Starting consumer for {} - {}", topic, getName());
          try {
             connection = cf.createConnection();
 
@@ -222,11 +224,11 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
 
             while (counter < numberOfMessages && !requestForStop && !error) {
                if (counter == 0) {
-                  instanceLog.debug("Starting to consume for " + topic + " - " + getName());
+                  log.debug("Starting to consume for {} - {}", topic, getName());
                }
                BytesMessage msg = (BytesMessage) subscriber.receive(receiveTimeout);
                if (msg == null) {
-                  instanceLog.debug("Cannot get message in specified timeout: " + topic + " - " + getName());
+                  log.debug("Cannot get message in specified timeout: {} - {}", topic, getName());
                   error = true;
                } else {
                   counter++;
@@ -238,13 +240,13 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
                   session.commit();
                }
                if (counter % 100 == 0) {
-                  log.debug("## " + getName() + " " + topic + " received " + counter);
+                  log.debug("## {} {} received {}", getName(), topic, counter);
                }
                receivedMessages = counter;
             }
             session.commit();
          } catch (Exception e) {
-            instanceLog.debug("Exception in consumer " + getName() + " : " + e.getMessage());
+            log.debug("Exception in consumer {} : {}", getName(), e.getMessage());
             e.printStackTrace();
          } finally {
             if (session != null) {
@@ -263,11 +265,7 @@ public class FlowControlOnIgnoreLargeMessageBodyTest extends JMSTestBase {
             }
          }
          stopped = true;
-         instanceLog.debug("Stopping consumer for " + topic +
-                               " - " +
-                               getName() +
-                               ", received " +
-                               getReceivedMessages());
+         log.debug("Stopping consumer for {} - {}, received {}", topic, getName(), getReceivedMessages());
       }
 
       public int getReceivedMessages() {

@@ -36,11 +36,13 @@ import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class InVMConnection implements Connection {
 
-   private static final Logger logger = Logger.getLogger(InVMConnection.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final BufferHandler handler;
 
@@ -213,7 +215,7 @@ public class InVMConnection implements Connection {
                   }
                } catch (Exception e) {
                   final String msg = "Failed to write to handler on connector " + this;
-                  ActiveMQServerLogger.LOGGER.errorWritingToInvmConnector(e, this);
+                  ActiveMQServerLogger.LOGGER.errorWritingToInvmConnector(this, e);
                   throw new IllegalStateException(msg, e);
                } finally {
                   buffer.release();

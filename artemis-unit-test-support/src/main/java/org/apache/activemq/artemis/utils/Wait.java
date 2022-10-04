@@ -21,14 +21,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
-import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Utility adapted from: org.apache.activemq.util.Wait
  */
 public class Wait {
-   private static Logger logger = Logger.getLogger(Wait.class);
+   private static Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final long MAX_WAIT_MILLIS = 30 * 1000;
    public static final int SLEEP_MILLIS = 100;

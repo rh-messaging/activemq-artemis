@@ -44,8 +44,13 @@ import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class ConnectionFactoryTest extends JMSTestCase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Random random = new Random();
    private String testClientId;
@@ -165,13 +170,13 @@ public class ConnectionFactoryTest extends JMSTestCase {
                conn.close();
             }
          } catch (Exception e) {
-            log.warn(e.toString(), e);
+            logger.warn(e.toString(), e);
          }
 
          try {
             destroyTopic("TestSubscriber");
          } catch (Exception e) {
-            log.warn(e.toString(), e);
+            logger.warn(e.toString(), e);
          }
 
       }
@@ -283,13 +288,13 @@ public class ConnectionFactoryTest extends JMSTestCase {
                conn.close();
             }
          } catch (Exception e) {
-            log.warn(e.toString(), e);
+            logger.warn(e.toString(), e);
          }
 
          try {
             ActiveMQServerTestCase.undeployConnectionFactory("TestSlowConsumersCF");
          } catch (Exception e) {
-            log.warn(e.toString(), e);
+            logger.warn(e.toString(), e);
          }
 
       }

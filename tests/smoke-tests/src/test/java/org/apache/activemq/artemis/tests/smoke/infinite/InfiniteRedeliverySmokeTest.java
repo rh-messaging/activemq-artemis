@@ -33,14 +33,16 @@ import org.apache.activemq.artemis.core.io.nio.NIOSequentialFileFactory;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.tests.smoke.common.SmokeTestBase;
 import org.apache.activemq.artemis.utils.Wait;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class InfiniteRedeliverySmokeTest extends SmokeTestBase {
 
-   private static final Logger logger = Logger.getLogger(InfiniteRedeliverySmokeTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String SERVER_NAME_0 = "infinite-redelivery";
 
@@ -77,7 +79,7 @@ public class InfiniteRedeliverySmokeTest extends SmokeTestBase {
       SequentialFileFactory fileFactory = new NIOSequentialFileFactory(journalLocation, 1);
 
       for (int i = 0; i < 500; i++) {
-         if (i % 10 == 0) logger.debug("Redelivery " + i);
+         if (i % 10 == 0) logger.debug("Redelivery {}", i);
          for (int j = 0; j < 5000; j++) {
             Assert.assertNotNull(consumer.receive(5000));
          }
@@ -124,7 +126,7 @@ public class InfiniteRedeliverySmokeTest extends SmokeTestBase {
       connection.start();
       MessageConsumer consumer = session.createConsumer(queue);
       for (int i = 0; i < 500; i++) {
-         if (i % 10 == 0) logger.debug("Rollback send " + i);
+         if (i % 10 == 0) logger.debug("Rollback send {}", i);
          for (int j = 0; j < 5000; j++) {
             producer.send(message);
          }

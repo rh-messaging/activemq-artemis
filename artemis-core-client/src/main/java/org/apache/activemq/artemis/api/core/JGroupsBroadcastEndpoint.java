@@ -21,7 +21,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.activemq.artemis.api.core.jgroups.JChannelManager;
 import org.apache.activemq.artemis.api.core.jgroups.JChannelWrapper;
 import org.apache.activemq.artemis.api.core.jgroups.JGroupsReceiver;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.jgroups.JChannel;
 
 /**
@@ -29,7 +31,7 @@ import org.jgroups.JChannel;
  */
 public abstract class JGroupsBroadcastEndpoint implements BroadcastEndpoint {
 
-   private static final Logger logger = Logger.getLogger(JGroupsBroadcastEndpoint.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final String channelName;
 

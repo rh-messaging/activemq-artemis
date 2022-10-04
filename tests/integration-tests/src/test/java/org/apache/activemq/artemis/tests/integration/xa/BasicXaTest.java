@@ -48,17 +48,19 @@ import org.apache.activemq.artemis.ra.ActiveMQRAXAResource;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.Wait;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 @RunWith(Parameterized.class)
 public class BasicXaTest extends ActiveMQTestBase {
 
-   private static final Logger log = Logger.getLogger(BasicXaTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Map<String, AddressSettings> addressSettings = new HashMap<>();
 
@@ -673,7 +675,7 @@ public class BasicXaTest extends ActiveMQTestBase {
 
       String[] preparedTransactions = messagingService.getActiveMQServerControl().listPreparedTransactions();
       Assert.assertEquals(1, preparedTransactions.length);
-      instanceLog.debug(preparedTransactions[0]);
+      log.debug(preparedTransactions[0]);
       Assert.assertTrue(messagingService.getActiveMQServerControl().commitPreparedTransaction(XidImpl.toBase64String(xid)));
       Assert.assertEquals(1, messagingService.getActiveMQServerControl().listHeuristicCommittedTransactions().length);
 
@@ -691,7 +693,7 @@ public class BasicXaTest extends ActiveMQTestBase {
 
       String[] preparedTransactions = messagingService.getActiveMQServerControl().listPreparedTransactions();
       Assert.assertEquals(1, preparedTransactions.length);
-      instanceLog.debug(preparedTransactions[0]);
+      log.debug(preparedTransactions[0]);
 
       Assert.assertTrue(messagingService.getActiveMQServerControl().rollbackPreparedTransaction(XidImpl.toBase64String(xid)));
       Assert.assertEquals(1, messagingService.getActiveMQServerControl().listHeuristicRolledBackTransactions().length);

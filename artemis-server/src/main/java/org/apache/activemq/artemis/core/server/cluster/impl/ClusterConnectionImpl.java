@@ -75,11 +75,13 @@ import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class ClusterConnectionImpl implements ClusterConnection, AfterConnectInternalListener, TopologyManager {
 
-   private static final Logger logger = Logger.getLogger(ClusterConnectionImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String SN_PREFIX = "sf.";
    /**
@@ -584,9 +586,7 @@ public final class ClusterConnectionImpl implements ClusterConnection, AfterConn
             clusterControl.sendNodeAnnounce(localMember.getUniqueEventID(), manager.getNodeId(), manager.getBackupGroupName(), manager.getScaleDownGroupName(), false, localMember.getLive(), localMember.getBackup());
          } catch (ActiveMQException e) {
             ActiveMQServerLogger.LOGGER.clusterControlAuthfailure(e.getMessage());
-            if (logger.isDebugEnabled()) {
-               logger.debug(e);
-            }
+            logger.debug(e.getMessage(), e);
          }
       } else {
          ActiveMQServerLogger.LOGGER.noLocalMemborOnClusterConnection(this);

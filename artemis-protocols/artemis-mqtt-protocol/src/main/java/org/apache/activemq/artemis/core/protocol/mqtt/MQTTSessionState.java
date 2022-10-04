@@ -35,11 +35,13 @@ import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.settings.impl.Match;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class MQTTSessionState {
 
-   private static final Logger logger = Logger.getLogger(MQTTSessionState.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final MQTTSessionState DEFAULT = new MQTTSessionState(null);
 
@@ -189,7 +191,7 @@ public class MQTTSessionState {
       for (Pair<MqttTopicSubscription, Integer> pair : subscriptions.values()) {
          Pattern pattern = Match.createPattern(pair.getA().topicName(), MQTTUtil.MQTT_WILDCARD, true);
          boolean matches = pattern.matcher(address).matches();
-         logger.debugf("Matching %s with %s: %s", address, pattern, matches);
+         logger.debug("Matching {} with {}: {}", address, pattern, matches);
          if (matches) {
             if (result == null) {
                result = new ArrayList<>();

@@ -21,7 +21,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.junit.rules.ExternalResource;
 
 /**
@@ -29,7 +31,7 @@ import org.junit.rules.ExternalResource;
  */
 public class CleanupSystemPropertiesRule extends ExternalResource {
 
-   private static Logger log = Logger.getLogger(CleanupSystemPropertiesRule.class);
+   private static Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private Properties originalProperties;
 

@@ -37,10 +37,15 @@ import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class AcknowledgementTest extends JMSTestCase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    /**
     * Topics shouldn't hold on to messages if there are no subscribers
@@ -240,7 +245,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Sent messages");
+      logger.trace("Sent messages");
 
       int count = 0;
       while (true) {
@@ -253,7 +258,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Received " + count + " messages");
+      logger.trace("Received " + count + " messages");
 
       ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
@@ -261,14 +266,14 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Session recover called");
+      logger.trace("Session recover called");
 
       Message m = null;
 
       int i = 0;
       for (; i < NUM_MESSAGES; i++) {
          m = consumer.receive();
-         log.trace("Received message " + i);
+         logger.trace("Received message " + i);
 
       }
 
@@ -276,7 +281,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
       // if I don't receive enough messages, the test will timeout
 
-      log.trace("Received " + i + " messages after recover");
+      logger.trace("Received " + i + " messages after recover");
 
       m.acknowledge();
 
@@ -356,7 +361,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Sent messages");
+      logger.trace("Sent messages");
 
       Message m = null;
       int count = 0;
@@ -376,17 +381,17 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(0);
 
-      log.trace("Received " + count + " messages");
+      logger.trace("Received " + count + " messages");
 
       ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
       consumerSess.recover();
 
-      log.trace("Session recover called");
+      logger.trace("Session recover called");
 
       m = consumer.receiveNoWait();
 
-      log.trace("Message is:" + m);
+      logger.trace("Message is:" + m);
 
       ProxyAssertSupport.assertNull(m);
    }
@@ -418,7 +423,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
          assertRemainingMessages(NUM_MESSAGES);
 
-         log.trace("Sent messages");
+         logger.trace("Sent messages");
 
          int count = 0;
 
@@ -438,13 +443,13 @@ public class AcknowledgementTest extends JMSTestCase {
 
          ProxyAssertSupport.assertNotNull(m);
 
-         log.trace("Received " + count + " messages");
+         logger.trace("Received " + count + " messages");
 
          ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
          consumerSess.recover();
 
-         log.trace("Session recover called");
+         logger.trace("Session recover called");
 
          count = 0;
          while (true) {
@@ -511,17 +516,17 @@ public class AcknowledgementTest extends JMSTestCase {
 
       ProxyAssertSupport.assertNotNull(m);
 
-      log.trace("Received " + count + " messages");
+      logger.trace("Received " + count + " messages");
 
       ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
       consumerSess.recover();
 
-      log.trace("Session recover called");
+      logger.trace("Session recover called");
 
       m = consumer.receiveNoWait();
 
-      log.trace("Message is:" + m);
+      logger.trace("Message is:" + m);
 
       ProxyAssertSupport.assertNull(m);
    }
@@ -565,17 +570,17 @@ public class AcknowledgementTest extends JMSTestCase {
 
       ProxyAssertSupport.assertNotNull(m);
 
-      log.trace("Received " + count + " messages");
+      logger.trace("Received " + count + " messages");
 
       ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
       consumerSess.recover();
 
-      log.trace("Session recover called");
+      logger.trace("Session recover called");
 
       m = consumer.receiveNoWait();
 
-      log.trace("Message is:" + m);
+      logger.trace("Message is:" + m);
 
       ProxyAssertSupport.assertNull(m);
 
@@ -609,7 +614,7 @@ public class AcknowledgementTest extends JMSTestCase {
             producer.send(m);
          }
 
-         log.trace("Sent messages");
+         logger.trace("Sent messages");
 
          Message m = null;
          for (int i = 0; i < 19; i++) {
@@ -654,7 +659,7 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Sent messages");
+      logger.trace("Sent messages");
 
       int count = 0;
 
@@ -671,17 +676,17 @@ public class AcknowledgementTest extends JMSTestCase {
 
       assertRemainingMessages(NUM_MESSAGES);
 
-      log.trace("Received " + count + " messages");
+      logger.trace("Received " + count + " messages");
 
       ProxyAssertSupport.assertEquals(count, NUM_MESSAGES);
 
       consumerSess.recover();
 
-      log.trace("Session recover called");
+      logger.trace("Session recover called");
 
       m = consumer.receiveNoWait();
 
-      log.trace("Message is:" + m);
+      logger.trace("Message is:" + m);
 
       ProxyAssertSupport.assertNull(m);
 
@@ -696,7 +701,7 @@ public class AcknowledgementTest extends JMSTestCase {
       Session sessSend = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
       MessageProducer prod = sessSend.createProducer(queue1);
 
-      log.trace("Sending messages");
+      logger.trace("Sending messages");
 
       TextMessage tm1 = sessSend.createTextMessage("a");
       TextMessage tm2 = sessSend.createTextMessage("b");
@@ -705,7 +710,7 @@ public class AcknowledgementTest extends JMSTestCase {
       prod.send(tm2);
       prod.send(tm3);
 
-      log.trace("Sent messages");
+      logger.trace("Sent messages");
 
       sessSend.close();
 
@@ -715,19 +720,19 @@ public class AcknowledgementTest extends JMSTestCase {
 
       Session sessReceive = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-      log.trace("Creating consumer");
+      logger.trace("Creating consumer");
 
       MessageConsumer cons = sessReceive.createConsumer(queue1);
 
-      log.trace("Created consumer");
+      logger.trace("Created consumer");
 
       MessageListenerAutoAck listener = new MessageListenerAutoAck(sessReceive);
 
-      log.trace("Setting message listener");
+      logger.trace("Setting message listener");
 
       cons.setMessageListener(listener);
 
-      log.trace("Set message listener");
+      logger.trace("Set message listener");
 
       listener.waitForMessages();
 
@@ -782,7 +787,7 @@ public class AcknowledgementTest extends JMSTestCase {
       messageReceived = (TextMessage) consumer.receiveNoWait();
 
       if (messageReceived != null) {
-         log.debug("Message received " + messageReceived.getText());
+         logger.debug("Message received " + messageReceived.getText());
       }
       Assert.assertNull(messageReceived);
 
@@ -801,7 +806,7 @@ public class AcknowledgementTest extends JMSTestCase {
       Session sessSend = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
       MessageProducer prod = sessSend.createProducer(queue1);
 
-      log.trace("Sending messages");
+      logger.trace("Sending messages");
 
       TextMessage tm1 = sessSend.createTextMessage("a");
       TextMessage tm2 = sessSend.createTextMessage("b");
@@ -810,7 +815,7 @@ public class AcknowledgementTest extends JMSTestCase {
       prod.send(tm2);
       prod.send(tm3);
 
-      log.trace("Sent messages");
+      logger.trace("Sent messages");
 
       sessSend.close();
 
@@ -820,19 +825,19 @@ public class AcknowledgementTest extends JMSTestCase {
 
       Session sessReceive = conn.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
 
-      log.trace("Creating consumer");
+      logger.trace("Creating consumer");
 
       MessageConsumer cons = sessReceive.createConsumer(queue1);
 
-      log.trace("Created consumer");
+      logger.trace("Created consumer");
 
       MessageListenerDupsOK listener = new MessageListenerDupsOK(sessReceive);
 
-      log.trace("Setting message listener");
+      logger.trace("Setting message listener");
 
       cons.setMessageListener(listener);
 
-      log.trace("Set message listener");
+      logger.trace("Set message listener");
 
       listener.waitForMessages();
 
@@ -1064,7 +1069,7 @@ public class AcknowledgementTest extends JMSTestCase {
             if (count == 1) {
                assertRemainingMessages(3);
                if (!"a".equals(tm.getText())) {
-                  log.trace("Expected a but got " + tm.getText());
+                  logger.trace("Expected a but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
@@ -1072,7 +1077,7 @@ public class AcknowledgementTest extends JMSTestCase {
             if (count == 2) {
                assertRemainingMessages(3);
                if (!"b".equals(tm.getText())) {
-                  log.trace("Expected b but got " + tm.getText());
+                  logger.trace("Expected b but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
@@ -1080,40 +1085,40 @@ public class AcknowledgementTest extends JMSTestCase {
             if (count == 3) {
                assertRemainingMessages(3);
                if (!"c".equals(tm.getText())) {
-                  log.trace("Expected c but got " + tm.getText());
+                  logger.trace("Expected c but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
-               log.trace("calling recover");
+               logger.trace("calling recover");
                sess.recover();
             }
             if (count == 4) {
                assertRemainingMessages(3);
                if (!"a".equals(tm.getText())) {
-                  log.trace("Expected a but got " + tm.getText());
+                  logger.trace("Expected a but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
-               log.trace("*** calling acknowledge");
+               logger.trace("*** calling acknowledge");
                tm.acknowledge();
                assertRemainingMessages(2);
-               log.trace("calling recover");
+               logger.trace("calling recover");
                sess.recover();
             }
             if (count == 5) {
                assertRemainingMessages(2);
                if (!"b".equals(tm.getText())) {
-                  log.trace("Expected b but got " + tm.getText());
+                  logger.trace("Expected b but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
-               log.trace("calling recover");
+               logger.trace("calling recover");
                sess.recover();
             }
             if (count == 6) {
                assertRemainingMessages(2);
                if (!"b".equals(tm.getText())) {
-                  log.trace("Expected b but got " + tm.getText());
+                  logger.trace("Expected b but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
@@ -1121,7 +1126,7 @@ public class AcknowledgementTest extends JMSTestCase {
             if (count == 7) {
                assertRemainingMessages(2);
                if (!"c".equals(tm.getText())) {
-                  log.trace("Expected c but got " + tm.getText());
+                  logger.trace("Expected c but got " + tm.getText());
                   failed = true;
                   latch.countDown();
                }
@@ -1131,7 +1136,7 @@ public class AcknowledgementTest extends JMSTestCase {
             }
 
          } catch (Exception e) {
-            log.error("Caught exception", e);
+            logger.error("Caught exception", e);
             failed = true;
             latch.countDown();
          }
@@ -1172,7 +1177,7 @@ public class AcknowledgementTest extends JMSTestCase {
                   failed = true;
                   latch.countDown();
                }
-               log.trace("Rollback");
+               logger.trace("Rollback");
                sess.rollback();
             }
             if (count == 4) {
@@ -1188,7 +1193,7 @@ public class AcknowledgementTest extends JMSTestCase {
                   failed = true;
                   latch.countDown();
                }
-               log.trace("commit");
+               logger.trace("commit");
                sess.commit();
                assertRemainingMessages(1);
             }
@@ -1198,7 +1203,7 @@ public class AcknowledgementTest extends JMSTestCase {
                   failed = true;
                   latch.countDown();
                }
-               log.trace("recover");
+               logger.trace("recover");
                sess.rollback();
             }
             if (count == 7) {
@@ -1207,13 +1212,13 @@ public class AcknowledgementTest extends JMSTestCase {
                   failed = true;
                   latch.countDown();
                }
-               log.trace("Commit");
+               logger.trace("Commit");
                sess.commit();
                assertRemainingMessages(0);
                latch.countDown();
             }
          } catch (Exception e) {
-            // log.error(e);
+            // logger.error(e.getMessage(), e);
             failed = true;
             latch.countDown();
          }
@@ -1308,8 +1313,8 @@ public class AcknowledgementTest extends JMSTestCase {
       long time1 = consume(cf1, queue1, messageCount);
       long time2 = consume(cf2, queue2, messageCount);
 
-      log.debug("BlockOnAcknowledge=false MessageCount=" + messageCount + " TimeToConsume=" + time1);
-      log.debug("BlockOnAcknowledge=true MessageCount=" + messageCount + " TimeToConsume=" + time2);
+      logger.debug("BlockOnAcknowledge=false MessageCount=" + messageCount + " TimeToConsume=" + time1);
+      logger.debug("BlockOnAcknowledge=true MessageCount=" + messageCount + " TimeToConsume=" + time2);
 
       Assert.assertTrue(time1 < (time2 / 2));
 

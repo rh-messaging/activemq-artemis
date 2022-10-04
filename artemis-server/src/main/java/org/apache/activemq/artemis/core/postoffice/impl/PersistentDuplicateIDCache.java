@@ -34,7 +34,9 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.TransactionOperationAbstract;
 import org.apache.activemq.artemis.utils.ByteUtil;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static org.apache.activemq.artemis.api.core.ObjLongPair.NIL;
 import static org.apache.activemq.artemis.core.postoffice.impl.IntegerCache.boxedInts;
@@ -48,7 +50,7 @@ import static org.apache.activemq.artemis.core.postoffice.impl.IntegerCache.boxe
  */
 final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
-   private static final Logger LOGGER = Logger.getLogger(PersistentDuplicateIDCache.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Map<ByteArray, Integer> cache = new ConcurrentHashMap<>();
 
@@ -95,8 +97,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
       for (Pair<byte[], Long> id : ids) {
          if (id.getB() == null) {
-            if (LOGGER.isTraceEnabled()) {
-               LOGGER.tracef("ignoring id = %s because without record ID", describeID(id.getA()));
+            if (logger.isTraceEnabled()) {
+               logger.trace("ignoring id = {} because without record ID", describeID(id.getA()));
             }
             if (toNotBeAdded > 0) {
                toNotBeAdded--;
@@ -108,8 +110,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
             if (txID == -1) {
                txID = storageManager.generateID();
             }
-            if (LOGGER.isTraceEnabled()) {
-               LOGGER.tracef("deleting id = %s", describeID(id.getA(), id.getB()));
+            if (logger.isTraceEnabled()) {
+               logger.trace("deleting id = {}", describeID(id.getA(), id.getB()));
             }
 
             storageManager.deleteDuplicateIDTransactional(txID, id.getB());
@@ -122,8 +124,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
             cache.put(bah, cachedBoxedInts.apply(this.ids.size()));
 
             this.ids.add(pair);
-            if (LOGGER.isTraceEnabled()) {
-               LOGGER.tracef("loading id = %s", describeID(id.getA(), id.getB()));
+            if (logger.isTraceEnabled()) {
+               logger.trace("loading id = {}", describeID(id.getA(), id.getB()));
             }
          }
 
@@ -147,8 +149,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
    }
 
    private void deleteFromCache(final ByteArray duplicateID) throws Exception {
-      if (LOGGER.isTraceEnabled()) {
-         LOGGER.tracef("deleting id = %s", describeID(duplicateID.bytes));
+      if (logger.isTraceEnabled()) {
+         logger.trace("deleting id = {}", describeID(duplicateID.bytes));
       }
 
       final Integer posUsed = cache.remove(duplicateID);
@@ -161,8 +163,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
                final long recordID = id.getB();
                id.setA(null);
                id.setB(NIL);
-               if (LOGGER.isTraceEnabled()) {
-                  LOGGER.tracef("address = %s deleting id = %s", address, describeID(duplicateID.bytes, id.getB()));
+               if (logger.isTraceEnabled()) {
+                  logger.trace("address = {} deleting id = {}", address, describeID(duplicateID.bytes, id.getB()));
                }
                storageManager.deleteDuplicateID(recordID);
             }
@@ -187,9 +189,9 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
    private boolean contains(final ByteArray duplID) {
       boolean contains = cache.containsKey(duplID);
 
-      if (LOGGER.isTraceEnabled()) {
+      if (logger.isTraceEnabled()) {
          if (contains) {
-            LOGGER.tracef("address = %s found a duplicate %s", address, describeID(duplID.bytes));
+            logger.trace("address = {} found a duplicate {}", address, describeID(duplID.bytes));
          }
       }
       return contains;
@@ -236,8 +238,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
          tx.setContainsPersistent();
 
-         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("address = %s adding duplicateID TX operation for %s, tx = %s", address,
+         if (logger.isTraceEnabled()) {
+            logger.trace("address = {} adding duplicateID TX operation for {}, tx = {}", address,
                           describeID(holder.bytes, recordID), tx);
          }
 
@@ -262,8 +264,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
       if (recordID < 0) {
          throw new IllegalArgumentException("recordID must be >= 0");
       }
-      if (LOGGER.isTraceEnabled()) {
-         LOGGER.tracef("address = %s adding %s", address, describeID(holder.bytes, recordID));
+      if (logger.isTraceEnabled()) {
+         logger.trace("address = {} adding {}", address, describeID(holder.bytes, recordID));
       }
 
       cache.put(holder, cachedBoxedInts.apply(pos));
@@ -276,8 +278,8 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
          // The id here might be null if it was explicit deleted
          if (id.getA() != null) {
-            if (LOGGER.isTraceEnabled()) {
-               LOGGER.tracef("address = %s removing excess duplicateDetection %s", address, describeID(id.getA().bytes, id.getB()));
+            if (logger.isTraceEnabled()) {
+               logger.trace("address = {} removing excess duplicateDetection {}", address, describeID(id.getA().bytes, id.getB()));
             }
 
             cache.remove(id.getA());
@@ -294,15 +296,15 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
          id.setB(recordID);
 
-         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("address = %s replacing old duplicateID by %s", address, describeID(id.getA().bytes, id.getB()));
+         if (logger.isTraceEnabled()) {
+            logger.trace("address = {} replacing old duplicateID by {}", address, describeID(id.getA().bytes, id.getB()));
          }
 
       } else {
          id = new ObjLongPair<>(holder, recordID);
 
-         if (LOGGER.isTraceEnabled()) {
-            LOGGER.tracef("address = %s adding new duplicateID %s", address, describeID(id.getA().bytes, id.getB()));
+         if (logger.isTraceEnabled()) {
+            logger.trace("address = {} adding new duplicateID {}", address, describeID(id.getA().bytes, id.getB()));
          }
 
          ids.add(id);
@@ -316,7 +318,7 @@ final class PersistentDuplicateIDCache implements DuplicateIDCache {
 
    @Override
    public synchronized void clear() throws Exception {
-      LOGGER.debugf("address = %s removing duplicate ID data", address);
+      logger.debug("address = {} removing duplicate ID data", address);
       final int idsSize = ids.size();
       if (idsSize > 0) {
          long tx = storageManager.generateID();

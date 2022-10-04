@@ -43,12 +43,14 @@ import org.apache.activemq.artemis.quorum.file.FileBasedPrimitiveManager;
 import org.apache.activemq.artemis.tests.integration.cluster.failover.FailoverTest;
 import org.apache.activemq.artemis.tests.integration.cluster.util.TestableServer;
 import org.apache.activemq.artemis.tests.util.Wait;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class PluggableQuorumNettyNoGroupNameReplicatedFailoverTest extends FailoverTest {
-   private static final Logger log = Logger.getLogger(PluggableQuorumReplicatedLargeMessageFailoverTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    protected void beforeWaitForRemoteBackupSynchronization() {
    }

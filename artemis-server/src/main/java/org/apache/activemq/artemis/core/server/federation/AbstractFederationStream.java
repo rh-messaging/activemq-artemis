@@ -28,12 +28,14 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.federation.address.FederatedAddress;
 import org.apache.activemq.artemis.core.server.federation.queue.FederatedQueue;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public abstract class AbstractFederationStream implements FederationStream {
 
 
-   private static final Logger logger = Logger.getLogger(AbstractFederationStream.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    protected final ActiveMQServer server;
    protected final Federation federation;
    protected final SimpleString name;
@@ -122,7 +124,7 @@ public abstract class AbstractFederationStream implements FederationStream {
          try {
             server.callBrokerFederationPlugins(plugin -> plugin.federationStreamStarted(this));
          } catch (ActiveMQException t) {
-            ActiveMQServerLogger.LOGGER.federationPluginExecutionError(t, "federationStreamStarted");
+            ActiveMQServerLogger.LOGGER.federationPluginExecutionError("federationStreamStarted", t);
             throw new IllegalStateException(t.getMessage(), t.getCause());
          }
       }
@@ -133,7 +135,7 @@ public abstract class AbstractFederationStream implements FederationStream {
          try {
             server.callBrokerFederationPlugins(plugin -> plugin.federationStreamStopped(this));
          } catch (ActiveMQException t) {
-            ActiveMQServerLogger.LOGGER.federationPluginExecutionError(t, "federationStreamStopped");
+            ActiveMQServerLogger.LOGGER.federationPluginExecutionError("federationStreamStopped", t);
             throw new IllegalStateException(t.getMessage(), t.getCause());
          }
       }

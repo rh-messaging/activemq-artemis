@@ -29,6 +29,9 @@ import javax.jms.TopicConnection;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Connection tests. Contains all connection tests, except tests relating to closing a connection,
@@ -36,7 +39,7 @@ import org.junit.Test;
  */
 public class ConnectionTest extends JMSTestCase {
 
-   private static final JmsTestLogger log = JmsTestLogger.LOGGER;
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 
    @Test
@@ -134,7 +137,7 @@ public class ConnectionTest extends JMSTestCase {
          connection.setClientID(clientID);
          ProxyAssertSupport.fail();
       } catch (javax.jms.IllegalStateException e) {
-         ConnectionTest.log.trace("Caught exception ok");
+         logger.trace("Caught exception ok");
       }
 
       connection.close();
@@ -290,7 +293,7 @@ public class ConnectionTest extends JMSTestCase {
       @Override
       public void onException(final JMSException exception) {
          exceptionReceived = exception;
-         ConnectionTest.log.trace("Received exception");
+         logger.trace("Received exception");
       }
    }
 }

@@ -37,14 +37,16 @@ import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class CompactingOpenWireTest extends BasicOpenWireTest {
 
-   private static final Logger logger = Logger.getLogger(CompactingOpenWireTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Override
    @Before

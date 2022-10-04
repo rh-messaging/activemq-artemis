@@ -42,11 +42,13 @@ import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.ActiveMQEx
 import org.apache.activemq.artemis.core.protocol.core.impl.wireformat.PacketsConfirmedMessage;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.utils.ConcurrentUtil;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class ChannelImpl implements Channel {
 
-   private static final Logger logger = Logger.getLogger(ChannelImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public enum CHANNEL_ID {
       /**
@@ -588,7 +590,7 @@ public final class ChannelImpl implements Channel {
                   return interceptor.getClass().getName();
                }
             } catch (final Throwable e) {
-               ActiveMQClientLogger.LOGGER.errorCallingInterceptor(e, interceptor);
+               ActiveMQClientLogger.LOGGER.errorCallingInterceptor(interceptor, e);
             }
          }
       }

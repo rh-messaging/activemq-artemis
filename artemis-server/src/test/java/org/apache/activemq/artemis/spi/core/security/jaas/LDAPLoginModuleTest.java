@@ -48,7 +48,9 @@ import org.apache.directory.server.annotations.CreateTransport;
 import org.apache.directory.server.core.annotations.ApplyLdifFiles;
 import org.apache.directory.server.core.integ.AbstractLdapTestUnit;
 import org.apache.directory.server.core.integ.FrameworkRunner;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +66,7 @@ import static org.junit.Assert.fail;
 @ApplyLdifFiles("test.ldif")
 public class LDAPLoginModuleTest extends AbstractLdapTestUnit {
 
-   private static final Logger logger = Logger.getLogger(LDAPLoginModuleTest.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final String PRINCIPAL = "uid=admin,ou=system";
    private static final String CREDENTIALS = "secret";

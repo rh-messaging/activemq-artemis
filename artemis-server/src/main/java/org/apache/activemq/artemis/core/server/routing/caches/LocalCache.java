@@ -22,14 +22,16 @@ import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.config.PersistedKeyValuePair;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class LocalCache implements Cache, RemovalListener<String, String> {
-   private static final Logger logger = Logger.getLogger(LocalCache.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private String id;
    private boolean persisted;
@@ -74,7 +76,8 @@ public class LocalCache implements Cache, RemovalListener<String, String> {
          if (persistedCacheEntries != null) {
             for (Map.Entry<String, PersistedKeyValuePair> cacheEntry : persistedCacheEntries.entrySet()) {
                cache.put(cacheEntry.getKey(), cacheEntry.getValue().getValue());
-               logger.info(cacheEntry.toString());
+
+               logger.debug("Restored persisted cache entry during start: {}", cacheEntry);
             }
          }
       }

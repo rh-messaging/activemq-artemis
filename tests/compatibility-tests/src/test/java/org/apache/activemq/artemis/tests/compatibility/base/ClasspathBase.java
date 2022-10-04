@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.apache.activemq.artemis.tests.compatibility.GroovyRun;
-import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -36,6 +35,9 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT;
 
@@ -43,21 +45,19 @@ import static org.apache.activemq.artemis.tests.compatibility.GroovyRun.SNAPSHOT
 
 public class ClasspathBase {
 
-   private static final Logger logger = Logger.getLogger(ClasspathBase.class);
-
-   private final Logger instanceLog = logger;
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Rule
    public TestRule watcher = new TestWatcher() {
 
       @Override
       protected void starting(Description description) {
-         instanceLog.info(String.format("**** start #test %s() ***", ClasspathBase.this.getClass().getName() + "::" + description.getMethodName()));
+         logger.info("**** start #test {}::{}() ***", ClasspathBase.this.getClass().getName(), description.getMethodName());
       }
 
       @Override
       protected void finished(Description description) {
-         instanceLog.info(String.format("**** end #test %s() ***", ClasspathBase.this.getClass().getName() + "::" + description.getMethodName()));
+         logger.info("**** end #test {}::{}() ***", ClasspathBase.this.getClass().getName(), description.getMethodName());
       }
    };
 

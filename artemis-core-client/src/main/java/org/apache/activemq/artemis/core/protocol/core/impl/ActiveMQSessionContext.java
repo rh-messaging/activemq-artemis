@@ -129,11 +129,13 @@ import org.apache.activemq.artemis.spi.core.remoting.Connection;
 import org.apache.activemq.artemis.spi.core.remoting.ReadyListener;
 import org.apache.activemq.artemis.spi.core.remoting.SessionContext;
 import org.apache.activemq.artemis.utils.TokenBucketLimiterImpl;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class ActiveMQSessionContext extends SessionContext {
 
-   private static final Logger logger = Logger.getLogger(ActiveMQSessionContext.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Channel sessionChannel;
    private final int serverVersion;
@@ -846,14 +848,14 @@ public class ActiveMQSessionContext extends SessionContext {
       ReattachSessionResponseMessage response = (ReattachSessionResponseMessage) channel1.sendBlocking(request, PacketImpl.REATTACH_SESSION_RESP);
 
       if (response.isReattached()) {
-         ActiveMQClientLogger.LOGGER.replayingCommands(sessionChannel.getID(), response.getLastConfirmedCommandID());
+         logger.debug("Replaying commands for channelID={} with lastCommandID from the server={}", sessionChannel.getID(), response.getLastConfirmedCommandID());
          // The session was found on the server - we reattached transparently ok
 
          sessionChannel.replayCommands(response.getLastConfirmedCommandID());
 
          return true;
       } else {
-         ActiveMQClientLogger.LOGGER.reconnectCreatingNewSession(sessionChannel.getID());
+         logger.debug("Couldn't reattach session {}, performing as a failover operation now and recreating objects", sessionChannel.getID());
 
          sessionChannel.clearCommands();
 
@@ -1061,8 +1063,8 @@ public class ActiveMQSessionContext extends SessionContext {
             final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(elapsedFlowControl);
             ActiveMQClientLogger.LOGGER.timeoutStreamingLargeMessage();
             if (logger.isDebugEnabled()) {
-               logger.debugf("try to write %d bytes after blocked %d ms on a not writable connection: [%s]",
-                             chunkPacket.expectedEncodeSize(), elapsedMillis, connection.getID());
+               logger.debug("try to write {} bytes after blocked {} ms on a not writable connection: [{}]",
+                            chunkPacket.expectedEncodeSize(), elapsedMillis, connection.getID());
             }
          }
          if (requiresResponse) {

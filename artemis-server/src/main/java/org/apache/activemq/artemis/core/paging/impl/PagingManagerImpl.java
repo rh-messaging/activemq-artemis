@@ -41,13 +41,15 @@ import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.runnables.AtomicRunnable;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class PagingManagerImpl implements PagingManager {
 
    private static final int ARTEMIS_DEBUG_PAGING_INTERVAL = Integer.valueOf(System.getProperty("artemis.debug.paging.interval", "0"));
 
-   private static final Logger logger = Logger.getLogger(PagingManagerImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private volatile boolean started = false;
 
@@ -221,13 +223,13 @@ public final class PagingManagerImpl implements PagingManager {
 
    class LocalMonitor implements FileStoreMonitor.Callback {
 
-      private final Logger logger = Logger.getLogger(LocalMonitor.class);
+      private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
       @Override
       public void tick(long usableSpace, long totalSpace) {
          diskUsableSpace = usableSpace;
          diskTotalSpace = totalSpace;
-         logger.tracef("Tick:: usable space at %s, total space at %s", ByteUtil.getHumanReadableByteCount(usableSpace), ByteUtil.getHumanReadableByteCount(totalSpace));
+         logger.trace("Tick:: usable space at {}, total space at {}", ByteUtil.getHumanReadableByteCount(usableSpace), ByteUtil.getHumanReadableByteCount(totalSpace));
       }
 
       @Override

@@ -39,13 +39,15 @@ import org.apache.activemq.artemis.jms.client.ActiveMQBytesMessage;
 import org.apache.activemq.artemis.jms.client.ActiveMQTextMessage;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReattachSupportTestBase {
 
-   private static final Logger log = Logger.getLogger(MultiThreadRandomReattachTestBase.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 
    private static final int RECEIVE_TIMEOUT = 30000;
@@ -537,7 +539,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    protected void doTestD(final ClientSessionFactory sf, final int threadNum) throws Exception {
@@ -662,7 +664,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    // Now with synchronous receive()
@@ -721,7 +723,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    protected void doTestF(final ClientSessionFactory sf, final int threadNum) throws Exception {
@@ -780,7 +782,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    protected void doTestG(final ClientSessionFactory sf, final int threadNum) throws Exception {
@@ -853,7 +855,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    protected void doTestH(final ClientSessionFactory sf, final int threadNum) throws Exception {
@@ -928,7 +930,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
 
       long end = System.currentTimeMillis();
 
-      log.debug("duration " + (end - start));
+      log.debug("duration {}", (end - start));
    }
 
    protected void doTestI(final ClientSessionFactory sf, final int threadNum) throws Exception {

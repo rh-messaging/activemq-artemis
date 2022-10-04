@@ -28,7 +28,9 @@ import org.apache.activemq.artemis.ra.ActiveMQRALogger;
 import org.apache.activemq.artemis.ra.ActiveMQRaUtils;
 import org.apache.activemq.artemis.ra.ActiveMQResourceAdapter;
 import org.apache.activemq.artemis.ra.ConnectionFactoryProperties;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The activation spec
@@ -36,7 +38,7 @@ import org.jboss.logging.Logger;
  */
 public class ActiveMQActivationSpec extends ConnectionFactoryProperties implements ActivationSpec, Serializable {
 
-   private static final Logger logger = Logger.getLogger(ActiveMQActivationSpec.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final long serialVersionUID = -7997041053897964654L;
 

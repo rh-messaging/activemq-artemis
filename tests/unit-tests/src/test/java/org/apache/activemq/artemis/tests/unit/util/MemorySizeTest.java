@@ -19,12 +19,14 @@ package org.apache.activemq.artemis.tests.unit.util;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 import org.apache.activemq.artemis.core.server.impl.MessageReferenceImpl;
 import org.apache.activemq.artemis.utils.MemorySize;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class MemorySizeTest extends Assert {
-   private static final Logger log = Logger.getLogger(MemorySizeTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Test
    public void testObjectSizes() throws Exception {

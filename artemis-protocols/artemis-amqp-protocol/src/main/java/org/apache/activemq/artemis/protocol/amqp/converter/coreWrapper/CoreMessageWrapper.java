@@ -30,7 +30,9 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static org.apache.activemq.artemis.api.core.FilterConstants.NATIVE_MESSAGE_ID;
 import static org.apache.activemq.artemis.api.core.Message.BYTES_TYPE;
@@ -45,7 +47,7 @@ import static org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSup
 import static org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport.PERSISTENT;
 
 public class CoreMessageWrapper {
-   private static final Logger logger = Logger.getLogger(CoreMessageWrapper.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    protected final ICoreMessage message;
    private ActiveMQBuffer readBodyBuffer;
@@ -105,7 +107,7 @@ public class CoreMessageWrapper {
 
          return null;
       } catch (Throwable e) {
-         logger.debug("Exception ignored during conversion", e.getMessage(), e);
+         logger.debug("Exception ignored during conversion {}", e.getMessage(), e);
          return new AmqpValue("Conversion to AMQP error: " + e.getMessage());
       }
 

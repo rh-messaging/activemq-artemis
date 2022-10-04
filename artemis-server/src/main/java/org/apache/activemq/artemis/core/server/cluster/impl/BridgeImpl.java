@@ -71,7 +71,9 @@ import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * A Core BridgeImpl
@@ -79,7 +81,7 @@ import org.jboss.logging.Logger;
 
 public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowledgementHandler, ReadyListener, ClientProducerFlowCallback {
 
-   private static final Logger logger = Logger.getLogger(BridgeImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    protected final ServerLocatorInternal serverLocator;
 
@@ -225,6 +227,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    @Override
    public void onCreditsFlow(boolean blocked, ClientProducerCredits producerCredits) {
+      if (logger.isTraceEnabled()) {
+         logger.trace("Bridge {} received credits, with blocked = {}", this.getName(), blocked);
+      }
       this.blockedOnFlowControl = blocked;
       if (!blocked) {
          queue.deliverAsync();
@@ -303,7 +308,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             refqueue.cancel(ref, timeBase);
          } catch (Exception e) {
             // There isn't much we can do besides log an error
-            ActiveMQServerLogger.LOGGER.errorCancellingRefOnBridge(e, ref);
+            ActiveMQServerLogger.LOGGER.errorCancellingRefOnBridge(ref, e);
          }
       }
    }
@@ -559,27 +564,32 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    @Override
    public HandleStatus handle(final MessageReference ref) throws Exception {
       if (filter != null && !filter.match(ref.getMessage())) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("message reference {} is no match for bridge {}", ref, this.getName());
+         }
          return HandleStatus.NO_MATCH;
       }
 
       synchronized (this) {
          if (!active || !session.isWritable(this)) {
             if (logger.isDebugEnabled()) {
-               logger.debug(this + "::Ignoring reference on bridge as it is set to inactive ref=" + ref);
+               logger.debug(this + "::Ignoring reference on bridge as it is set to inactive ref {}, active = {}", ref, active);
             }
             return HandleStatus.BUSY;
          }
 
          if (blockedOnFlowControl) {
+            logger.debug("Bridge {} is blocked on flow control, cannot receive {}", getName(), ref);
             return HandleStatus.BUSY;
          }
 
          if (deliveringLargeMessage) {
+            logger.trace("Bridge {} is busy delivering a large message", this.getName());
             return HandleStatus.BUSY;
          }
 
          if (logger.isTraceEnabled()) {
-            logger.trace("Bridge " + this + " is handling reference=" + ref);
+            logger.trace("Bridge {} is handling reference {} ", ref);
          }
 
          ref.handled();
@@ -694,7 +704,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             fail(true, true);
 
          } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.warn(e.getMessage(), e);
+            logger.warn(e.getMessage(), e);
          }
       }
    }
@@ -729,7 +739,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                }
             } catch (final ActiveMQException e) {
                unsetLargeMessageDelivery();
-               ActiveMQServerLogger.LOGGER.bridgeUnableToSendMessage(e, ref);
+               ActiveMQServerLogger.LOGGER.bridgeUnableToSendMessage(ref, e);
 
                connectionFailed(e, false);
             }
@@ -755,7 +765,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       try {
          producer.send(dest, message);
       } catch (final ActiveMQException e) {
-         ActiveMQServerLogger.LOGGER.bridgeUnableToSendMessage(e, ref);
+         ActiveMQServerLogger.LOGGER.bridgeUnableToSendMessage(ref, e);
 
          synchronized (refs) {
             // We remove this reference as we are returning busy which means the reference will never leave the Queue.
@@ -839,7 +849,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             }
             queue.removeConsumer(this);
          } catch (Exception dontcare) {
-            logger.debug(dontcare);
+            logger.debug(dontcare.getMessage(), dontcare);
          }
       }
 
@@ -945,7 +955,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                try {
                   query = session.addressQuery(SimpleString.toSimpleString(configuration.getForwardingAddress()));
                } catch (Throwable e) {
-                  ActiveMQServerLogger.LOGGER.errorQueryingBridge(e, configuration.getName());
+                  ActiveMQServerLogger.LOGGER.errorQueryingBridge(configuration.getName(), e);
                   // This was an issue during startup, we will not count this retry
                   retryCount--;
 
@@ -1000,9 +1010,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                scheduleRetryConnect();
             }
          } catch (ActiveMQInterruptedException | InterruptedException e) {
-            ActiveMQServerLogger.LOGGER.errorConnectingBridge(e, this);
+            ActiveMQServerLogger.LOGGER.errorConnectingBridge(this, e);
          } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.errorConnectingBridge(e, this);
+            ActiveMQServerLogger.LOGGER.errorConnectingBridge(this, e);
             if (csf != null) {
                try {
                   csf.close();

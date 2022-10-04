@@ -16,7 +16,9 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.sasl;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -36,7 +38,7 @@ import java.util.HashMap;
  * delegate the the jdk GSSAPI support
  */
 public class GSSAPIServerSASL implements ServerSASL {
-   private static final Logger log = Logger.getLogger(GSSAPIServerSASL.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String NAME = "GSSAPI";
    private String loginConfigScope;
@@ -81,7 +83,7 @@ public class GSSAPIServerSASL implements ServerSASL {
          return challenge;
 
       } catch (Exception outOfHere) {
-         log.info("Error on sasl input: " + outOfHere.toString(), outOfHere);
+         log.info("Error on sasl input: {}", outOfHere.toString(), outOfHere);
          result = new PrincipalSASLResult(false, null);
       }
       return null;

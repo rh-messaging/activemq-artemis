@@ -46,11 +46,15 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
 import org.apache.activemq.artemis.jms.server.JMSServerManager;
 import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
-import org.apache.activemq.artemis.jms.tests.JmsTestLogger;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager;
 import org.apache.activemq.artemis.spi.core.security.jaas.InVMLoginModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class LocalTestServer implements Server, Runnable {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private boolean started = false;
 
@@ -98,7 +102,7 @@ public class LocalTestServer implements Server, Runnable {
 
          boolean deleted = LocalTestServer.deleteDirectory(dir);
 
-         JmsTestLogger.LOGGER.info("Deleted dir: " + dir.getAbsolutePath() + " deleted: " + deleted);
+         logger.info("Deleted dir: " + dir.getAbsolutePath() + " deleted: " + deleted);
       }
 
       javax.management.MBeanServer beanServer = java.lang.management.ManagementFactory.getPlatformMBeanServer();

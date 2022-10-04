@@ -29,8 +29,13 @@ import javax.naming.NamingException;
 
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class TemporaryDestinationTest extends JMSTestCase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 
 
@@ -288,7 +293,7 @@ public class TemporaryDestinationTest extends JMSTestCase {
                   Thread.sleep(500);
                   producer.send(m);
                } catch (Exception e) {
-                  log.error(e);
+                  logger.error(e.getMessage(), e);
                }
             }
          }, "Producer");

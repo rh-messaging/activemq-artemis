@@ -53,14 +53,16 @@ import org.apache.activemq.artemis.service.extensions.xa.ActiveMQXAResourceWrapp
 import org.apache.activemq.artemis.utils.AutoCreateUtil;
 import org.apache.activemq.artemis.utils.FutureLatch;
 import org.apache.activemq.artemis.utils.VersionLoader;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The message handler
  */
 public class ActiveMQMessageHandler implements MessageHandler, FailoverEventListener {
 
-   private static final Logger logger = Logger.getLogger(ActiveMQMessageHandler.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    /**
     * The session
@@ -133,7 +135,7 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
             if (sessionNr == 0 && subResponse.getConsumerCount() > 0) {
                if (!spec.isShareSubscriptions()) {
                   throw ActiveMQRALogger.LOGGER.canNotCreatedNonSharedSubscriber();
-               } else if (ActiveMQRALogger.LOGGER.isDebugEnabled()) {
+               } else if (logger.isDebugEnabled()) {
                   logger.debug("the mdb on destination " + queueName + " already had " + subResponse.getConsumerCount() + " consumers but the MDB is configured to share subscriptions, so no exceptions are thrown");
                }
             }

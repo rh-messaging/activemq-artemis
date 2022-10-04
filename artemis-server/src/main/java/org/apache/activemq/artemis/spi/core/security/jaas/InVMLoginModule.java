@@ -32,11 +32,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.activemq.artemis.core.config.impl.SecurityConfiguration;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class InVMLoginModule implements AuditLoginModule {
 
-   private static final Logger logger = Logger.getLogger(InVMLoginModule.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String CONFIG_PROP_NAME = "org.apache.activemq.jaas.invm.config";
 

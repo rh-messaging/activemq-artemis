@@ -32,7 +32,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * A DefaultSensitiveDataCodec
@@ -48,7 +50,7 @@ import org.jboss.logging.Logger;
  */
 public class DefaultSensitiveStringCodec implements SensitiveDataCodec<String> {
 
-   private static final Logger logger = Logger.getLogger(DefaultSensitiveStringCodec.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String ALGORITHM = "algorithm";
    public static final String BLOWFISH_KEY = "key";

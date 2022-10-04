@@ -28,11 +28,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.jgroups.JChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Various utility functions
  */
 public final class ActiveMQRaUtils {
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    /**
     * Private constructor
@@ -250,7 +254,7 @@ public final class ActiveMQRaUtils {
                Method m = aClass.getMethod("locateChannel", new Class[]{String.class});
                return (JChannel) m.invoke(o, name);
             } catch (Throwable e) {
-               ActiveMQRALogger.LOGGER.debug(e.getMessage(), e);
+               logger.debug(e.getMessage(), e);
                return null;
             }
          }

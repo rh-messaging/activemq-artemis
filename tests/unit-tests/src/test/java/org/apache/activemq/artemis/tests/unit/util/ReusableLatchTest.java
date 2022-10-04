@@ -20,13 +20,15 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ReusableLatch;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class ReusableLatchTest extends ActiveMQTestBase {
 
-   private static final Logger log = Logger.getLogger(ReusableLatchTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Test
    public void testLatchWithParameterizedDown() throws Exception {
@@ -87,7 +89,7 @@ public class ReusableLatchTest extends ActiveMQTestBase {
                   log.error("Latch timed out");
                }
             } catch (Exception e) {
-               log.error(e);
+               log.error(e.getMessage(), e);
             }
             waiting = false;
          }
@@ -235,7 +237,7 @@ public class ReusableLatchTest extends ActiveMQTestBase {
                   log.error("Latch timed out!", new Exception("trace"));
                }
             } catch (Exception e) {
-               log.error(e);
+               log.error(e.getMessage(), e);
                this.e = e;
             }
             waiting = false;

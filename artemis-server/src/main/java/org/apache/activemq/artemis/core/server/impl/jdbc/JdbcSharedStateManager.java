@@ -27,7 +27,9 @@ import org.apache.activemq.artemis.jdbc.store.drivers.AbstractJDBCDriver;
 import org.apache.activemq.artemis.jdbc.store.drivers.JDBCConnectionProvider;
 import org.apache.activemq.artemis.jdbc.store.sql.SQLProvider;
 import org.apache.activemq.artemis.utils.UUID;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * JDBC implementation of a {@link SharedStateManager}.
@@ -35,7 +37,7 @@ import org.jboss.logging.Logger;
 @SuppressWarnings("SynchronizeOnNonFinalField")
 final class JdbcSharedStateManager extends AbstractJDBCDriver implements SharedStateManager {
 
-   private static final Logger logger = Logger.getLogger(JdbcSharedStateManager.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    private static final int MAX_SETUP_ATTEMPTS = 20;
    private final String holderId;
    private final long lockExpirationMillis;
@@ -269,12 +271,12 @@ final class JdbcSharedStateManager extends AbstractJDBCDriver implements SharedS
             } else {
                //rawInitializeNodeId has failed just due to contention or nodeId wasn't committed yet
                connection.rollback();
-               logger.debugf("Rollback after failed to update NodeId to %s and haven't found any NodeId", newNodeId);
+               logger.debug("Rollback after failed to update NodeId to {} and haven't found any NodeId", newNodeId);
                return null;
             }
          } catch (SQLException e) {
             connection.rollback();
-            logger.debugf(e, "Rollback while trying to update NodeId to %s", newNodeId);
+            logger.debug("Rollback while trying to update NodeId to {}", newNodeId, e);
             return null;
          } finally {
             connection.setAutoCommit(autoCommit);

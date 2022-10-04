@@ -69,20 +69,22 @@ import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConne
 import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConnectionFactory;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static org.apache.activemq.artemis.utils.collections.IterableStream.iterableOf;
 
 @RunWith(Parameterized.class)
 public class StompTest extends StompTestBase {
 
-   private static final Logger log = Logger.getLogger(StompTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    protected StompClientConnection conn;
 
@@ -193,7 +195,6 @@ public class StompTest extends StompTestBase {
          // It should encounter the exception on logs
          AssertionLoggerHandler.findText("AMQ119119");
       } finally {
-         AssertionLoggerHandler.clear();
          AssertionLoggerHandler.stopCapture();
       }
    }
@@ -837,7 +838,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage(text);
 
       ClientStompFrame frame = conn.receiveFrame(10000);
-      log.debug(frame);
+      log.debug("{}", frame);
       Assert.assertEquals(Stomp.Responses.MESSAGE, frame.getCommand());
       Assert.assertEquals(getQueuePrefix() + getQueueName(), frame.getHeader(Stomp.Headers.Message.DESTINATION));
       Assert.assertEquals(text, frame.getBody());
@@ -1048,7 +1049,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage("second message");
 
       frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
    }
 
@@ -1071,7 +1072,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage("second message");
 
       frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
    }
@@ -1158,7 +1159,7 @@ public class StompTest extends StompTestBase {
          if (length - baselineQueueCount == 1) {
             return true;
          } else {
-            log.debug("Queue count: " + (length - baselineQueueCount));
+            log.debug("Queue count: {}", (length - baselineQueueCount));
             return false;
          }
       });
@@ -1175,7 +1176,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage(getName(), topic);
 
       frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
       assertEquals("Subscription queue should be deleted", 0, server.getActiveMQServerControl().getQueueNames().length - baselineQueueCount);
@@ -1210,7 +1211,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage(getName(), queue);
 
       frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
       assertEquals("Subscription queue should not be deleted", baselineQueueCount, server.getActiveMQServerControl().getQueueNames().length);
@@ -1245,7 +1246,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage(getName(), ActiveMQJMSClient.createQueue(nonExistentQueue));
 
       frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
       conn.disconnect();
@@ -1409,7 +1410,7 @@ public class StompTest extends StompTestBase {
       send(conn, getTopicPrefix() + getTopicName(), null, "Hello World");
 
       ClientStompFrame frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
       // send message on another JMS connection => it should be received
@@ -1444,7 +1445,7 @@ public class StompTest extends StompTestBase {
 
       // ...and nothing else
       ClientStompFrame frame = conn.receiveFrame(100);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull(frame);
 
       conn.disconnect();
@@ -1513,7 +1514,7 @@ public class StompTest extends StompTestBase {
       sendJmsMessage(getName(), topic);
 
       ClientStompFrame frame = conn.receiveFrame(NEGATIVE_TIME_OUT);
-      log.debug("Received frame: " + frame);
+      log.debug("Received frame: {}", frame);
       Assert.assertNull("No message should have been received since subscription was removed", frame);
 
       conn.disconnect();
@@ -1855,7 +1856,7 @@ public class StompTest extends StompTestBase {
 
       frame = conn.receiveFrame(10000);
 
-      log.debug("Received: " + frame);
+      log.debug("Received: {}", frame);
 
       Assert.assertEquals(Boolean.TRUE.toString(), frame.getHeader(ManagementHelper.HDR_OPERATION_SUCCEEDED.toString()));
       // the address will be returned in the message body in a JSON array
@@ -1878,7 +1879,7 @@ public class StompTest extends StompTestBase {
 
       frame = conn.receiveFrame(10000);
 
-      log.debug("Received: " + frame);
+      log.debug("Received: {}", frame);
 
       Assert.assertEquals(Boolean.TRUE.toString(), frame.getHeader(ManagementHelper.HDR_OPERATION_SUCCEEDED.toString()));
       // there is no such messages => 0 returned in a JSON array

@@ -37,13 +37,15 @@ import org.apache.activemq.artemis.core.server.impl.InVMNodeManager;
 import org.apache.activemq.artemis.jms.client.ActiveMQTextMessage;
 import org.apache.activemq.artemis.tests.util.CountDownSessionFailureListener;
 import org.apache.activemq.artemis.tests.util.TransportConfigurationUtils;
-import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class FailBackAutoTest extends FailoverTestBase {
 
-   private static final Logger log = Logger.getLogger(FailBackAutoTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final int NUM_MESSAGES = 100;
    private ServerLocatorInternal locator;
@@ -72,7 +74,7 @@ public class FailBackAutoTest extends FailoverTestBase {
 
       assertTrue(latch.await(5, TimeUnit.SECONDS));
 
-      log.debug("backup (nowLive) topology = " + backupServer.getServer().getClusterManager().getDefaultConnection(null).getTopology().describe());
+      log.debug("backup (nowLive) topology = {}", backupServer.getServer().getClusterManager().getDefaultConnection(null).getTopology().describe());
 
       log.debug("Server Crash!!!");
 
@@ -99,7 +101,7 @@ public class FailBackAutoTest extends FailoverTestBase {
 
       Thread.sleep(1000);
 
-      log.debug("After failback: " + locator.getTopology().describe());
+      log.debug("After failback: {}", locator.getTopology().describe());
 
       assertTrue(latch2.await(5, TimeUnit.SECONDS));
 

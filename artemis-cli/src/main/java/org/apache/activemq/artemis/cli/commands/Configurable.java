@@ -33,13 +33,17 @@ import org.apache.activemq.artemis.core.config.FileDeploymentManager;
 import org.apache.activemq.artemis.core.config.impl.FileConfiguration;
 import org.apache.activemq.artemis.dto.BrokerDTO;
 import org.apache.activemq.artemis.dto.ManagementContextDTO;
-import org.apache.activemq.artemis.integration.bootstrap.ActiveMQBootstrapLogger;
 import org.apache.activemq.artemis.jms.server.config.impl.FileJMSConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Abstract class where we can replace the configuration in various places *
  */
 public abstract class Configurable extends ActionAbstract {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Arguments(description = "Broker Configuration URI, default 'xml:${ARTEMIS_INSTANCE}/etc/bootstrap.xml'")
    String configuration;
@@ -55,7 +59,7 @@ public abstract class Configurable extends ActionAbstract {
    private FileConfiguration fileConfiguration;
 
    protected void treatError(Exception e, String group, String command) {
-      ActiveMQBootstrapLogger.LOGGER.debug(e.getMessage(), e);
+      logger.debug(e.getMessage(), e);
       System.err.println();
       System.err.println("Error:" + e.getMessage());
       System.err.println();
@@ -142,7 +146,7 @@ public abstract class Configurable extends ActionAbstract {
          // To support Windows paths as explained above.
          configuration = configuration.replace("\\", "/");
 
-         ActiveMQBootstrapLogger.LOGGER.usingBrokerConfig(configuration);
+         logger.debug("Using broker configuration: {}", configuration);
       }
 
       return configuration;

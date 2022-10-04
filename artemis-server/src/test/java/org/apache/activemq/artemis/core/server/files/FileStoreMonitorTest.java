@@ -30,7 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.ReusableLatch;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +40,7 @@ import org.junit.Test;
 
 public class FileStoreMonitorTest extends ActiveMQTestBase {
 
-   private static final Logger log = Logger.getLogger(FileStoreMonitorTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private ScheduledExecutorService scheduledExecutorService;
    private ExecutorService executorService;

@@ -22,11 +22,16 @@ import javax.jms.Message;
 
 import org.apache.activemq.artemis.jms.tests.message.SimpleJMSMapMessage;
 import org.apache.activemq.artemis.jms.tests.util.ProxyAssertSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Tests the delivery/receipt of a foreign map message
  */
 public class ForeignMapMessageTest extends ForeignMessageTest {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final String obj = new String("stringobject");
 
@@ -34,7 +39,7 @@ public class ForeignMapMessageTest extends ForeignMessageTest {
    protected Message createForeignMessage() throws Exception {
       SimpleJMSMapMessage m = new SimpleJMSMapMessage();
 
-      log.debug("creating JMS Message type " + m.getClass().getName());
+      logger.debug("creating JMS Message type " + m.getClass().getName());
 
       m.setBoolean("boolean1", true);
       m.setChar("char1", 'c');

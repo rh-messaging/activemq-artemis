@@ -43,9 +43,11 @@ import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.MqttReturnCode;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
-import org.jboss.logging.Logger;
 import org.junit.Assume;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Fulfilled by client or Netty codec (i.e. not tested here):
@@ -101,7 +103,7 @@ import org.junit.Test;
  */
 public class ConnectTests extends MQTT5TestSupport {
 
-   private static final Logger log = Logger.getLogger(ConnectTests.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public ConnectTests(String protocol) {
       super(protocol);

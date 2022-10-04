@@ -62,17 +62,19 @@ import org.fusesource.hawtdispatch.internal.DispatcherConfig;
 import org.fusesource.mqtt.client.MQTT;
 import org.fusesource.mqtt.client.Tracer;
 import org.fusesource.mqtt.codec.MQTTFrame;
-import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static java.util.Collections.singletonList;
 
 public class MQTTTestSupport extends ActiveMQTestBase {
 
-   private static final Logger log = Logger.getLogger(MQTTTestSupport.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    protected ActiveMQServer server;
 
    static {
@@ -406,17 +408,19 @@ public class MQTTTestSupport extends ActiveMQTestBase {
       return new Tracer() {
          @Override
          public void onReceive(MQTTFrame frame) {
-            log.debug("Client Received:\n" + frame);
+            log.debug("Client Received:\n{}", frame);
          }
 
          @Override
          public void onSend(MQTTFrame frame) {
-            log.debug("Client Sent:\n" + frame);
+            log.debug("Client Sent:\n{}", frame);
          }
 
          @Override
          public void debug(String message, Object... args) {
-            log.debug(String.format(message, args));
+            if (log.isDebugEnabled()) {
+               log.debug(String.format(message, args));
+            }
          }
       };
    }

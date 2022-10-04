@@ -73,11 +73,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 @RunWith(Parameterized.class)
 public class AmqpLargeMessageTest extends AmqpClientTestSupport {
 
-   protected static final Logger LOG = LoggerFactory.getLogger(AmqpLargeMessageTest.class);
+   protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final Random rand = new Random(System.currentTimeMillis());
 
@@ -311,7 +312,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
             if (wrapped.getBody() instanceof Data) {
                // converters can change this to AmqValue
                Data data = (Data) wrapped.getBody();
-               instanceLog.debug("received : message: " + data.getValue().getLength());
+               LOG.debug("received : message: " + data.getValue().getLength());
                assertEquals(payload, data.getValue().getLength());
             }
             message.accept();
@@ -365,7 +366,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          MessageImpl wrapped = (MessageImpl) message.getWrappedMessage();
          if (wrapped.getBody() instanceof Data) {
             Data data = (Data) wrapped.getBody();
-            instanceLog.debug("received : message: " + data.getValue().getLength());
+            LOG.debug("received : message: " + data.getValue().getLength());
             assertEquals(payload, data.getValue().getLength());
          }
 

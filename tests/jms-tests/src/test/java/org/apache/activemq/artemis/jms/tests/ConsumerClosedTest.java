@@ -23,8 +23,13 @@ import javax.jms.Session;
 import javax.naming.InitialContext;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class ConsumerClosedTest extends JMSTestCase {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
 
    public static final int NUMBER_OF_MESSAGES = 10;
@@ -48,12 +53,12 @@ public class ConsumerClosedTest extends JMSTestCase {
             p.send(s.createTextMessage("message" + i));
          }
 
-         log.debug("all messages sent");
+         logger.debug("all messages sent");
 
          MessageConsumer cons = s.createConsumer(queue1);
          cons.close();
 
-         log.debug("consumer closed");
+         logger.debug("consumer closed");
 
          // make sure that all messages are in queue
 

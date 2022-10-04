@@ -20,7 +20,9 @@ package org.apache.activemq.artemis.utils;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class SizeAwareMetric {
 
@@ -28,7 +30,7 @@ public class SizeAwareMetric {
       void add(int delta, boolean sizeOnly);
    }
 
-   private static final Logger logger = Logger.getLogger(SizeAwareMetric.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private static final int PENDING_FREE = 0, FREE = 1, PENDING_OVER_SIZE = 2, OVER_SIZE = 3, PENDING_OVER_ELEMENTS = 4, OVER_ELEMENTS = 5, NOT_USED = -1;
 

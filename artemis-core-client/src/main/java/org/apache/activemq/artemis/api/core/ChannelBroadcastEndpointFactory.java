@@ -17,7 +17,9 @@
 package org.apache.activemq.artemis.api.core;
 
 import org.apache.activemq.artemis.api.core.jgroups.JChannelManager;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 import org.jgroups.JChannel;
 
 /**
@@ -27,7 +29,7 @@ import org.jgroups.JChannel;
  */
 public class ChannelBroadcastEndpointFactory implements BroadcastEndpointFactory {
 
-   private static final Logger logger = Logger.getLogger(ChannelBroadcastEndpointFactory.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private final JChannel channel;
 

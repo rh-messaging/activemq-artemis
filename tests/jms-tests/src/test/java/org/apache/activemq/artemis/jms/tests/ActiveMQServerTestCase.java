@@ -53,6 +53,9 @@ import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * @deprecated this infrastructure should not be used for new code. New tests should go into
@@ -60,13 +63,13 @@ import org.junit.runner.Description;
  */
 @Deprecated
 public abstract class ActiveMQServerTestCase {
+   private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final int MAX_TIMEOUT = 1000 * 10 /* seconds */;
 
    public static final int MIN_TIMEOUT = 1000 * 1 /* seconds */;
 
    private static final int DRAIN_WAIT_TIME = 250;
-   protected final JmsTestLogger log = JmsTestLogger.LOGGER;
 
    /**
     * Some testcases are time sensitive, and we need to make sure a GC would happen before certain scenarios
@@ -101,12 +104,12 @@ public abstract class ActiveMQServerTestCase {
    public TestRule watcher = new TestWatcher() {
       @Override
       protected void starting(Description description) {
-         log.debug(String.format("#*#*# Starting test: %s()...", description.getMethodName()));
+         logger.debug(String.format("#*#*# Starting test: %s()...", description.getMethodName()));
       }
 
       @Override
       protected void finished(Description description) {
-         log.debug(String.format("#*#*# Finished test: %s()...", description.getMethodName()));
+         logger.debug(String.format("#*#*# Finished test: %s()...", description.getMethodName()));
       }
 
       @Override
@@ -259,13 +262,13 @@ public abstract class ActiveMQServerTestCase {
          MessageConsumer cons = sess.createConsumer(dest);
          Message m = null;
          conn.start();
-         log.trace("Draining messages from " + dest);
+         logger.trace("Draining messages from " + dest);
          while (true) {
             m = cons.receive(DRAIN_WAIT_TIME);
             if (m == null) {
                break;
             }
-            log.trace("Drained message");
+            logger.trace("Drained message");
          }
       } finally {
          if (conn != null) {

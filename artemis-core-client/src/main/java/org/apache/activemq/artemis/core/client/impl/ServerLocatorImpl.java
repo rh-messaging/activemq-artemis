@@ -73,7 +73,9 @@ import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.actors.Actor;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutor;
 import org.apache.activemq.artemis.utils.uri.FluentPropertyBeanIntrospectorWithIgnores;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * This is the implementation of {@link org.apache.activemq.artemis.api.core.client.ServerLocator} and all
@@ -81,7 +83,7 @@ import org.jboss.logging.Logger;
  */
 public final class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListener {
 
-   private static final Logger logger = Logger.getLogger(ServerLocatorImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private enum STATE {
       INITIALIZED, CLOSED, CLOSING

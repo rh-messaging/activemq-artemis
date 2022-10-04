@@ -35,12 +35,14 @@ import org.apache.activemq.artemis.junit.EmbeddedJMSResource;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import com.github.javafaker.ChuckNorris;
 import com.github.javafaker.Faker;
@@ -48,7 +50,7 @@ import com.github.javafaker.Faker;
 @SuppressWarnings("deprecation")
 public class MQTTRetainMessageManagerTest {
 
-   private Logger log = Logger.getLogger(MQTTRetainMessageManagerTest.class);
+   private Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public EmbeddedJMSResource jmsServer = new EmbeddedJMSResource("embedded-artemis-server-mqtt.xml");
 
@@ -101,7 +103,7 @@ public class MQTTRetainMessageManagerTest {
             final String payload = new String(message.getPayload());
             lastMessageArrivedOnConsumerBeforePublish.set(message);
             arrivedCountBeforePublish.incrementAndGet();
-            log.debugf("[MQTT][before ][retained: %s][duplicate: %s][qos: %s] %s",
+            log.debug("[MQTT][before ][retained: {}][duplicate: {}][qos: {}] {}",
                   message.isRetained(), message.isDuplicate(), message.getQos(), payload);
          });
       mqttConsumerBeforePublish.init();
@@ -113,7 +115,7 @@ public class MQTTRetainMessageManagerTest {
             final String payload = new String(message.getPayload());
             lastMessageArrivedOnConsumerAfterPublish.set(message);
             arrivedCountAferPublish.incrementAndGet();
-            log.infof("[MQTT][after  ][retained: %s][duplicate: %s][qos: %s] %s",
+            log.info("[MQTT][after  ][retained: {}][duplicate: {}][qos: {}] {}",
                   message.isRetained(), message.isDuplicate(), message.getQos(), payload);
          });
       mqttConsumerAfterPublish2 = new MqttClientService("consumer-after2",
@@ -121,7 +123,7 @@ public class MQTTRetainMessageManagerTest {
             final String payload = new String(message.getPayload());
             lastMessageArrivedOnConsumerAfterPublish2.set(message);
             arrivedCountAferPublish2.incrementAndGet();
-            log.infof("[MQTT][after2 ][retained: %s][duplicate: %s][qos: %s] %s",
+            log.info("[MQTT][after2 ][retained: {}][duplicate: {}][qos: {}] {}",
                   message.isRetained(), message.isDuplicate(), message.getQos(), payload);
          });
       mqttConsumerAfterPublish.init();
@@ -241,10 +243,10 @@ public class MQTTRetainMessageManagerTest {
    }
 
    private void logAftePublish(int i, int qos) {
-      log.infof("--- QoS: %s --- %s/%s---", qos, i, numberOfTests);
-      log.infof("[MQTT][publish][retained: %s][duplicate: %s][qos: %s] %s",
+      log.info("--- QoS: {} --- {}/{}---", qos, i, numberOfTests);
+      log.info("[MQTT][publish][retained: {}][duplicate: {}][qos: {}] {}",
             lastMessagePublished.get().isRetained(), lastMessagePublished.get().isDuplicate(), lastMessagePublished.get().getQos(), lastMessagePublished.get());
-      log.infof("[MQTT][before ][retained: %s][duplicate: %s][qos: %s] %s",
+      log.info("[MQTT][before ][retained: {}][duplicate: {}][qos: {}] {}",
             lastMessageArrivedOnConsumerBeforePublish.get().isRetained(),
             lastMessageArrivedOnConsumerBeforePublish.get().isDuplicate(),
             lastMessageArrivedOnConsumerBeforePublish.get().getQos(),
@@ -259,7 +261,7 @@ public class MQTTRetainMessageManagerTest {
       browserIterator.forEachRemaining(messageReference -> {
          final Message message = messageReference.getMessage();
          final String body = message.toCore().getBuffer().toString(StandardCharsets.UTF_8);
-         log.infof("[MQTT][%s][%s][%s]", retainAddress, message, body);
+         log.info("[MQTT][{}][{}][{}]", retainAddress, message, body);
       });
    }
 }

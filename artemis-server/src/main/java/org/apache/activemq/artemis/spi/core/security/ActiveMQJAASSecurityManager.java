@@ -28,7 +28,9 @@ import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.spi.core.security.jaas.JaasCallbackHandler;
 import org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
 import org.apache.activemq.artemis.utils.SecurityManagerUtil;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 import static org.apache.activemq.artemis.core.remoting.CertificateUtil.getCertsFromConnection;
 
@@ -40,7 +42,7 @@ import static org.apache.activemq.artemis.core.remoting.CertificateUtil.getCerts
  */
 public class ActiveMQJAASSecurityManager implements ActiveMQSecurityManager5 {
 
-   private static final Logger logger = Logger.getLogger(ActiveMQJAASSecurityManager.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private String configurationName;
    private String certificateConfigurationName;

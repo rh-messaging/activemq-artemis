@@ -21,13 +21,17 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
-import org.apache.activemq.artemis.ra.ActiveMQRALogger;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.ActiveMQRegistry;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.ActiveMQRegistryImpl;
 import org.apache.activemq.artemis.service.extensions.xa.recovery.XARecoveryConfig;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public final class RecoveryManager {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    private ActiveMQRegistry registry;
 
@@ -47,7 +51,7 @@ public final class RecoveryManager {
                                     String userName,
                                     String password,
                                     Map<String, String> properties) {
-      ActiveMQRALogger.LOGGER.debug("registering recovery for factory : " + factory);
+      logger.debug("registering recovery for factory : " + factory);
 
       XARecoveryConfig config = XARecoveryConfig.newConfig(factory, userName, password, properties);
       resources.add(config);
@@ -86,7 +90,7 @@ public final class RecoveryManager {
                registry = ActiveMQRegistryImpl.getInstance();
             }
          } catch (Throwable e) {
-            ActiveMQRALogger.LOGGER.debug("unable to load  recovery registry " + locatorClasse, e);
+            logger.debug("unable to load  recovery registry " + locatorClasse, e);
          }
          if (registry != null) {
             break;
@@ -94,7 +98,7 @@ public final class RecoveryManager {
       }
 
       if (registry != null) {
-         ActiveMQRALogger.LOGGER.debug("Recovery Registry located = " + registry);
+         logger.debug("Recovery Registry located = " + registry);
       }
    }
 

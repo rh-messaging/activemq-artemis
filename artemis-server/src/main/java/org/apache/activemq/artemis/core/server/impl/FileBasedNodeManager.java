@@ -30,7 +30,6 @@ import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.NodeManager;
 import org.apache.activemq.artemis.utils.UUID;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
-import org.jboss.logging.Logger;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
@@ -38,7 +37,6 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 public abstract class FileBasedNodeManager extends NodeManager {
 
-   private static final Logger LOGGER = Logger.getLogger(FileBasedNodeManager.class);
    protected static final byte FIRST_TIME_START = '0';
    public static final String SERVER_LOCK_NAME = "server.lock";
    public static final String SERVER_ACTIVATION_SEQUENCE_NAME = "server.activation.sequence";
@@ -145,7 +143,7 @@ public abstract class FileBasedNodeManager extends NodeManager {
          try {
             fileCreated = serverLockFile.createNewFile();
          } catch (RuntimeException e) {
-            ActiveMQServerLogger.LOGGER.nodeManagerCantOpenFile(e, serverLockFile);
+            ActiveMQServerLogger.LOGGER.nodeManagerCantOpenFile(serverLockFile, e);
             throw e;
          } catch (IOException e) {
             /*
@@ -159,7 +157,7 @@ public abstract class FileBasedNodeManager extends NodeManager {
                count++;
                continue;
             }
-            ActiveMQServerLogger.LOGGER.nodeManagerCantOpenFile(e, serverLockFile);
+            ActiveMQServerLogger.LOGGER.nodeManagerCantOpenFile(serverLockFile, e);
             throw e;
          }
       }

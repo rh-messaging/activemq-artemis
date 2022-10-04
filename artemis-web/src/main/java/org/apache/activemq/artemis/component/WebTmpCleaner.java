@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.activemq.artemis.utils.SpawnedVMSupport;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * This class is used to remove the jar files
@@ -32,7 +34,7 @@ import org.jboss.logging.Logger;
  */
 public class WebTmpCleaner {
 
-   private static final Logger logger = Logger.getLogger(WebTmpCleaner.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static void main(String[] filesToClean) throws Exception {
       //It needs to retry a bit as we are not sure
@@ -57,7 +59,7 @@ public class WebTmpCleaner {
          Thread.sleep(200);
       }
       if (!allCleaned) {
-         logger.warn("Some files in web temp dir are not cleaned up after " + maxRetries + " retries.");
+         logger.warn("Some files in web temp dir are not cleaned up after {} retries.", maxRetries);
       }
       return allCleaned;
    }

@@ -52,10 +52,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class JMSMessageConsumerTest extends JMSClientTestSupport {
 
-   protected static final Logger LOG = LoggerFactory.getLogger(JMSMessageConsumerTest.class);
+   protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Override
    protected String getConfiguredProtocols() {
@@ -730,7 +731,7 @@ public class JMSMessageConsumerTest extends JMSClientTestSupport {
                while (count > 0) {
                   try {
                      if (++n % 1000 == 0) {
-                        instanceLog.debug("received " + n + " messages");
+                        LOG.debug("received " + n + " messages");
                      }
 
                      Message m = consumer.receive(5000);
@@ -782,11 +783,11 @@ public class JMSMessageConsumerTest extends JMSClientTestSupport {
       Wait.assertEquals(0, queueView::getMessageCount);
 
       long taken = (System.currentTimeMillis() - time);
-      instanceLog.debug("Microbenchamrk ran in " + taken + " milliseconds, sending/receiving " + numMessages);
+      LOG.debug("Microbenchamrk ran in " + taken + " milliseconds, sending/receiving " + numMessages);
 
       double messagesPerSecond = ((double) numMessages / (double) taken) * 1000;
 
-      instanceLog.debug(((int) messagesPerSecond) + " messages per second");
+      LOG.debug(((int) messagesPerSecond) + " messages per second");
    }
 
    @Test(timeout = 60000)

@@ -18,11 +18,13 @@
 package org.apache.activemq.artemis.core.client.impl;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl {
 
-   private static final Logger logger = Logger.getLogger(AsynchronousProducerCreditsImpl.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    int balance;
 
@@ -40,7 +42,7 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
       synchronized (this) {
          balance -= credits;
          if (logger.isDebugEnabled()) {
-            logger.debugf("actualAcquire on address %s with credits=%s, balance=%s, callbackType=%s", address, credits, balance, callback.getClass());
+            logger.debug("actualAcquire on address {} with credits={}, balance={}, callbackType={}", address, credits, balance, callback.getClass());
          }
          if (balance <= 0) {
             callback.onCreditsFlow(true, this);
@@ -60,13 +62,13 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
          super.receiveCredits(credits);
          balance += credits;
          if (logger.isDebugEnabled()) {
-            logger.debugf("receiveCredits with credits=%s, balance=%s, arriving=%s, callbackType=%s", credits, balance, arriving, callback.getClass());
+            logger.debug("receiveCredits with credits={}, balance={}, arriving={}, callbackType={}", credits, balance, arriving, callback.getClass());
          }
          callback.onCreditsFlow(balance <= 0, this);
 
          if (balance < 0 && arriving == 0) {
             // there are no more credits arriving and we are still negative, async large message send asked too much and we need to counter balance
-            logger.debugf("Starve credits counter balance");
+            logger.debug("Starve credits counter balance");
             int request = -balance + windowSize * 2;
             requestCredits(request);
          }
@@ -79,7 +81,7 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
    public void receiveFailCredits(final int credits) {
       super.receiveFailCredits(credits);
       if (logger.isDebugEnabled()) {
-         logger.debugf("creditsFail %s, callback=%s", credits, callback.getClass());
+         logger.debug("creditsFail {}, callback={}", credits, callback.getClass());
       }
       callback.onCreditsFail(this);
    }
@@ -90,7 +92,7 @@ public class AsynchronousProducerCreditsImpl extends AbstractProducerCreditsImpl
          balance = 0;
          callback.onCreditsFlow(true, this);
          if (logger.isDebugEnabled()) {
-            logger.debugf("releaseOutstanding credits, balance=%s, callback=%s", balance, callback.getClass());
+            logger.debug("releaseOutstanding credits, balance={}, callback={}", balance, callback.getClass());
          }
       }
 

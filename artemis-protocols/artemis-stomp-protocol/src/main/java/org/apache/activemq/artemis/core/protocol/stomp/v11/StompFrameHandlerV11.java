@@ -39,8 +39,13 @@ import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.spi.core.protocol.ConnectionEntry;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements FrameEventListener {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    protected static final char ESC_CHAR = '\\';
 
@@ -307,9 +312,8 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
                   connectionTtl = ttlMax;
                   clientPingResponse = (long) (ttlMax / heartBeatToTtlModifier);
                }
-               if (ActiveMQServerLogger.LOGGER.isDebugEnabled()) {
-                  ActiveMQServerLogger.LOGGER.debug("Setting STOMP client TTL to: " + connectionTtl);
-               }
+
+               logger.debug("Setting STOMP client TTL to: {}", connectionTtl);
                connectionEntry.ttl = connectionTtl;
             }
          }

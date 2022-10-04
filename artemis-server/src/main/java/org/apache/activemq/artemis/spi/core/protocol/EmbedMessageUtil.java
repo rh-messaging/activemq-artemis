@@ -27,7 +27,9 @@ import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 public class EmbedMessageUtil {
 
@@ -36,7 +38,7 @@ public class EmbedMessageUtil {
 
    private static final byte[] signature = new byte[]{(byte) 'E', (byte) 'M', (byte) 'B'};
 
-   private static final Logger logger = Logger.getLogger(EmbedMessageUtil.class);
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static ICoreMessage embedAsCoreMessage(Message source) {
 
@@ -86,7 +88,7 @@ public class EmbedMessageUtil {
       ActiveMQBuffer buffer = message.getReadOnlyBodyBuffer();
 
       if (buffer.readableBytes() < signature.length || !checkSignature(buffer)) {
-         logger.tracef("Message type %d was used for something other than embed messages, ignoring content and treating as a regular message", Message.EMBEDDED_TYPE);
+         logger.trace("Message type {} was used for something other than embed messages, ignoring content and treating as a regular message", Message.EMBEDDED_TYPE);
          return message;
       }
 

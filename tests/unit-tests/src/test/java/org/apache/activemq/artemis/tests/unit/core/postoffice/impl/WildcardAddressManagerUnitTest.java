@@ -41,15 +41,17 @@ import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
-import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.lang.invoke.MethodHandles;
 
 /**
  * This test is replicating the behaviour from https://issues.jboss.org/browse/HORNETQ-988.
  */
 public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
-   private static final Logger log = Logger.getLogger(WildcardAddressManagerUnitTest.class);
+   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Test
    public void testUnitOnWildCardFailingScenario() throws Exception {
@@ -484,7 +486,7 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
 
       @Override
       public void route(Message message, RoutingContext context) throws Exception {
-         log.debug("routing message: " + message);
+         log.debug("routing message: {}", message);
       }
 
       @Override
