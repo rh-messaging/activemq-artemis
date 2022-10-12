@@ -25,8 +25,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.activemq.artemis.utils.DataConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /** This MessageDecoder is based on LengthFieldBasedFrameDecoder.
  *  When OpenWire clients send a Large Message (large in the context of size only as openwire does not support message chunk streaming).
@@ -37,7 +36,7 @@ import org.slf4j.LoggerFactory;
  *  */
 public class OpenWireFrameParser extends ByteToMessageDecoder {
 
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
    final int openwireMaxPacketChunkSize;
 
@@ -63,7 +62,7 @@ public class OpenWireFrameParser extends ByteToMessageDecoder {
 
          if (openwireMaxPacketChunkSize > 0 && bufferSize > openwireMaxPacketChunkSize) {
             if (logger.isTraceEnabled()) {
-               logger.trace("Creating a heapBuffer sized as {} as it is beyond {} chunk limit", bufferSize, openwireMaxPacketChunkSize);
+               logger.tracef("Creating a heapBuffer sized as %s as it is beyond %s chunk limit", bufferSize, openwireMaxPacketChunkSize);
             }
             // we will use a heap buffer for large frames.
             // to avoid competing for resources with the broker on native messages.
