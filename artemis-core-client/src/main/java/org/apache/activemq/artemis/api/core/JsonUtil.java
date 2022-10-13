@@ -360,6 +360,70 @@ public final class JsonUtil {
       return result;
    }
 
+   public static JsonObject mergeAndUpdate(JsonObject source, JsonObject update) {
+      // all immutable so we need to create new merged instance
+      JsonObjectBuilder jsonObjectBuilder = JsonLoader.createObjectBuilder();
+      for (Map.Entry<String, JsonValue> entry : source.entrySet()) {
+         jsonObjectBuilder.add(entry.getKey(), entry.getValue());
+      }
+      // apply any updates
+      for (String updateKey : update.keySet()) {
+         JsonValue updatedValue = update.get(updateKey);
+         if (updatedValue != null) {
+            if (!source.containsKey(updateKey)) {
+               jsonObjectBuilder.add(updateKey, updatedValue);
+            } else {
+               // recursively merge into new value
+               if (updatedValue.getValueType() == JsonValue.ValueType.OBJECT) {
+                  jsonObjectBuilder.add(updateKey, mergeAndUpdate(source.getJsonObject(updateKey), updatedValue.asJsonObject()));
+
+               } else if (updatedValue.getValueType() == JsonValue.ValueType.ARRAY) {
+                  JsonArrayBuilder jsonArrayBuilder = JsonLoader.createArrayBuilder();
+
+                  // update wins
+                  JsonArray updatedArrayValue = update.getJsonArray(updateKey);
+                  JsonArray sourceArrayValue = source.getJsonArray(updateKey);
+
+                  for (int i = 0; i < updatedArrayValue.size(); i++) {
+                     if (i < sourceArrayValue.size()) {
+                        JsonValue element = updatedArrayValue.get(i);
+                        if (element.getValueType() == JsonValue.ValueType.OBJECT) {
+                           jsonArrayBuilder.add(mergeAndUpdate(sourceArrayValue.getJsonObject(i), updatedArrayValue.getJsonObject(i)));
+                        } else {
+                           // take the update
+                           jsonArrayBuilder.add(element);
+                        }
+                     } else {
+                        jsonArrayBuilder.add(updatedArrayValue.get(i));
+                     }
+                  }
+                  jsonObjectBuilder.add(updateKey, jsonArrayBuilder.build());
+               } else {
+                  // update wins!
+                  jsonObjectBuilder.add(updateKey, updatedValue);
+               }
+            }
+         }
+      }
+
+      return jsonObjectBuilder.build();
+   }
+
+   // component path, may contain x/y/z as a pointer to a nested object
+   public static JsonObjectBuilder objectBuilderWithValueAtPath(String componentPath, JsonValue componentStatus) {
+      JsonObjectBuilder jsonObjectBuilder = JsonLoader.createObjectBuilder();
+      String[] nestedComponents = componentPath.split("/", 0);
+      // may need to nest this status in objects
+      for (int i = nestedComponents.length - 1; i > 0; i--) {
+         JsonObjectBuilder nestedBuilder = JsonLoader.createObjectBuilder();
+         nestedBuilder.add(nestedComponents[i], componentStatus);
+         componentStatus = nestedBuilder.build();
+      }
+      jsonObjectBuilder.add(nestedComponents[0], componentStatus);
+      return jsonObjectBuilder;
+   }
+
+
    private static class NullableJsonString implements JsonValue, JsonString {
 
       private final String value;
