@@ -103,6 +103,16 @@ public class LinkedListImpl<E> implements LinkedList<E> {
    }
 
    @Override
+   public E peek() {
+      Node<E> current = head.next;
+      if (current == null) {
+         return null;
+      } else {
+         return current.val();
+      }
+   }
+
+   @Override
    public synchronized E removeWithID(String listID, long id) {
       assert nodeStore != null; // it is assumed the code will call setNodeStore before callin removeWithID
 
