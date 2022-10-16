@@ -24,6 +24,8 @@ public interface LinkedList<E> {
 
    E poll();
 
+   E peek();
+
    LinkedListIterator<E> iterator();
 
    void clear();

@@ -920,6 +920,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
          long txDeleteCursorOnReload = -1;
 
          for (PagePosition pos : recoveredACK) {
+            logger.tracef("reloading pos %s", pos);
             lastAckedPosition = pos;
             PageCursorInfo pageInfo = getPageInfo(pos);
             PageCache cache = null;

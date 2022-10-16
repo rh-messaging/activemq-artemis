@@ -1302,7 +1302,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private void deliverAsync(boolean noWait) {
       if (scheduledRunners.get() < MAX_SCHEDULED_RUNNERS) {
          scheduledRunners.incrementAndGet();
-         checkDepage(noWait);
          try {
             getExecutor().execute(deliverRunner);
          } catch (RejectedExecutionException ignored) {
@@ -1632,6 +1631,17 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public QueueBrowserIterator browserIterator() {
       return new QueueBrowserIterator();
+   }
+
+   @Override
+   public MessageReference peekFirstMessage() {
+      synchronized (this) {
+         if (messageReferences != null) {
+            return messageReferences.peek();
+         }
+      }
+
+      return null;
    }
 
    @Override
