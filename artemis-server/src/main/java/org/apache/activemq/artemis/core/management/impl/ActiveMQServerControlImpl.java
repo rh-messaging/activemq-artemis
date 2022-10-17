@@ -30,7 +30,9 @@ import javax.management.NotificationEmitter;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.transaction.xa.Xid;
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -4466,8 +4468,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       if (configurationUrl == null) {
          throw ActiveMQMessageBundle.BUNDLE.failedToLocateConfigURL();
       }
-      String path = configurationUrl.getPath();
-      return new PropertiesLoginModuleConfigurator(getSecurityDomain(), path.substring(0, path.lastIndexOf("/")));
+      String path = Path.of(configurationUrl.toURI()).toString();
+      return new PropertiesLoginModuleConfigurator(getSecurityDomain(), path.substring(0, path.lastIndexOf(File.separator)));
    }
 
    @Override
