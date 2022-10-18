@@ -1346,6 +1346,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (scheduledRunners.get() < MAX_SCHEDULED_RUNNERS) {
          scheduledRunners.incrementAndGet();
          try {
+            getExecutor().execute(() -> checkDepage(noWait));
             getExecutor().execute(deliverRunner);
          } catch (RejectedExecutionException ignored) {
             // no-op
