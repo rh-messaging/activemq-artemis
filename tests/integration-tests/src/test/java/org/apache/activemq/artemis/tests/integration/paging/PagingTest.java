@@ -2557,14 +2557,15 @@ public class PagingTest extends ActiveMQTestBase {
 
       Wait.assertEquals(numberOfMessages, queue::getMessageCount);
 
-      int msgReceived = 0;
       ClientSession sessionConsumer = sf.createSession(false, false, false);
       sessionConsumer.start();
       ClientConsumer consumer = sessionConsumer.createConsumer(PagingTest.ADDRESS);
       for (int msgCount = 0; msgCount < numberOfMessages; msgCount++) {
          logger.debug("Received {}", msgCount);
-         msgReceived++;
-         ClientMessage msg = consumer.receiveImmediate();
+         ClientMessage msg = null;
+         for (int retry = 0; retry < 10 && msg == null; retry++) {
+            msg = consumer.receiveImmediate();
+         }
          if (msg == null) {
             logger.debug("It's null. leaving now");
             sessionConsumer.commit();
