@@ -271,9 +271,7 @@ public class MMSFactoryTest extends SmokeTestBase {
                }, 45_000, 1_000);
 
                expectedTotalSize += BATCH_SIZE * 2;
-               Wait.assertEquals(expectedTotalSize, queueControl::getMessagesAdded);
 
-               Wait.assertEquals(expectedTotalSize, () -> queueControl.getMessagesAcknowledged() + queueControl.getMessagesKilled());
                retryNumber.incrementAndGet();
 
                for (Process c : consumers) {
