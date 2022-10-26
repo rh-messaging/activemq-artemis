@@ -42,6 +42,7 @@ import org.apache.activemq.artemis.core.io.SequentialFileFactory;
 import org.apache.activemq.artemis.journal.ActiveMQJournalBundle;
 import org.apache.activemq.artemis.journal.ActiveMQJournalLogger;
 import org.jboss.logging.Logger;
+import org.apache.activemq.artemis.utils.ThreadDumpUtil;
 
 /**
  * This is a helper class for the Journal, which will control access to dataFiles, openedFiles and freeFiles
@@ -493,6 +494,7 @@ public class JournalFilesRepository {
 
       if (nextFile == null) {
          ActiveMQJournalLogger.LOGGER.cantOpenFileTimeout(journalFileOpenTimeout);
+         logger.warn(ThreadDumpUtil.threadDump(ActiveMQJournalBundle.BUNDLE.threadDumpAfterFileOpenTimeout()));
          try {
             nextFile = takeFile(true, true, true, false);
          } catch (Exception e) {

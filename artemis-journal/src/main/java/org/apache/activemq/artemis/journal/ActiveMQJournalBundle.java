@@ -50,4 +50,8 @@ public interface ActiveMQJournalBundle {
 
    @Message(id = 149005, value = "Message of {0} bytes is bigger than the max record size of {1} bytes. You should try to move large application properties to the message body.", format = Message.Format.MESSAGE_FORMAT)
    ActiveMQIOErrorException recordLargerThanStoreMax(long recordSize, long maxRecordSize);
+
+   @Message(id = 149007, value = "Thread dump being generated as the asynchronous file.open is not responding fast enough.")
+   String threadDumpAfterFileOpenTimeout();
+
 }
