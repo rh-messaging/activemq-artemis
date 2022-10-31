@@ -255,7 +255,7 @@ final class JdbcLeaseLock implements LeaseLock {
             final long localExpirationTime = now + expirationMillis;
             preparedStatement.setLong(2, localExpirationTime);
             preparedStatement.setLong(3, now);
-            LOGGER.debugf("[%s] %s is trying to acquire lock with expirationTime %l",
+            LOGGER.debugf("[%s] %s is trying to acquire lock with expirationTime %d",
                           lockName, holderId, localExpirationTime);
             final boolean acquired = preparedStatement.executeUpdate() == 1;
             connection.commit();
