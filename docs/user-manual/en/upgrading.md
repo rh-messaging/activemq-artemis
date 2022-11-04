@@ -16,18 +16,18 @@ Because of this separation it's very easy to upgrade Artemis in most cases.
 
 > **Note:**
 >
-> It's recommended to choose a folder different than the on where Apache
+> It's recommended to choose a folder different from where Apache
 > Artemis was downloaded. This separation allows you run multiple broker
 > instances with the same Artemis "home" for example. It also simplifies
 > updating to newer versions of Artemis. 
-
+ 
 ## General Upgrade Procedure
 
 Upgrading may require some specific steps noted in the [versions](versions.md),
 but the general process is as follows:
 
 1. Navigate to the `etc` folder of the broker instance that's being upgraded
-1. Open `artemis.profile` (`artemis.profile.cmd` on Windows). It contains a
+2. Open `artemis.profile` (`artemis.profile.cmd` on Windows). It contains a
    property which is relevant for the upgrade:
 
    ```
@@ -37,7 +37,7 @@ but the general process is as follows:
 If you run Artemis as a service on windows you have to do the following additional steps:
 
 1. Navigate to the `bin` folder of the broker instance that's being upgraded
-1. Open `artemis-service.xml`. It contains a property which is relevant for the upgrade:
+2. Open `artemis-service.xml`. It contains a property which is relevant for the upgrade:
 
    ```
    <env name="ARTEMIS_HOME" value="/path/to/apache-artemis-version"/>
@@ -48,3 +48,35 @@ most cases_ the instance can be upgraded to a newer version simply by changing
 the value of this property to the location of the new broker home. Please refer
 to the aforementioned [versions](versions.md) document for additional upgrade
 steps (if required).
+
+It is also possible to do many of these update steps automatically as can be seen in the next section.
+
+## Upgrading tool
+
+An upgrade helper tool from the new broker download can be used to refresh various configuration files
+and scripts from an existing broker instance from a prior version, and thus automate much of work to upgrade
+the instance to use the new version.
+
+> You should back up your existing broker instance before running the command.
+
+```shell
+cd $NEW_ARTEMIS_DOWNLOAD/bin/
+./artemis upgrade PATH_TO_UPGRADING_INSTANCE
+```
+
+The broker instance `bin/artemis` script and `etc/artemis.profile`(artemis.cmd and artemis.cmd.profile on Windows)
+will be updated to the new versions, setting its ARTEMIS_HOME to refer to the new broker version home path. The tool
+will also create the new `<instance>/etc/log4j2.properties` configuration file if needed (e.g if you are migrating
+from a version prior to 2.27.0), and remove the old `<instance>/etc/logging.properties` file if present.
+
+The broker.xml file and data are retained as-is.
+
+> **Note:**
+>
+> Most existing customisations to the old configuration files and scripts will be lost in the process of refreshing the
+> files. As such you should compare the old configuration files with the refreshed ones and then port any missing
+> customisations you may have made as necessary. The upgrade command itself will copy the older files it changes to
+> an old-config-bkp.<index> folder within the instance dir.
+>
+> Similarly, if you had customised the old logging.properties file you may need to prepare analogous changes for the
+> new log4j2.properties file.
