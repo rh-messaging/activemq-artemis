@@ -126,9 +126,7 @@ public class RefsOperation extends TransactionOperationAbstract {
 
          QueueImpl queue = entry.getKey();
 
-         synchronized (queue) {
-            queue.postRollback(refs);
-         }
+         queue.postRollback(refs);
       }
 
       if (!ackedRefs.isEmpty()) {

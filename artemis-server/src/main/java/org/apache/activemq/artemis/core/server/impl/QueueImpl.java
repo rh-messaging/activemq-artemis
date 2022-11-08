@@ -1093,6 +1093,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    /* Called when a message is cancelled back into the queue */
    @Override
    public void addHead(final MessageReference ref, boolean scheduling) {
+      if (logger.isTraceEnabled()) {
+         logger.tracef("AddHead, size = %s, intermediate size = %s, references size = %s\nreference=%s", queueMemorySize, intermediateMessageReferences.size(), messageReferences.size(), ref);
+      }
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_HEAD)) {
          synchronized (this) {
             if (ringSize != -1) {
@@ -1115,8 +1118,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    /* Called when a message is cancelled back into the queue */
    @Override
    public void addSorted(final MessageReference ref, boolean scheduling) {
+      if (logger.isTraceEnabled()) {
+         logger.tracef("addSorted, size = %s, intermediate size = %s, references size = %s\nreference=%s", queueMemorySize, intermediateMessageReferences.size(), messageReferences.size(), ref);
+      }
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_HEAD)) {
-         synchronized (this) {
+         synchronized (QueueImpl.this) {
             if (ringSize != -1) {
                enforceRing(ref, false, true);
             }
@@ -1152,6 +1158,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    /* Called when a message is cancelled back into the queue */
    @Override
    public void addSorted(final List<MessageReference> refs, boolean scheduling) {
+      if (refs.size() > MAX_DELIVERIES_IN_LOOP) {
+         logger.debugf("Switching addSorted call to addSortedLargeTX on queue %s", name);
+         addSortedLargeTX(refs, scheduling);
+         return;
+      }
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_HEAD)) {
          synchronized (this) {
             for (MessageReference ref : refs) {
@@ -1162,6 +1173,29 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             deliverAsync();
          }
+      }
+   }
+
+   // Perhaps we could just replace addSorted by addSortedLargeTX
+   // However I am not 100% confident we could always resetAllIterators
+   // we certainly can in the case of a rollback in a huge TX.
+   // so I am just playing safe and keeping the original semantic for small transactions.
+   private void addSortedLargeTX(final List<MessageReference> refs, boolean scheduling) {
+      for (MessageReference ref : refs) {
+         // When dealing with large transactions, we are not holding a synchronization lock here.
+         // addSorted will lock for each individual adds
+         addSorted(ref, scheduling);
+      }
+
+      if (logger.isDebugEnabled()) {
+         logger.debugf("addSortedHugeLoad finished on queue %s", name);
+      }
+
+      synchronized (this) {
+
+         resetAllIterators();
+
+         deliverAsync();
       }
    }
 
@@ -2968,8 +3002,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * are no more matching or available messages.
     */
    private boolean deliver() {
-      if (logger.isDebugEnabled()) {
-         logger.debug("Queue " + this.getName()  + " doing deliver. messageReferences=" + messageReferences.size() + " with consumers=" + getConsumerCount());
+      if (logger.isTraceEnabled()) {
+         logger.tracef("Queue %s doing deliver. messageReferences=%s with consumers=%s", name, messageReferences.size(), getConsumerCount());
       }
 
       scheduledRunners.decrementAndGet();
