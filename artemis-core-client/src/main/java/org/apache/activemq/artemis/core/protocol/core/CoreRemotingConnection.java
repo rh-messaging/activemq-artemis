@@ -52,13 +52,11 @@ public interface CoreRemotingConnection extends RemotingConnection {
    }
 
    default boolean isVersionSupportClientID() {
-      int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return false;
    }
 
    default boolean isVersionSupportRouting() {
-      int version = getChannelVersion();
-      return  version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return false;
    }
 
    default boolean isVersionSupportCommitV2() {
@@ -67,8 +65,7 @@ public interface CoreRemotingConnection extends RemotingConnection {
    }
 
    default boolean isBeforeTwoEighteen() {
-      int version = getChannelVersion();
-      return  version < PacketImpl.ARTEMIS_2_18_0_VERSION;
+      return true;
    }
 
    /**

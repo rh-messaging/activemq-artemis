@@ -190,7 +190,7 @@ public final class ChannelImpl implements Channel {
          case PacketImpl.CLUSTER_TOPOLOGY_V4:
          case PacketImpl.CREATESESSION_V2:
          case PacketImpl.DISCONNECT_V3:
-            return version >= PacketImpl.ARTEMIS_2_18_0_VERSION;
+            return false;
          default:
             return true;
       }
