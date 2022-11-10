@@ -434,79 +434,82 @@ public class ClientProducerImpl implements ClientProducerInternal {
 
       boolean headerSent = false;
 
-      int reconnectID = sessionContext.getReconnectID();
-      while (!lastPacket) {
-         byte[] buff = new byte[minLargeMessageSize];
+      try {
+         int reconnectID = sessionContext.getReconnectID();
+         while (!lastPacket) {
+            byte[] buff = new byte[minLargeMessageSize];
 
-         int pos = 0;
+            int pos = 0;
 
-         do {
-            int numberOfBytesRead;
+            do {
+               int numberOfBytesRead;
 
-            int wanted = minLargeMessageSize - pos;
+               int wanted = minLargeMessageSize - pos;
 
-            try {
-               numberOfBytesRead = input.read(buff, pos, wanted);
-            } catch (IOException e) {
-               throw ActiveMQClientMessageBundle.BUNDLE.errorReadingBody(e);
+               try {
+                  numberOfBytesRead = input.read(buff, pos, wanted);
+               } catch (IOException e) {
+                  throw ActiveMQClientMessageBundle.BUNDLE.errorReadingBody(e);
+               }
+
+               if (numberOfBytesRead == -1) {
+                  lastPacket = true;
+
+                  break;
+               }
+
+               pos += numberOfBytesRead;
             }
+            while (pos < minLargeMessageSize);
 
-            if (numberOfBytesRead == -1) {
-               lastPacket = true;
+            totalSize += pos;
 
-               break;
-            }
+            if (lastPacket) {
+               if (!session.isCompressLargeMessages()) {
+                  messageSize.set(totalSize);
+               }
 
-            pos += numberOfBytesRead;
-         }
-         while (pos < minLargeMessageSize);
+               // This is replacing the last packet by a smaller packet
+               byte[] buff2 = new byte[pos];
 
-         totalSize += pos;
+               System.arraycopy(buff, 0, buff2, 0, pos);
 
-         if (lastPacket) {
-            if (!session.isCompressLargeMessages()) {
-               messageSize.set(totalSize);
-            }
+               buff = buff2;
 
-            // This is replacing the last packet by a smaller packet
-            byte[] buff2 = new byte[pos];
+               // This is the case where the message is being converted as a regular message
+               if (!headerSent && session.isCompressLargeMessages() && buff2.length < minLargeMessageSize) {
+                  msgI.getBodyBuffer().resetReaderIndex();
+                  msgI.getBodyBuffer().resetWriterIndex();
+                  msgI.putLongProperty(Message.HDR_LARGE_BODY_SIZE, deflaterReader.getTotalSize());
 
-            System.arraycopy(buff, 0, buff2, 0, pos);
-
-            buff = buff2;
-
-            // This is the case where the message is being converted as a regular message
-            if (!headerSent && session.isCompressLargeMessages() && buff2.length < minLargeMessageSize) {
-               msgI.getBodyBuffer().resetReaderIndex();
-               msgI.getBodyBuffer().resetWriterIndex();
-               msgI.putLongProperty(Message.HDR_LARGE_BODY_SIZE, deflaterReader.getTotalSize());
-
-               msgI.getBodyBuffer().writeBytes(buff, 0, pos);
-               sendRegularMessage(msgI.getAddressSimpleString(), msgI, sendBlocking, credits, handler);
-               return;
+                  msgI.getBodyBuffer().writeBytes(buff, 0, pos);
+                  sendRegularMessage(msgI.getAddressSimpleString(), msgI, sendBlocking, credits, handler);
+                  return;
+               } else {
+                  if (!headerSent) {
+                     headerSent = true;
+                     sendInitialLargeMessageHeader(msgI, credits);
+                  }
+                  int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, true, buff, reconnectID, handler);
+                  credits.acquireCredits(creditsSent);
+               }
             } else {
                if (!headerSent) {
                   headerSent = true;
                   sendInitialLargeMessageHeader(msgI, credits);
                }
-               int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, true, buff, reconnectID, handler);
+
+               int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, false, buff, reconnectID, handler);
                credits.acquireCredits(creditsSent);
             }
-         } else {
-            if (!headerSent) {
-               headerSent = true;
-               sendInitialLargeMessageHeader(msgI, credits);
-            }
-
-            int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, false, buff, reconnectID, handler);
-            credits.acquireCredits(creditsSent);
+         }
+      } finally {
+         try {
+            input.close();
+         } catch (IOException e) {
+            throw ActiveMQClientMessageBundle.BUNDLE.errorClosingLargeMessage(e);
          }
       }
 
-      try {
-         input.close();
-      } catch (IOException e) {
-         throw ActiveMQClientMessageBundle.BUNDLE.errorClosingLargeMessage(e);
-      }
    }
 }

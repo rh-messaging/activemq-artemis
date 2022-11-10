@@ -24,6 +24,8 @@ import javax.jms.Session;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.nio.ByteBuffer;
@@ -31,6 +33,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.management.UnixOperatingSystemMXBean;
@@ -2791,6 +2794,83 @@ public class LargeMessageTest extends LargeMessageTestBase {
       Wait.assertTrue(() -> ((UnixOperatingSystemMXBean)os).getOpenFileDescriptorCount() - fdBefore < 3);
    }
 
+   @Test
+   public void testStreamedMessage() throws Exception {
+      testStream(false);
+   }
 
+   @Test
+   public void testStreamedMessageCompressed() throws Exception {
+      testStream(true);
+   }
+
+   private void testStream(boolean compressed) throws Exception {
+      ActiveMQServer server = createServer(true, isNetty(), storeType);
+
+      server.start();
+
+      locator.setCompressLargeMessage(compressed);
+
+      ClientSessionFactory sf = addSessionFactory(createSessionFactory(locator));
+
+      ClientSession session = sf.createSession(false, false);
+
+      session.createQueue(new QueueConfiguration(ADDRESS));
+
+      ClientProducer producer = session.createProducer(ADDRESS);
+
+      AtomicBoolean closed = new AtomicBoolean(false);
+
+      final int BYTES = 1_000;
+
+      InputStream inputStream = new InputStream() {
+         int bytes = BYTES;
+         @Override
+         public int read() throws IOException {
+            if (bytes-- > 0) {
+               return 10;
+            } else {
+               return -1;
+            }
+         }
+
+         @Override
+         public void close() {
+            closed.set(true);
+         }
+
+         @Override
+         public int available() {
+            return bytes;
+         }
+      };
+
+      ClientMessage message = session.createMessage(true);
+      message.setBodyInputStream(inputStream);
+      producer.send(message);
+
+      Wait.assertTrue(closed::get);
+
+      session.commit();
+
+      session.start();
+
+      ClientConsumer consumer = session.createConsumer(ADDRESS);
+
+      ClientMessage receivedMessage = consumer.receive(5000);
+      Assert.assertNotNull(receivedMessage);
+
+      ActiveMQBuffer buffer = receivedMessage.getBodyBuffer();
+      Assert.assertEquals(BYTES, buffer.readableBytes());
+
+      for (int i = 0; i < BYTES; i++) {
+         Assert.assertEquals((byte)10, buffer.readByte());
+      }
+
+      Assert.assertEquals(0, buffer.readableBytes());
+
+      session.close();
+
+   }
 
 }
