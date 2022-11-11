@@ -16,7 +16,6 @@
  */
 package org.apache.activemq.artemis.utils.collections;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -33,7 +32,7 @@ import org.jboss.logging.Logger;
 public class LinkedListImpl<E> implements LinkedList<E> {
 
    private static final Logger logger = Logger.getLogger(LinkedListImpl.class);
-   
+
 
    private static final int INITIAL_ITERATOR_ARRAY_SIZE = 10;
 
