@@ -800,6 +800,9 @@ public class ActiveMQActivation {
 
       @Override
       public void nodeUP(TopologyMember member, boolean last) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("nodeUp: " + member.toURI());
+         }
          boolean newNode = false;
 
          String id = member.getNodeId();
@@ -820,6 +823,9 @@ public class ActiveMQActivation {
 
       @Override
       public void nodeDown(long eventUID, String nodeID) {
+         if (logger.isTraceEnabled()) {
+            logger.trace("nodeDown: " + nodeID);
+         }
          if (nodes.remove(nodeID)) {
             removedNodes.put(nodeID, eventUID);
             ActiveMQRALogger.LOGGER.rebalancingConnections("nodeDown " + nodeID);
