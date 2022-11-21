@@ -125,7 +125,7 @@ import static org.apache.activemq.artemis.utils.collections.IterableStream.itera
 /**
  * Implementation of a Queue
  * <p>
- * Completely non blocking between adding to queue and delivering to consumers.
+ * Completely non blocking between adding to queue and t stdelivering to consumers.
  */
 public class QueueImpl extends CriticalComponentImpl implements Queue {
 
