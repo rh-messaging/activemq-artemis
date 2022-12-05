@@ -124,6 +124,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
    // as large message could be interrupted due to flow control and resumed at the same message
    volatile boolean hasLarge = false;
    volatile LargeMessageDeliveryContext pendingLargeMessage = null;
+   volatile Runnable afterLargeMessage;
 
 
    private int credits = 0;
@@ -172,6 +173,10 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
 
    @Override
    public void onFlow(int currentCredits, boolean drain) {
+
+      if (log.isDebugEnabled()) {
+         log.debugf("flow %s, draing=%s", (Object)currentCredits, drain);
+      }
       connection.requireInHandler();
 
       setupCredit();
@@ -186,8 +191,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
                public void run() {
                   try {
                      connection.runNow(() -> {
-                        plugSender.reportDrained();
-                        setupCredit();
+                        if (pendingLargeMessage != null) {
+                           afterLargeMessage = () -> drained(plugSender);
+                        } else {
+                           drained(plugSender);
+                        }
                      });
                   } finally {
                      draining.set(false);
@@ -198,6 +206,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
       } else {
          serverConsumer.receiveCredits(-1);
       }
+   }
+
+   private void drained(ProtonServerSenderContext sender) {
+      sender.reportDrained();
+      setupCredit();
    }
 
    public boolean hasCredits() {
@@ -772,6 +785,11 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
 
    private void finishLargeMessage() {
       lmUsageDown();
+      Runnable localRunnable = afterLargeMessage;
+      afterLargeMessage = null;
+      if (localRunnable != null) {
+         localRunnable.run();
+      }
       pendingLargeMessage = null;
       hasLarge = false;
       brokerConsumer.promptDelivery();
