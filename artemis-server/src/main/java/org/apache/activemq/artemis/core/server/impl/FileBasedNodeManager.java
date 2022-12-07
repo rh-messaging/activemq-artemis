@@ -33,6 +33,7 @@ public abstract class FileBasedNodeManager extends NodeManager {
    public static final String SERVER_LOCK_NAME = "server.lock";
    private static final String ACCESS_MODE = "rw";
    private final File directory;
+   protected File serverLockFile;
    protected FileChannel channel;
 
    public FileBasedNodeManager(boolean replicatedBackup, File directory) {
@@ -53,7 +54,7 @@ public abstract class FileBasedNodeManager extends NodeManager {
     * </ol>
     */
    protected synchronized void setUpServerLockFile() throws IOException {
-      File serverLockFile = newFile(SERVER_LOCK_NAME);
+      serverLockFile = newFile(SERVER_LOCK_NAME);
 
       boolean fileCreated = false;
 
