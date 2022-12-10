@@ -127,6 +127,10 @@ public class ConnectionRouter implements ActiveMQComponent {
 
    @Override
    public void start() throws Exception {
+      if (localTarget != null) {
+         localTarget.getTarget().connect();
+      }
+
       if (cache != null) {
          cache.start();
       }
@@ -148,6 +152,10 @@ public class ConnectionRouter implements ActiveMQComponent {
 
       if (cache != null) {
          cache.stop();
+      }
+
+      if (localTarget != null) {
+         localTarget.getTarget().disconnect();
       }
    }
 

@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.core.server.routing;
 
 import java.util.Collections;
 
-import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
 import org.apache.activemq.artemis.core.config.routing.NamedPropertyConfiguration;
 import org.apache.activemq.artemis.core.config.routing.PoolConfiguration;
@@ -47,7 +46,6 @@ public class ConnectionRouterManagerTest {
    public void setUp() throws Exception {
 
       mockServer = mock(ActiveMQServer.class);
-      Mockito.when(mockServer.getNodeID()).thenReturn(SimpleString.toSimpleString("UUID"));
 
       underTest = new ConnectionRouterManager(null, mockServer, null);
       underTest.start();
