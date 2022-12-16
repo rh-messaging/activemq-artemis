@@ -543,7 +543,9 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
       // check that suffixes were interpreted well
       Assert.assertEquals(100 * 1024 * 1024, configuration.getGlobalMaxSize());
       Assert.assertEquals(10 * 1024 * 1024, configuration.getJournalFileSize());
-      Assert.assertEquals(5 * 1024 * 1024, configuration.getJournalBufferSize_NIO());
+      // one of the two will get the value
+      Assert.assertTrue(5 * 1024 * 1024 == configuration.getJournalBufferSize_AIO() ||
+                                 5 * 1024 * 1024 == configuration.getJournalBufferSize_NIO());
    }
 
    @Test
