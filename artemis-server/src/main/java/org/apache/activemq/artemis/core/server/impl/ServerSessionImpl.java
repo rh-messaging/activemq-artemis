@@ -1125,17 +1125,15 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
       private void run() {
          try {
-            if (logger.isDebugEnabled()) {
-               logger.debug("deleting temporary queue " + bindingName);
+            Binding binding = server.getPostOffice().getBinding(bindingName);
+            if (binding == null) {
+               // the queue may have already been deleted
+               return;
             }
-            try {
-               server.destroyQueue(bindingName, null, false, false, true);
-               if (observer != null) {
-                  observer.tempQueueDeleted(bindingName);
-               }
-            } catch (ActiveMQException e) {
-               // that's fine.. it can happen due to queue already been deleted
-               logger.debug(e.getMessage(), e);
+            logger.debug("deleting temporary queue " + bindingName);
+            server.destroyQueue(bindingName, null, false, false, server.getAddressInfo(binding.getAddress()).isTemporary());
+            if (observer != null) {
+               observer.tempQueueDeleted(bindingName);
             }
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.errorRemovingTempQueue(e, bindingName);
