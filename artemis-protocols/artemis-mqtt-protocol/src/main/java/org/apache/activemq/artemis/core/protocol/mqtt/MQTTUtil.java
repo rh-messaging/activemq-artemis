@@ -231,10 +231,8 @@ public class MQTTUtil {
    }
 
    public static Message createServerMessageFromByteBuf(MQTTSession session,
-                                                              String topic,
+                                                              SimpleString address,
                                                               MqttPublishMessage mqttPublishMessage) {
-      String coreAddress = convertMqttTopicFilterToCoreAddress(topic, session.getWildcardConfiguration());
-      SimpleString address = SimpleString.toSimpleString(coreAddress, session.getCoreMessageObjectPools().getAddressStringSimpleStringPool());
       ICoreMessage message = createServerMessage(session, address, mqttPublishMessage);
 
       ByteBuf payload = mqttPublishMessage.payload();
