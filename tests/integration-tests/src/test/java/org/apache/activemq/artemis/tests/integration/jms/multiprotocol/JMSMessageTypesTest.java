@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.artemis.tests.integration.amqp;
+package org.apache.activemq.artemis.tests.integration.jms.multiprotocol;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -44,16 +44,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test that various message types are handled as expected with an AMQP JMS client.
+ * Test that various message types are handled as expected between JMS clients.
  */
-public class JMSMessageTypesTest extends JMSClientTestSupport {
+public class JMSMessageTypesTest extends MultiprotocolJMSClientTestSupport {
 
    final int NUM_MESSAGES = 10;
-
-   @Override
-   protected String getConfiguredProtocols() {
-      return "AMQP,OPENWIRE,CORE";
-   }
 
    @Test(timeout = 60000)
    public void testAddressControlSendMessage() throws Exception {
