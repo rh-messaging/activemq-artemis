@@ -44,6 +44,8 @@ public class ClientProducerImpl implements ClientProducerInternal {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+   private final int id;
+
    private final SimpleString address;
 
    private final ClientSessionInternal session;
@@ -75,7 +77,10 @@ public class ClientProducerImpl implements ClientProducerInternal {
                              final boolean autoGroup,
                              final SimpleString groupID,
                              final int minLargeMessageSize,
-                             final SessionContext sessionContext) {
+                             final SessionContext sessionContext,
+                             final int producerID) {
+      this.id = producerID;
+
       this.sessionContext = sessionContext;
 
       this.session = session;
@@ -136,7 +141,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
       checkClosed();
 
       if (handler != null) {
-         handler = new SendAcknowledgementHandlerWrapper(handler, session.getSessionExecutor());
+         handler =  session.wrap(handler);
       }
 
       doSend(address1, message, handler);
@@ -145,7 +150,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
          logger.debug("Handler was used on producing messages towards address {} however there is no confirmationWindowEnabled", address1);
 
          // if there is no confirmation enabled, we will at least call the handler after the sent is done
-         session.scheduleConfirmation(handler, message);
+         handler.sendAcknowledged(message); // this is asynchronous as we wrapped with an executor
       }
    }
 
@@ -197,12 +202,19 @@ public class ClientProducerImpl implements ClientProducerInternal {
       return producerCredits;
    }
 
+   @Override
+   public int getID() {
+      return id;
+   }
+
    private void doCleanup() {
       if (address != null) {
          session.returnCredits(address);
       }
 
       session.removeProducer(this);
+
+      sessionContext.removeProducer(id);
 
       closed = true;
    }
@@ -257,6 +269,8 @@ public class ClientProducerImpl implements ClientProducerInternal {
 
          session.workDone();
 
+         msg.setConfirmed(false);
+
          if (isLarge) {
             largeMessageSend(sendBlocking, msg, theCredits, handler);
          } else {
@@ -288,7 +302,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
 
       theCredits.acquireCredits(creditSize);
 
-      sessionContext.sendFullMessage(msgI, sendBlocking, handler, address);
+      sessionContext.sendFullMessage(msgI, sendBlocking, handler, address, id);
    }
 
    private void checkClosed() throws ActiveMQException {
@@ -379,7 +393,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
             lastChunk = pos >= bodySize;
             SendAcknowledgementHandler messageHandler = lastChunk ? handler : null;
 
-            int creditsUsed = sessionContext.sendServerLargeMessageChunk(msgI, -1, sendBlocking, lastChunk, bodyBuffer.array(), messageHandler);
+            int creditsUsed = sessionContext.sendServerLargeMessageChunk(msgI, -1, sendBlocking, lastChunk, bodyBuffer.array(), id, messageHandler);
 
             credits.acquireCredits(creditsUsed);
          }
@@ -490,7 +504,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
                      headerSent = true;
                      sendInitialLargeMessageHeader(msgI, credits);
                   }
-                  int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, true, buff, reconnectID, handler);
+                  int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, true, buff, reconnectID, id, handler);
                   credits.acquireCredits(creditsSent);
                }
             } else {
@@ -499,7 +513,7 @@ public class ClientProducerImpl implements ClientProducerInternal {
                   sendInitialLargeMessageHeader(msgI, credits);
                }
 
-               int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, false, buff, reconnectID, handler);
+               int creditsSent = sessionContext.sendLargeMessageChunk(msgI, messageSize.get(), sendBlocking, false, buff, reconnectID, id, handler);
                credits.acquireCredits(creditsSent);
             }
          }

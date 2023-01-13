@@ -80,6 +80,8 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
    private final Executor executor;
 
+   private final Executor confirmationExecutor;
+
    // to be sent to consumers as consumers will need a separate consumer for flow control
    private final Executor flowControlExecutor;
 
@@ -159,6 +161,8 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
 
    private final CoreMessageObjectPools coreMessageObjectPools = new CoreMessageObjectPools();
 
+   private AtomicInteger producerIDs = new AtomicInteger();
+
    ClientSessionImpl(final ClientSessionFactoryInternal sessionFactory,
                      final String name,
                      final String username,
@@ -184,6 +188,7 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
                      final String groupID,
                      final SessionContext sessionContext,
                      final Executor executor,
+                     final Executor confirmationExecutor,
                      final Executor flowControlExecutor,
                      final Executor closeExecutor) throws ActiveMQException {
       this.sessionFactory = sessionFactory;
@@ -195,6 +200,8 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
       this.password = password;
 
       this.executor = executor;
+
+      this.confirmationExecutor = confirmationExecutor;
 
       this.flowControlExecutor = flowControlExecutor;
 
@@ -2026,9 +2033,19 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
                                                  final int maxRate) throws ActiveMQException {
       checkClosed();
 
-      ClientProducerInternal producer = new ClientProducerImpl(this, address, maxRate == -1 ? null : new TokenBucketLimiterImpl(maxRate, false), autoCommitSends && blockOnNonDurableSend, autoCommitSends && blockOnDurableSend, autoGroup, groupID == null ? null : new SimpleString(groupID), minLargeMessageSize, sessionContext);
+      ClientProducerInternal producer = new ClientProducerImpl(this,
+                                                                      address,
+                                                                      maxRate == -1 ? null : new TokenBucketLimiterImpl(maxRate, false),
+                                                                      autoCommitSends && blockOnNonDurableSend,
+                                                                      autoCommitSends && blockOnDurableSend,
+                                                                      autoGroup, groupID == null ? null : new SimpleString(groupID),
+                                                                      minLargeMessageSize,
+                                                                      sessionContext,
+                                                                      producerIDs.incrementAndGet());
 
       addProducer(producer);
+
+      sessionContext.createProducer(producer);
 
       return producer;
    }
@@ -2209,22 +2226,16 @@ public final class ClientSessionImpl implements ClientSessionInternal, FailureLi
    }
 
    @Override
-   public void scheduleConfirmation(final SendAcknowledgementHandler handler, final Message message) {
-      executor.execute(new Runnable() {
-         @Override
-         public void run() {
-            handler.sendAcknowledged(message);
-         }
-      });
-   }
-
-   @Override
    public SessionContext getSessionContext() {
       return sessionContext;
    }
 
    @Override
-   public Executor getSessionExecutor() {
-      return executor;
+   public SendAcknowledgementHandler wrap(SendAcknowledgementHandler handler) {
+      if (!(handler instanceof SendAcknowledgementHandlerWrapper)) {
+         handler = new SendAcknowledgementHandlerWrapper(handler, confirmationExecutor);
+      }
+      return handler;
    }
+
 }

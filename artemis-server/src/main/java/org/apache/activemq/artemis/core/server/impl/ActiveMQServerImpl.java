@@ -50,6 +50,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -277,7 +278,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    /** Certain management operations shouldn't use more than one thread.
     *  this semaphore is used to guarantee a single thread used. */
-   private final Semaphore managementSemaphore = new Semaphore(1);
+   private final ReentrantLock managementLock = new ReentrantLock();
 
    /**
     * This is a thread pool for io tasks only.
@@ -522,7 +523,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (replayManager == null) {
          throw ActiveMQMessageBundle.BUNDLE.noRetention();
       }
-      replayManager.replay(start, end, address, target, filter);
+      try (AutoCloseable lock = managementLock()) {
+         replayManager.replay(start, end, address, target, filter);
+      }
    }
 
    /**
@@ -1743,7 +1746,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                       final OperationContext context,
                                       final Map<SimpleString, RoutingType> prefixes,
                                       final String securityDomain,
-                                      String validatedUser) throws Exception {
+                                      String validatedUser,
+                                      boolean isLegacyProducer) throws Exception {
       if (validatedUser == null) {
          validatedUser = validateUser(username, password, connection, securityDomain);
       }
@@ -1755,7 +1759,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                        autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, prefixes);
       }
 
-      final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain);
+      final ServerSessionImpl session = internalCreateSession(name, username, password, validatedUser, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain, isLegacyProducer);
 
       return session;
    }
@@ -1783,8 +1787,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                        boolean autoCreateQueues,
                                        OperationContext context,
                                        Map<SimpleString, RoutingType> prefixes,
-                                       String securityDomain) throws Exception {
-      ServerSessionImpl session = internalCreateSession(name, null, null, null, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain);
+                                       String securityDomain,
+                                       boolean isLegacyProducer) throws Exception {
+      ServerSessionImpl session = internalCreateSession(name, null, null, null, minLargeMessageSize, connection, autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, context, autoCreateQueues, prefixes, securityDomain, isLegacyProducer);
       session.disableSecurity();
       return session;
    }
@@ -1861,14 +1866,15 @@ public class ActiveMQServerImpl implements ActiveMQServer {
                                                      OperationContext context,
                                                      boolean autoCreateQueues,
                                                      Map<SimpleString, RoutingType> prefixes,
-                                                     String securityDomain) throws Exception {
+                                                     String securityDomain,
+                                                     boolean isLegacyProducer) throws Exception {
 
       if (hasBrokerSessionPlugins()) {
          callBrokerSessionPlugins(plugin -> plugin.beforeCreateSession(name, username, minLargeMessageSize, connection,
                                                                        autoCommitSends, autoCommitAcks, preAcknowledge, xa, defaultAddress, callback, autoCreateQueues, context, prefixes));
       }
 
-      ServerSessionImpl session = new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, storageManager, postOffice, resourceManager, securityStore, managementService, this, configuration.getManagementAddress(), defaultAddress == null ? null : new SimpleString(defaultAddress), callback, context, pagingManager, prefixes, securityDomain);
+      ServerSessionImpl session = new ServerSessionImpl(name, username, password, validatedUser, minLargeMessageSize, autoCommitSends, autoCommitAcks, preAcknowledge, configuration.isPersistDeliveryCountBeforeDelivery(), xa, connection, storageManager, postOffice, resourceManager, securityStore, managementService, this, configuration.getManagementAddress(), defaultAddress == null ? null : new SimpleString(defaultAddress), callback, context, pagingManager, prefixes, securityDomain, isLegacyProducer);
 
       sessions.put(name, session);
 
@@ -4626,10 +4632,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    @Override
    public AutoCloseable managementLock() throws Exception {
-      if (!managementSemaphore.tryAcquire(1, TimeUnit.MINUTES)) {
+      if (!managementLock.tryLock(1, TimeUnit.MINUTES)) {
          throw ActiveMQMessageBundle.BUNDLE.managementBusy();
       } else {
-         return managementSemaphore::release;
+         return managementLock::unlock;
       }
    }
 }
