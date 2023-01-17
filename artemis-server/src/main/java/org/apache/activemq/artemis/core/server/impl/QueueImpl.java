@@ -4383,7 +4383,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       LinkedListIterator<MessageReference> messagesIterator = null;
 
       private LinkedListIterator<PagedReference> getPagingIterator() {
-         if (pagingIterator == null) {
+         if (pagingIterator == null && pageSubscription != null) {
             pagingIterator = pageSubscription.iterator(true);
          }
          return pagingIterator;
