@@ -54,7 +54,9 @@ public interface ActiveMQStompProtocolLogger extends BasicLogger {
    @Message(id = 332069, value = "Sent ERROR frame to STOMP client {0}: {1}", format = Message.Format.MESSAGE_FORMAT)
    void sentErrorToClient(String address, String message);
 
-   @LogMessage(level = Logger.Level.ERROR)
-   @Message(id = 334023, value = "Unable to send frame {0}", format = Message.Format.MESSAGE_FORMAT)
-   void errorSendingFrame(@Cause Exception e, StompFrame frame);
+   @LogMessage(id = 332070, value = "Unable to send frame {0}", format = Message.Format.MESSAGE_FORMAT)
+   void errorSendingFrame(StompFrame frame, Exception e);
+
+   @LogMessage(id = 332071, value = "Unable to send message to client: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void unableToSendMessageToClient(ICoreMessage message, Exception e);
 }

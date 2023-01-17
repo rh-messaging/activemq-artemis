@@ -190,6 +190,7 @@ public class StompSession implements SessionCallback {
          if (ActiveMQStompProtocolLogger.LOGGER.isDebugEnabled()) {
             ActiveMQStompProtocolLogger.LOGGER.debug(e);
          }
+         ActiveMQStompProtocolLogger.LOGGER.unableToSendMessageToClient(coreMessage, e);
          return 0;
       }
    }
