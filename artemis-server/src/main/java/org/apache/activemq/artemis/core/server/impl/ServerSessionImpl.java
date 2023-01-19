@@ -1166,6 +1166,11 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
    @Override
    public void deleteQueue(final SimpleString queueToDelete) throws Exception {
+      deleteQueue(queueToDelete, true);
+   }
+
+   @Override
+   public void deleteQueue(final SimpleString queueToDelete, boolean enforceSecurity) throws Exception {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.destroyQueue(this, remotingConnection.getAuditSubject(), remotingConnection.getRemoteAddress(), queueToDelete);
       }
@@ -1177,7 +1182,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          throw new ActiveMQNonExistentQueueException();
       }
 
-      server.destroyQueue(unPrefixedQueueName, this, true, false, true);
+      server.destroyQueue(unPrefixedQueueName, enforceSecurity ? this : null, true, false, true);
 
       TempQueueCleanerUpper cleaner = this.tempQueueCleannerUppers.remove(unPrefixedQueueName);
 

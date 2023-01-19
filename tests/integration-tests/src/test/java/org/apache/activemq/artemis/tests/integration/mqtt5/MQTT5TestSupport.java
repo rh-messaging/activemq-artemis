@@ -139,6 +139,9 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
    protected String fullUser = "user";
    protected String fullPass = "pass";
 
+   protected String noDeleteUser = "noDelete";
+   protected String noDeletePass = "noDelete";
+
    @Rule
    public TestName name = new TestName();
 
@@ -208,6 +211,8 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
          securityManager.getConfiguration().addRole(guestUser, "guest");
          securityManager.getConfiguration().addUser(fullUser, fullPass);
          securityManager.getConfiguration().addRole(fullUser, "full");
+         securityManager.getConfiguration().addUser(noDeleteUser, noDeleteUser);
+         securityManager.getConfiguration().addRole(noDeleteUser, "noDelete");
 
          // Configure roles
          HierarchicalRepository<Set<Role>> securityRepository = server.getSecurityRepository();
@@ -216,6 +221,7 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
          value.add(new Role("browser", false, false, false, false, false, false, false, true, false, false));
          value.add(new Role("guest", false, true, false, false, false, false, false, true, false, false));
          value.add(new Role("full", true, true, true, true, true, true, true, true, true, true));
+         value.add(new Role("noDelete", true, true, true, false, true, false, true, true, true, true));
          securityRepository.addMatch("#", value);
 
          server.getConfiguration().setSecurityEnabled(true);
@@ -339,7 +345,12 @@ public class MQTT5TestSupport extends ActiveMQTestBase {
 
    protected Queue getSubscriptionQueue(String TOPIC) {
       try {
-         return ((LocalQueueBinding)server.getPostOffice().getBindingsForAddress(SimpleString.toSimpleString(TOPIC)).getBindings().toArray()[0]).getQueue();
+         Object[] array = server.getPostOffice().getBindingsForAddress(SimpleString.toSimpleString(TOPIC)).getBindings().toArray();
+         if (array.length == 0) {
+            return null;
+         } else {
+            return ((LocalQueueBinding)array[0]).getQueue();
+         }
       } catch (Exception e) {
          e.printStackTrace();
          return null;
