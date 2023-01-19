@@ -256,6 +256,10 @@ public class MQTTSubscriptionManager {
    }
 
    private short removeSubscription(String address) {
+      return removeSubscription(address, true);
+   }
+
+   private short removeSubscription(String address, boolean enforceSecurity) {
       if (session.getState().getSubscription(address) == null) {
          return MQTTReasonCodes.NO_SUBSCRIPTION_EXISTED;
       }
@@ -294,7 +298,7 @@ public class MQTTSubscriptionManager {
             if (queue.isConfigurationManaged()) {
                queue.deleteAllReferences();
             } else {
-               session.getServerSession().deleteQueue(internalQueueName);
+               session.getServerSession().deleteQueue(internalQueueName, enforceSecurity);
             }
          }
       } catch (Exception e) {
@@ -371,9 +375,9 @@ public class MQTTSubscriptionManager {
       return consumerQoSLevels;
    }
 
-   void clean() {
+   void clean(boolean enforceSecurity) {
       for (MqttTopicSubscription mqttTopicSubscription : session.getState().getSubscriptions()) {
-         removeSubscription(mqttTopicSubscription.topicName());
+         removeSubscription(mqttTopicSubscription.topicName(), enforceSecurity);
       }
    }
 }

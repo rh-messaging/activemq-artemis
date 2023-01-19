@@ -131,7 +131,7 @@ public class MQTTSession {
                   // If the session expires the will message must be sent no matter the will delay
                   sendWillMessage();
                }
-               clean();
+               clean(false);
                protocolManager.removeSessionState(connection.getClientID());
             } else {
                state.setDisconnectedTime(System.currentTimeMillis());
@@ -141,7 +141,7 @@ public class MQTTSession {
                sendWillMessage();
             }
             if (isClean()) {
-               clean();
+               clean(false);
                protocolManager.removeSessionState(connection.getClientID());
             }
          }
@@ -221,8 +221,8 @@ public class MQTTSession {
       return protocolManager;
    }
 
-   void clean() throws Exception {
-      subscriptionManager.clean();
+   void clean(boolean enforceSecurity) throws Exception {
+      subscriptionManager.clean(enforceSecurity);
       mqttPublishManager.clean();
       state.clear();
    }
