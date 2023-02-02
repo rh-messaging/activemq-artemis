@@ -182,6 +182,19 @@
          <version>${netty.transport.native.epoll.s390x.version}</version>
          <classifier>linux-s390_64</classifier>
       </dependency>
+
+      <!-- artemis-prometheus-metrics-plugin -->
+      <dependency>
+         <groupId>com.redhat.amq-broker</groupId>
+         <artifactId>artemis-prometheus-metrics-plugin</artifactId>
+         <version>${artemis.prometheus.metrics.plugin.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.redhat.amq-broker</groupId>
+         <artifactId>artemis-prometheus-metrics-plugin-servlet</artifactId>
+         <version>${artemis.prometheus.metrics.plugin.version}</version>
+         <type>war</type>
+      </dependency>
    </dependencies>
 
    <build>
