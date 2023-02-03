@@ -149,6 +149,7 @@ public class ReplayManager {
                continue;
             }
          }
+         logger.debug("Reading retention file {}", file);
          JournalImpl.readJournalFile(messagesFF, file, new JournalReaderCallback() {
             @Override
             public void onReadEventRecord(RecordInfo info) throws Exception {
@@ -199,6 +200,8 @@ public class ReplayManager {
 
          }, null, false, null);
       }
+
+      logger.debug("Replay done::sourceAddress={}", sourceAddress);
    }
 
    private boolean messageMatch(Filter filter, Message message, String sourceAddress, String targetAddress) {
