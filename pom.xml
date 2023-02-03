@@ -68,6 +68,7 @@
       <module>artemis-features</module>
       <module>artemis-quorum-api</module>
       <module>artemis-quorum-ri</module>
+      <module>amq-broker</module>
    </modules>
 
    <name>ActiveMQ Artemis Parent</name>
