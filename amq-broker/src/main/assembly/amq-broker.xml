@@ -29,6 +29,22 @@
       <fileSet>
          <directory>target/artemis/apache-artemis-${project.parent.version}/</directory>
          <outputDirectory>/</outputDirectory>
+         <excludes>
+            <exclude>bin/artemis</exclude>
+            <exclude>**/**/*.sh</exclude>
+         </excludes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>target/artemis/apache-artemis-${project.parent.version}/</directory>
+         <outputDirectory>/</outputDirectory>
+         <includes>
+            <include>bin/artemis</include>
+            <include>**/**/*.sh</include>
+         </includes>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0755</fileMode>
       </fileSet>
    </fileSets>
 </assembly>
