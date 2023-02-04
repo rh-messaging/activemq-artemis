@@ -25,7 +25,6 @@
       <format>tar.gz</format>
    </formats>
    <includeBaseDirectory>true</includeBaseDirectory>
-   <baseDirectory>amq-broker-${amq.broker.version}</baseDirectory>
 
    <componentDescriptors>
        <componentDescriptor>dep.xml</componentDescriptor>
