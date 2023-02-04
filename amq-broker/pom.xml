@@ -26,7 +26,7 @@
 
    <groupId>com.redhat.amq-broker</groupId>
    <artifactId>amq-broker</artifactId>
-   <version>${amq.broker.version}</version>
+   <version>${amq.broker.version}.activemq-artemis-${project.parent.version}</version>
    <packaging>pom</packaging>
    <name>Red Hat AMQ Broker Distribution</name>
 
