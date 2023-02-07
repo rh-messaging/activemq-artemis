@@ -253,6 +253,9 @@ public abstract class ActiveMQTestBase extends Assert {
    }
 
 
+   protected void clearServers() {
+      servers.clear();
+   }
 
    private final Collection<ActiveMQServer> servers = new ArrayList<>();
    private final Collection<ServerLocator> locators = new ArrayList<>();
@@ -365,7 +368,7 @@ public abstract class ActiveMQTestBase extends Assert {
                }
                stopComponentOutputExceptions(server);
             }
-            servers.clear();
+            clearServers();
          }
 
          closeAllOtherComponents();

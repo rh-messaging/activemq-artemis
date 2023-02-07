@@ -92,7 +92,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private final int minLargeMessageSize;
 
-   private final ServerSession session;
+   private ServerSession session;
 
    protected final Object lock = new Object();
 
@@ -136,7 +136,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private final java.util.Deque<MessageReference> deliveringRefs = new ArrayDeque<>();
 
-   private final SessionCallback callback;
+   private SessionCallback callback;
 
    private boolean preAcknowledge;
 
@@ -613,6 +613,12 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
       if (server.hasBrokerConsumerPlugins()) {
          server.callBrokerConsumerPlugins(plugin -> plugin.afterCloseConsumer(this, failed));
       }
+
+      protocolContext = null;
+
+      callback = null;
+
+      session = null;
    }
 
    private void addLingerRefs() throws Exception {
