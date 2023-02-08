@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeImpl;
+import org.apache.activemq.artemis.core.postoffice.impl.PostOfficeTestAccessor;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTReasonCodes;
 import org.apache.activemq.artemis.core.protocol.mqtt.MQTTUtil;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -429,5 +431,46 @@ public class MQTT5Test extends MQTT5TestSupport {
 
       // verify the shared subscription queue is removed after all the subscribers disconnect
       Wait.assertTrue(() -> server.locateQueue(SUB_NAME.concat(".").concat(TOPIC)) == null, 2000, 100);
+   }
+
+   @Test(timeout = DEFAULT_TIMEOUT)
+   public void testAutoDeleteAddressWithWildcardSubscription() throws Exception {
+      String prefix = "topic";
+      server.getAddressSettingsRepository().addMatch(prefix + ".#", new AddressSettings().setAutoDeleteAddresses(true).setAutoDeleteAddressesSkipUsageCheck(true));
+      String topic = prefix + "/#";
+      final int MESSAGE_COUNT = 100;
+      final CountDownLatch latch = new CountDownLatch(MESSAGE_COUNT);
+
+      MqttClient consumer = createPahoClient("consumer");
+      consumer.connect();
+      consumer.subscribe(topic, AT_LEAST_ONCE);
+      consumer.setCallback(new LatchedMqttCallback(latch));
+
+      MqttClient producer = createPahoClient("producer");
+      producer.connect();
+
+      List<String> addresses = new ArrayList<>();
+      for (int i = 0; i < MESSAGE_COUNT; i++) {
+         String address = prefix + "/" + RandomUtil.randomString();
+         addresses.add(address.replace('/', '.'));
+         producer.publish(address, new MqttMessage());
+      }
+      producer.disconnect();
+      producer.close();
+
+      assertTrue(latch.await(2, TimeUnit.SECONDS));
+
+      for (String address : addresses) {
+         assertNotNull(server.getAddressInfo(SimpleString.toSimpleString(address)));
+      }
+
+      PostOfficeTestAccessor.sweepAndReapAddresses((PostOfficeImpl) server.getPostOffice());
+
+      for (String address : addresses) {
+         assertNull(server.getAddressInfo(SimpleString.toSimpleString(address)));
+      }
+
+      consumer.disconnect();
+      consumer.close();
    }
 }

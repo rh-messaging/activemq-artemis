@@ -2201,11 +2201,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
    void useOnlyAllowList();
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 224112, value = "Auto removing Queue {0} with queueID={1} on address={2}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 224112, value = "Auto removing queue {0} with queueID={1} on address={2}", format = Message.Format.MESSAGE_FORMAT)
    void autoRemoveQueue(String name, long queueID, String address);
 
    @LogMessage(level = Logger.Level.INFO)
-   @Message(id = 224113, value = "Auto removing Address {0}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 224113, value = "Auto removing address {0}", format = Message.Format.MESSAGE_FORMAT)
    void autoRemoveAddress(String name);
 
    @LogMessage(level = Logger.Level.INFO)

@@ -532,4 +532,8 @@ public interface Queue extends Bindable,CriticalComponent {
    default QueueConfiguration getQueueConfiguration() {
       return null;
    }
+
+   default long getCreatedTimestamp() {
+      return -1;
+   }
 }

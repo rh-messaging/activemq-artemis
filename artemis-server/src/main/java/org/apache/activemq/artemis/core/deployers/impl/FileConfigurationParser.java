@@ -276,6 +276,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String AUTO_DELETE_QUEUES_MESSAGE_COUNT = "auto-delete-queues-message-count";
 
+   private static final String AUTO_DELETE_QUEUES_SKIP_USAGE_CHECK = "auto-delete-queues-skip-usage-check";
+
    private static final String CONFIG_DELETE_QUEUES = "config-delete-queues";
 
    private static final String AUTO_CREATE_ADDRESSES = "auto-create-addresses";
@@ -283,6 +285,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
    private static final String AUTO_DELETE_ADDRESSES = "auto-delete-addresses";
 
    private static final String AUTO_DELETE_ADDRESSES_DELAY = "auto-delete-addresses-delay";
+
+   private static final String AUTO_DELETE_ADDRESSES_SKIP_USAGE_CHECK = "auto-delete-addresses-skip-usage-check";
 
    private static final String CONFIG_DELETE_ADDRESSES = "config-delete-addresses";
 
@@ -325,8 +329,6 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
    private static final String ENABLE_METRICS = "enable-metrics";
 
    private static final String ENABLE_INGRESS_TIMESTAMP = "enable-ingress-timestamp";
-
-   private static final String SUPPRESS_SESSION_NOTIFICATIONS = "suppress-session-notifications";
 
    private boolean validateAIO = false;
 
@@ -1334,6 +1336,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             long autoDeleteQueuesMessageCount = XMLUtil.parseLong(child);
             Validators.MINUS_ONE_OR_GE_ZERO.validate(AUTO_DELETE_QUEUES_MESSAGE_COUNT, autoDeleteQueuesMessageCount);
             addressSettings.setAutoDeleteQueuesMessageCount(autoDeleteQueuesMessageCount);
+         }  else if (AUTO_DELETE_QUEUES_SKIP_USAGE_CHECK.equalsIgnoreCase(name)) {
+            addressSettings.setAutoDeleteQueuesSkipUsageCheck(XMLUtil.parseBoolean(child));
          } else if (CONFIG_DELETE_QUEUES.equalsIgnoreCase(name)) {
             String value = getTrimmedTextContent(child);
             Validators.DELETION_POLICY_TYPE.validate(CONFIG_DELETE_QUEUES, value);
@@ -1347,6 +1351,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
             long autoDeleteAddressesDelay = XMLUtil.parseLong(child);
             Validators.GE_ZERO.validate(AUTO_DELETE_ADDRESSES_DELAY, autoDeleteAddressesDelay);
             addressSettings.setAutoDeleteAddressesDelay(autoDeleteAddressesDelay);
+         } else if (AUTO_DELETE_ADDRESSES_SKIP_USAGE_CHECK.equalsIgnoreCase(name)) {
+            addressSettings.setAutoDeleteAddressesSkipUsageCheck(XMLUtil.parseBoolean(child));
          } else if (CONFIG_DELETE_ADDRESSES.equalsIgnoreCase(name)) {
             String value = getTrimmedTextContent(child);
             Validators.DELETION_POLICY_TYPE.validate(CONFIG_DELETE_ADDRESSES, value);
