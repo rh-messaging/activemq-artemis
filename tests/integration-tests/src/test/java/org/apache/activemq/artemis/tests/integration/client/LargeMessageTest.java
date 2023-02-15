@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.management.UnixOperatingSystemMXBean;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
+import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -58,6 +59,8 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.LargeServerMessage;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
+import org.apache.activemq.artemis.core.server.RoutingContext;
+import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerMessagePlugin;
 import org.apache.activemq.artemis.core.settings.impl.AddressFullMessagePolicy;
 import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.tests.integration.largemessage.LargeMessageTestBase;
@@ -312,6 +315,52 @@ public class LargeMessageTest extends LargeMessageTestBase {
       Message clientFile = createLargeClientMessageStreaming(session, messageSize, true);
 
       producer.send(clientFile);
+
+      session.close();
+
+      validateNoFilesOnLargeDir();
+   }
+
+   @Test
+   public void testFileRemovalOnFailure() throws Exception {
+      final AtomicBoolean throwException = new AtomicBoolean(false);
+      final String queueName = RandomUtil.randomString();
+      final int messageSize = (int) (3.5 * ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE);
+
+      ActiveMQServer server = createServer(true, isNetty(), storeType);
+
+      server.start();
+
+      server.registerBrokerPlugin(new ActiveMQServerMessagePlugin() {
+         @Override
+         public void beforeMessageRoute(Message message, RoutingContext context, boolean direct, boolean rejectDuplicates) throws ActiveMQException {
+            if (throwException.get()) {
+               throw new ActiveMQException();
+            }
+         }
+      });
+
+      server.createQueue(new QueueConfiguration(queueName));
+
+      ClientSessionFactory sf = addSessionFactory(createSessionFactory(locator));
+
+      ClientSession session = addClientSession(sf.createSession(false, true, false));
+
+      ClientProducer producer = session.createProducer(queueName);
+
+      Message clientFile = createLargeClientMessageStreaming(session, messageSize, true);
+
+      try {
+         throwException.set(true);
+         producer.send(clientFile);
+         fail("Should have thrown an exception here");
+      } catch (Exception e) {
+         // expected exception from plugin
+      } finally {
+         throwException.set(false);
+      }
+
+      assertEquals(0, server.locateQueue(queueName).getMessageCount());
 
       session.close();
 
