@@ -247,4 +247,9 @@ public class JournalFileImpl implements JournalFile {
       return totalNegativeToOthers.get();
    }
 
+   @Override
+   public void fileRemoved(JournalFile fileRemoved) {
+      negCounts.remove(fileRemoved);
+   }
+
 }
