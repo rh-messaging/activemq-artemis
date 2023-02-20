@@ -160,6 +160,10 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
 
    private boolean isClosed = false;
 
+   @Override
+   public boolean isClosed() {
+      return isClosed;
+   }
 
    public ServerConsumerImpl(final long id,
                              final ServerSession session,
@@ -614,11 +618,14 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
          server.callBrokerConsumerPlugins(plugin -> plugin.afterCloseConsumer(this, failed));
       }
 
-      protocolContext = null;
+      messageQueue.getExecutor().execute(() -> {
+         protocolContext = null;
 
-      callback = null;
+         callback = null;
 
-      session = null;
+         session = null;
+      });
+
    }
 
    private void addLingerRefs() throws Exception {
@@ -1121,7 +1128,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener {
     */
    @Override
    public String toString() {
-      return "ServerConsumerImpl [id=" + id + ", filter=" + filter + ", binding=" + binding + "]";
+      return "ServerConsumerImpl [id=" + id + ", filter=" + filter + ", binding=" + binding + ", closed=" + isClosed + "]";
    }
 
    @Override

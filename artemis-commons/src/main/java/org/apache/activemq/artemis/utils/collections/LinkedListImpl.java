@@ -322,6 +322,9 @@ public class LinkedListImpl<E> implements LinkedList<E> {
 
    @Override
    public LinkedListIterator<E> iterator() {
+      if (logger.isTraceEnabled()) {
+         logger.trace("Creating new iterator at", new Exception("trace location"));
+      }
       return new Iterator();
    }
 
@@ -406,6 +409,9 @@ public class LinkedListImpl<E> implements LinkedList<E> {
    }
 
    private synchronized void removeIter(Iterator iter) {
+      if (logger.isTraceEnabled()) {
+         logger.trace("Removing iterator at", new Exception("trace location"));
+      }
       for (int i = 0; i < numIters; i++) {
          if (iter == iters[i]) {
             iters[i] = null;
@@ -421,8 +427,10 @@ public class LinkedListImpl<E> implements LinkedList<E> {
             if (numIters >= INITIAL_ITERATOR_ARRAY_SIZE && numIters == iters.length / 2) {
                resize(numIters);
             }
-
             nextIndex--;
+            if (nextIndex < iters.length) {
+               iters[nextIndex] = null;
+            }
 
             return;
          }
@@ -487,8 +495,7 @@ public class LinkedListImpl<E> implements LinkedList<E> {
       }
    }
 
-   private class Iterator implements LinkedListIterator<E> {
-
+   public class Iterator implements LinkedListIterator<E> {
       Node<E> last;
 
       Node<E> current = head.next;
