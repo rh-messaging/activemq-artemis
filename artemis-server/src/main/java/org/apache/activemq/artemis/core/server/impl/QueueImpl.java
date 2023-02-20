@@ -373,10 +373,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       boolean foundRef = false;
 
       synchronized (this) {
-         Iterator<MessageReference> iter = messageReferences.iterator();
-         while (iter.hasNext()) {
-            foundRef = true;
-            out.println("reference = " + iter.next());
+         try (LinkedListIterator<MessageReference> iter = messageReferences.iterator()) {
+            while (iter.hasNext()) {
+               foundRef = true;
+               out.println("reference = " + iter.next());
+            }
          }
       }
 
@@ -1485,7 +1486,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    public void removeConsumer(final Consumer consumer) {
 
       try (ArtemisCloseable metric = measureCritical(CRITICAL_CONSUMER)) {
-         synchronized (this) {
+         synchronized (QueueImpl.this) {
 
             boolean consumerRemoved = false;
             for (ConsumerHolder holder : consumers) {
@@ -3032,7 +3033,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          MessageReference ref;
          Consumer handledconsumer = null;
 
-         synchronized (this) {
+         synchronized (QueueImpl.this) {
 
             if (queueDestroyed) {
                if (messageReferences.size() == 0) {
@@ -3065,6 +3066,14 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             Consumer consumer = holder.consumer;
             Consumer groupConsumer = null;
+
+            // we remove the consumerHolder when the Consumer is closed
+            // however the QueueConsumerIterator may hold a reference until the reset is called, which
+            // could happen a little later.
+            if (consumer.isClosed()) {
+               deliverAsync(true);
+               return false;
+            }
 
             if (holder.iter == null) {
                holder.iter = messageReferences.iterator();
