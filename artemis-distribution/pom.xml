@@ -207,6 +207,15 @@
          <artifactId>keycloak-core</artifactId>
          <version>${keycloak.version}</version>
       </dependency>
+      <dependency>
+         <groupId>org.jboss.logging</groupId>
+         <artifactId>jboss-logging</artifactId>
+         <version>${jboss.logging.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.httpcomponents</groupId>
+         <artifactId>httpclient</artifactId>
+      </dependency>
    </dependencies>
 
    <build>
