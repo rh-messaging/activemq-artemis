@@ -212,7 +212,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
                // if the backup acquires the file lock and the state is 'L' that means the primary died
 	       logger.debug("acquired live node lock state = " + (char) state);
                serverLockFile.setLastModified(System.currentTimeMillis());
-               logger.debug("touched {}; new time: {}", serverLockFile.getAbsoluteFile(), serverLockFile.lastModified());
+               logger.debug("touched " + serverLockFile.getAbsoluteFile() + "; new time: " + serverLockFile.lastModified());
                break;
             }
          }
@@ -340,7 +340,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
             }
          }
          serverLockLastModified = serverLockFile.lastModified();
-         logger.debug("Modified {} at {}", serverLockFile.getName(), serverLockLastModified);
+         logger.debug("Modified " + serverLockFile.getName() + " at " + serverLockLastModified);
       } catch (IOException | ActiveMQLockAcquisitionTimeoutException e) {
          throw new NodeManagerException(e);
       }
@@ -418,7 +418,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
             FileLock lock = tryLock(lockPosition);
             isRecurringFailure = false;
 
-            logger.debug("lock: {}", lock);
+            logger.debug("lock: " + lock);
 
             // even if the lock is valid it may have taken too long to acquire
             if (this.lockAcquisitionTimeoutNanos != -1 && (System.nanoTime() - start) > this.lockAcquisitionTimeoutNanos) {
@@ -558,11 +558,11 @@ public class FileLockNodeManager extends FileBasedNodeManager {
          if (freshServerLockFile.exists()) {
             // the other broker competing for the lock may modify the state as 'F' when it starts so ensure the state is 'L' before returning true
             if (freshServerLockFile.lastModified() > serverLockLastModified && state == LIVE) {
-               logger.debug("Lock file {} originally locked at {} was modified at {}", serverLockFile.getAbsolutePath(), new Date(serverLockLastModified), new Date(freshServerLockFile.lastModified()));
+               logger.debug("Lock file " + serverLockFile.getAbsolutePath() + " originally locked at " + new Date(serverLockLastModified) + " was modified at " + new Date(freshServerLockFile.lastModified()));
                modified = true;
             }
          } else {
-            logger.debug("Lock file {} does not exist", serverLockFile.getAbsolutePath());
+            logger.debug("Lock file " + serverLockFile.getAbsolutePath() + " does not exist");
             modified = true;
          }
 
