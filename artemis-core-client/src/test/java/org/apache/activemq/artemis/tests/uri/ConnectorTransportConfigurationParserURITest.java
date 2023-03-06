@@ -57,7 +57,7 @@ public class ConnectorTransportConfigurationParserURITest {
       System.out.println(transportURI);
       List<TransportConfiguration> objects = parser.newObject(transportURI, null);
       if (logger.isInfoEnabled()) {
-         objects.forEach(t -> logger.info("transportConfig: {}", t));
+         objects.forEach(t -> logger.info("transportConfig:" + t.toString()));
       }
 
       Assert.assertEquals(3, objects.size());
