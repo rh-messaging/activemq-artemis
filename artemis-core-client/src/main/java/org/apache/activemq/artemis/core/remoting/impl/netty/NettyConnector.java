@@ -118,6 +118,7 @@ import org.apache.activemq.artemis.spi.core.remoting.BufferHandler;
 import org.apache.activemq.artemis.spi.core.remoting.ClientConnectionLifeCycleListener;
 import org.apache.activemq.artemis.spi.core.remoting.ClientProtocolManager;
 import org.apache.activemq.artemis.spi.core.remoting.Connection;
+import org.apache.activemq.artemis.spi.core.remoting.ssl.OpenSSLContextFactory;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.OpenSSLContextFactoryProvider;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextConfig;
 import org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextFactoryProvider;
@@ -772,8 +773,11 @@ public class NettyConnector extends AbstractConnector {
    }
 
    private SSLEngine loadOpenSslEngine(final ByteBufAllocator alloc, final SSLContextConfig sslContextConfig) throws Exception {
-      final SslContext context = OpenSSLContextFactoryProvider.getOpenSSLContextFactory()
-         .getClientSslContext(sslContextConfig, configuration);
+      final OpenSSLContextFactory factory = OpenSSLContextFactoryProvider.getOpenSSLContextFactory();
+      if (factory == null) {
+         throw new IllegalStateException("No OpenSSLContextFactory registered!");
+      }
+      final SslContext context = factory.getClientSslContext(sslContextConfig, configuration);
 
       Subject subject = null;
       if (kerb5Config != null) {
