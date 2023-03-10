@@ -244,7 +244,7 @@
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
-      <bcprov-jdk15on-version>1.70</bcprov-jdk15on-version>
+      <bcprov-jdk15on-version>1.68.0.redhat-00005</bcprov-jdk15on-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
