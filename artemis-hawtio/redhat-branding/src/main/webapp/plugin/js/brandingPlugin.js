@@ -71,8 +71,8 @@ var Branding = (function (Branding) {
       "disabledRoutes": []
     };
 
-    aboutService.addProductInfo('Artemis', '${artemis-version}');
-    aboutService.addProductInfo('AMQ', '${project.version}');
+    aboutService.addProductInfo('AMQ', '${amq.broker.version}');
+    aboutService.addProductInfo('Artemis', '${project.version}');
     // Calling this function is required to apply the custom css and
     // favicon settings
     Core.applyBranding(configManager);
