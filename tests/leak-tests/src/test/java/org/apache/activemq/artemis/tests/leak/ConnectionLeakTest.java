@@ -25,19 +25,13 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.activemq.artemis.api.core.QueueConfiguration;
-import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.core.protocol.core.impl.RemotingConnectionImpl;
-import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
-import org.apache.activemq.artemis.core.server.impl.ServerConsumerImpl;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import io.github.checkleak.core.CheckLeak;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
-import org.apache.activemq.artemis.utils.collections.LinkedListImpl;
-import org.apache.qpid.proton.engine.impl.DeliveryImpl;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -78,7 +72,7 @@ public class ConnectionLeakTest extends ActiveMQTestBase {
    @Override
    @Before
    public void setUp() throws Exception {
-      server = createServer(false, createDefaultConfig(1, true));
+      server = createServer(true, createDefaultConfig(1, true));
       server.getConfiguration().setJournalPoolFiles(4).setJournalMinFiles(2);
       server.start();
    }
@@ -99,9 +93,6 @@ public class ConnectionLeakTest extends ActiveMQTestBase {
    }
 
    private void doTest(String protocol) throws Exception {
-      CheckLeak checkLeak = new CheckLeak();
-      // Some protocols may create ServerConsumers
-      int originalConsumers = checkLeak.getAllObjects(ServerConsumerImpl.class).length;
       int REPEATS = 100;
       int MESSAGES = 20;
       basicMemoryAsserts();
@@ -143,16 +134,11 @@ public class ConnectionLeakTest extends ActiveMQTestBase {
                      targetProducer.send(m);
                   }
                   Assert.assertNull(sourceConsumer.receiveNoWait());
-                  consumerSession.commit();
-
-                  Wait.assertTrue(() -> validateClosedConsumers(checkLeak));
                }
+               consumerSession.commit();
             }
          }
       }
-
-      assertMemory(new CheckLeak(), 0, ServerConsumerImpl.class.getName());
-
 
       // this is just to drain the messages
       try (Connection targetConnection = cf.createConnection(); Connection consumerConnection = cf.createConnection()) {
@@ -165,9 +151,6 @@ public class ConnectionLeakTest extends ActiveMQTestBase {
          }
 
          Assert.assertNull(consumer.receiveNoWait());
-         assertMemory(new CheckLeak(), 0, DeliveryImpl.class.getName());
-         Wait.assertTrue(() -> validateClosedConsumers(checkLeak));
-         consumer = null;
       }
 
       Queue sourceQueue = server.locateQueue("source");
@@ -181,66 +164,6 @@ public class ConnectionLeakTest extends ActiveMQTestBase {
       }
 
       basicMemoryAsserts();
-   }
 
-   @Test
-   public void testCheckIteratorsAMQP() throws Exception {
-      testCheckIterators("AMQP");
-   }
-
-   @Test
-   public void testCheckIteratorsOpenWire() throws Exception {
-      testCheckIterators("OPENWIRE");
-   }
-
-   @Test
-   public void testCheckIteratorsCORE() throws Exception {
-      testCheckIterators("CORE");
-   }
-
-   public void testCheckIterators(String protocol) throws Exception {
-      CheckLeak checkLeak = new CheckLeak();
-
-      String queueName = getName();
-
-      Queue queue = server.createQueue(new QueueConfiguration(queueName).setRoutingType(RoutingType.ANYCAST));
-
-      ConnectionFactory cf = CFUtil.createConnectionFactory(protocol, "tcp://localhost:61616");
-      for (int i = 0; i < 10; i++) {
-         Connection connection = cf.createConnection();
-         connection.start();
-         for (int j = 0; j < 10; j++) {
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            MessageProducer producer = session.createProducer(session.createQueue(queueName));
-            producer.send(session.createTextMessage("test"));
-            session.commit();
-            session.close();
-         }
-
-         for (int j = 0; j < 10; j++) {
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
-            consumer.receiveNoWait(); // it doesn't matter if it received or not, just doing something in the queue to kick the iterators
-            session.commit();
-         }
-         connection.close();
-
-         assertMemory(checkLeak, 0, 1, 1, ServerConsumerImpl.class.getName());
-         assertMemory(checkLeak, 0, 2, 1, LinkedListImpl.Iterator.class.getName());
-      }
-   }
-
-
-   private boolean validateClosedConsumers(CheckLeak checkLeak) throws Exception {
-      Object[] objecs = checkLeak.getAllObjects(ServerConsumerImpl.class);
-      for (Object obj : objecs) {
-         ServerConsumerImpl consumer = (ServerConsumerImpl) obj;
-         if (consumer.isClosed()) {
-            String output = "References to closedConsumer " + consumer + "\n" + checkLeak.exploreObjectReferences(3, 1, true, consumer);
-            System.out.println("CheckLeak::" + output);
-            return false;
-         }
-      }
-      return true;
    }
 }
