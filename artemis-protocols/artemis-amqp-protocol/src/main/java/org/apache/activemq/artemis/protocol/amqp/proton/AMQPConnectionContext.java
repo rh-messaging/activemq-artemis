@@ -734,9 +734,14 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
          }
       }
 
-      link.close();
-      link.free();
-      flush();
+      /// we have to perform the link.close after the linkContext.close is finished.
+      // linkeContext.close will perform a few executions on the netty loop,
+      // this has to come next
+      runLater(() -> {
+         link.close();
+         link.free();
+         flush();
+      });
    }
 
    @Override

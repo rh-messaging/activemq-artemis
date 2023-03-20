@@ -37,6 +37,7 @@ import org.apache.activemq.artemis.core.persistence.impl.journal.JournalStorageM
 import org.apache.activemq.artemis.core.protocol.core.impl.RemotingConnectionImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl;
+import org.apache.activemq.artemis.core.server.impl.ServerStatus;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.junit.After;
@@ -76,6 +77,7 @@ public class JournalLeakTest extends ActiveMQTestBase {
       server = null;
 
       clearServers();
+      ServerStatus.clear();
 
       assertMemory(checkLeak, 0, ActiveMQServerImpl.class.getName());
    }

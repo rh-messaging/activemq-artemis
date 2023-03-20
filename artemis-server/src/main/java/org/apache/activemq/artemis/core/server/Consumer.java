@@ -53,10 +53,6 @@ public interface Consumer extends PriorityAware {
    default void promptDelivery() {
    }
 
-   default boolean isClosed() {
-      return false;
-   }
-
    /**
     * This will proceed with the actual delivery.
     * Notice that handle should hold a readLock and proceedDelivery should release the readLock
