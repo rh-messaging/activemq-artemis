@@ -31,10 +31,10 @@ public class IndexTest extends ConsoleTest {
 
    @Test
    public void testIndexLogo() {
-      String expectedLogoImage = serverUrl + System.getProperty(
+      String expectedLogoImage = webServerUrl + System.getProperty(
          "artemis.console.index.logo.image", DEFAULT_CONSOLE_INDEX_LOGO_IMAGE);
 
-      driver.get(serverUrl);
+      driver.get(webServerUrl);
       IndexPage indexPage = new IndexPage(driver);
       assertEquals(expectedLogoImage, indexPage.getLogoImage(DEFAULT_TIMEOUT));
    }
