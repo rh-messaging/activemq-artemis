@@ -210,7 +210,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
                Thread.sleep(2000);
             } else if (state == LIVE) {
                // if the backup acquires the file lock and the state is 'L' that means the primary died
-	       logger.debug("acquired live node lock state = " + (char) state);
+               logger.debug("acquired live node lock state = " + (char) state);
                serverLockFile.setLastModified(System.currentTimeMillis());
                logger.debug("touched " + serverLockFile.getAbsoluteFile() + "; new time: " + serverLockFile.lastModified());
                break;
@@ -367,7 +367,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
             }
          }
 
-	 logger.debug("state: " + result);
+         logger.debug("state: " + result);
          return result;
       } catch (IOException | ActiveMQLockAcquisitionTimeoutException e) {
          throw new NodeManagerException(e);
@@ -394,7 +394,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
 
    protected FileLock tryLock(final int lockPos) throws IOException {
       try {
-	 logger.debug("trying to lock position: " + lockPos);
+         logger.debug("trying to lock position: " + lockPos);
 
          FileLock lock = lockChannels[lockPos].tryLock();
          if (lock != null) {
