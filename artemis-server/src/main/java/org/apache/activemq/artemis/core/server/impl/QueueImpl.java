@@ -50,6 +50,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RefCountMessage;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.management.CoreNotificationType;
@@ -1108,6 +1109,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (logger.isTraceEnabled()) {
          logger.trace("AddHead, size = {}, intermediate size = {}, references size = {}\nreference={}", queueMemorySize, intermediateMessageReferences.size(), messageReferences.size(), ref);
       }
+
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_HEAD)) {
          synchronized (this) {
             if (ringSize != -1) {
@@ -1133,6 +1135,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (logger.isTraceEnabled()) {
          logger.trace("addSorted, size = {}, intermediate size = {}, references size = {}\nreference={}", queueMemorySize, intermediateMessageReferences.size(), messageReferences.size(), ref);
       }
+
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_HEAD)) {
          synchronized (QueueImpl.this) {
             if (ringSize != -1) {
@@ -1247,6 +1250,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       try (ArtemisCloseable metric = measureCritical(CRITICAL_PATH_ADD_TAIL)) {
          if (scheduleIfPossible(ref)) {
             return;
+         }
+         if (RefCountMessage.isRefTraceEnabled()) {
+            RefCountMessage.deferredDebug(ref.getMessage(), "add tail queue {}", this.getName());
          }
 
          if (direct && supportsDirectDeliver && !directDeliver && System.currentTimeMillis() - lastDirectDeliveryCheck > CHECK_QUEUE_SIZE_PERIOD) {
@@ -2943,6 +2949,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * @param ref
     */
    private void internalAddHead(final MessageReference ref) {
+      if (RefCountMessage.isRefTraceEnabled()) {
+         RefCountMessage.deferredDebug(ref.getMessage(), "add head queue {}", this.getAddress());
+      }
       queueMemorySize.addSize(ref.getMessageMemoryEstimate());
       pendingMetrics.incrementMetrics(ref);
       refAdded(ref);
@@ -2962,6 +2971,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     * @param ref
     */
    private void internalAddSorted(final MessageReference ref) {
+      if (RefCountMessage.isRefTraceEnabled()) {
+         RefCountMessage.deferredDebug(ref.getMessage(), "add sorted queue {}", this.getAddress());
+      }
       queueMemorySize.addSize(ref.getMessageMemoryEstimate());
       pendingMetrics.incrementMetrics(ref);
       refAdded(ref);
@@ -3093,9 +3105,21 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                break;
             }
 
-            ConsumerHolder<? extends Consumer> holder;
+            final ConsumerHolder<? extends Consumer> holder;
+            final LinkedListIterator<MessageReference> holderIterator;
             if (consumers.hasNext()) {
                holder = consumers.next();
+               if (holder == null) {
+                  // this shouldn't happen, however I'm adding this check just in case
+                  logger.debug("consumers.next() returned null.");
+                  consumers.remove();
+                  deliverAsync(true);
+                  return false;
+               }
+               if (holder.iter == null) {
+                  holder.iter = messageReferences.iterator();
+               }
+               holderIterator = holder.iter;
             } else {
                pruneLastValues();
                break;
@@ -3112,12 +3136,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                return false;
             }
 
-            if (holder.iter == null) {
-               holder.iter = messageReferences.iterator();
-            }
-
-            if (holder.iter.hasNext()) {
-               ref = holder.iter.next();
+            if (holderIterator.hasNext()) {
+               ref = holderIterator.next();
             } else {
                ref = null;
             }
@@ -3167,7 +3187,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   consumers.reset();
                } else if (status == HandleStatus.BUSY) {
                   try {
-                     holder.iter.repeat();
+                     holderIterator.repeat();
                   } catch (NoSuchElementException e) {
                      // this could happen if there was an exception on the queue handling
                      // and it returned BUSY because of that exception
@@ -3953,22 +3973,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    /** This will print errors and decide what to do with the errored consumer from the protocol layer. */
    @Override
    public void errorProcessing(Consumer consumer, Throwable t, MessageReference reference) {
-      executor.execute(() -> internalErrorProcessing(consumer, t, reference));
-   }
-
-   private void internalErrorProcessing(Consumer consumer, Throwable t, MessageReference reference) {
-      synchronized (this) {
-         ActiveMQServerLogger.LOGGER.removingBadConsumer(consumer, reference, t);
-         // If the consumer throws an exception we remove the consumer
-         try {
-            removeConsumer(consumer);
-         } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.errorRemovingConsumer(e);
-         }
-
-         // The message failed to be delivered, hence we try again
-         addHead(reference, false);
-      }
+      ActiveMQServerLogger.LOGGER.removingBadConsumer(consumer, reference, t);
+      executor.execute(() -> consumer.failed(t));
    }
 
    private boolean checkExpired(final MessageReference reference) {
@@ -4003,7 +4009,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
          // If the consumer throws an exception we remove the consumer
          try {
-            removeConsumer(consumer);
+            errorProcessing(consumer, t, reference);
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.errorRemovingConsumer(e);
          }
