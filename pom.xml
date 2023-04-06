@@ -96,7 +96,7 @@
       <commons.io.version>2.10.0</commons.io.version>
       <commons.codec.version>1.15</commons.codec.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
-      <guava.version>30.1-jre</guava.version>
+      <guava.version>31.1-jre</guava.version>
       <hawtio.version>2.0.0.fuse-sb2-7_11_1-00013-redhat-00002</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.11</jetty.version>
@@ -125,8 +125,8 @@
       <product>true</product>
 
       <!-- tracing -->
-      <opentelemetry.version>1.10.0</opentelemetry.version>
-      <opentelemetry-alpha.version>1.10.0-alpha</opentelemetry-alpha.version>
+      <opentelemetry.version>1.24.0</opentelemetry.version>
+      <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
 
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.54.Final</netty-tcnative-version>
@@ -165,7 +165,7 @@
       <version.jaxb.runtime>2.3.3</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.4.3</postgresql.version>
-      <testcontainers.version>1.16.3</testcontainers.version>
+      <testcontainers.version>1.17.6</testcontainers.version>
       <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.13</apache.httpcore.version>
       <apache.httpclient.version>4.5.13</apache.httpclient.version>

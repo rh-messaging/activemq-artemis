@@ -114,7 +114,7 @@
       <dependency>
          <groupId>org.seleniumhq.selenium</groupId>
          <artifactId>selenium-java</artifactId>
-         <version>3.141.59</version>
+         <version>4.8.3</version>
          <scope>test</scope>
       </dependency>
 
@@ -302,40 +302,6 @@
                         <arg>../../test-classes/client-ca-truststore.p12</arg>
                         <arg>--ssl-trust-password</arg>
                         <arg>securepass</arg>
-                     </args>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>test-compile</phase>
-                  <id>create0</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <!-- this makes it easier in certain envs -->
-                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/replicated-static0</instance>
-                     <configuration>${basedir}/target/classes/servers/replicated-static0</configuration>
-                     <args>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
-                     </args>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>test-compile</phase>
-                  <id>create1</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <!-- this makes it easier in certain envs -->
-                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/replicated-static1</instance>
-                     <configuration>${basedir}/target/classes/servers/replicated-static1</configuration>
-                     <args>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
                      </args>
                   </configuration>
                </execution>
