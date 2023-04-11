@@ -47,7 +47,7 @@ public class PacketImpl implements Packet {
    // 2.24.0
    public static final int ARTEMIS_2_24_0_VERSION = 133;
 
-   // 2.28.0
+   // 2.28.0-PATCH-3251
    public static final int ARTEMIS_2_28_0_VERSION = 134;
 
    public static final SimpleString OLD_QUEUE_PREFIX = new SimpleString("jms.queue.");

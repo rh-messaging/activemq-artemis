@@ -8,7 +8,7 @@ This chapter provides the following information for each release:
   - **Note:** Follow the general upgrade procedure outlined in the [Upgrading the Broker](upgrading.md) 
     chapter in addition to any version-specific upgrade instructions outlined here.
 
-## 2.28.0
+## 2.28.0-PATCH-3251
 [Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352523&projectId=12315920)
 
 Highlights:
