@@ -134,12 +134,12 @@ public class MetricsManager {
       if (meters.get(resource) != null) {
          throw ActiveMQMessageBundle.BUNDLE.metersAlreadyRegistered(resource);
       }
-      logger.debug("Registering meters for {}", resource);
+      log.debug("Registering meters for " + resource);
       List<Meter> newMeters = new ArrayList<>(gaugeBuilders.size());
       for (Gauge.Builder gaugeBuilder : gaugeBuilders) {
          Gauge gauge = gaugeBuilder.register(meterRegistry);
          newMeters.add(gauge);
-         logger.debug("Registered meter: {}", gauge.getId());
+         log.debug("Registered meter: " + gauge.getId());
       }
       meters.put(resource, newMeters);
    }
@@ -147,7 +147,7 @@ public class MetricsManager {
    public void remove(String resource) {
       List<Meter> resourceMeters = meters.remove(resource);
       if (resourceMeters != null) {
-         logger.debug("Unregistering meters for {}", resource);
+         log.debug("Unregistering meters for " + resource);
          for (Meter meter : resourceMeters) {
             Meter removed = meterRegistry.remove(meter);
             if (log.isDebugEnabled()) {
@@ -155,7 +155,7 @@ public class MetricsManager {
             }
          }
       } else {
-         logger.debug("Attempted to unregister meters for {}, but none were found.", resource);
+         log.debug("Attempted to unregister meters for " + resource + ", but none were found.");
       }
    }
 }

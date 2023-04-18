@@ -523,6 +523,6 @@ public interface ActiveMQMessageBundle {
    @Message(id = 229240, value = "Connection router {0} rejected the connection", format = Message.Format.MESSAGE_FORMAT)
    ActiveMQRemoteDisconnectException connectionRejected(String connectionRouter);
 
-   @Message(id = 229244, value = "Meters already registered for {}")
+   @Message(id = 229244, value = "Meters already registered for {0}", format = Message.Format.MESSAGE_FORMAT)
    IllegalStateException metersAlreadyRegistered(String resource);
 }
