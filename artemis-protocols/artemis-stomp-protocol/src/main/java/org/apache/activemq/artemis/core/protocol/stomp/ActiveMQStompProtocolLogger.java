@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.core.protocol.stomp;
 
+import org.apache.activemq.artemis.api.core.ICoreMessage;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -54,9 +55,11 @@ public interface ActiveMQStompProtocolLogger extends BasicLogger {
    @Message(id = 332069, value = "Sent ERROR frame to STOMP client {0}: {1}", format = Message.Format.MESSAGE_FORMAT)
    void sentErrorToClient(String address, String message);
 
-   @LogMessage(id = 332070, value = "Unable to send frame {0}", format = Message.Format.MESSAGE_FORMAT)
-   void errorSendingFrame(StompFrame frame, Exception e);
+   @LogMessage(level = Logger.Level.ERROR)
+   @Message(id = 332070, value = "Unable to send frame {0}", format = Message.Format.MESSAGE_FORMAT)
+   void errorSendingFrame(StompFrame frame, @Cause Exception e);
 
-   @LogMessage(id = 332071, value = "Unable to send message to client: {0}", format = Message.Format.MESSAGE_FORMAT)
-   void unableToSendMessageToClient(ICoreMessage message, Exception e);
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 332071, value = "Unable to send message to client: {0}", format = Message.Format.MESSAGE_FORMAT)
+   void unableToSendMessageToClient(ICoreMessage message, @Cause Exception e);
 }

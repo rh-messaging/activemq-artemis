@@ -206,7 +206,7 @@ public class StompProtocolManager extends AbstractProtocolManager<StompFrame, St
          try {
             connection.physicalSend(frame);
          } catch (Exception e) {
-            ActiveMQStompProtocolLogger.LOGGER.errorSendingFrame(e, frame);
+            ActiveMQStompProtocolLogger.LOGGER.errorSendingFrame(frame, e);
             return false;
          }
          return true;
