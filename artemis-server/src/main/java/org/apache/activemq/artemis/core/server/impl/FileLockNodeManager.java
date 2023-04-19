@@ -320,7 +320,7 @@ public class FileLockNodeManager extends FileBasedNodeManager {
     * @throws NodeManagerException
     */
    private void writeFileLockStatus(byte status) throws NodeManagerException {
-      if (replicatedBackup && channel == null)
+      if (replicatedBackup && channel == null) {
          return;
       }
 
