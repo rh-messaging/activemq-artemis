@@ -16,7 +16,6 @@
  */
 package org.apache.activemq.artemis.core.protocol.openwire.amq;
 
-import java.lang.invoke.MethodHandles;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
