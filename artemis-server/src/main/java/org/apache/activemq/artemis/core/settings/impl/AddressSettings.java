@@ -1469,6 +1469,10 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       }
 
       if (buffer.readableBytes() > 0) {
+         autoDeleteQueuesSkipUsageCheck = BufferHelper.readNullableBoolean(buffer);
+      }
+
+      if (buffer.readableBytes() > 0) {
          autoDeleteAddressesSkipUsageCheck = BufferHelper.readNullableBoolean(buffer);
       }
    }
@@ -1677,6 +1681,8 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       buffer.writeNullableSimpleString(configDeleteDiverts != null ? new SimpleString(configDeleteDiverts.toString()) : null);
 
       BufferHelper.writeNullableLong(buffer, maxSizeMessages);
+
+      BufferHelper.writeNullableBoolean(buffer, autoDeleteQueuesSkipUsageCheck);
 
       BufferHelper.writeNullableBoolean(buffer, autoDeleteAddressesSkipUsageCheck);
    }
