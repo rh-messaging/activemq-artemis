@@ -193,12 +193,6 @@ under the License.
                  Lower this setting if you have too many queues in memory. -->
             <page-size-bytes>10M</page-size-bytes>
 
-            <!-- limit how many messages are read from paging into the Queue. -->
-            <max-read-page-messages>-1</max-read-page-messages>
-
-            <!-- limit how much memory is read from paging into the Queue. -->
-            <max-read-page-bytes>20M</max-read-page-bytes>
-
             <message-counter-history-day-limit>10</message-counter-history-day-limit>
             <address-full-policy>PAGE</address-full-policy>
             <auto-create-queues>true</auto-create-queues>
