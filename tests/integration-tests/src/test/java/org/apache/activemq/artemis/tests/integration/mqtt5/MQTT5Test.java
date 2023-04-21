@@ -225,4 +225,28 @@ public class MQTT5Test extends MQTT5TestSupport {
       server.start();
       org.apache.activemq.artemis.tests.util.Wait.assertTrue(() -> getSubscriptionQueue(topic, clientId) != null, 3000, 10);
    }
+
+   @Test(timeout = DEFAULT_TIMEOUT)
+   public void testQueueCleanedUpOnConsumerFail() throws Exception {
+      final String topic = getName();
+      final String clientID = getName();
+
+      // force the creation of the consumer to fail
+      server.getAddressSettingsRepository().addMatch(topic, new AddressSettings().setDefaultMaxConsumers(0));
+
+      MqttClient client = createPahoClient(clientID);
+      client.connect();
+      try {
+         client.subscribe(topic, 1);
+      } catch (Exception e) {
+         // ignore
+      }
+
+      Wait.assertTrue(() -> getSubscriptionQueue(topic, clientID) == null, 2000, 100);
+
+      if (client.isConnected()) {
+         client.disconnect();
+      }
+      client.close();
+   }
 }
