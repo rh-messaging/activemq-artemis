@@ -572,7 +572,11 @@ public final class ActiveMQDefaultConfiguration {
 
    public static final String BROKER_PROPERTIES_KEY_SURROUND = "\"";
 
+   public static final String BROKER_PROPERTIES_REMOVE_VALUE = "-";
+
    public static final String BROKER_PROPERTIES_KEY_SURROUND_PROPERTY = "key.surround";
+
+   public static final String BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY = "remove.value";
 
    public static String DEFAULT_NETWORK_CHECK_LIST = null;
 
@@ -1630,6 +1634,10 @@ public final class ActiveMQDefaultConfiguration {
 
    public static String getDefaultBrokerPropertiesKeySurround() {
       return BROKER_PROPERTIES_KEY_SURROUND;
+   }
+
+   public static String getDefaultBrokerPropertiesRemoveValue() {
+      return BROKER_PROPERTIES_REMOVE_VALUE;
    }
 
    public static String getDefaultNetworkCheckList() {
