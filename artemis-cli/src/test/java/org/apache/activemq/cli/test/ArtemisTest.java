@@ -1259,7 +1259,9 @@ public class ArtemisTest extends CliTestBase {
       mask.setPasswordCodec(true);
       result = (String) mask.execute(context);
       assertEquals(TestPasswordCodec.class, mask.getCodec().getClass());
-      assertEquals(result, result);
+      assertEquals(((TestPasswordCodec) mask.getCodec()).getPropertyOne(), "1234");
+      assertEquals(((TestPasswordCodec) mask.getCodec()).getPropertyTwo(), "9876");
+      assertEquals(password, result);
    }
 
    @Test
@@ -2281,6 +2283,19 @@ public class ArtemisTest extends CliTestBase {
    }
 
    public static class TestPasswordCodec implements SensitiveDataCodec<String> {
+      public String PROP_NAME_ONE = "propertyNameOne";
+      public String PROP_NAME_TWO = "propertyNameTwo";
+
+      private String propertyOne;
+      private String propertyTwo;
+
+      @Override
+      public void init(Map<String, String> params) throws Exception {
+         if (params != null) {
+            propertyOne = params.get(PROP_NAME_ONE);
+            propertyTwo = params.get(PROP_NAME_TWO);
+         }
+      }
 
       @Override
       public String decode(Object mask) throws Exception {
@@ -2290,6 +2305,14 @@ public class ArtemisTest extends CliTestBase {
       @Override
       public String encode(Object secret) throws Exception {
          return secret.toString();
+      }
+
+      public String getPropertyOne() {
+         return propertyOne;
+      }
+
+      public String getPropertyTwo() {
+         return propertyTwo;
       }
    }
 
