@@ -1894,7 +1894,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                      pgTX.reloadUpdate(this, pagingManager, tx, pageTransactionInfo.getNumberOfMessages());
                   }
                } else {
-                  pageTransactionInfo.setCommitted(false);
+                  pageTransactionInfo.reloadPrepared(tx);
 
                   tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransactionInfo);
 
