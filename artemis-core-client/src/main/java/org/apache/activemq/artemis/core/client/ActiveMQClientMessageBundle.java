@@ -237,4 +237,7 @@ public interface ActiveMQClientMessageBundle {
 
    @Message(id = 219065, value = "Failed to handle packet.")
    RuntimeException failedToHandlePacket(@Cause Exception e);
+
+   @Message(id = 219068, value = "Connection closed while receiving cluster topology. Group:{0}", format = Message.Format.MESSAGE_FORMAT)
+   ActiveMQObjectClosedException connectionClosedOnReceiveTopology(DiscoveryGroup discoveryGroup);
 }
