@@ -129,7 +129,7 @@
       <opentelemetry-alpha.version>1.10.0-alpha</opentelemetry-alpha.version>
       <protonj2.version>1.0.0-M17</protonj2.version>
       <!-- this is basically for tests -->
-      <netty-tcnative-version>2.0.54.Final</netty-tcnative-version>
+      <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
       <slf4j.version>1.7.36</slf4j.version>
       <log4j.version>2.19.0</log4j.version>
