@@ -475,6 +475,9 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception {
+      if (config.getMaxRedeliveryRecords() >= 0 && ref.getDeliveryCount() > config.getMaxRedeliveryRecords()) {
+         return;
+      }
       ScheduledDeliveryEncoding encoding = new ScheduledDeliveryEncoding(ref.getScheduledDeliveryTime(), ref.getQueue().getID());
       try (ArtemisCloseable lock = closeableReadLock()) {
          messageJournal.tryAppendUpdateRecord(ref.getMessage().getMessageID(), JournalRecordIds.SET_SCHEDULED_DELIVERY_TIME, encoding, syncNonTransactional, true, this::recordNotFoundCallback, getContext(syncNonTransactional));
@@ -703,6 +706,10 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       // no need to store if it's the same value
       // otherwise the journal will get OME in case of lots of redeliveries
       if (ref.getDeliveryCount() == ref.getPersistedCount()) {
+         return;
+      }
+
+      if (config.getMaxRedeliveryRecords() >= 0 && ref.getDeliveryCount() > config.getMaxRedeliveryRecords()) {
          return;
       }
 
@@ -1926,7 +1933,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
                      pgTX.reloadUpdate(this, pagingManager, tx, pageTransactionInfo.getNumberOfMessages());
                   }
                } else {
-                  pageTransactionInfo.setCommitted(false);
+                  pageTransactionInfo.reloadPrepared(tx);
 
                   tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransactionInfo);
 

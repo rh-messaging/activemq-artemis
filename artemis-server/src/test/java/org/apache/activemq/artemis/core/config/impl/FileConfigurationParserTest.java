@@ -97,6 +97,20 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testAddressWithNoRoutingType() throws Exception {
+      String filename = "FileConfigurationParser-addressWithNoRoutingType.xml";
+      FileConfiguration fc = new FileConfiguration();
+      FileDeploymentManager deploymentManager = new FileDeploymentManager(filename);
+      deploymentManager.addDeployable(fc);
+      try {
+         deploymentManager.readConfiguration();
+         fail();
+      } catch (IllegalArgumentException e) {
+         // expected exception when address has no routing type configured
+      }
+   }
+
+   @Test
    public void testDuplicateAddressSettings() throws Exception {
       FileConfigurationParser parser = new FileConfigurationParser();
       Configuration config = parser.parseMainConfig(ClassloadingUtil.findResource("FileConfigurationParser-duplicateAddressSettings.xml").openStream());
@@ -519,6 +533,22 @@ public class FileConfigurationParserTest extends ActiveMQTestBase {
 
       Assert.assertEquals(10 * 1024 * 1024, configuration.getGlobalMaxSize());
       Assert.assertEquals(1000, configuration.getGlobalMaxMessages());
+   }
+
+   @Test
+   public void testConfigurationPersistRedelivery() throws Exception {
+      StringPrintStream stringPrintStream = new StringPrintStream();
+      PrintStream stream = stringPrintStream.newStream();
+
+      stream.println("<configuration><core>");
+      stream.println("<max-redelivery-records>0</max-redelivery-records>");
+      stream.println("</core></configuration>");
+
+      ByteArrayInputStream inputStream = new ByteArrayInputStream(stringPrintStream.getBytes());
+      FileConfigurationParser parser = new FileConfigurationParser();
+      Configuration configuration = parser.parseMainConfig(inputStream);
+
+      Assert.assertEquals(0, configuration.getMaxRedeliveryRecords());
    }
 
    @Test

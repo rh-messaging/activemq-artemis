@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -656,7 +655,7 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
             } else if (type.equals(String.class)) {
                byte[] array = new byte[7]; // length is bounded by 7
                new Random().nextBytes(array);
-               String generatedString = new String(array, Charset.forName("UTF-8"));
+               String generatedString = new String(array, StandardCharsets.UTF_8);
 
                properties.put(prop, generatedString);
             }
@@ -965,6 +964,46 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals(1, configuration.getAddressConfigurations().get(0).getQueueConfigs().size());
       Assert.assertEquals(SimpleString.toSimpleString("LB.TEST"), configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).getAddress());
       Assert.assertEquals(false, configuration.getAddressConfigurations().get(0).getQueueConfigs().get(0).isDurable());
+   }
+
+   @Test
+   public void testAddressRemovalViaProperties() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new Properties();
+
+      properties.put("addressConfigurations.\"LB.TEST\".queueConfigs.\"LB.TEST\".routingType", "ANYCAST");
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(1, configuration.getAddressConfigurations().size());
+      Assert.assertEquals(1, configuration.getAddressConfigurations().get(0).getQueueConfigs().size());
+      Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+
+      properties.clear();
+      properties.put("addressConfigurations.\"LB.TEST\"", "-");
+      configuration.parsePrefixedProperties(properties, null);
+
+      Assert.assertEquals(0, configuration.getAddressConfigurations().size());
+      Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+   }
+
+   @Test
+   public void testRoleRemovalViaCustomRemoveProperties() throws Throwable {
+      ConfigurationImpl configuration = new ConfigurationImpl();
+
+      Properties properties = new Properties();
+
+      properties.put("securityRoles.TEST.users.send", "true");
+      configuration.parsePrefixedProperties(properties, null);
+      Assert.assertEquals(1, configuration.getSecurityRoles().size());
+      Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
+
+      properties.clear();
+      properties.put(ActiveMQDefaultConfiguration.BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY, "^");
+      properties.put("securityRoles.TEST", "^");
+      configuration.parsePrefixedProperties(properties, null);
+      Assert.assertEquals(0, configuration.getSecurityRoles().size());
+      Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
    }
 
    @Test
@@ -1639,6 +1678,8 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
       Assert.assertEquals(SimpleString.toSimpleString("sharedExpiry"), configuration.getAddressSettings().get("#").getExpiryAddress());
       Assert.assertEquals(SimpleString.toSimpleString("important"), configuration.getAddressSettings().get("NeedToTrackExpired").getExpiryAddress());
       Assert.assertEquals(SimpleString.toSimpleString("moreImportant"), configuration.getAddressSettings().get("Name.With.Dots").getExpiryAddress());
+
+      Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
    }
 
    @Test

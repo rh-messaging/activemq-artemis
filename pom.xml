@@ -99,11 +99,11 @@
       <guava.version>31.1-jre</guava.version>
       <hawtio.version>2.0.0.fuse-sb2-7_11_1-00013-redhat-00002</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
-      <jetty.version>10.0.11</jetty.version>
+      <jetty.version>10.0.15</jetty.version>
       <tomcat.servlet-api.version>8.0.36</tomcat.servlet-api.version>
       <jgroups.version>5.2.0.Final</jgroups.version>
       <errorprone.version>2.10.0</errorprone.version>
-      <maven.bundle.plugin.version>5.1.8</maven.bundle.plugin.version>
+      <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <maven.checkstyle.plugin.version>3.1.2</maven.checkstyle.plugin.version>
       <sevntu.checks.version>1.39.0</sevntu.checks.version>
       <checkstyle.version>9.2.1</checkstyle.version>
@@ -129,11 +129,11 @@
       <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
 
       <!-- this is basically for tests -->
-      <netty-tcnative-version>2.0.54.Final</netty-tcnative-version>
+      <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
       <slf4j.version>1.7.36</slf4j.version>
-      <log4j.version>2.19.0</log4j.version>
-      <qpid.jms.version>1.7.0</qpid.jms.version>
+      <log4j.version>2.20.0</log4j.version>
+      <qpid.jms.version>1.9.0</qpid.jms.version>
       <johnzon.version>1.2.16</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <airlift.version>0.8</airlift.version>
@@ -183,7 +183,7 @@
       <mockserver.version>5.13.2</mockserver.version>
 
       <owasp.version>6.1.0</owasp.version>
-      <spring.version>5.3.26</spring.version>
+      <spring.version>5.3.27</spring.version>
 
       <jackson.version>2.14.1</jackson.version>
       <jackson-databind.version>${jackson.version}</jackson-databind.version>

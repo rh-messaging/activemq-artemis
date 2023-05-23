@@ -248,6 +248,9 @@ public final class ActiveMQDefaultConfiguration {
    // True means that the delivery count is persisted before delivery. False means that this only happens after a message has been cancelled.
    private static boolean DEFAULT_PERSIST_DELIVERY_COUNT_BEFORE_DELIVERY = false;
 
+   // Default Maximum number of records we would store for redeliveries
+   private static int DEFAULT_MAX_REDELIVERY_RECORDS = 10;
+
    // the directory to store paged messages in
    private static String DEFAULT_PAGING_DIR = "data/paging";
 
@@ -569,7 +572,11 @@ public final class ActiveMQDefaultConfiguration {
 
    public static final String BROKER_PROPERTIES_KEY_SURROUND = "\"";
 
+   public static final String BROKER_PROPERTIES_REMOVE_VALUE = "-";
+
    public static final String BROKER_PROPERTIES_KEY_SURROUND_PROPERTY = "key.surround";
+
+   public static final String BROKER_PROPERTIES_REMOVE_VALUE_PROPERTY = "remove.value";
 
    public static String DEFAULT_NETWORK_CHECK_LIST = null;
 
@@ -679,6 +686,10 @@ public final class ActiveMQDefaultConfiguration {
     */
    public static boolean isDefaultPersistenceEnabled() {
       return DEFAULT_PERSISTENCE_ENABLED;
+   }
+
+   public static int getDefaultMaxRedeliveryRecords() {
+      return DEFAULT_MAX_REDELIVERY_RECORDS;
    }
 
    public static boolean isDefaultJournalDatasync() {
@@ -1623,6 +1634,10 @@ public final class ActiveMQDefaultConfiguration {
 
    public static String getDefaultBrokerPropertiesKeySurround() {
       return BROKER_PROPERTIES_KEY_SURROUND;
+   }
+
+   public static String getDefaultBrokerPropertiesRemoveValue() {
+      return BROKER_PROPERTIES_REMOVE_VALUE;
    }
 
    public static String getDefaultNetworkCheckList() {

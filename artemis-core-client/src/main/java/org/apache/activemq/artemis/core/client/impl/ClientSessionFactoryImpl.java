@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.activemq.artemis.api.config.ServerLocatorConfig;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
+import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.ActiveMQInterruptedException;
 import org.apache.activemq.artemis.api.core.ActiveMQNotConnectedException;
 import org.apache.activemq.artemis.api.core.DisconnectReason;
@@ -67,6 +68,7 @@ import org.apache.activemq.artemis.spi.core.remoting.TopologyResponseHandler;
 import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.ConfirmationWindowWarning;
 import org.apache.activemq.artemis.utils.ExecutorFactory;
+import org.apache.activemq.artemis.utils.PasswordMaskingUtil;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
@@ -121,6 +123,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private final long retryInterval;
 
    private final double retryIntervalMultiplier; // For exponential backoff
+
+   private volatile boolean topologyReady = false;
 
    private final CountDownLatch latchFinalTopology = new CountDownLatch(1);
 
@@ -472,6 +476,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          closeCleanSessions(close);
          closed = true;
       }
+
+      //release all threads waiting for topology
+      latchFinalTopology.countDown();
    }
 
    /**
@@ -519,7 +526,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    @Override
    public boolean waitForTopology(long timeout, TimeUnit unit) {
       try {
-         return latchFinalTopology.await(timeout, unit);
+         //latchFinalTopology is decremented on last topology message or on close
+         //topologyReady is set to true only on last topology message
+         return latchFinalTopology.await(timeout, unit) && topologyReady;
       } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
          ActiveMQClientLogger.LOGGER.unableToReceiveClusterTopology(e);
@@ -738,15 +747,24 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
    }
 
-   private ClientSession createSessionInternal(final String username,
-                                               final String password,
+   private ClientSession createSessionInternal(final String rawUsername,
+                                               final String rawPassword,
                                                final boolean xa,
                                                final boolean autoCommitSends,
                                                final boolean autoCommitAcks,
                                                final boolean preAcknowledge,
                                                final int ackBatchSize,
                                                final String clientID) throws ActiveMQException {
+      String username;
+      String password;
       String name = UUIDGenerator.getInstance().generateStringUUID();
+
+      try {
+         username = PasswordMaskingUtil.resolveMask(rawUsername, serverLocator.getPasswordCodec());
+         password = PasswordMaskingUtil.resolveMask(rawPassword, serverLocator.getPasswordCodec());
+      } catch (Exception e) {
+         throw new ActiveMQException(e.getMessage(), e, ActiveMQExceptionType.GENERIC_EXCEPTION);
+      }
 
       SessionContext context = createSessionChannel(name, username, password, xa, autoCommitSends, autoCommitAcks, preAcknowledge, clientID);
 
@@ -1491,6 +1509,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             serverLocator.notifyNodeUp(uniqueEventID, nodeID, backupGroupName, scaleDownGroupName, connectorPair, isLast);
          } finally {
             if (isLast) {
+               topologyReady = true;
                latchFinalTopology.countDown();
             }
          }

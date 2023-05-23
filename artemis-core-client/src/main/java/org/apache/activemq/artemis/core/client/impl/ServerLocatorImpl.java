@@ -182,6 +182,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    private ServerLocatorConfig config = new ServerLocatorConfig();
 
+   private String passwordCodec;
+
    public static synchronized void clearThreadPools() {
       ActiveMQClient.clearThreadPools();
    }
@@ -299,6 +301,17 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    @Override
    public void setLocatorConfig(ServerLocatorConfig config) {
       this.config = config;
+   }
+
+   @Override
+   public ServerLocator setPasswordCodec(String passwordCodec) {
+      this.passwordCodec = passwordCodec;
+      return this;
+   }
+
+   @Override
+   public String getPasswordCodec() {
+      return this.passwordCodec;
    }
 
    private static DiscoveryGroup createDiscoveryGroup(String nodeID,
@@ -684,6 +697,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
                   // We always try to connect here with only one attempt,
                   // as we will perform the initial retry here, looking for all possible connectors
                   factory.connect(1, false);
+
+                  addFactory(factory);
                } finally {
                   removeFromConnecting(factory);
                }
@@ -737,11 +752,16 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       // how the sendSubscription happens.
       // in case this ever changes.
       if (topology != null && !factory.waitForTopology(config.callTimeout, TimeUnit.MILLISECONDS)) {
+         factoryClosed(factory);
+
          factory.cleanup();
+
+         if (isClosed()) {
+            throw ActiveMQClientMessageBundle.BUNDLE.connectionClosedOnReceiveTopology(discoveryGroup);
+         }
+
          throw ActiveMQClientMessageBundle.BUNDLE.connectionTimedOutOnReceiveTopology(discoveryGroup);
       }
-
-      addFactory(factory);
 
       return factory;
    }

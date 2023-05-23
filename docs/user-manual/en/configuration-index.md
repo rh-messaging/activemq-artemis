@@ -91,6 +91,7 @@ reflect the camelCase java naming convention.
 
 Collections need some special treatment to allow additions and reference. We utilise the name attribute of configuration
 entities to find existing entries and when populating new entities, we set the name to match the requested key.
+Removal of configuration from named collections is supported by setting a key value to "-". The remove match value can be configured with a property key "remove.value".
 
 For example, a properties file containing:
 
@@ -209,6 +210,7 @@ name | node name; used in topology notifications if set. | n/a
 [read-whole-page](paging.md) | If true the whole page would be read, otherwise just seek and read while getting message. | `false`
 [paging-directory](paging.md#configuration)| the directory to store paged messages in. | `data/paging`
 [persist-delivery-count-before-delivery](undelivered-messages.md#delivery-count-persistence) | True means that the delivery count is persisted before delivery. False means that this only happens after a message has been cancelled. | `false`
+[max-redelivery-records](undelivered-messages.md#persist-redelivery) | Maximum number of records the system will store for redeliveries. In most cases this should be set to '1'. | `10`
 [persistence-enabled](persistence.md#zero-persistence)| true means that the server will use the file based journal for persistence. | `true`
 [persist-id-cache](duplicate-detection.md#configuring-the-duplicate-id-cache) | true means that ID's are persisted to the journal. | `true`
 queues | **deprecated** [use addresses](#address-type) | n/a
