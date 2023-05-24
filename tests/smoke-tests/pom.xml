@@ -1366,6 +1366,8 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
+               <forkCount>1</forkCount>
+               <reuseForks>false</reuseForks>
                <skipTests>${skipSmokeTests}</skipTests>
                <argLine>${sts-surefire-extra-args} ${activemq-surefire-argline} ${artemis-distribution-lib-dir}</argLine>
             </configuration>
