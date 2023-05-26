@@ -118,7 +118,7 @@
       <amq.broker.version>7.11.1</amq.broker.version>
       <netty.transport.native.epoll.ppcle.version>4.1.86.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
       <netty.transport.native.epoll.s390x.version>4.1.86.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
-      <artemis.prometheus.metrics.plugin.version>2.0.0.redhat-00002</artemis.prometheus.metrics.plugin.version>
+      <artemis.prometheus.metrics.plugin.version>2.1.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <keycloak.version>18.0.3.redhat-00001</keycloak.version>
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
       <!-- disable keycloak community profile -->
