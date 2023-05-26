@@ -44,6 +44,12 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
       // hence this test needs to be ignored when using the core protocol for management
    }
 
+   @Override
+   @Ignore
+   public void testListProducersMessageCounts() throws Exception {
+      // invalid test when using core protocol (noise from itself)
+   }
+
 
    @Ignore
    @Override
@@ -1747,6 +1753,16 @@ public class ActiveMQServerControlUsingCoreTest extends ActiveMQServerControlTes
          @Override
          public void rebuildPageCounters() throws Exception {
             proxy.invokeOperation("rebuildPageCounters");
+         }
+
+         @Override
+         public void clearAuthenticationCache() throws Exception {
+            proxy.invokeOperation("clearAuthenticationCache");
+         }
+
+         @Override
+         public void clearAuthorizationCache() throws Exception {
+            proxy.invokeOperation("clearAuthorizationCache");
          }
       };
    }
