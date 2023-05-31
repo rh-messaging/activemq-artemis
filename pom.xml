@@ -112,15 +112,15 @@
       <checkstyle.version>9.2.1</checkstyle.version>
       <mockito.version>5.2.0</mockito.version>
       <jctools.version>2.1.2</jctools.version>
-      <netty.version>4.1.86.Final-redhat-00001</netty.version>
+      <netty.version>4.1.93.Final</netty.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.2.0</curator.version>
       <zookeeper.version>3.6.3</zookeeper.version>
 
       <!-- AMQ Broker -->
       <amq.broker.version>7.12.0</amq.broker.version>
-      <netty.transport.native.epoll.ppcle.version>4.1.86.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
-      <netty.transport.native.epoll.s390x.version>4.1.86.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
+      <netty.transport.native.epoll.ppcle.version>4.1.93.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
+      <netty.transport.native.epoll.s390x.version>4.1.93.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <artemis.prometheus.metrics.plugin.version>2.1.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <keycloak.version>18.0.3.redhat-00001</keycloak.version>
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
