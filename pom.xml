@@ -1065,13 +1065,6 @@
             <version>${apache.httpclient.version}</version>
          </dependency>
 
-         <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>[2.4.11,)</version>
-            <scope>test</scope>
-         </dependency>
-
       </dependencies>
    </dependencyManagement>
 
