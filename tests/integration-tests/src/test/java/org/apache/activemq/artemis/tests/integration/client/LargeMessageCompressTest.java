@@ -31,6 +31,8 @@ import java.util.zip.Deflater;
 import io.netty.util.internal.PlatformDependent;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
 import org.apache.activemq.artemis.api.core.client.ClientConsumer;
 import org.apache.activemq.artemis.api.core.client.ClientMessage;
@@ -38,6 +40,8 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
+import org.apache.activemq.artemis.api.core.management.QueueControl;
+import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.management.impl.QueueControlImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -508,6 +512,126 @@ public class LargeMessageCompressTest extends LargeMessageTest {
 
       testFile.delete();
       validateNoFilesOnLargeDir();
+   }
+
+   @Test
+   public void testPreviouslyCompressedMessageCleanup() throws Exception {
+      final int messageSize = 1024 * 1024;
+
+      ActiveMQServer server = createServer(true, isNetty());
+      server.start();
+
+      ClientSessionFactory sf1 = createSessionFactory(locator);
+      ClientSession session1 = addClientSession(sf1.createSession(false, true, true));
+      session1.createQueue(new QueueConfiguration(ADDRESS).setRoutingType(RoutingType.ANYCAST));
+      ClientProducer producer = session1.createProducer(ADDRESS);
+
+      ServerLocator locator2 = ActiveMQClient.createServerLocator("vm://0");
+      locator2.setCompressLargeMessage(false);
+      ClientSessionFactory sf2 = locator2.createSessionFactory();
+      ClientSession session2 = sf2.createSession(false, true, true);
+      ClientConsumer consumer = session2.createConsumer(ADDRESS);
+      ClientProducer producer2 = session2.createProducer(ADDRESS);
+      session2.start();
+
+      byte[] payload = new byte[messageSize];
+      byte[] response = new byte[messageSize];
+
+      for (int i = 0; i < payload.length; i++) {
+         payload[i] = RandomUtil.randomByte();
+      }
+
+      ClientMessage message = session1.createMessage(true);
+      message.getBodyBuffer().writeBytes(payload);
+      producer.send(message);
+
+      message = consumer.receive();
+      assertTrue(message.getBooleanProperty(Message.HDR_LARGE_COMPRESSED));
+
+      message.getBodyBuffer().readBytes(response);
+      message.getBodyBuffer().writeBytes(response);
+      producer2.send(message);
+
+      message = consumer.receive();
+      assertFalse(message.getBooleanProperty(Message.HDR_LARGE_COMPRESSED));
+
+      message.getBodyBuffer().readBytes(payload);
+      message.getBodySize();
+      assertTrue(Arrays.equals(payload, response));
+
+      session1.close();
+      session2.close();
+      sf1.close();
+      locator.close();
+      sf2.close();
+      locator2.close();
+   }
+
+   @Test
+   public void testLargeMessageCompressionLevel() throws Exception {
+
+      SimpleString address1 = new SimpleString("address1");
+      SimpleString address2 = new SimpleString("address2");
+      SimpleString address3 = new SimpleString("address3");
+
+      ActiveMQServer server = createServer(true, true);
+      server.start();
+
+      ServerLocator locator1 = ActiveMQClient.createServerLocator("tcp://localhost:61616?compressionLevel=1");
+      ServerLocator locator2 = ActiveMQClient.createServerLocator("vm://0?compressionLevel=5");
+      ServerLocator locator3 = ActiveMQClient.createServerLocator("vm://0");
+      locator1.setCompressLargeMessage(true);
+      locator2.setCompressLargeMessage(true);
+      locator3.setCompressLargeMessage(true);
+      locator3.setCompressionLevel(9);
+
+      ClientSessionFactory sf1 = locator1.createSessionFactory();
+      ClientSessionFactory sf2 = locator2.createSessionFactory();
+      ClientSessionFactory sf3 = locator3.createSessionFactory();
+      ClientSession session1 = sf1.createSession(false, true, true);
+      ClientSession session2 = sf2.createSession(false, true, true);
+      ClientSession session3 = sf3.createSession(false, true, true);
+
+      ClientProducer producer1 = session1.createProducer(address1);
+      ClientProducer producer2 = session2.createProducer(address2);
+      ClientProducer producer3 = session3.createProducer(address3);
+
+      session1.createQueue(new QueueConfiguration(address1));
+      session2.createQueue(new QueueConfiguration(address2));
+      session3.createQueue(new QueueConfiguration(address3));
+
+      String inputString = "blahblahblah??blahblahblahblahblah??blablahblah??blablahblah??bla";
+      for (int i = 0; i < 20; i++) {
+         inputString = inputString + inputString;
+      }
+
+      ClientMessage message = session1.createMessage(true);
+      message.getBodyBuffer().writeString(inputString);
+      producer1.send(message);
+      producer2.send(message);
+      producer3.send(message);
+
+      QueueControl queueControl1 = (QueueControl)server.getManagementService().
+         getResource(ResourceNames.QUEUE + address1);
+      QueueControl queueControl2 = (QueueControl)server.getManagementService().
+         getResource(ResourceNames.QUEUE + address2);
+      QueueControl queueControl3 = (QueueControl)server.getManagementService().
+         getResource(ResourceNames.QUEUE + address3);
+
+      assertTrue(1 == queueControl1.getMessageCount());
+      assertTrue(1 == queueControl2.getMessageCount());
+      assertTrue(1 == queueControl3.getMessageCount());
+      assertTrue(message.getPersistentSize() > queueControl1.getPersistentSize());
+      assertTrue(queueControl1.getPersistentSize() > queueControl2.getPersistentSize());
+      assertTrue(queueControl2.getPersistentSize() > queueControl3.getPersistentSize());
+
+      sf1.close();
+      sf2.close();
+      sf3.close();
+      locator1.close();
+      locator2.close();
+      locator3.close();
+
    }
 
    @Override
