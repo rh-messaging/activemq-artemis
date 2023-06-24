@@ -2380,6 +2380,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
    @Override
    public boolean closeSessionWithID(final String connectionID, final String ID) throws Exception {
+      return closeSessionWithID(connectionID, ID, false);
+   }
+
+   @Override
+   public boolean closeSessionWithID(final String connectionID, final String ID, final boolean force) throws Exception {
       // possibly a long running task
       try (AutoCloseable lock = server.managementLock()) {
          if (AuditLogger.isBaseLoggingEnabled()) {
@@ -2392,7 +2397,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
             List<ServerSession> sessions = server.getSessions(connectionID);
             for (ServerSession session : sessions) {
                if (session.getName().equals(ID.toString())) {
-                  session.close(true);
+                  session.close(true, force);
                   return true;
                }
             }
