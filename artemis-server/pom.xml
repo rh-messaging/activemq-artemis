@@ -203,6 +203,19 @@
       </dependency>
       <dependency>
          <groupId>org.apache.directory.server</groupId>
+         <artifactId>apacheds-protocol-ldap</artifactId>
+         <version>${directory-version}</version>
+         <scope>test</scope>
+         <exclusions>
+            <!-- exclude bcprov-jdk15on to avoid conflicts with bcprov-jdk18on -->
+            <exclusion>
+               <groupId>org.bouncycastle</groupId>
+               <artifactId>bcprov-jdk15on</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.directory.server</groupId>
          <artifactId>apacheds-test-framework</artifactId>
          <version>${directory-version}</version>
          <scope>test</scope>
@@ -274,6 +287,12 @@
                <artifactId>json-smart</artifactId>
             </exclusion>
          </exclusions>
+      </dependency>
+      <!-- bcprov-jdk18on replaces bcprov-jdk15on excluded from apacheds-protocol-ldap -->
+      <dependency>
+         <groupId>org.bouncycastle</groupId>
+         <artifactId>bcprov-jdk18on</artifactId>
+         <scope>test</scope>
       </dependency>
    </dependencies>
 

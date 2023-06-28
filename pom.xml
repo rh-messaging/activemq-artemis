@@ -181,7 +181,7 @@
       <groovy.version>4.0.10</groovy.version>
       <vertx.version>4.3.3</vertx.version>
       <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
-      <mockserver.version>5.13.2</mockserver.version>
+      <mockserver.version>5.15.0</mockserver.version>
 
       <owasp.version>6.1.0</owasp.version>
       <spring.version>5.3.27</spring.version>
@@ -247,7 +247,7 @@
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
-      <bcprov-jdk15on-version>1.68.0.redhat-00005</bcprov-jdk15on-version>
+      <bc-java-version>1.75</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
@@ -410,8 +410,13 @@
 
          <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>${bcprov-jdk15on-version}</version>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bc-java-version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>${bc-java-version}</version>
          </dependency>
 
          <!-- ## End Test Dependencies ## -->
