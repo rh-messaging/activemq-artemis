@@ -41,7 +41,6 @@ import org.apache.activemq.artemis.spi.core.security.jaas.kubernetes.model.Token
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockserver.configuration.Configuration;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -52,7 +51,6 @@ import org.mockserver.verify.VerificationTimes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore("The KubernetesClientImplTest fails with the bouncycastle version used by keycloak")
 public class KubernetesClientImplTest {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
