@@ -1635,13 +1635,6 @@
             </plugin>
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-install-plugin</artifactId>
-               <configuration>
-                  <createChecksum>true</createChecksum>
-               </configuration>
-            </plugin>
-            <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-pmd-plugin</artifactId>
                <version>3.6</version>
                <configuration>
@@ -1827,13 +1820,6 @@
             <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
                <noindex>true</noindex>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-install-plugin</artifactId>
-            <configuration>
-               <createChecksum>true</createChecksum>
             </configuration>
          </plugin>
          <plugin>
