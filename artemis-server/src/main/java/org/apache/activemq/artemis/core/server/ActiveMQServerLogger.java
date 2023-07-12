@@ -1118,7 +1118,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 222702, value = "Message ack in prepared tx for queue {} which does not exist. This ack will be ignored.", level = LogMessage.Level.WARN)
    void journalMessageAckMissingQueueInPreparedTX(Long queueID);
 
-   @LogMessage(id = 222703,  value = "Address \"{}\" is full. Bridge {} will disconnect", level = LogMessage.Level.WARN)
+   @LogMessage(id = 222703, value = "Address \"{}\" is full. Bridge {} will disconnect", level = LogMessage.Level.WARN)
    void bridgeAddressFull(String addressName, String bridgeName);
 
    @LogMessage(id = 222274, value = "Failed to deploy address {}: {}", level = LogMessage.Level.WARN)
@@ -1582,4 +1582,5 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224125, value = "Address {} has page-limit-bytes={} and page-limit-messages={} but no page-full-policy set. Page full configuration being ignored on this address", level = LogMessage.Level.WARN)
    void noPagefullPolicySet(Object address, Object limitBytes, Object limitMessages);
 
+   // notice loggerID=224127 is reserved as it's been used at ActiveMQQueueLogger
 }
