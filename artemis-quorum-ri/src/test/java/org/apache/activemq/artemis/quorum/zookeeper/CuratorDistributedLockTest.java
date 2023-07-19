@@ -27,9 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
-import com.google.common.base.Predicates;
 import org.apache.activemq.artemis.quorum.DistributedLock;
 import org.apache.activemq.artemis.quorum.DistributedPrimitiveManager;
 import org.apache.activemq.artemis.quorum.UnavailableStateException;
@@ -84,8 +82,6 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       }
       testingServer = new TestingCluster(clusterSpecs);
       testingServer.start();
-      // start waits for quorumPeer!=null but not that it has started...
-      Wait.waitFor(this::ensembleHasLeader);
       connectString = testingServer.getConnectString();
       super.setupEnv();
    }
@@ -208,7 +204,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
    public void cannotStartManagerWithoutQuorum() throws Exception {
       Assume.assumeThat(zkNodes, greaterThan(1));
       DistributedPrimitiveManager manager = createManagedDistributeManager();
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       Assert.assertFalse(manager.start(2, TimeUnit.SECONDS));
       Assert.assertFalse(manager.isStarted());
    }
@@ -218,7 +214,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       Assume.assumeThat(zkNodes, greaterThan(1));
       DistributedPrimitiveManager manager = createManagedDistributeManager();
       manager.start();
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       DistributedLock lock = manager.getDistributedLock("a");
       lock.tryLock();
    }
@@ -228,7 +224,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       Assume.assumeThat(zkNodes, greaterThan(1));
       DistributedPrimitiveManager manager = createManagedDistributeManager();
       manager.start();
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       DistributedLock lock = manager.getDistributedLock("a");
       final boolean held;
       try {
@@ -244,7 +240,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       Assume.assumeThat(zkNodes, greaterThan(1));
       DistributedPrimitiveManager manager = createManagedDistributeManager();
       manager.start();
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       DistributedLock lock = manager.getDistributedLock("a");
       Assert.assertNotNull(lock);
    }
@@ -257,7 +253,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       DistributedLock lock = manager.getDistributedLock("a");
       CountDownLatch unavailable = new CountDownLatch(1);
       lock.addListener(unavailable::countDown);
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       Assert.assertTrue(unavailable.await(SESSION_MS + SERVER_TICK_MS, TimeUnit.MILLISECONDS));
    }
 
@@ -271,7 +267,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       final AtomicInteger unavailableLock = new AtomicInteger(0);
       manager.addUnavailableManagerListener(unavailableManager::incrementAndGet);
       lock.addListener(unavailableLock::incrementAndGet);
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       TimeUnit.MILLISECONDS.sleep(SESSION_MS + SERVER_TICK_MS + CONNECTION_MS);
       Assert.assertEquals(1, unavailableLock.get());
       Assert.assertEquals(1, unavailableManager.get());
@@ -306,7 +302,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       timedLock.start();
       Assert.assertTrue(startedTimedLock.await(10, TimeUnit.SECONDS));
       TimeUnit.SECONDS.sleep(1);
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       TimeUnit.MILLISECONDS.sleep(SESSION_MS + CONNECTION_MS);
       Wait.waitFor(() -> unavailableLock.get() > 0, SERVER_TICK_MS);
       Assert.assertEquals(1, unavailableManager.get());
@@ -324,7 +320,7 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       };
       manager.addUnavailableManagerListener(managerListener);
       Assert.assertFalse(unavailable.get());
-      stopMajorityNotLeaderNodes(true);
+      stopMajority(true);
       Wait.waitFor(unavailable::get);
       manager.removeUnavailableManagerListener(managerListener);
       final AtomicInteger unavailableOnRegister = new AtomicInteger();
@@ -337,21 +333,8 @@ public class CuratorDistributedLockTest extends DistributedLockTest {
       }
    }
 
-   private boolean ensembleHasLeader() {
-      return testingServer.getServers().stream().filter(CuratorDistributedLockTest::isLeader).count() != 0;
-   }
-
-   private static boolean isLeader(TestingZooKeeperServer server) {
-      if (server.getInstanceSpecs().size() == 1) {
-         return true;
-      }
-      long leaderId = server.getQuorumPeer().getLeaderId();
-      long id = server.getQuorumPeer().getId();
-      return id == leaderId;
-   }
-
-   private void stopMajorityNotLeaderNodes(boolean fromLast) throws Exception {
-      List<TestingZooKeeperServer> followers = testingServer.getServers().stream().filter(Predicates.not(CuratorDistributedLockTest::isLeader)).collect(Collectors.toList());
+   private void stopMajority(boolean fromLast) throws Exception {
+      List<TestingZooKeeperServer> followers = testingServer.getServers();
       final int quorum = (zkNodes / 2) + 1;
       for (int i = 0; i < quorum; i++) {
          final int nodeIndex = fromLast ? (followers.size() - 1) - i : i;

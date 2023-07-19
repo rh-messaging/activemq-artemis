@@ -117,8 +117,8 @@
       <netty.transport.native.epoll.ppcle.version>4.1.100.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
       <netty.transport.native.epoll.s390x.version>4.1.100.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
-      <curator.version>5.2.0</curator.version>
-      <zookeeper.version>3.6.3</zookeeper.version>
+      <curator.version>5.5.0</curator.version>
+      <zookeeper.version>3.8.2</zookeeper.version>
 
       <!-- tracing -->
       <opentelemetry.version>1.10.0</opentelemetry.version>
@@ -989,12 +989,8 @@
             <version>${zookeeper.version}</version>
             <exclusions>
                <exclusion>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-log4j12</artifactId>
-               </exclusion>
-               <exclusion>
-                  <groupId>log4j</groupId>
-                  <artifactId>log4j</artifactId>
+                  <groupId>ch.qos.logback</groupId>
+                  <artifactId>*</artifactId>
                </exclusion>
                <exclusion>
                   <groupId>io.netty</groupId>

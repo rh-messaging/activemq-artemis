@@ -18,7 +18,6 @@
 package org.apache.activemq.artemis.tests.smoke.quorum;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +25,7 @@ import org.apache.activemq.artemis.util.ServerUtil;
 import org.apache.activemq.artemis.utils.Wait;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.apache.activemq.artemis.tests.smoke.utils.Jmx.containsExactNodeIds;
@@ -47,15 +47,14 @@ public class ZookeeperPluggableQuorumPeerTest extends ZookeeperPluggableQuorumSi
       // both roles as both wish to be primary but will revert to backup
       primary = new BrokerControl("primary-peer-a", JMX_PORT_PRIMARY, "zkReplicationPrimaryPeerA", PRIMARY_PORT_OFFSET);
       backup = new BrokerControl("primary-peer-b", JMX_PORT_BACKUP, "zkReplicationPrimaryPeerB", BACKUP_PORT_OFFSET);
-      brokers = new LinkedList(Arrays.asList(primary, backup));
+      brokers = Arrays.asList(primary, backup);
    }
 
+   @Ignore
    @Test
    @Override
    public void testBackupFailoverAndPrimaryFailback() throws Exception {
       // peers don't request fail back by default
-      // just wait for setup to avoid partial stop of zk via fast tear down with async setup
-      Wait.waitFor(this::ensembleHasLeader);
    }
 
    @Test
