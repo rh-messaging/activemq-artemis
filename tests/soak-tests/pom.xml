@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
    <modelVersion>4.0.0</modelVersion>
 
    <parent>
@@ -382,6 +383,24 @@
                      <args>
                         <arg>--java-options</arg>
                         <arg>-ea</arg>
+                     </args>
+                  </configuration>
+               </execution>
+               <execution>
+                  <phase>test-compile</phase>
+                  <id>create-paging-export</id>
+                  <goals>
+                     <goal>create</goal>
+                  </goals>
+                  <configuration>
+                     <instance>${basedir}/target/paging-export</instance>
+                     <args>
+                        <arg>--global-max-messages</arg>
+                        <arg>10000</arg>
+                        <arg>--java-options</arg>
+                        <arg>-ea</arg>
+                        <arg>--queues</arg>
+                        <arg>TEST</arg>
                      </args>
                   </configuration>
                </execution>

@@ -17,7 +17,10 @@
 
 package org.apache.activemq.artemis.cli.commands.tools;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,6 +65,8 @@ public class DBOption extends OptionalLocking {
    @Option(name = "--output", description = "Output name for the file.")
    private String output;
 
+   private OutputStream fileOutputStream;
+
    @Option(name = "--jdbc", description = "Whether to store message data in JDBC instead of local files.")
    Boolean jdbc;
 
@@ -89,6 +94,15 @@ public class DBOption extends OptionalLocking {
    public boolean isJDBC() throws Exception {
       parseDBConfig();
       return jdbc;
+   }
+
+   public String getOutput() {
+      return output;
+   }
+
+   public DBOption setOutput(String output) {
+      this.output = output;
+      return this;
    }
 
    public String getJdbcBindings() throws Exception {
@@ -167,13 +181,24 @@ public class DBOption extends OptionalLocking {
       super.execute(context);
 
       if (output != null) {
-         FileOutputStream fileOutputStream = new FileOutputStream(output);
+         fileOutputStream = new BufferedOutputStream(new FileOutputStream(output));
          PrintStream printStream = new PrintStream(fileOutputStream);
          context.out = printStream;
 
          Runtime.getRuntime().addShutdownHook(new Thread(printStream::close));
       }
       return null;
+   }
+
+   public void done() {
+      if (fileOutputStream != null) {
+         try {
+            fileOutputStream.close();
+         } catch (Throwable e) {
+            e.printStackTrace();
+         }
+         fileOutputStream = null;
+      }
    }
 
    private void parseDBConfig() throws Exception {
