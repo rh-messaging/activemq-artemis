@@ -21,11 +21,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.github.rvesse.airline.annotations.Command;
-import com.github.rvesse.airline.annotations.Option;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.cli.Artemis;
+import org.apache.activemq.artemis.cli.Shell;
 import org.apache.activemq.artemis.cli.commands.tools.LockAbstract;
 import org.apache.activemq.artemis.cli.factory.BrokerFactory;
 import org.apache.activemq.artemis.cli.factory.jmx.ManagementFactory;
@@ -41,14 +40,16 @@ import org.apache.activemq.artemis.integration.Broker;
 import org.apache.activemq.artemis.integration.bootstrap.ActiveMQBootstrapLogger;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 import org.apache.activemq.artemis.utils.ReusableLatch;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 @Command(name = "run", description = "Run the broker.")
 public class Run extends LockAbstract {
 
-   @Option(name = "--allow-kill", description = "This will allow the server to kill itself. Useful for tests (e.g. failover tests).")
+   @Option(names = "--allow-kill", description = "This will allow the server to kill itself. Useful for tests (e.g. failover tests).")
    boolean allowKill;
 
-   @Option(name = "--properties", description = "URL to a properties file that is applied to the server's configuration.")
+   @Option(names = "--properties", description = "URL to a properties file that is applied to the server's configuration.")
    String properties;
 
    private static boolean embedded = false;
@@ -153,6 +154,15 @@ public class Run extends LockAbstract {
       if (serverActivationFailed.get() != null) {
          stop();
          return serverActivationFailed.get();
+      }
+
+      if (Shell.inShell()) {
+         while (server.getServer().isStarted()) {
+            try {
+               Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+         }
       }
 
       return new Pair<>(managementContext, server.getServer());
