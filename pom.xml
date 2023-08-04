@@ -101,7 +101,7 @@
       <hawtio.version>2.0.0.fuse-7_12_0-00019-redhat-00001</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.15</jetty.version>
-      <tomcat.servlet-api.version>8.0.36</tomcat.servlet-api.version>
+      <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
       <jgroups.version>5.2.16.Final</jgroups.version>
       <errorprone.version>2.20.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
@@ -126,6 +126,10 @@
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
       <!-- disable keycloak community profile -->
       <product>true</product>
+
+      <!-- docs -->
+      <asciidoctor.maven.plugin.version>2.2.4</asciidoctor.maven.plugin.version>
+      <asciidoctorj.pdf.version>2.3.9</asciidoctorj.pdf.version>
 
       <!-- tracing -->
       <opentelemetry.version>1.24.0</opentelemetry.version>
@@ -791,28 +795,17 @@
          <!-- ## Jetty web Dependencies ##-->
          <dependency>
             <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-server</artifactId>
-            <version>${jetty.version}</version>
-            <exclusions>
-               <exclusion>
-                  <groupId>javax.servlet</groupId>
-                  <artifactId>javax.servlet-api</artifactId>
-               </exclusion>
-            </exclusions>
-            <!-- License: (Joint): Apache 2.0 & EPL 1.0 -->
-         </dependency>
-         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-bom</artifactId>
             <version>${jetty.version}</version>
             <type>pom</type>
             <scope>import</scope>
-            <!-- License: (Joint): Apache 2.0 & EPL 1.0 -->
+            <!-- License: (Joint): Apache 2.0 or EPL 2.0 -->
          </dependency>
          <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>tomcat-servlet-api</artifactId>
-            <version>${tomcat.servlet-api.version}</version>
+            <groupId>org.eclipse.jetty.toolchain</groupId>
+            <artifactId>jetty-servlet-api</artifactId>
+            <version>${jetty-servlet-api.version}</version>
+            <!-- License: (Joint): Apache 2.0 or EPL 2.0 -->
          </dependency>
          <!-- ## End Jetty Wed Dependencies ## -->
 
@@ -1758,14 +1751,13 @@
                      <exclude>**/footer.html</exclude>
                      <exclude>**/*.txt</exclude>
                      <exclude>**/*.md</exclude>
+                     <exclude>**/*.adoc</exclude>
                      <exclude>etc/ide-settings/**</exclude>
                      <exclude>**/*.json</exclude>
-                     <exclude>docs/**/*.json</exclude>
-                     <exclude>docs/**/_book/</exclude>
-                     <exclude>docs/**/_layouts/</exclude>
-                     <exclude>docs/user-manual/en/diagrams/*.svg</exclude>
-                     <exclude>docs/user-manual/en/02-27-00-scripts-profiles.diff</exclude>
-                     <exclude>docs/user-manual/en/02-27-00-scripts-profiles-windows.diff</exclude>
+                     <exclude>docs/resources/font-awesome/**/*</exclude>
+                     <exclude>docs/user-manual/_diagrams/*.svg</exclude>
+                     <exclude>docs/user-manual/02-27-00-scripts-profiles.diff</exclude>
+                     <exclude>docs/user-manual/02-27-00-scripts-profiles-windows.diff</exclude>
                      <exclude>**/target/</exclude>
                      <exclude>**/META-INF/services/*</exclude>
                      <exclude>**/META-INF/MANIFEST.MF</exclude>
