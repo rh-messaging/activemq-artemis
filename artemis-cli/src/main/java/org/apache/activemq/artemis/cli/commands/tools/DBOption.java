@@ -18,7 +18,6 @@
 package org.apache.activemq.artemis.cli.commands.tools;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
