@@ -609,24 +609,52 @@ public class ConfigurationImpl implements Configuration, Serializable {
                   logger.debug("setProperty on {}, name: {}, value: {}", bean.getClass(), name, value);
                }
                // Resolve any nested expression to get the actual target bean
-               Object target = bean;
+               List<Object> targets = new ArrayList<>();
+               List<Stack<Pair<String, Object>>> cols = new ArrayList<>();
+               targets.add(bean);
+               cols.add(autoFillCollections.collections);
                final Resolver resolver = getPropertyUtils().getResolver();
                while (resolver.hasNested(name)) {
                   try {
-                     target = getPropertyUtils().getProperty(target, resolver.next(name));
-                     if (target == null) {
-                        throw new InvocationTargetException(null, "Resolved nested property for:" + name + ", on: " + bean + " was null");
+                     List<Object> nextTargets = new ArrayList<>();
+                     List<Stack<Pair<String, Object>>> nextCols = new ArrayList<>();
+                     String[] nextNames = resolver.next(name).split(",");
+                     for(int t = 0; t < targets.size(); t++) {
+                        Object target = targets.get(t);
+                        Stack<Pair<String, Object>> collections = cols.get(t);
+                        for(String nextName : nextNames) {
+                           autoFillCollections.collections = new Stack<>();
+                           autoFillCollections.collections.addAll(collections);
+                           Object nextTarget = getPropertyUtils().getProperty(target, nextName);
+                           if (nextTarget == null) {
+                              throw new InvocationTargetException(null, "Resolved nested property for:" + name + ", on: " + bean + " was null");
+                           }
+                           nextTargets.add(nextTarget);
+                           nextCols.add(autoFillCollections.collections);
+                        }
                      }
                      name = resolver.remove(name);
+                     targets = nextTargets;
+                     cols = nextCols;
                   } catch (final NoSuchMethodException e) {
                      throw new InvocationTargetException(e, "No getter for property:" + name + ", on: " + bean);
                   }
                }
-               logger.trace("resolved target, bean: {}, name: {}", target.getClass(), name);
 
-               final String propName = resolver.getProperty(name); // Simple name of target property
+               for(int t = 0; t < targets.size(); t++) {
+                  Object target = targets.get(t);
+                  Stack<Pair<String, Object>> collections = cols.get(t);
+
+                  String[] nextNames = resolver.next(name).split(",");
+                  for(String nextName : nextNames) {
+                     autoFillCollections.collections = new Stack<>();
+                     autoFillCollections.collections.addAll(collections);
+
+               logger.trace("resolved target, bean: {}, name: {}", target.getClass(), nextName);
+
+               final String propName = resolver.getProperty(nextName); // Simple name of target property
                if (autoFillCollections.isRemoveValue(value)) {
-                  logger.trace("removing from target, bean: {}, name: {}", target.getClass(), name);
+                  logger.trace("removing from target, bean: {}, name: {}", target.getClass(), nextName);
 
                   // we may do a further get but no longer want to reference our nested collection stack
                   if (!autoFillCollections.collections.isEmpty()) {
@@ -646,23 +674,23 @@ public class ConfigurationImpl implements Configuration, Serializable {
                      try {
                         autoFillCollections.removeByNameProperty(propName, (Collection) target);
                      } catch (NoSuchMethodException e) {
-                        throw new InvocationTargetException(e, "Can only remove named entries from collections or maps" + name + ", on: " + target);
+                        throw new InvocationTargetException(e, "Can only remove named entries from collections or maps" + nextName + ", on: " + target);
                      }
                   } else {
-                     throw new InvocationTargetException(null, "Can only remove entries from collections or maps" + name + ", on: " + target);
+                     throw new InvocationTargetException(null, "Can only remove entries from collections or maps" + nextName + ", on: " + target);
                   }
 
-                  logger.trace("removed from target, bean: {}, name: {}", target.getClass(), name);
-                  return;
+                  logger.trace("removed from target, bean: {}, name: {}", target.getClass(), nextName);
+                  continue;
                }
 
                Class<?> type = null;                         // Java type of target property
-               final int index = resolver.getIndex(name);         // Indexed subscript value (if any)
-               final String key = resolver.getKey(name);           // Mapped key value (if any)
+               final int index = resolver.getIndex(nextName);         // Indexed subscript value (if any)
+               final String key = resolver.getKey(nextName);           // Mapped key value (if any)
 
                // Calculate the property type
                if (target instanceof DynaBean) {
-                  throw new InvocationTargetException(null, "Cannot determine DynaBean type to access: " + name + " on: " + target);
+                  throw new InvocationTargetException(null, "Cannot determine DynaBean type to access: " + nextName + " on: " + target);
                } else if (target instanceof Map) {
                   type = Object.class;
                } else if (target != null && target.getClass().isArray() && index >= 0) {
@@ -670,33 +698,33 @@ public class ConfigurationImpl implements Configuration, Serializable {
                } else {
                   PropertyDescriptor descriptor = null;
                   try {
-                     descriptor = getPropertyUtils().getPropertyDescriptor(target, name);
+                     descriptor = getPropertyUtils().getPropertyDescriptor(target, nextName);
                      if (descriptor == null) {
-                        throw new InvocationTargetException(null, "No accessor method descriptor for: " + name + " on: " + target.getClass());
+                        throw new InvocationTargetException(null, "No accessor method descriptor for: " + nextName + " on: " + target.getClass());
                      }
                   } catch (final NoSuchMethodException e) {
-                     throw new InvocationTargetException(e, "Failed to get descriptor for: " + name + " on: " + target.getClass());
+                     throw new InvocationTargetException(e, "Failed to get descriptor for: " + nextName + " on: " + target.getClass());
                   }
                   if (descriptor instanceof MappedPropertyDescriptor) {
                      if (((MappedPropertyDescriptor) descriptor).getMappedWriteMethod() == null) {
-                        throw new InvocationTargetException(null, "No mapped Write method for: " + name + " on: " + target.getClass());
+                        throw new InvocationTargetException(null, "No mapped Write method for: " + nextName + " on: " + target.getClass());
                      }
                      type = ((MappedPropertyDescriptor) descriptor).getMappedPropertyType();
                   } else if (index >= 0 && descriptor instanceof IndexedPropertyDescriptor) {
                      if (((IndexedPropertyDescriptor) descriptor).getIndexedWriteMethod() == null) {
-                        throw new InvocationTargetException(null, "No indexed Write method for: " + name + " on: " + target.getClass());
+                        throw new InvocationTargetException(null, "No indexed Write method for: " + nextName + " on: " + target.getClass());
                      }
                      type = ((IndexedPropertyDescriptor) descriptor).getIndexedPropertyType();
                   } else if (index >= 0 && List.class.isAssignableFrom(descriptor.getPropertyType())) {
                      type = Object.class;
                   } else if (key != null) {
                      if (descriptor.getReadMethod() == null) {
-                        throw new InvocationTargetException(null, "No Read method for: " + name + " on: " + target.getClass());
+                        throw new InvocationTargetException(null, "No Read method for: " + nextName + " on: " + target.getClass());
                      }
                      type = (value == null) ? Object.class : value.getClass();
                   } else {
                      if (descriptor.getWriteMethod() == null) {
-                        throw new InvocationTargetException(null, "No Write method for: " + name + " on: " + target.getClass());
+                        throw new InvocationTargetException(null, "No Write method for: " + nextName + " on: " + target.getClass());
                      }
                      type = descriptor.getPropertyType();
                   }
@@ -736,9 +764,13 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
                // Invoke the setter method
                try {
-                  getPropertyUtils().setProperty(target, name, newValue);
+                  getPropertyUtils().setProperty(target, nextName, newValue);
                } catch (final NoSuchMethodException e) {
                   throw new InvocationTargetException(e, "Cannot set: " + propName + " on: " + target.getClass());
+               }
+
+
+                  }
                }
             }
          }
@@ -3136,7 +3168,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private static class CollectionAutoFillPropertiesUtil extends PropertyUtilsBean {
 
       private static final Object[] EMPTY_OBJECT_ARRAY = new Object[]{};
-      final Stack<Pair<String, Object>> collections = new Stack<>();
+      Stack<Pair<String, Object>> collections = new Stack<>();
       final String removeValue;
       private BeanUtilsBean beanUtilsBean;
 

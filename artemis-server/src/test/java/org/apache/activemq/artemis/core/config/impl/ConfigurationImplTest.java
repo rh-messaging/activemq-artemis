@@ -979,9 +979,12 @@ public class ConfigurationImplTest extends ActiveMQTestBase {
 
       Properties properties = new Properties();
 
-      properties.put("securityRoles.TEST.users.send", "true");
+      System.setProperty("USERS", "USER_0,USER_1,USER_2");
+
+      properties.put("securityRoles.TEST.${USERS}.send", "true");
       configuration.parsePrefixedProperties(properties, null);
       Assert.assertEquals(1, configuration.getSecurityRoles().size());
+      Assert.assertEquals(3, configuration.getSecurityRoles().get("TEST").size());
       Assert.assertTrue(configuration.getStatus().contains("\"errors\":[]"));
 
       properties.clear();
