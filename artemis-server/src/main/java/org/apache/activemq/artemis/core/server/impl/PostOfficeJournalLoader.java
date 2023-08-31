@@ -161,7 +161,8 @@ public class PostOfficeJournalLoader implements JournalLoader {
                                                              .setAutoDeleteMessageCount(queueBindingInfo.getAutoDeleteMessageCount())
                                                              .setRoutingType(RoutingType.getType(queueBindingInfo.getRoutingType()))
                                                              .setConfigurationManaged(queueBindingInfo.isConfigurationManaged())
-                                                             .setRingSize(queueBindingInfo.getRingSize()),
+                                                             .setRingSize(queueBindingInfo.getRingSize())
+                                                             .setInternal(queueBindingInfo.isInternal()),
                                                           pagingManager);
 
 
@@ -187,7 +188,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
       for (AddressBindingInfo addressBindingInfo : addressBindingInfos) {
          AddressInfo addressInfo = new AddressInfo(addressBindingInfo.getName()).setRoutingTypes(addressBindingInfo.getRoutingTypes());
          addressInfo.setId(addressBindingInfo.getId());
-         addressInfo.setAutoCreated(addressBindingInfo.getAutoCreated());
+         addressInfo.setAutoCreated(addressBindingInfo.isAutoCreated());
          if (addressBindingInfo.getAddressStatusEncoding() != null && addressBindingInfo.getAddressStatusEncoding().getStatus() == AddressQueueStatus.PAUSED) {
             addressInfo.setStorageManager(storageManager);
             addressInfo.setPostOffice(postOffice);
