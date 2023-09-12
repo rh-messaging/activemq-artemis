@@ -397,6 +397,15 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
          session.markRollbackOnly();
       } finally {
          try {
+            if (activation.getActivationSpec().getTransactionTimeout() > 0) {
+               TransactionManager tm = ServiceUtils.getTransactionManager();
+               if (tm != null) {
+                  try {
+                     tm.setTransactionTimeout(0);
+                  } catch (SystemException ex) {
+                  }
+               }
+            }
             session.resetIfNeeded();
          } catch (ActiveMQException e) {
             ActiveMQRALogger.LOGGER.unableToResetSession(activation.toString(), e);
