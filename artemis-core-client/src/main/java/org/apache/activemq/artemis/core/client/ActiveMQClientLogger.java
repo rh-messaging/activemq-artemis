@@ -347,4 +347,7 @@ public interface ActiveMQClientLogger {
 
    @LogMessage(id = 214034, value = "{} has negative counts {}\n{}", level = LogMessage.Level.ERROR)
    void negativeRefCount(String message, String count, String debugString);
+
+   @LogMessage(id = 214036, value = "Connection closure to {} has been detected: {} [code={}]", level = LogMessage.Level.INFO)
+   void connectionClosureDetected(String remoteAddress, String message, ActiveMQExceptionType type);
 }
