@@ -2220,4 +2220,11 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224116, value = "The component {0} is not responsive during start up. The Server may be taking too long to start", format = Message.Format.MESSAGE_FORMAT)
    void tooLongToStart(Object component);
 
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224134, value = "Connection closed with failedOver={0}", format = Message.Format.MESSAGE_FORMAT)
+   void bridgeConnectionClosed(Boolean failedOver);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 224135, value = "nodeID {0} is closing. Topology update ignored", format = Message.Format.MESSAGE_FORMAT)
+   void nodeLeavingCluster(String nodeID);
 }

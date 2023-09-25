@@ -577,4 +577,8 @@ public interface ActiveMQClientLogger extends BasicLogger {
    @Message(id = 214033, value = "Cannot resolve host ",
            format = Message.Format.MESSAGE_FORMAT)
    void unableToResolveHost(@Cause UnknownHostException e);
+
+   @LogMessage(level = Logger.Level.INFO)
+   @Message(id = 214036, value = "Connection closure to {0} has been detected: {1} [code={2}]", format = Message.Format.MESSAGE_FORMAT)
+   void connectionClosureDetected(String remoteAddress, String message, ActiveMQExceptionType type);
 }

@@ -469,6 +469,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    }
 
    private void interruptConnectAndCloseAllSessions(boolean close) {
+      //release all threads waiting for topology
+      latchFinalTopology.countDown();
+
       clientProtocolManager.stop();
 
       synchronized (createSessionLock) {
@@ -525,7 +528,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          return latchFinalTopology.await(timeout, unit);
       } catch (InterruptedException e) {
          Thread.currentThread().interrupt();
-         ActiveMQClientLogger.LOGGER.unableToReceiveClusterTopology(e);
+         if (!isClosed()) {
+            ActiveMQClientLogger.LOGGER.unableToReceiveClusterTopology(e);
+         }
          return false;
       }
    }
@@ -1472,7 +1477,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                     reason, new Exception("trace"));
          }
 
-         serverLocator.notifyNodeDown(System.currentTimeMillis(), nodeID);
+         serverLocator.notifyNodeDown(System.currentTimeMillis(), nodeID, true);
 
          if (reason.isRedirect()) {
             if (serverLocator.isHA()) {
@@ -1520,8 +1525,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       @Override
-      public void notifyNodeDown(long eventTime, String nodeID) {
-         serverLocator.notifyNodeDown(eventTime, nodeID);
+      public void notifyNodeDown(long eventTime, String nodeID, boolean disconnect) {
+         serverLocator.notifyNodeDown(eventTime, nodeID, disconnect);
       }
    }
 }
