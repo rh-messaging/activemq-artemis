@@ -151,6 +151,10 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
 
    private Integer maxReadPageMessages = null;
 
+   private Integer prefetchPageBytes = null;
+
+   private Integer prefetchPageMessages = null;
+
    private Long pageLimitBytes = null;
 
    private Long pageLimitMessages = null;
@@ -681,6 +685,16 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
       return this;
    }
 
+
+   public int getPrefetchPageMessages() {
+      return prefetchPageMessages != null ? prefetchPageMessages : getMaxReadPageMessages();
+   }
+
+   public AddressSettings setPrefetchPageMessages(final int prefetchPageMessages) {
+      this.prefetchPageMessages = prefetchPageMessages <= 0 ? null : prefetchPageMessages;
+      return this;
+   }
+
    public Long getPageLimitBytes() {
       return pageLimitBytes;
    }
@@ -714,6 +728,15 @@ public class AddressSettings implements Mergeable<AddressSettings>, Serializable
 
    public AddressSettings setMaxReadPageBytes(final int maxReadPageBytes) {
       this.maxReadPageBytes = maxReadPageBytes;
+      return this;
+   }
+
+   public int getPrefetchPageBytes() {
+      return prefetchPageBytes != null ? prefetchPageBytes : getMaxReadPageBytes();
+   }
+
+   public AddressSettings setPrefetchPageBytes(final int prefetchPageBytes) {
+      this.prefetchPageBytes = prefetchPageBytes <= 0 ? null : prefetchPageBytes;
       return this;
    }
 
