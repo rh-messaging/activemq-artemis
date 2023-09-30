@@ -18,7 +18,7 @@
    <parent>
       <groupId>org.apache.activemq</groupId>
       <artifactId>artemis-pom</artifactId>
-      <version>2.31.0-SNAPSHOT</version>
+      <version>2.32.0-SNAPSHOT</version>
    </parent>
 
    <name>ActiveMQ Artemis Tests POM</name>
@@ -141,5 +141,6 @@
       <module>smoke-tests</module>
       <module>e2e-tests</module>
       <module>leak-tests</module>
+      <module>db-tests</module>
    </modules>
 </project>

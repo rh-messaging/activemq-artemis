@@ -387,7 +387,7 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       }
 
       @Override
-      public void sync() throws Exception {
+      public void addSyncPoint(OperationContext context) throws Exception {
 
       }
 
@@ -418,6 +418,16 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
 
       @Override
       public int getMaxPageReadMessages() {
+         return 0;
+      }
+
+      @Override
+      public int getPrefetchPageBytes() {
+         return 0;
+      }
+
+      @Override
+      public int getPrefetchPageMessages() {
          return 0;
       }
 

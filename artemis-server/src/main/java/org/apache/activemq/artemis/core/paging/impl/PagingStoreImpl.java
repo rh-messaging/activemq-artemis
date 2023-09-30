@@ -43,6 +43,7 @@ import org.apache.activemq.artemis.core.paging.PagingStore;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
 import org.apache.activemq.artemis.core.paging.cursor.PageCursorProvider;
 import org.apache.activemq.artemis.core.paging.cursor.PageSubscription;
+import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
@@ -98,6 +99,10 @@ public class PagingStoreImpl implements PagingStore {
    private int maxPageReadBytes = -1;
 
    private int maxPageReadMessages = -1;
+
+   private int prefetchPageBytes = -1;
+
+   private int prefetchPageMessages = -1;
 
    private long maxMessages;
 
@@ -226,13 +231,19 @@ public class PagingStoreImpl implements PagingStore {
 
       maxPageReadMessages = addressSettings.getMaxReadPageMessages();
 
+      prefetchPageMessages = addressSettings.getPrefetchPageMessages();
+
       maxPageReadBytes = addressSettings.getMaxReadPageBytes();
+
+      prefetchPageBytes = addressSettings.getPrefetchPageBytes();
 
       maxMessages = addressSettings.getMaxSizeMessages();
 
       configureSizeMetric();
 
-      pageSize = addressSettings.getPageSizeBytes();
+      // JDBC has a maximum page size of 100K by default.
+      // it can be reconfigured through jdbc-max-page-size-bytes in the JDBC configuration section
+      pageSize = storageManager.getAllowedPageSize(addressSettings.getPageSizeBytes());
 
       addressFullMessagePolicy = addressSettings.getAddressFullMessagePolicy();
 
@@ -406,8 +417,18 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
+   public int getPrefetchPageBytes() {
+      return prefetchPageBytes;
+   }
+
+   @Override
    public int getMaxPageReadMessages() {
       return maxPageReadMessages;
+   }
+
+   @Override
+   public int getPrefetchPageMessages() {
+      return prefetchPageMessages;
    }
 
    @Override
@@ -428,6 +449,11 @@ public class PagingStoreImpl implements PagingStore {
       } else {
          return null;
       }
+   }
+
+   @Override
+   public String getFolderName() {
+      return fileFactory.getDirectoryName();
    }
 
    @Override
@@ -461,26 +487,29 @@ public class PagingStoreImpl implements PagingStore {
    }
 
    @Override
-   public void sync() throws Exception {
-      if (syncTimer != null) {
-         syncTimer.addSync(storageManager.getContext());
-      } else {
-         ioSync();
+   public void addSyncPoint(OperationContext context) throws Exception {
+      if (fileFactory == null || !fileFactory.supportsIndividualContext()) {
+         if (syncTimer != null) {
+            syncTimer.addSync(context);
+         } else {
+            ioSync();
+         }
       }
-
    }
 
    @Override
    public void ioSync() throws Exception {
-      lock.readLock().lock();
+      if (!fileFactory.supportsIndividualContext()) {
+         lock.readLock().lock();
 
-      try {
-         final Page page = currentPage;
-         if (page != null) {
-            page.sync();
+         try {
+            final Page page = currentPage;
+            if (page != null) {
+               page.sync();
+            }
+         } finally {
+            lock.readLock().unlock();
          }
-      } finally {
-         lock.readLock().unlock();
       }
    }
 
@@ -1214,7 +1243,7 @@ public class PagingStoreImpl implements PagingStore {
          page.write(pagedMessage);
 
          if (tx == null && syncNonTransactional && message.isDurable()) {
-            sync();
+            addSyncPoint(storageManager.getContext());
          }
 
          if (logger.isTraceEnabled()) {
@@ -1384,7 +1413,7 @@ public class PagingStoreImpl implements PagingStore {
        */
       private void syncStore() throws Exception {
          for (PagingStore store : usedStores) {
-            store.sync();
+            store.addSyncPoint(storageManager.getContext());
          }
       }
 

@@ -42,6 +42,7 @@ import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal
 import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 import org.apache.activemq.artemis.core.protocol.core.impl.PacketImpl;
 import org.apache.activemq.artemis.jms.client.ActiveMQDestination;
+import org.apache.activemq.artemis.jms.client.ActiveMQJMSClientLogger;
 import org.apache.activemq.artemis.jms.client.ActiveMQMessage;
 import org.apache.activemq.artemis.jms.client.ConnectionFactoryOptions;
 import org.apache.activemq.artemis.jms.client.compatible1X.ActiveMQCompatibleMessage;
@@ -55,6 +56,7 @@ import org.apache.activemq.artemis.utils.VersionLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
 /**
@@ -288,7 +290,6 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
    @Override
    public void onMessage(final ClientMessage message) {
       logger.trace("onMessage({})", message);
-
       ActiveMQMessage msg;
       if (enable1XPrefix) {
          msg = ActiveMQCompatibleMessage.createMessage(message, session, options);
@@ -379,6 +380,15 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
          session.markRollbackOnly();
       } finally {
          try {
+            if (activation.getActivationSpec().getTransactionTimeout() > 0) {
+               TransactionManager tm = ServiceUtils.getTransactionManager();
+               if (tm != null) {
+                  try {
+                     tm.setTransactionTimeout(0);
+                  } catch (SystemException ex) {
+                  }
+               }
+            }
             session.resetIfNeeded();
          } catch (ActiveMQException e) {
             ActiveMQRALogger.LOGGER.unableToResetSession(activation.toString(), e);
@@ -386,6 +396,16 @@ public class ActiveMQMessageHandler implements MessageHandler, FailoverEventList
          }
       }
 
+   }
+
+
+   @Override
+   public void onMessageExpired(ClientMessage message) {
+      try {
+         message.checkCompletion();
+      } catch (ActiveMQException e) {
+         ActiveMQJMSClientLogger.LOGGER.errorProcessingMessage(e);
+      }
    }
 
    public void start() throws ActiveMQException {

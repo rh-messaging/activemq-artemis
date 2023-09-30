@@ -15,14 +15,13 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
    <modelVersion>4.0.0</modelVersion>
 
    <parent>
       <groupId>org.apache.activemq.tests</groupId>
       <artifactId>artemis-tests-pom</artifactId>
-      <version>2.31.0-SNAPSHOT</version>
+      <version>2.32.0-SNAPSHOT</version>
    </parent>
 
    <artifactId>soak-tests</artifactId>
@@ -576,83 +575,6 @@
                      <instance>${basedir}/target/replica-tx-check/live-two</instance>
                      <configuration>${basedir}/target/classes/servers/replica-tx-check/live-two</configuration>
                      <args>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
-                     </args>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>test-compile</phase>
-                  <id>create-database-paging</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <!-- this makes it easier in certain envs -->
-                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/database-paging/derby</instance>
-                     <configuration>${basedir}/target/classes/servers/database-paging/derby</configuration>
-                     <libList>
-                        <arg>org.apache.derby:derby:${apache.derby.version}</arg>
-                     </libList>
-                     <args>
-                        <arg>--jdbc</arg>
-                        <arg>--global-max-messages</arg>
-                        <arg>100</arg>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
-                     </args>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>test-compile</phase>
-                  <id>create-database-paging-mysql</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <!-- this makes it easier in certain envs -->
-                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/database-paging/mysql</instance>
-                     <configuration>${basedir}/target/classes/servers/database-paging/mysql</configuration>
-                     <libListWithDeps>
-                        <arg>com.mysql:mysql-connector-j:8.0.33</arg>
-                     </libListWithDeps>
-                     <args>
-                        <arg>--jdbc</arg>
-                        <arg>--jdbc-connection-url</arg>
-                        <arg>jdbc:mysql://localhost/ARTEMIS-TEST?user=root&amp;#38;password=artemis</arg>
-                        <arg>--jdbc-driver-class-name</arg>
-                        <arg>com.mysql.cj.jdbc.Driver</arg>
-                        <arg>--global-max-messages</arg>
-                        <arg>100</arg>
-                        <arg>--java-options</arg>
-                        <arg>-ea</arg>
-                     </args>
-                  </configuration>
-               </execution>
-               <execution>
-                  <phase>test-compile</phase>
-                  <id>create-database-paging-postgres</id>
-                  <goals>
-                     <goal>create</goal>
-                  </goals>
-                  <configuration>
-                     <!-- this makes it easier in certain envs -->
-                     <javaOptions>-Djava.net.preferIPv4Stack=true</javaOptions>
-                     <instance>${basedir}/target/database-paging/postgres</instance>
-                     <configuration>${basedir}/target/classes/servers/database-paging/postgres</configuration>
-                     <libListWithDeps>
-                        <arg>org.postgresql:postgresql:42.6.0</arg>
-                     </libListWithDeps>
-                     <args>
-                        <arg>--jdbc</arg>
-                        <arg>--jdbc-connection-url</arg>
-                        <arg>jdbc:postgresql:artemis?user=artemis&amp;#38;password=artemis</arg>
-                        <arg>--jdbc-driver-class-name</arg>
-                        <arg>org.postgresql.Driver</arg>
-                        <arg>--global-max-messages</arg>
-                        <arg>100</arg>
                         <arg>--java-options</arg>
                         <arg>-ea</arg>
                      </args>

@@ -20,7 +20,7 @@
    <groupId>org.apache.activemq</groupId>
    <artifactId>artemis-pom</artifactId>
    <packaging>pom</packaging>
-   <version>2.31.0-SNAPSHOT</version>
+   <version>2.32.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.apache</groupId>
@@ -99,11 +99,11 @@
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.1.6</caffeine.version>
       <guava.version>32.0.1-jre</guava.version>
-      <hawtio.version>2.15.0</hawtio.version>
+      <hawtio.version>2.17.6</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.15</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
-      <jgroups.version>5.2.16.Final</jgroups.version>
+      <jgroups.version>5.3.0.Final</jgroups.version>
       <errorprone.version>2.20.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <maven.checkstyle.plugin.version>3.2.2</maven.checkstyle.plugin.version>
@@ -112,7 +112,7 @@
       <checkstyle.version>10.11.0</checkstyle.version>
       <mockito.version>5.4.0</mockito.version>
       <jctools.version>2.1.2</jctools.version>
-      <netty.version>4.1.96.Final</netty.version>
+      <netty.version>4.1.99.Final</netty.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.5.0</curator.version>
       <zookeeper.version>3.8.2</zookeeper.version>
@@ -129,6 +129,7 @@
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
+      <protonj2.version>1.0.0-M17</protonj2.version>
       <slf4j.version>1.7.36</slf4j.version>
       <log4j.version>2.20.0</log4j.version>
       <qpid.jms.version>1.10.0</qpid.jms.version>
@@ -184,7 +185,7 @@
       <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>6.1.0</owasp.version>
+      <owasp.version>8.4.0</owasp.version>
       <spring.version>5.3.27</spring.version>
 
       <jackson.version>2.14.1</jackson.version>
@@ -220,7 +221,7 @@
 
       <maven.test.redirectTestOutputToFile>false</maven.test.redirectTestOutputToFile>
 
-     <!--
+      <!--
 
        note for idea users:
        Idea picks up surefire argline by default:
@@ -235,6 +236,7 @@
 
       -->
 
+
       <activemq-surefire-argline>-Dorg.apache.activemq.artemis.utils.RetryRule.retry=${retryTests} -Dbrokerconfig.maxDiskUsage=100 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
          -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686" -Djgroups.bind_addr=localhost
          -Djava.net.preferIPv4Stack=true -Dbasedir=${basedir}
@@ -243,6 +245,7 @@
       </activemq-surefire-argline>
       <activemq.basedir>${project.basedir}</activemq.basedir>
       <skipOWASP>true</skipOWASP>
+      <proton.trace.frames>false</proton.trace.frames>
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
@@ -256,7 +259,7 @@
       <testFailureIgnore>true</testFailureIgnore>
       <fast-tests>false</fast-tests>
 
-      <project.build.outputTimestamp>2023-07-20T19:39:20Z</project.build.outputTimestamp>
+      <project.build.outputTimestamp>2023-09-15T18:40:46Z</project.build.outputTimestamp>
    </properties>
 
    <scm>
@@ -271,28 +274,28 @@
       <url>https://issues.apache.org/jira/browse/ARTEMIS</url>
    </issueManagement>
    <developers>
-       <developer>
-           <name>The Apache ActiveMQ Team</name>
-           <email>dev@activemq.apache.org</email>
-           <url>http://activemq.apache.org</url>
-           <organization>Apache Software Foundation</organization>
-           <organizationUrl>http://apache.org/</organizationUrl>
-       </developer>
+      <developer>
+         <name>The Apache ActiveMQ Team</name>
+         <email>dev@activemq.apache.org</email>
+         <url>http://activemq.apache.org</url>
+         <organization>Apache Software Foundation</organization>
+         <organizationUrl>http://apache.org/</organizationUrl>
+      </developer>
    </developers>
-    <mailingLists>
-        <mailingList>
-            <name>User List</name>
-            <subscribe>users-subscribe@activemq.apache.org</subscribe>
-            <unsubscribe>users-unsubscribe@activemq.apache.org</unsubscribe>
-            <post>users@activemq.apache.org</post>
-        </mailingList>
-        <mailingList>
-            <name>Development List</name>
-            <subscribe>dev-subscribe@activemq.apache.org</subscribe>
-            <unsubscribe>dev-unsubscribe@activemq.apache.org</unsubscribe>
-            <post>dev@activemq.apache.org</post>
-        </mailingList>
-    </mailingLists>
+   <mailingLists>
+      <mailingList>
+         <name>User List</name>
+         <subscribe>users-subscribe@activemq.apache.org</subscribe>
+         <unsubscribe>users-unsubscribe@activemq.apache.org</unsubscribe>
+         <post>users@activemq.apache.org</post>
+      </mailingList>
+      <mailingList>
+         <name>Development List</name>
+         <subscribe>dev-subscribe@activemq.apache.org</subscribe>
+         <unsubscribe>dev-unsubscribe@activemq.apache.org</unsubscribe>
+         <post>dev@activemq.apache.org</post>
+      </mailingList>
+   </mailingLists>
 
    <dependencyManagement>
       <dependencies>
@@ -420,10 +423,10 @@
 
          <!-- ## End Test Dependencies ## -->
          <dependency>
-             <groupId>com.google.errorprone</groupId>
-             <artifactId>error_prone_core</artifactId>
-             <version>${errorprone.version}</version>
-             <scope>provided</scope>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_core</artifactId>
+            <version>${errorprone.version}</version>
+            <scope>provided</scope>
          </dependency>
          <dependency>
             <groupId>org.springframework</groupId>
@@ -498,31 +501,31 @@
             <artifactId>jakarta.jms-api</artifactId>
             <version>${jakarta.jms-api.version}</version>
             <!-- License: EPL 2.0 -->
-        </dependency>
-        <dependency>
-           <groupId>jakarta.transaction</groupId>
-           <artifactId>jakarta.transaction-api</artifactId>
-           <version>${jakarta.transaction-api.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <version>${jakarta.transaction-api.version}</version>
             <!-- License: EPL 2.0 -->
-        </dependency>
-        <dependency>
-           <groupId>jakarta.ejb</groupId>
-           <artifactId>jakarta.ejb-api</artifactId>
-           <version>${jakarta.ejb-api.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>jakarta.ejb</groupId>
+            <artifactId>jakarta.ejb-api</artifactId>
+            <version>${jakarta.ejb-api.version}</version>
             <!-- License: EPL 2.0 -->
-        </dependency>
-        <dependency>
-           <groupId>jakarta.annotation</groupId>
-           <artifactId>jakarta.annotation-api</artifactId>
-           <version>${jakarta.annotation-api.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${jakarta.annotation-api.version}</version>
             <!-- License: EPL 2.0 -->
-        </dependency>
-        <dependency>
-           <groupId>jakarta.resource</groupId>
-           <artifactId>jakarta.resource-api</artifactId>
-           <version>${jakarta.resource-api.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>jakarta.resource</groupId>
+            <artifactId>jakarta.resource-api</artifactId>
+            <version>${jakarta.resource-api.version}</version>
             <!-- License: EPL 2.0 -->
-        </dependency>
+         </dependency>
          <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
@@ -530,34 +533,34 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-             <groupId>org.apache.commons</groupId>
-             <artifactId>commons-configuration2</artifactId>
-             <version>${commons.config.version}</version>
-             <!-- License: Apache 2.0 -->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>${commons.config.version}</version>
+            <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-             <groupId>org.apache.commons</groupId>
-             <artifactId>commons-text</artifactId>
-             <version>${commons.text.version}</version>
-             <!-- License: Apache 2.0 -->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${commons.text.version}</version>
+            <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-             <groupId>org.apache.commons</groupId>
-             <artifactId>commons-lang3</artifactId>
-             <version>${commons.lang.version}</version>
-             <!-- License: Apache 2.0 -->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.lang.version}</version>
+            <!-- License: Apache 2.0 -->
          </dependency>
 
          <!-- ## Examples Dependencies ## -->
          <dependency>
-             <groupId>org.slf4j</groupId>
-             <artifactId>slf4j-simple</artifactId>
-             <version>${slf4j.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.slf4j</groupId>
-             <artifactId>slf4j-nop</artifactId>
-             <version>${slf4j.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>${slf4j.version}</version>
          </dependency>
          <!-- ## End Examples Dependencies ## -->
 
@@ -729,9 +732,16 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-           <groupId>org.apache.qpid</groupId>
-           <artifactId>qpid-jms-client</artifactId>
-           <version>${qpid.jms.version}</version>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>protonj2-test-driver</artifactId>
+            <version>${protonj2.version}</version>
+            <scope>test</scope>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-jms-client</artifactId>
+            <version>${qpid.jms.version}</version>
          </dependency>
          <dependency>
             <groupId>org.apache.activemq</groupId>
@@ -756,10 +766,10 @@
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
-           <groupId>org.slf4j</groupId>
-           <artifactId>slf4j-api</artifactId>
-           <version>${slf4j.version}</version>
-           <!-- License: MIT -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <!-- License: MIT -->
          </dependency>
          <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -906,16 +916,16 @@
             <scope>test</scope>
          </dependency>
          <dependency>
-             <groupId>org.jacoco</groupId>
-             <artifactId>org.jacoco.ant</artifactId>
-             <version>${version.org.jacoco}</version>
-             <scope>test</scope>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.ant</artifactId>
+            <version>${version.org.jacoco}</version>
+            <scope>test</scope>
          </dependency>
          <dependency>
-             <groupId>org.jacoco</groupId>
-             <artifactId>org.jacoco.core</artifactId>
-             <version>${version.org.jacoco}</version>
-             <scope>test</scope>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.core</artifactId>
+            <version>${version.org.jacoco}</version>
+            <scope>test</scope>
          </dependency>
          <dependency>
             <groupId>jakarta.enterprise</groupId>
@@ -1119,93 +1129,93 @@
    </dependencyManagement>
 
    <profiles>
-       <profile>
-           <id>M2E</id>
-           <activation>
-               <property>
-                   <name>m2e.version</name>
-               </property>
-           </activation>
-           <properties>
-               <javac-compiler-id>javac</javac-compiler-id>
-           </properties>
-        </profile>
+      <profile>
+         <id>M2E</id>
+         <activation>
+            <property>
+               <name>m2e.version</name>
+            </property>
+         </activation>
+         <properties>
+            <javac-compiler-id>javac</javac-compiler-id>
+         </properties>
+      </profile>
 
       <profile>
-          <id>jdk11to15-errorprone</id>
-          <activation>
-              <jdk>[11,16)</jdk>
-              <property>
-                  <name>errorprone</name>
-              </property>
-          </activation>
-          <dependencies>
-              <dependency>
-                  <groupId>com.google.errorprone</groupId>
-                  <artifactId>error_prone_core</artifactId>
-              </dependency>
-          </dependencies>
-          <build>
-              <plugins>
-                  <plugin>
-                      <groupId>org.apache.maven.plugins</groupId>
-                      <artifactId>maven-compiler-plugin</artifactId>
-                      <configuration>
-                          <compilerArgs>
-                              <arg>-Xdiags:verbose</arg>
-                              <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
-                              <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
-                              <arg>-XDcompilePolicy=simple</arg>
-                              <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
-                          </compilerArgs>
-                      </configuration>
-                  </plugin>
-              </plugins>
-          </build>
+         <id>jdk11to15-errorprone</id>
+         <activation>
+            <jdk>[11,16)</jdk>
+            <property>
+               <name>errorprone</name>
+            </property>
+         </activation>
+         <dependencies>
+            <dependency>
+               <groupId>com.google.errorprone</groupId>
+               <artifactId>error_prone_core</artifactId>
+            </dependency>
+         </dependencies>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <configuration>
+                     <compilerArgs>
+                        <arg>-Xdiags:verbose</arg>
+                        <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
+                        <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
+                     </compilerArgs>
+                  </configuration>
+               </plugin>
+            </plugins>
+         </build>
       </profile>
       <profile>
-          <id>jdk16on-errorprone</id>
-          <!-- TODO: MissingOverride check only warns in this profile for now, as JDK15+ added a toString method to CharSequence -->
-          <activation>
-              <jdk>[16,)</jdk>
-              <property>
-                  <name>errorprone</name>
-              </property>
-          </activation>
-          <dependencies>
-              <dependency>
-                  <groupId>com.google.errorprone</groupId>
-                  <artifactId>error_prone_core</artifactId>
-              </dependency>
-          </dependencies>
-          <build>
-              <plugins>
-                  <plugin>
-                      <groupId>org.apache.maven.plugins</groupId>
-                      <artifactId>maven-compiler-plugin</artifactId>
-                      <configuration>
-                          <fork>true</fork>
-                          <compilerArgs>
-                              <arg>-Xdiags:verbose</arg>
-                              <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
-                              <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
-                              <arg>-XDcompilePolicy=simple</arg>
-                              <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:WARN -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-                              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-                              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-                              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-                          </compilerArgs>
-                      </configuration>
-                  </plugin>
-              </plugins>
-          </build>
+         <id>jdk16on-errorprone</id>
+         <!-- TODO: MissingOverride check only warns in this profile for now, as JDK15+ added a toString method to CharSequence -->
+         <activation>
+            <jdk>[16,)</jdk>
+            <property>
+               <name>errorprone</name>
+            </property>
+         </activation>
+         <dependencies>
+            <dependency>
+               <groupId>com.google.errorprone</groupId>
+               <artifactId>error_prone_core</artifactId>
+            </dependency>
+         </dependencies>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <configuration>
+                     <fork>true</fork>
+                     <compilerArgs>
+                        <arg>-Xdiags:verbose</arg>
+                        <arg>--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</arg>
+                        <arg>--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED</arg>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:WARN -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                     </compilerArgs>
+                  </configuration>
+               </plugin>
+            </plugins>
+         </build>
       </profile>
       <profile>
          <id>owasp</id>
@@ -1559,54 +1569,54 @@
 
       <pluginManagement>
          <plugins>
-         <plugin>
-            <groupId>org.eclipse.m2e</groupId>
-            <artifactId>lifecycle-mapping</artifactId>
-            <version>1.0.0</version>
-            <configuration>
-               <lifecycleMappingMetadata>
-                  <pluginExecutions>
-                     <pluginExecution>
-                        <pluginExecutionFilter>
-                           <groupId>org.apache.rat</groupId>
-                           <artifactId>apache-rat-plugin</artifactId>
-                           <versionRange>[0.12,)</versionRange>
-                           <goals>
-                              <goal>check</goal>
-                           </goals>
-                        </pluginExecutionFilter>
-                        <action>
-                           <ignore />
-                        </action>
-                     </pluginExecution>
-                     <pluginExecution>
-                        <pluginExecutionFilter>
-                           <groupId>
-                              org.apache.servicemix.tooling
+            <plugin>
+               <groupId>org.eclipse.m2e</groupId>
+               <artifactId>lifecycle-mapping</artifactId>
+               <version>1.0.0</version>
+               <configuration>
+                  <lifecycleMappingMetadata>
+                     <pluginExecutions>
+                        <pluginExecution>
+                           <pluginExecutionFilter>
+                              <groupId>org.apache.rat</groupId>
+                              <artifactId>apache-rat-plugin</artifactId>
+                              <versionRange>[0.12,)</versionRange>
+                              <goals>
+                                 <goal>check</goal>
+                              </goals>
+                           </pluginExecutionFilter>
+                           <action>
+                              <ignore />
+                           </action>
+                        </pluginExecution>
+                        <pluginExecution>
+                           <pluginExecutionFilter>
+                              <groupId>
+                                 org.apache.servicemix.tooling
                            </groupId>
-                           <artifactId>
-                              depends-maven-plugin
+                              <artifactId>
+                                 depends-maven-plugin
                            </artifactId>
-                           <versionRange>
-                              [1.2,)
+                              <versionRange>
+                                 [1.2,)
                            </versionRange>
-                           <goals>
-                              <goal>
-                                 generate-depends-file
+                              <goals>
+                                 <goal>
+                                    generate-depends-file
                               </goal>
-                           </goals>
-                        </pluginExecutionFilter>
-                        <action>
-                           <ignore />
-                        </action>
-                     </pluginExecution>
-                  </pluginExecutions>
-               </lifecycleMappingMetadata>
-            </configuration>
-         </plugin>
+                              </goals>
+                           </pluginExecutionFilter>
+                           <action>
+                              <ignore />
+                           </action>
+                        </pluginExecution>
+                     </pluginExecutions>
+                  </lifecycleMappingMetadata>
+               </configuration>
+            </plugin>
             <plugin>
                <groupId>org.codehaus.mojo</groupId>
-                  <artifactId>javacc-maven-plugin</artifactId>
+               <artifactId>javacc-maven-plugin</artifactId>
                <version>2.6</version>
                <executions>
                   <execution>
@@ -1630,7 +1640,7 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-rar-plugin</artifactId>
-               <version>2.3</version>
+               <version>3.0.0</version>
             </plugin>
             <plugin>
                <groupId>net.sf.maven-sar</groupId>
@@ -1643,9 +1653,9 @@
                <version>${jetty.version}</version>
             </plugin>
             <plugin>
-              <groupId>org.wildfly.extras.batavia</groupId>
-              <artifactId>transformer-tools-mvn</artifactId>
-              <version>${version.batavia}</version>
+               <groupId>org.wildfly.extras.batavia</groupId>
+               <artifactId>transformer-tools-mvn</artifactId>
+               <version>${version.batavia}</version>
             </plugin>
             <plugin>
                <inherited>true</inherited>
@@ -1671,6 +1681,9 @@
                   <runOrder>alphabetical</runOrder>
                   <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                   <argLine>${activemq-surefire-argline}</argLine>
+                  <environmentVariables>
+                     <PN_TRACE_FRM>${proton.trace.frames}</PN_TRACE_FRM>
+                  </environmentVariables>
                </configuration>
             </plugin>
             <plugin>
@@ -1779,7 +1792,7 @@
                      <exclude>**/*.log</exclude>
                      <exclude>**/*.redo</exclude>
 
-                      <!-- NPM files -->
+                     <!-- NPM files -->
                      <exclude>**/node/**</exclude>
                      <exclude>**/node_modules/**</exclude>
                      <exclude>**/package.json</exclude>
@@ -1803,6 +1816,9 @@
                      <exclude>examples/protocols/amqp/dotnet/**/bin/**/*</exclude>
                      <exclude>examples/protocols/amqp/dotnet/**/readme.md</exclude>
                      <exclude>examples/protocols/amqp/**/readme.md</exclude>
+
+                     <!-- DB Test config files -->
+                     <exclude>tests/db-tests/jdbc-drivers/**/*</exclude>
                   </excludes>
                </configuration>
             </plugin>
@@ -1825,38 +1841,38 @@
 
       <plugins>
          <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
-           <artifactId>maven-enforcer-plugin</artifactId>
-           <executions>
-             <execution>
-               <id>enforce-java-version</id>
-               <goals>
-                 <goal>enforce</goal>
-               </goals>
-               <configuration>
-                 <rules>
-                   <requireJavaVersion>
-                     <version>[11,)</version>
-                     <message>You must use JDK 11+ when building</message>
-                   </requireJavaVersion>
-                 </rules>
-               </configuration>
-             </execution>
-             <execution>
-               <id>enforce-maven-version</id>
-               <goals>
-                 <goal>enforce</goal>
-               </goals>
-               <configuration>
-                 <rules>
-                   <requireMavenVersion>
-                     <version>3.5.0</version>
-                     <message>You must use Maven 3.5.0+ to build</message>
-                   </requireMavenVersion>
-                 </rules>
-               </configuration>
-             </execution>
-           </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>enforce-java-version</id>
+                  <goals>
+                     <goal>enforce</goal>
+                  </goals>
+                  <configuration>
+                     <rules>
+                        <requireJavaVersion>
+                           <version>[11,)</version>
+                           <message>You must use JDK 11+ when building</message>
+                        </requireJavaVersion>
+                     </rules>
+                  </configuration>
+               </execution>
+               <execution>
+                  <id>enforce-maven-version</id>
+                  <goals>
+                     <goal>enforce</goal>
+                  </goals>
+                  <configuration>
+                     <rules>
+                        <requireMavenVersion>
+                           <version>3.5.0</version>
+                           <message>You must use Maven 3.5.0+ to build</message>
+                        </requireMavenVersion>
+                     </rules>
+                  </configuration>
+               </execution>
+            </executions>
          </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -1895,14 +1911,15 @@
             <artifactId>dependency-check-maven</artifactId>
             <version>${owasp.version}</version>
             <configuration>
-                <skip>${skipOWASP}</skip>
-                <!-- <skipProvidedScope>true</skipProvidedScope>
+               <skip>${skipOWASP}</skip>
+               <!-- <skipProvidedScope>true</skipProvidedScope>
                 <skipRuntimeScope>true</skipRuntimeScope> -->
             </configuration>
             <executions>
                <execution>
                   <goals>
-                     <goal>check</goal>
+                     <!-- combine results for all modules into a single report -->
+                     <goal>aggregate</goal>
                   </goals>
                </execution>
             </executions>

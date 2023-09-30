@@ -1602,6 +1602,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          } catch (Exception e) {
             ActiveMQServerLogger.LOGGER.unableToCancelRedistributor(e);
          } finally {
+            if (redistributor.iter != null) {
+               redistributor.iter.close();
+               redistributor.iter = null;
+            }
             consumers.remove(redistributor);
             redistributor = null;
          }
@@ -2226,6 +2230,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          Transaction tx = new TransactionImpl(storageManager);
 
          synchronized (this) {
+            // ensure all messages are moved from intermediateMessageReferences so that they can be seen by the iterator
+            doInternalPoll();
 
             try (LinkedListIterator<MessageReference> iter = iterator()) {
 
@@ -3302,16 +3308,21 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private boolean needsDepage() {
       final int maxReadMessages = pageSubscription.getPagingStore().getMaxPageReadMessages();
       final int maxReadBytes = pageSubscription.getPagingStore().getMaxPageReadBytes();
+      final int prefetchMessages = pageSubscription.getPagingStore().getPrefetchPageMessages();
+      final int prefetchBytes = pageSubscription.getPagingStore().getPrefetchPageBytes();
 
-      if (maxReadMessages <= 0 && maxReadBytes <= 0) {
-         // if both maxValues are disabled, we will protect the broker using an older semantic
+      if (maxReadMessages <= 0 && maxReadBytes <= 0 && prefetchBytes <= 0 && prefetchBytes <= 0) {
+         // if all values are disabled, we will protect the broker using an older semantic
          // where we don't look for deliveringMetrics..
          // this would give users a chance to switch to older protection mode.
          return queueMemorySize.getSize() < pageSubscription.getPagingStore().getMaxSize() &&
             intermediateMessageReferences.size() + messageReferences.size() < MAX_DEPAGE_NUM;
       } else {
-         boolean needsDepageResult =  (maxReadBytes <= 0 || (queueMemorySize.getSize() + deliveringMetrics.getPersistentSize()) < maxReadBytes) &&
-            (maxReadMessages <= 0 || (queueMemorySize.getElements() + deliveringMetrics.getMessageCount()) < maxReadMessages);
+         boolean needsDepageResult =
+            (maxReadBytes <= 0 || (queueMemorySize.getSize() + deliveringMetrics.getPersistentSize()) < maxReadBytes) &&
+            (prefetchBytes <= 0 || (queueMemorySize.getSize() < prefetchBytes)) &&
+            (maxReadMessages <= 0 || (queueMemorySize.getElements() + deliveringMetrics.getMessageCount()) < maxReadMessages) &&
+            (prefetchMessages <= 0 || (queueMemorySize.getElements() < prefetchMessages));
 
          if (!needsDepageResult) {
             if (!pageFlowControlled && (maxReadBytes > 0 && deliveringMetrics.getPersistentSize() >= maxReadBytes || maxReadMessages > 0 && deliveringMetrics.getMessageCount() >= maxReadMessages)) {

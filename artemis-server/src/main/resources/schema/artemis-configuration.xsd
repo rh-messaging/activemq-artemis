@@ -801,7 +801,17 @@
          <xsd:element name="max-disk-usage" type="xsd:int" default="90" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  Max percentage of disk usage before the system blocks or fails clients.
+                  Max percentage of disk usage before the system blocks or fails clients. Will be overrided by
+                  min-disk-free if both are set.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         
+         <xsd:element name="min-disk-free" type="xsd:string" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Min free bytes on disk below which the system blocks or fails clients. Supports byte notation like
+                  "K", "Mb", "GB", etc. Will override max-disk-usage if both are set.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -2047,6 +2057,7 @@
             <xsd:element name="receiver" type="amqp-address-match-type"/>
             <xsd:element name="peer" type="amqp-address-match-type"/>
             <xsd:element name="mirror" type="amqp-mirror-type"/>
+            <xsd:element name="federation" type="amqp-federation-type"/>
          </xsd:choice>
       </xsd:sequence>
       <xsd:attribute name="uri" type="xsd:string" use="required">
@@ -2173,6 +2184,102 @@
          </xsd:annotation>
       </xsd:attribute>
 
+   </xsd:complexType>
+
+   <xsd:complexType name="amqp-federation-type">
+      <xsd:annotation>
+         <xsd:documentation>
+            This create a federation between this broker and the remote that is being
+            connected to, federation can occur in either direction over this connection
+            depending on the address and queue policy configurations.
+         </xsd:documentation>
+      </xsd:annotation>
+      <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+         <xsd:choice maxOccurs="unbounded">
+            <xsd:element name="local-queue-policy" type="amqpFederationQueuePolicyType" />
+            <xsd:element name="local-address-policy" type="amqpFederationAddressPolicyType" />
+            <xsd:element name="remote-queue-policy" type="amqpFederationQueuePolicyType" />
+            <xsd:element name="remote-address-policy" type="amqpFederationAddressPolicyType" />
+         </xsd:choice>
+          <xsd:element ref="property" minOccurs="0" maxOccurs="unbounded">
+             <xsd:annotation>
+                <xsd:documentation>
+                   Optional properties that can be applied to the federation configuration
+                </xsd:documentation>
+             </xsd:annotation>
+          </xsd:element>
+      </xsd:sequence>
+   </xsd:complexType>
+
+   <xsd:complexType name="amqpFederationQueuePolicyType">
+      <xsd:sequence>
+         <xsd:element name="include" type="queueMatchType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element name="exclude" type="queueMatchType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element ref="property" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Optional properties that can be applied to the Queue federation policy
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:choice minOccurs="0" maxOccurs="1">
+            <xsd:element name="transformer-class-name" type="xsd:string" minOccurs="0" maxOccurs="1">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     an optional class name of a transformer
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="transformer" type="transformerType" minOccurs="0" maxOccurs="1">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     optional transformer configuration
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+         </xsd:choice>
+      </xsd:sequence>
+      <xsd:attribute name="priority-adjustment" type="xsd:int" use="optional" />
+      <xsd:attribute name="include-federated" type="xsd:boolean" use="optional" />
+      <xsd:attribute name="name" type="xsd:ID" use="required" />
+      <xsd:attributeGroup ref="xml:specialAttrs"/>
+   </xsd:complexType>
+
+   <xsd:complexType name="amqpFederationAddressPolicyType">
+      <xsd:sequence>
+         <xsd:element name="include" type="addressMatchType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element name="exclude" type="addressMatchType" minOccurs="0" maxOccurs="unbounded"/>
+         <xsd:element ref="property" minOccurs="0" maxOccurs="unbounded">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Optional properties that can be applied to the Address federation policy
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:choice minOccurs="0" maxOccurs="1">
+            <xsd:element name="transformer-class-name" type="xsd:string" minOccurs="0" maxOccurs="1">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     an optional class name of a transformer
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="transformer" type="transformerType" minOccurs="0" maxOccurs="1">
+               <xsd:annotation>
+                  <xsd:documentation>
+                     optional transformer configuration
+                  </xsd:documentation>
+               </xsd:annotation>
+            </xsd:element>
+         </xsd:choice>
+      </xsd:sequence>
+      <xsd:attribute name="auto-delete" type="xsd:boolean" use="optional" />
+      <xsd:attribute name="auto-delete-delay" type="xsd:long" use="optional" />
+      <xsd:attribute name="auto-delete-message-count" type="xsd:long" use="optional" />
+      <xsd:attribute name="max-hops" type="xsd:int" use="optional" />
+      <xsd:attribute name="name" type="xsd:ID" use="required" />
+      <xsd:attribute name="enable-divert-bindings" type="xsd:boolean" use="optional" />
+      <xsd:attributeGroup ref="xml:specialAttrs"/>
    </xsd:complexType>
 
    <xsd:complexType name="cluster-connectionUriType">
@@ -2686,6 +2793,14 @@
                <xsd:documentation>
                   The maximal time offset between the broker and the database in milliseconds when requesting the
                   current time of the database while updating and validating live and backup locks.
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+         <xsd:element name="jdbc-max-page-size-bytes" type="xsd:string" default="102400" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  The max page size (in bytes) to use for all addresses when using JDBC.
+                  Supports byte notation like "K", "Mb", "MiB", "GB", etc.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -3808,7 +3923,7 @@
          <xsd:element name="page-max-cache-size" default="5" type="xsd:int" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  Number of paging files to cache in memory to avoid IO during paging navigation
+                  Number of paging files to cache in memory to avoid IO during paging navigation. This is not used any more. and it will be ignored.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -3816,8 +3931,14 @@
          <xsd:element name="max-read-page-messages" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  How many messages are we allowed to read from page into the Queue each time. We should read more data from pages as messages are acknowledged until it fills up the size.
-                  Between this and max-read-page-bytes the system will stop reading based on whatever hits the mark first.
+                  Maximum number of paged messages that the broker can read into memory per-queue. The default value is -1, which means that no limit applies. </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="prefetch-page-messages" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  How many messages we are reading from paging and keeping ready in queues ready to deliver to consumers. Default: If not defined max-read-page-messages is used.
                </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
@@ -3825,9 +3946,16 @@
          <xsd:element name="max-read-page-bytes" type="xsd:string" default="20M" maxOccurs="1" minOccurs="0">
             <xsd:annotation>
                <xsd:documentation>
-                  How many bytes are we allowed to read from page into the Queue each time. We should read more data from pages as messages are acknowledged until it fills up the size.
-                  Between this and max-read-page-messages the system will stop reading based on whatever hits the mark first.
-               </xsd:documentation>
+                  Maximum memory, in bytes, that can be used to read paged messages into memory per-queue.
+                  When applying this limit, the broker takes into account both messages that are currently delivering and messages that are ready to be delivered to consumers.
+                  The default value is 2 * page-size (usually being 20 MB). If consumers are slow to acknowledge messages, you can increase the default value to ensure that the memory is not consumed by messages pending acknowledgment, which can starve the broker of messages.               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
+
+         <xsd:element name="prefetch-page-bytes" type="xsd:string" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  Number of paged messages that the broker can read from disk into memory per-queue. The default value is taken from max-read-page-messages, usually at -1, which means that no limit applies. </xsd:documentation>
             </xsd:annotation>
          </xsd:element>
 

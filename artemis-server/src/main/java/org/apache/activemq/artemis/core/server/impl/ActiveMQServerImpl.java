@@ -73,6 +73,7 @@ import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
+import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
 import org.apache.activemq.artemis.core.config.impl.ConfigurationImpl;
 import org.apache.activemq.artemis.core.config.impl.LegacyJMSConfiguration;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
@@ -553,6 +554,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    private void configureJdbcNetworkTimeout() {
       if (configuration.isPersistenceEnabled()) {
          if (configuration.getStoreConfiguration() != null && configuration.getStoreConfiguration().getStoreType() == StoreConfiguration.StoreType.DATABASE) {
+            configuration.setMaxDiskUsage(-1); // it does not make sense with JDBC
             DatabaseStorageConfiguration databaseStorageConfiguration = (DatabaseStorageConfiguration) configuration.getStoreConfiguration();
             databaseStorageConfiguration.setConnectionProviderNetworkTimeout(threadPool, databaseStorageConfiguration.getJdbcNetworkTimeout());
          }
@@ -2651,6 +2653,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public List<AMQPFederationBrokerPlugin> getBrokerAMQPFederationPlugins() {
+      return configuration.getBrokerAMQPFederationPlugins();
+   }
+
+   @Override
    public List<ActiveMQServerResourcePlugin> getBrokerResourcePlugins() {
       return configuration.getBrokerResourcePlugins();
    }
@@ -2732,6 +2739,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    @Override
+   public void callBrokerAMQPFederationPlugins(final ActiveMQPluginRunnable<AMQPFederationBrokerPlugin> pluginRun) throws ActiveMQException {
+      callBrokerPlugins(getBrokerAMQPFederationPlugins(), pluginRun);
+   }
+
+   @Override
    public void callBrokerResourcePlugins(final ActiveMQPluginRunnable<ActiveMQServerResourcePlugin> pluginRun) throws ActiveMQException {
       callBrokerPlugins(getBrokerResourcePlugins(), pluginRun);
    }
@@ -2806,6 +2818,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    @Override
    public boolean hasBrokerFederationPlugins() {
       return !getBrokerFederationPlugins().isEmpty();
+   }
+
+   @Override
+   public boolean hasBrokerAMQPFederationPlugins() {
+      return !getBrokerAMQPFederationPlugins().isEmpty();
    }
 
    @Override
@@ -3493,12 +3510,25 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          recoverStoredBridges();
       }
 
-      if (configuration.getMaxDiskUsage() != -1) {
-         try {
-            injectMonitor(new FileStoreMonitor(getScheduledPool(), executorFactory.getExecutor(), configuration.getDiskScanPeriod(), TimeUnit.MILLISECONDS, configuration.getMaxDiskUsage() / 100f, ioCriticalErrorListener));
-         } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.unableToInjectMonitor(e);
+      deployFileStoreMonitor();
+   }
+
+   private void deployFileStoreMonitor() throws Exception {
+      FileStoreMonitor.FileStoreMonitorType fileStoreMonitorType = null;
+      Number referenceValue = null;
+      if (configuration.getMinDiskFree() != -1) {
+         if (configuration.getMaxDiskUsage() != -1) {
+            ActiveMQServerLogger.LOGGER.configParamOverride(FileConfigurationParser.MIN_DISK_FREE, configuration.getMinDiskFree(), FileConfigurationParser.MAX_DISK_USAGE, configuration.getMaxDiskUsage());
          }
+         fileStoreMonitorType = FileStoreMonitor.FileStoreMonitorType.MinDiskFree;
+         referenceValue = configuration.getMinDiskFree();
+      } else if (configuration.getMaxDiskUsage() != -1) {
+         fileStoreMonitorType = FileStoreMonitor.FileStoreMonitorType.MaxDiskUsage;
+         referenceValue = configuration.getMaxDiskUsage() / 100d;
+      }
+
+      if (fileStoreMonitorType != null) {
+         injectMonitor(new FileStoreMonitor(getScheduledPool(), executorFactory.getExecutor(), configuration.getDiskScanPeriod(), TimeUnit.MILLISECONDS, referenceValue, ioCriticalErrorListener, fileStoreMonitorType));
       }
    }
 
@@ -3519,10 +3549,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
     * This method exists for a possibility of test cases replacing the FileStoreMonitor for an extension that would for instance pretend a disk full on certain tests.
     */
    public void injectMonitor(FileStoreMonitor storeMonitor) throws Exception {
-      this.fileStoreMonitor = storeMonitor;
-      pagingManager.injectMonitor(storeMonitor);
-      storageManager.injectMonitor(storeMonitor);
-      fileStoreMonitor.start();
+      try {
+         this.fileStoreMonitor = storeMonitor;
+         pagingManager.injectMonitor(storeMonitor);
+         storageManager.injectMonitor(storeMonitor);
+         fileStoreMonitor.start();
+      } catch (Exception e) {
+         ActiveMQServerLogger.LOGGER.unableToInjectMonitor(e);
+      }
    }
 
    public FileStoreMonitor getMonitor() {

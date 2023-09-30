@@ -63,6 +63,7 @@ import org.apache.activemq.artemis.api.core.TransportConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
+import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -341,6 +342,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private final List<ActiveMQServerBridgePlugin> brokerBridgePlugins = new CopyOnWriteArrayList<>();
    private final List<ActiveMQServerCriticalPlugin> brokerCriticalPlugins = new CopyOnWriteArrayList<>();
    private final List<ActiveMQServerFederationPlugin> brokerFederationPlugins = new CopyOnWriteArrayList<>();
+   private final List<AMQPFederationBrokerPlugin> brokerAMQPFederationPlugins = new CopyOnWriteArrayList<>();
    private final List<ActiveMQServerResourcePlugin> brokerResourcePlugins = new CopyOnWriteArrayList<>();
 
    private Map<String, Set<String>> securityRoleNameMappings = new HashMap<>();
@@ -376,6 +378,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
    private boolean amqpUseCoreSubscriptionNaming = ActiveMQDefaultConfiguration.getDefaultAmqpUseCoreSubscriptionNaming();
 
    private int maxDiskUsage = ActiveMQDefaultConfiguration.getDefaultMaxDiskUsage();
+
+   private long minDiskFree = ActiveMQDefaultConfiguration.getDefaultMinDiskFree();
 
    private int diskScanPeriod = ActiveMQDefaultConfiguration.getDefaultDiskScanPeriod();
 
@@ -901,6 +905,17 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public ConfigurationImpl setMaxDiskUsage(int maxDiskUsage) {
       this.maxDiskUsage = maxDiskUsage;
+      return this;
+   }
+
+   @Override
+   public long getMinDiskFree() {
+      return minDiskFree;
+   }
+
+   @Override
+   public ConfigurationImpl setMinDiskFree(long minDiskFree) {
+      this.minDiskFree = minDiskFree;
       return this;
    }
 
@@ -2155,6 +2170,9 @@ public class ConfigurationImpl implements Configuration, Serializable {
       if (plugin instanceof ActiveMQServerFederationPlugin) {
          brokerFederationPlugins.add((ActiveMQServerFederationPlugin) plugin);
       }
+      if (plugin instanceof AMQPFederationBrokerPlugin) {
+         brokerAMQPFederationPlugins.add((AMQPFederationBrokerPlugin) plugin);
+      }
       if (plugin instanceof ActiveMQServerResourcePlugin) {
          brokerResourcePlugins.add((ActiveMQServerResourcePlugin) plugin);
       }
@@ -2192,6 +2210,9 @@ public class ConfigurationImpl implements Configuration, Serializable {
       }
       if (plugin instanceof ActiveMQServerFederationPlugin) {
          brokerFederationPlugins.remove(plugin);
+      }
+      if (plugin instanceof AMQPFederationBrokerPlugin) {
+         brokerAMQPFederationPlugins.remove(plugin);
       }
       if (plugin instanceof ActiveMQServerResourcePlugin) {
          brokerResourcePlugins.remove(plugin);
@@ -2251,6 +2272,11 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public List<ActiveMQServerFederationPlugin> getBrokerFederationPlugins() {
       return brokerFederationPlugins;
+   }
+
+   @Override
+   public List<AMQPFederationBrokerPlugin> getBrokerAMQPFederationPlugins() {
+      return brokerAMQPFederationPlugins;
    }
 
    @Override
@@ -2814,6 +2840,9 @@ public class ConfigurationImpl implements Configuration, Serializable {
       if (maxDiskUsage != other.maxDiskUsage) {
          return false;
       }
+      if (minDiskFree != other.minDiskFree) {
+         return false;
+      }
       if (diskScanPeriod != other.diskScanPeriod) {
          return false;
       }
@@ -3299,10 +3328,17 @@ public class ConfigurationImpl implements Configuration, Serializable {
          // find the add X and init an instance of the type with name=name
 
          StringBuilder addPropertyNameBuilder = new StringBuilder("add");
-         // expect an add... without the plural for named accessors
+         // expect an add... without the plural for named access methods that add a single instance.
          if (collectionPropertyName != null && collectionPropertyName.length() > 0) {
             addPropertyNameBuilder.append(Character.toUpperCase(collectionPropertyName.charAt(0)));
-            addPropertyNameBuilder.append(collectionPropertyName, 1, collectionPropertyName.length() - 1);
+            if (collectionPropertyName.endsWith("ies")) {
+               // Plural form would convert to a singular ending in 'y' e.g. policies becomes policy
+               // or strategies becomes strategy etc.
+               addPropertyNameBuilder.append(collectionPropertyName, 1, collectionPropertyName.length() - 3);
+               addPropertyNameBuilder.append('y');
+            } else {
+               addPropertyNameBuilder.append(collectionPropertyName, 1, collectionPropertyName.length() - 1);
+            }
          }
 
          // we don't know the type, infer from add method add(X x) or add(String key, X x)

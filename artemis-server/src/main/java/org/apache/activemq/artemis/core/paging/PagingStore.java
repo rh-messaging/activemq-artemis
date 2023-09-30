@@ -25,6 +25,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.paging.cursor.PageCursorProvider;
 import org.apache.activemq.artemis.core.paging.cursor.PageSubscription;
 import org.apache.activemq.artemis.core.paging.impl.Page;
+import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
 import org.apache.activemq.artemis.core.replication.ReplicationManager;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
@@ -60,6 +61,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    File getFolder();
 
+   default String getFolderName() {
+      return getFolder().getName();
+   }
+
    AddressFullMessagePolicy getAddressFullMessagePolicy();
 
    PageFullMessagePolicy getPageFullMessagePolicy();
@@ -87,6 +92,10 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    int getMaxPageReadMessages();
 
+   int getPrefetchPageBytes();
+
+   int getPrefetchPageMessages();
+
    void applySetting(AddressSettings addressSettings);
 
    /** This method will look if the current state of paging is not paging,
@@ -99,7 +108,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    /**
     * Schedules sync to the file storage.
     */
-   void sync() throws Exception;
+   void addSyncPoint(OperationContext context) throws Exception;
 
    /**
     * Performs a real sync on the current IO file.

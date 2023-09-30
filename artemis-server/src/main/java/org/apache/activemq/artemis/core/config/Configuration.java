@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
+import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
 import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
 import org.apache.activemq.artemis.core.server.metrics.ActiveMQMetricsPlugin;
 import org.apache.activemq.artemis.core.server.plugin.ActiveMQServerFederationPlugin;
@@ -1273,6 +1274,10 @@ public interface Configuration {
 
    Configuration setMaxDiskUsage(int maxDiskUsage);
 
+   long getMinDiskFree();
+
+   Configuration setMinDiskFree(long minDiskFree);
+
    ConfigurationImpl setInternalNamingPrefix(String internalNamingPrefix);
 
    Configuration setDiskScanPeriod(int diskScanPeriod);
@@ -1401,6 +1406,11 @@ public interface Configuration {
     * @return
     */
    List<ActiveMQServerFederationPlugin> getBrokerFederationPlugins();
+
+   /**
+    * @return
+    */
+   List<AMQPFederationBrokerPlugin> getBrokerAMQPFederationPlugins();
 
    /**
     * @return

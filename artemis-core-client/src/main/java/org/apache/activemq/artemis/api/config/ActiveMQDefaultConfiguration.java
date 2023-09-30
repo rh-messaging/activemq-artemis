@@ -496,6 +496,8 @@ public final class ActiveMQDefaultConfiguration {
 
    private static final long DEFAULT_JDBC_ALLOWED_TIME_DIFF_MILLIS = 250;
 
+   private static final int DEFAULT_JDBC_MAX_PAGE_SIZE_BYTES = 100 * 1024;
+
    // Default period to wait between connection TTL checks
    public static final long DEFAULT_CONNECTION_TTL_CHECK_INTERVAL = 2000;
 
@@ -521,6 +523,8 @@ public final class ActiveMQDefaultConfiguration {
       }
       DEFAULT_MAX_DISK_USAGE = maxDisk;
    }
+
+   public static final long DEFAULT_MIN_DISK_FREE = -1;
 
    public static final int DEFAULT_DISK_SCAN = 5000;
 
@@ -1512,6 +1516,10 @@ public final class ActiveMQDefaultConfiguration {
       return DEFAULT_JDBC_ALLOWED_TIME_DIFF_MILLIS;
    }
 
+   public static int getDefaultJdbcMaxPageSizeBytes() {
+      return DEFAULT_JDBC_MAX_PAGE_SIZE_BYTES;
+   }
+
    public static long getDefaultConnectionTtlCheckInterval() {
       return DEFAULT_CONNECTION_TTL_CHECK_INTERVAL;
    }
@@ -1537,6 +1545,10 @@ public final class ActiveMQDefaultConfiguration {
 
    public static int getDefaultMaxDiskUsage() {
       return DEFAULT_MAX_DISK_USAGE;
+   }
+
+   public static long getDefaultMinDiskFree() {
+      return DEFAULT_MIN_DISK_FREE;
    }
 
    public static int getDefaultDiskScanPeriod() {
