@@ -441,6 +441,11 @@ public class WildcardAddressManagerUnitTest extends ActiveMQTestBase {
       }
 
       @Override
+      public boolean hasLocalBinding() {
+         return false;
+      }
+
+      @Override
       public Collection<Binding> getBindings() {
          return bindings.values();
       }
