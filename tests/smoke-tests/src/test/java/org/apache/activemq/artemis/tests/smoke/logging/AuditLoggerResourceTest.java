@@ -16,6 +16,9 @@
  */
 package org.apache.activemq.artemis.tests.smoke.logging;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Session;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.openmbean.CompositeData;
@@ -32,6 +35,7 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
 import org.apache.activemq.artemis.api.core.management.ObjectNameBuilder;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
+import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.junit.Test;
 
 public class AuditLoggerResourceTest extends AuditLoggerTestBase {
@@ -83,6 +87,24 @@ public class AuditLoggerResourceTest extends AuditLoggerTestBase {
 
       } finally {
          jmxConnector.close();
+      }
+   }
+
+   @Test
+   public void testAMQPConnectionResourceAuditLog() throws Exception {
+      testResourceAuditLog("AMQP", "amqp://localhost:61616");
+   }
+
+   @Test
+   public void testAMQPNoSaslConnectionResourceAuditLog() throws Exception {
+      testResourceAuditLog("AMQP", "amqp://localhost:61616?amqp.saslLayer=false");
+   }
+
+   private void testResourceAuditLog(String protocol, String url) throws Exception {
+      ConnectionFactory factory = CFUtil.createConnectionFactory(protocol, url);
+      try (Connection connection = factory.createConnection()) {
+         Session s = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         checkAuditLogRecord(true, "AMQ601715");
       }
    }
 }
