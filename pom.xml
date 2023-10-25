@@ -118,7 +118,7 @@
       <netty.transport.native.epoll.s390x.version>4.1.100.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.5.0</curator.version>
-      <zookeeper.version>3.8.2</zookeeper.version>
+      <zookeeper.version>3.8.3</zookeeper.version>
 
       <!-- tracing -->
       <opentelemetry.version>1.10.0</opentelemetry.version>
