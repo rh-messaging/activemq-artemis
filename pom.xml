@@ -127,7 +127,7 @@
       <!-- tracing -->
       <opentelemetry.version>1.10.0</opentelemetry.version>
       <opentelemetry-alpha.version>1.10.0-alpha</opentelemetry-alpha.version>
-
+      <protonj2.version>1.0.0-M17</protonj2.version>
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.54.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
@@ -703,6 +703,13 @@
             <groupId>org.apache.qpid</groupId>
             <artifactId>proton-j</artifactId>
             <version>${proton.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>protonj2-test-driver</artifactId>
+            <version>${protonj2.version}</version>
+            <scope>test</scope>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
