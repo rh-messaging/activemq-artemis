@@ -41,11 +41,9 @@
             <exclude>org.apache.activemq:artemis-boot</exclude>
 
             <!-- Handled later in web subdir for console bits -->
-            <exclude>io.hawt:hawtio-war:war</exclude>
+            <exclude>org.apache.activemq:artemis-console:war</exclude>
             <exclude>org.apache.activemq:activemq-branding:war</exclude>
             <exclude>org.apache.activemq:artemis-plugin:war</exclude>
-            <exclude>com.redhat.amq-broker:redhat-branding:war</exclude>
-            <exclude>com.redhat.amq-broker:artemis-prometheus-metrics-plugin-servlet:war</exclude>
          </excludes>
          <outputDirectory>lib</outputDirectory>
          <unpack>false</unpack>
@@ -72,22 +70,22 @@
       <!-- Management Console Dependencies -->
       <dependencySet>
          <includes>
-            <include>io.hawt:hawtio-war</include>
+            <include>org.apache.activemq:artemis-console:war</include>
          </includes>
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
-         <outputFileNameMapping>hawtio.war</outputFileNameMapping>
+         <outputFileNameMapping>console.war</outputFileNameMapping>
          <useProjectArtifact>false</useProjectArtifact>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
       </dependencySet>
       <dependencySet>
          <includes>
-            <include>com.redhat.amq-broker:redhat-branding:war</include>
+            <include>org.apache.activemq:activemq-branding:war</include>
          </includes>
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
-         <outputFileNameMapping>redhat-branding.war</outputFileNameMapping>
+         <outputFileNameMapping>activemq-branding.war</outputFileNameMapping>
          <useProjectArtifact>false</useProjectArtifact>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
@@ -99,17 +97,6 @@
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
          <outputFileNameMapping>artemis-plugin.war</outputFileNameMapping>
-         <useProjectArtifact>false</useProjectArtifact>
-         <directoryMode>0755</directoryMode>
-         <fileMode>0644</fileMode>
-      </dependencySet>
-      <dependencySet>
-         <includes>
-            <include>com.redhat.amq-broker:artemis-prometheus-metrics-plugin-servlet:war</include>
-         </includes>
-         <outputDirectory>web</outputDirectory>
-         <unpack>false</unpack>
-         <outputFileNameMapping>metrics.war</outputFileNameMapping>
          <useProjectArtifact>false</useProjectArtifact>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
@@ -175,9 +162,6 @@
             <exclude>**/**/*.dat</exclude>
             <exclude>**/**/*.md</exclude>
             <exclude>**/**/*.sh</exclude>
-            <exclude>features/standard/camel/**</exclude>
-            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
-            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
          </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
@@ -191,9 +175,6 @@
          </includes>
          <excludes>
             <exclude>**/target/**</exclude>
-            <exclude>features/standard/camel/**</exclude>
-            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
-            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
          </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0755</fileMode>
@@ -202,11 +183,6 @@
          <directory>${project.build.directory}/markdown-pages/examples</directory>
          <outputDirectory>examples</outputDirectory>
          <lineEnding>keep</lineEnding>
-         <excludes>
-            <exclude>features/standard/camel/**</exclude>
-            <exclude>features/sub-modules/artemis-ra-rar/**</exclude>
-            <exclude>features/sub-modules/artemis-jakarta-ra-rar/**</exclude>
-         </excludes>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
       </fileSet>
