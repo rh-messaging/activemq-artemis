@@ -17,11 +17,8 @@
 package org.apache.activemq.artemis.maven;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.activemq.artemis.api.core.client.ActiveMQClient;
-import org.apache.activemq.artemis.api.core.client.ServerLocator;
-import org.apache.activemq.artemis.boot.Artemis;
-import org.apache.activemq.artemis.cli.commands.Run;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -30,8 +27,10 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-@Mojo(name = "cli", defaultPhase = LifecyclePhase.VERIFY)
-public class ArtemisCLIPlugin extends ArtemisAbstractPlugin {
+@Mojo(name = "stop", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
+public class ArtemisStopPlugin extends ArtemisAbstractPlugin {
+
+   private static final String STOP = "stop";
 
    private PluginDescriptor descriptor;
 
@@ -50,32 +49,11 @@ public class ArtemisCLIPlugin extends ArtemisAbstractPlugin {
    @Parameter(defaultValue = "${basedir}/target/server0", required = true)
    private File location;
 
-
-   @Parameter
-   private File etc;
-
-   @Parameter
-   private String[] args;
-
-   @Parameter
-   private boolean spawn = false;
-
-   @Parameter(defaultValue = "300000")
+   @Parameter(defaultValue = "30000")
    private long spawnTimeout;
 
    @Parameter
-   private String testURI = null;
-
-   @Parameter
-   private String testClientID = null;
-
-   @Parameter
-   private String testUser = null;
-
-   @Parameter
-   private String testPassword = null;
-
-   @Parameter boolean useSystemOutput = getLog().isDebugEnabled();
+   boolean useSystemOutput = getLog().isDebugEnabled();
 
    @Override
    protected boolean isIgnore() {
@@ -84,50 +62,31 @@ public class ArtemisCLIPlugin extends ArtemisAbstractPlugin {
 
    @Override
    protected void doExecute() throws MojoExecutionException, MojoFailureException {
-      // This is to avoid the Run issuing a kill at any point
-      Run.setEmbedded(true);
-
       MavenProject project = (MavenProject) getPluginContext().get("project");
 
       home = findArtemisHome(home, alternateHome);
 
       try {
-         if (spawn) {
-            final Process process = org.apache.activemq.artemis.cli.process.ProcessBuilder.build(name, location, true, args);
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-               @Override
-               public void run() {
-                  process.destroy();
-               }
-            });
-
-            if (testURI != null) {
-               long timeout = System.currentTimeMillis() + spawnTimeout;
-               while (System.currentTimeMillis() <= timeout) {
-                  try (ServerLocator locator = ActiveMQClient.createServerLocator(testURI)) {
-                     if (testUser != null || testPassword != null || testClientID != null) {
-                        locator.createSessionFactory().createSession(testUser, testPassword, false, false, false, false, 0, testClientID).close();
-                     } else {
-                        locator.createSessionFactory().createSession().close();
-                     }
-                     getLog().info("Server started");
-                  } catch (Exception e) {
-                     getLog().info("awaiting server to start");
-                     Thread.sleep(500);
-                     continue;
-                  }
-                  break;
-               }
+         final Process process = org.apache.activemq.artemis.cli.process.ProcessBuilder.build(name, location, true, new String[] {STOP});
+         Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+               process.destroy();
             }
-         } else {
-            Artemis.execute(home, location, etc, useSystemOutput, args);
+         });
+
+         boolean complete = process.waitFor(spawnTimeout, TimeUnit.MILLISECONDS);
+         if (!complete) {
+            getLog().error("Stop process did not exit within the spawnTimeout of " + spawnTimeout);
+
+            throw new MojoExecutionException("Stop process did not exit within the spawnTimeout of " + spawnTimeout);
          }
 
          Thread.sleep(600);
-
-         org.apache.activemq.artemis.cli.process.ProcessBuilder.cleanupProcess();
       } catch (Throwable e) {
          throw new MojoExecutionException(e.getMessage(), e);
+      } finally {
+         org.apache.activemq.artemis.cli.process.ProcessBuilder.cleanupProcess();
       }
    }
 }

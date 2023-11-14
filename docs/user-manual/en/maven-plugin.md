@@ -198,13 +198,10 @@ The following example is a copy of the /examples/features/standard/queue example
                <execution>
                   <id>stop</id>
                   <goals>
-                     <goal>cli</goal>
+                     <goal>stop</goal>
                   </goals>
                   <configuration>
                      <ignore>${noServer}</ignore>
-                     <args>
-                        <param>stop</param>
-                     </args>
                   </configuration>
                </execution>
             </executions>
