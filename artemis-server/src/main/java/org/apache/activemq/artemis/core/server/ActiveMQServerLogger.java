@@ -1583,4 +1583,13 @@ public interface ActiveMQServerLogger {
    void noPagefullPolicySet(Object address, Object limitBytes, Object limitMessages);
 
    // notice loggerID=224127 is reserved as it's been used at ActiveMQQueueLogger
+
+   @LogMessage(id = 224131, value = "Removing orphaned page transaction {}", level = LogMessage.Level.INFO)
+   void removeOrphanedPageTransaction(long transactionID);
+
+   @LogMessage(id = 224132, value = "{} orphaned page transactions were removed", level = LogMessage.Level.INFO)
+   void completeOrphanedTXCleanup(long numberOfPageTx);
+
+   @LogMessage(id = 224133, value = "{} orphaned page transactions have been removed", level = LogMessage.Level.INFO)
+   void cleaningOrphanedTXCleanup(long numberOfPageTx);
 }
