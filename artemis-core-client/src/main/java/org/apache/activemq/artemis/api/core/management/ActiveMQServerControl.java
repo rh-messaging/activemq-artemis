@@ -1415,6 +1415,7 @@ public interface ActiveMQServerControl {
    /**
     * adds a new address setting for a specific address
     */
+   @Deprecated
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1442,6 +1443,7 @@ public interface ActiveMQServerControl {
    /**
     * adds a new address setting for a specific address
     */
+   @Deprecated
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1473,6 +1475,7 @@ public interface ActiveMQServerControl {
    /**
     * adds a new address setting for a specific address
     */
+   @Deprecated
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1527,6 +1530,7 @@ public interface ActiveMQServerControl {
    /**
     * adds a new address setting for a specific address
     */
+   @Deprecated
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1587,6 +1591,7 @@ public interface ActiveMQServerControl {
    /**
     * adds a new address setting for a specific address
     */
+   @Deprecated
    @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
    void addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch,
                            @Parameter(desc = "the dead letter address setting", name = "DLA") String DLA,
@@ -1646,6 +1651,13 @@ public interface ActiveMQServerControl {
                            @Parameter(desc = "the minimum expiry delay setting", name = "minExpiryDelay") long minExpiryDelay,
                            @Parameter(desc = "the maximum expiry delay setting", name = "maxExpiryDelay") long maxExpiryDelay,
                            @Parameter(desc = "whether or not to enable metrics", name = "enableMetrics") boolean enableMetrics) throws Exception;
+
+
+   /**
+    * adds a new address setting for a specific address
+    */
+   @Operation(desc = "Add address settings for addresses matching the addressMatch", impact = MBeanOperationInfo.ACTION)
+   String addAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String address, @Parameter(desc = "The configuration of the address settings as JSON", name = "addressSettingsConfigurationAsJson")  String addressSettingsConfigurationAsJson) throws Exception;
 
    @Operation(desc = "Remove address settings", impact = MBeanOperationInfo.ACTION)
    void removeAddressSettings(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception;

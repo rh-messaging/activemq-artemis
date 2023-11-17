@@ -44,7 +44,9 @@ import org.apache.activemq.artemis.core.persistence.GroupingInfo;
 import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.QueueBindingInfo;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.config.AbstractPersistedAddressSetting;
 import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSetting;
+import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSettingJSON;
 import org.apache.activemq.artemis.core.persistence.config.PersistedBridgeConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedDivertConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedKeyValuePair;
@@ -353,6 +355,11 @@ public class TransactionImplTest extends ActiveMQTestBase {
 
       @Override
       public void updateQueueBinding(long tx, Binding binding) throws Exception {
+
+      }
+
+      @Override
+      public void storeAddressSetting(PersistedAddressSettingJSON addressSetting) throws Exception {
 
       }
 
@@ -697,7 +704,7 @@ public class TransactionImplTest extends ActiveMQTestBase {
       }
 
       @Override
-      public List<PersistedAddressSetting> recoverAddressSettings() throws Exception {
+      public List<AbstractPersistedAddressSetting> recoverAddressSettings() throws Exception {
          return null;
       }
 

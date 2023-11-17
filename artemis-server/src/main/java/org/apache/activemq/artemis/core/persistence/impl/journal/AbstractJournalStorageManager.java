@@ -72,7 +72,9 @@ import org.apache.activemq.artemis.core.persistence.OperationContext;
 import org.apache.activemq.artemis.core.persistence.QueueBindingInfo;
 import org.apache.activemq.artemis.core.persistence.AddressQueueStatus;
 import org.apache.activemq.artemis.core.persistence.StorageManager;
+import org.apache.activemq.artemis.core.persistence.config.AbstractPersistedAddressSetting;
 import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSetting;
+import org.apache.activemq.artemis.core.persistence.config.PersistedAddressSettingJSON;
 import org.apache.activemq.artemis.core.persistence.config.PersistedBridgeConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedDivertConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedKeyValuePair;
@@ -220,7 +222,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    // Persisted core configuration
    protected final Map<SimpleString, PersistedSecuritySetting> mapPersistedSecuritySettings = new ConcurrentHashMap<>();
 
-   protected final Map<SimpleString, PersistedAddressSetting> mapPersistedAddressSettings = new ConcurrentHashMap<>();
+   protected final Map<SimpleString, AbstractPersistedAddressSetting> mapPersistedAddressSettings = new ConcurrentHashMap<>();
 
    protected final Map<String, PersistedDivertConfiguration> mapPersistedDivertConfigurations = new ConcurrentHashMap<>();
 
@@ -731,7 +733,18 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
    }
 
    @Override
-   public List<PersistedAddressSetting> recoverAddressSettings() throws Exception {
+   public void storeAddressSetting(PersistedAddressSettingJSON addressSetting) throws Exception {
+      deleteAddressSetting(addressSetting.getAddressMatch());
+      try (ArtemisCloseable lock = closeableReadLock()) {
+         long id = idGenerator.generateID();
+         addressSetting.setStoreId(id);
+         bindingsJournal.appendAddRecord(id, JournalRecordIds.ADDRESS_SETTING_RECORD_JSON, addressSetting, true);
+         mapPersistedAddressSettings.put(addressSetting.getAddressMatch(), addressSetting);
+      }
+   }
+
+   @Override
+   public List<AbstractPersistedAddressSetting> recoverAddressSettings() throws Exception {
       return new ArrayList<>(mapPersistedAddressSettings.values());
    }
 
@@ -902,7 +915,7 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
    @Override
    public void deleteAddressSetting(SimpleString addressMatch) throws Exception {
-      PersistedAddressSetting oldSetting = mapPersistedAddressSettings.remove(addressMatch);
+      AbstractPersistedAddressSetting oldSetting = mapPersistedAddressSettings.remove(addressMatch);
       if (oldSetting != null) {
          try (ArtemisCloseable lock = closeableReadLock()) {
             bindingsJournal.tryAppendDeleteRecord(oldSetting.getStoreId(), this::recordNotFoundCallback, false);
@@ -1591,6 +1604,9 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
             } else if (rec == JournalRecordIds.ADDRESS_SETTING_RECORD) {
                PersistedAddressSetting setting = newAddressEncoding(id, buffer);
                mapPersistedAddressSettings.put(setting.getAddressMatch(), setting);
+            } else if (rec == JournalRecordIds.ADDRESS_SETTING_RECORD_JSON) {
+               PersistedAddressSettingJSON setting = newAddressJSONEncoding(id, buffer);
+               mapPersistedAddressSettings.put(setting.getAddressMatch(), setting);
             } else if (rec == JournalRecordIds.SECURITY_SETTING_RECORD) {
                PersistedSecuritySetting roles = newSecurityRecord(id, buffer);
                mapPersistedSecuritySettings.put(roles.getAddressMatch(), roles);
@@ -2084,6 +2100,13 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
     */
    static PersistedAddressSetting newAddressEncoding(long id, ActiveMQBuffer buffer) {
       PersistedAddressSetting setting = new PersistedAddressSetting();
+      setting.decode(buffer);
+      setting.setStoreId(id);
+      return setting;
+   }
+
+   static PersistedAddressSettingJSON newAddressJSONEncoding(long id, ActiveMQBuffer buffer) {
+      PersistedAddressSettingJSON setting = new PersistedAddressSettingJSON();
       setting.decode(buffer);
       setting.setStoreId(id);
       return setting;
