@@ -34,7 +34,6 @@ under the License.
    <properties>
       <activemq.basedir>${project.basedir}/../../../..</activemq.basedir>
       <version.org.keycloak>21.1.2</version.org.keycloak>
-      <version.jboss.logging>3.5.0.Final</version.jboss.logging>
    </properties>
 
    <dependencies>
@@ -82,13 +81,6 @@ under the License.
                      <noWeb>false</noWeb>
                      <!-- enable keycloak for hawtio via system property overrides, note use of "console" realm in login.config -->
                      <javaOptions>-Dhawtio.keycloakEnabled=true -Dhawtio.keycloakClientConfig=${ARTEMIS_INSTANCE_ETC_URI}keycloak-js-client.json -Dhawtio.authenticationEnabled=true -Dhawtio.realm=console</javaOptions>
-                     <libListWithDeps>
-                        <!-- allow keycloak login module classloading from the artemis lib dir-->
-                        <arg>org.keycloak:keycloak-adapter-core:jar:${version.org.keycloak}</arg>
-                        <arg>org.keycloak:keycloak-core:jar:${version.org.keycloak}</arg>
-                        <arg>org.apache.httpcomponents:httpclient:jar:${apache.httpclient.version}</arg>
-                        <arg>org.jboss.logging:jboss-logging:jar:${version.jboss.logging}</arg>
-                     </libListWithDeps>
                   </configuration>
                </execution>
                <execution>
@@ -129,26 +121,6 @@ under the License.
                   <groupId>org.apache.activemq.examples.broker</groupId>
                   <artifactId>security-keycloak</artifactId>
                   <version>${project.version}</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.keycloak</groupId>
-                  <artifactId>keycloak-adapter-core</artifactId>
-                  <version>${version.org.keycloak}</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.keycloak</groupId>
-                  <artifactId>keycloak-core</artifactId>
-                  <version>${version.org.keycloak}</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.apache.httpcomponents</groupId>
-                  <artifactId>httpclient</artifactId>
-                  <version>${apache.httpclient.version}</version>
-               </dependency>
-               <dependency>
-                  <groupId>org.jboss.logging</groupId>
-                  <artifactId>jboss-logging</artifactId>
-                  <version>${version.jboss.logging}</version>
                </dependency>
             </dependencies>
          </plugin>
