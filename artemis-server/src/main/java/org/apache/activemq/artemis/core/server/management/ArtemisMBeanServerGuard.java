@@ -132,7 +132,8 @@ public class ArtemisMBeanServerGuard implements GuardInvocationHandler {
          logger.debug("can't check invoke rights as object name invalid: {}", object, e);
          return false;
       }
-      if (canBypassRBAC(objectName)) {
+      //we check access to operations so dont check just th etop level bean
+      if (operationName == null || canBypassRBAC(objectName)) {
          return true;
       }
       List<String> requiredRoles = getRequiredRoles(objectName, operationName);

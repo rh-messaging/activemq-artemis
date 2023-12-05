@@ -61,7 +61,7 @@
       <module>artemis-jdbc-store</module>
       <module>artemis-maven-plugin</module>
       <module>artemis-server-osgi</module>
-      <module>artemis-hawtio</module>
+      <module>artemis-console</module>
       <module>artemis-distribution</module>
       <module>artemis-unit-test-support</module>
       <module>tests</module>
@@ -93,6 +93,7 @@
 
       <activemq-artemis-native-version>2.0.0</activemq-artemis-native-version>
       <karaf.version>4.4.6</karaf.version>
+      <artemis-console-war-version>1.0.0-SNAPSHOT</artemis-console-war-version>
       <pax.exam.version>4.13.5</pax.exam.version>
       <commons.config.version>2.10.1</commons.config.version>
       <commons.lang.version>3.14.0</commons.lang.version>
@@ -109,11 +110,10 @@
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.1.8</caffeine.version>
       <guava.version>33.0.0-jre</guava.version>
-      <hawtio.version>2.0.0.fuse-7_12_0-00019-redhat-00001</hawtio.version>
+      <hawtio.version>4.0.0-RC1</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
-      <jetty.version>10.0.20</jetty.version>
-      <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
-      <jgroups.version>5.3.4.Final</jgroups.version>
+      <jetty.version>11.0.18</jetty.version>
+      <jgroups.version>5.3.2.Final</jgroups.version>
       <errorprone.version>2.24.1</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.3.2</jib.maven.plugin.version>
@@ -162,6 +162,7 @@
       <jakarta.management.j2ee-api.version>1.1.4</jakarta.management.j2ee-api.version>
       <jakarta.resource-api.version>1.7.4</jakarta.resource-api.version>
       <jakarta.security.auth.message-api.version>1.1.3</jakarta.security.auth.message-api.version>
+      <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
       <jakarta.transaction-api.version>1.3.3</jakarta.transaction-api.version>
       <jakarta.ws.rs-api.version>2.1.6</jakarta.ws.rs-api.version>
       <jakarta.xml.bind-api.version>2.3.3</jakarta.xml.bind-api.version>
