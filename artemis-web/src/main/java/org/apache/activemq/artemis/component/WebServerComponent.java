@@ -16,7 +16,7 @@
  */
 package org.apache.activemq.artemis.component;
 
-import javax.servlet.DispatcherType;
+import jakarta.servlet.DispatcherType;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;

@@ -16,57 +16,48 @@
  */
 package org.apache.activemq.hawtio.plugin;
 
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+
 import io.hawt.web.plugin.HawtioPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-/**
- * The Plugin Context Listener used to load in the plugin
- **/
 public class PluginContextListener implements ServletContextListener {
 
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+   private static final Logger LOG = LoggerFactory.getLogger(PluginContextListener.class);
 
-   HawtioPlugin plugin = null;
+   private HawtioPlugin plugin = null;
 
    @Override
    public void contextInitialized(ServletContextEvent servletContextEvent) {
+      /*
+       * These are the parameters required to load a remote Hawtio plugin (a.k.a. Module Federation remote module):
+       *
+       * - url: The URL of the remote entry for the plugin. This must be the same location as the Hawtio console.
+       * - scope: The name of the container defined at Webpack ModuleFederationPlugin. See also: artemis-plugin/craco.config.js
+       * - module: The path exposed from Webpack ModuleFederationPlugin. See also: artemis-plugin/craco.config.js
+       */
+      plugin = new HawtioPlugin()
+              .scope("artemisPlugin")
+              .module("./plugin")
+              .url("/artemis-plugin");
 
-      ServletContext context = servletContextEvent.getServletContext();
+      /*
+       * By default, Hawtio expects "plugin" as the name of the Hawtio plugin entry function.
+       * If you want to use the name other than the default one, specify the name using HawtioPlugin#pluginEntry()
+       * as follows. See also: artemis-plugin/src/artemis-plugin/index.ts
+       */
+      //plugin.pluginEntry("registerMyPlugin");
 
-      plugin = new HawtioPlugin();
-      plugin.setContext(context.getContextPath());
-      plugin.setName(context.getInitParameter("plugin-name"));
-      plugin.setScripts(context.getInitParameter("plugin-scripts"));
-      plugin.setDomain(null);
+      plugin.init();
 
-      try {
-         plugin.init();
-      } catch (Exception e) {
-         throw createServletException(e);
-      }
-
-      logger.info("Initialized {} plugin", plugin.getName());
+      LOG.info("Initialised plugin: {}", plugin.getScope());
    }
 
    @Override
    public void contextDestroyed(ServletContextEvent servletContextEvent) {
-      try {
-         plugin.destroy();
-      } catch (Exception e) {
-         throw createServletException(e);
-      }
-
-      logger.info("Destroyed {} plugin", plugin.getName());
+      plugin.destroy();
+      LOG.info("Destroyed plugin: {}", plugin.getScope());
    }
-
-   protected RuntimeException createServletException(Exception e) {
-      return new RuntimeException(e);
-   }
-
 }
