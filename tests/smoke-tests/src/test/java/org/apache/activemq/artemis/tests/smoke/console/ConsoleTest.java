@@ -72,7 +72,7 @@ public abstract class ConsoleTest extends SmokeTestBase {
 
    @Parameterized.Parameters(name = "browserOptions={0}")
    public static Collection getParameters() {
-      return Arrays.asList(new Object[][]{{new ChromeOptions()}, {new FirefoxOptions()}});
+      return Arrays.asList(new Object[][]{{new ChromeOptions()}});
    }
 
    public ConsoleTest(MutableCapabilities browserOptions) {

@@ -22,6 +22,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.MutableCapabilities;
 
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE;
+import static org.apache.activemq.artemis.tests.smoke.console.PageConstants.WEB_URL_PATH;
+import static org.junit.Assert.assertEquals;
+
+
 public class LoginTest extends ConsoleTest {
 
    @Rule
@@ -35,7 +40,7 @@ public class LoginTest extends ConsoleTest {
 
    @Test
    public void testLogin() {
-      driver.get(webServerUrl + "/console");
+      driver.get(webServerUrl + WEB_URL_PATH);
       LoginPage loginPage = new LoginPage(driver);
       loginPage.loginValidUser(SERVER_ADMIN_USERNAME, SERVER_ADMIN_PASSWORD, DEFAULT_TIMEOUT);
    }
@@ -43,9 +48,9 @@ public class LoginTest extends ConsoleTest {
    @Test
    public void testLoginBrand() {
       String expectedBrandImage = webServerUrl + System.getProperty(
-         "artemis.console.login.brand.image", DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE);
+            "artemis.console.login.brand.image", DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE);
 
-      driver.get(webServerUrl + "/console");
+      driver.get(webServerUrl + WEB_URL_PATH);
       LoginPage loginPage = new LoginPage(driver);
       assertEquals(expectedBrandImage, loginPage.getBrandImage(DEFAULT_TIMEOUT));
    }

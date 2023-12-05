@@ -1,0 +1,21 @@
+{
+  "branding": {
+    "appName": "AMQ7 Console",
+    "showAppName": true,
+    "appLogoUrl": "img/Logo-RedHat-A-Reverse-RGB.png",
+    "companyLogoUrl": "img/Logo-RedHat-A-Reverse-RGB.png",
+    "css": "css/redhat-branding.css",
+    "favicon": "img/favicon.ico"
+  },
+  "login": {
+    "description": "Login page for AMQ7 Console."
+  },
+  "about": {
+    "title": "AMQ7 Artemis Management Console",
+    "productInfo": [{"name": "AMQ 7", "value": "${project.version}"}],
+    "additionalInfo": "",
+    "copyright": " ",
+    "imgSrc": "img/Logo-RedHat-A-Reverse-RGB.png"
+  },
+  "disabledRoutes": []
+}
