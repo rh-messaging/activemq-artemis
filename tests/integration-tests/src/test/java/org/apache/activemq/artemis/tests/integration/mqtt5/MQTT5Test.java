@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.tests.integration.mqtt5;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.Message;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -57,6 +58,28 @@ public class MQTT5Test extends MQTT5TestSupport {
 
    public MQTT5Test(String protocol) {
       super(protocol);
+   }
+
+   @Test(timeout = DEFAULT_TIMEOUT)
+   public void testSimpleSendReceive() throws Exception {
+      String topic = RandomUtil.randomString();
+
+      CountDownLatch latch = new CountDownLatch(1);
+      MqttClient subscriber = createPahoClient("subscriber");
+      subscriber.connect();
+      subscriber.setCallback(new DefaultMqttCallback() {
+         @Override
+         public void messageArrived(String topic, MqttMessage message) {
+            System.out.println("Message received from " + topic + ": " + message);
+            latch.countDown();
+         }
+      });
+      subscriber.subscribe(topic, AT_LEAST_ONCE);
+
+      MqttClient producer = createPahoClient("producer");
+      producer.connect();
+      producer.publish(topic, "myMessage".getBytes(StandardCharsets.UTF_8), 1, false);
+      assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
    }
 
    /*
