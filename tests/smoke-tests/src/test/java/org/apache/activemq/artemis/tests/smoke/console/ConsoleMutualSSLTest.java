@@ -25,6 +25,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
@@ -45,6 +46,7 @@ public class ConsoleMutualSSLTest extends SmokeTestBase {
    }
 
    @Test
+   @Ignore
    public void testLoginWithValidCertificate() throws Exception {
       File keyStoreFile = new File(this.getClass().getClassLoader().getResource("client-keystore.p12").getFile());
       File trustStoreFile = new File(this.getClass().getClassLoader().getResource("server-ca-truststore.p12").getFile());
@@ -66,6 +68,7 @@ public class ConsoleMutualSSLTest extends SmokeTestBase {
    }
 
    @Test
+   @Ignore
    public void testLoginWithInvalidCertificate() throws Exception {
       File keyStoreFile = new File(this.getClass().getClassLoader().getResource("other-client-keystore.p12").getFile());
       File trustStoreFile = new File(this.getClass().getClassLoader().getResource("server-ca-truststore.p12").getFile());

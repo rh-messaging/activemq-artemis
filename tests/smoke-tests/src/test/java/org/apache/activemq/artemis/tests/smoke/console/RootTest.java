@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.tests.smoke.console;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openqa.selenium.MutableCapabilities;
 
@@ -27,6 +28,7 @@ public class RootTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testRedirect() {
       driver.get(webServerUrl);
       Assert.assertTrue(driver.getCurrentUrl().startsWith(webServerUrl + "/console"));

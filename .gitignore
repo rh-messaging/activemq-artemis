@@ -40,3 +40,9 @@ docs/hacking-guide/en/_book
 
 # result of gitbook pdf under docs
 docs/user-manual/en/book.pdf
+
+#for the console and yarn builds
+artemis-hawtio/artemis-plugin/artemis-plugin/build
+artemis-hawtio/artemis-plugin/artemis-plugin/node_modules
+artemis-hawtio/artemis-plugin/artemis-plugin/.yarn/install-state.gz
+artemis-hawtio/artemis-plugin/artemis-plugin/.yarn/cache

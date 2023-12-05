@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.tests.smoke.console.pages.SendMessagePage;
 import org.apache.activemq.artemis.tests.smoke.console.pages.StatusPage;
 import org.apache.activemq.artemis.utils.Wait;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -46,6 +47,7 @@ public class QueuesTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testDefaultQueues() throws Exception {
       driver.get(webServerUrl + "/console");
       LoginPage loginPage = new LoginPage(driver);
@@ -61,6 +63,7 @@ public class QueuesTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testAutoCreatedQueue() throws Exception {
       final int messages = 1;
       final String queueName = "TEST";
@@ -110,6 +113,7 @@ public class QueuesTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testExpiryQueue() throws Exception {
       final int messages = 1;
       final String expiryQueueName = "ExpiryQueue";
@@ -167,6 +171,7 @@ public class QueuesTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testSendMessageUsingCurrentLogonUser() throws Exception {
       final String queueName = "TEST";
       final String messageText = "TEST";

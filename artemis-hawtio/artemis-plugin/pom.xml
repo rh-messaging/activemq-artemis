@@ -35,204 +35,97 @@
 
   <properties>
     <activemq.basedir>${project.basedir}/../..</activemq.basedir>
-
-    <!-- filtered plugin properties, we don't define plugin-scripts here
-  as we build that dynamically using maven-antrun-plugin below. -->
-    <!-- plugin-context is what context this plugin will handle requests on
-      in the application server -->
-    <plugin-context>/artemis-plugin</plugin-context>
-
-    <!-- plugin-name is the name of our plugin, affects the name used for
-      the plugin's mbean -->
-    <plugin-name>${project.artifactId}</plugin-name>
-
-    <!-- plugin-domain is currently unused, we just define it to an empty
-      string -->
-    <plugin-domain />
-
-    <!-- this lets this plugin deploy nicely into karaf, these get used
-      for the ImportPackage directive for maven-bundle-plugin -->
-    <osgi.import>
-      javax.servlet;version="2.6",
-      *;resolution:=optional
-    </osgi.import>
-
-    <webapp-dir>${project.artifactId}-${project.version}</webapp-dir>
-    <webapp-outdir>${basedir}/target/${webapp-dir}</webapp-outdir>
-    <schema-outdir>${basedir}/src/main/webapp/lib</schema-outdir>
-    <appjs-outfile>${webapp-outdir}/app/app.js</appjs-outfile>
-
+    <!-- Path to the Hawtio TypeScript plugin -->
+    <plugin.path>artemis-plugin</plugin.path>
+    <node-version>v20.9.0</node-version>
+    <yarn-version>v1.22.21</yarn-version>
+    <frontend-maven-plugin-version>1.15.0</frontend-maven-plugin-version>
   </properties>
 
   <dependencies>
-
-    <!-- we only need to embed this dependency in the war, this contains
-      a nice helper class that our plugin can use to export it's plugin
-      mbean -->
+    <!--
+      We only need to embed this dependency in the WAR. This contains
+      a nice helper class that our plugin can use to export its plugin
+      MBean.
+    -->
     <dependency>
       <groupId>io.hawt</groupId>
       <artifactId>hawtio-plugin-mbean</artifactId>
     </dependency>
 
-    <!-- servlet API is provided by the container -->
+    <!-- Servlet API is provided by the container -->
     <dependency>
-      <groupId>org.eclipse.jetty.toolchain</groupId>
-      <artifactId>jetty-servlet-api</artifactId>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!-- logging -->
+    <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback-version}</version>
     </dependency>
   </dependencies>
 
-
   <build>
-
-    <!-- we want to ensure src/main/resources/WEB-INF/web.xml is being filtered
-      so that it picks up all of our javascript files -->
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-        <includes>
-          <include>**/*.xml</include>
-        </includes>
-      </resource>
-    </resources>
+    <finalName>${project.artifactId}</finalName>
 
     <plugins>
-
-      <!-- We use maven-antrun-plugin to build up a list of
-           javascript files for our plugin mbean, this means
-           it needs to run before the maven-resources-plugin
-           copies and filters the web.xml, since for this
-           example we use contextParam settings to configure
-           our plugin mbean -->
-
+      <!-- Build the plugin TypeScript subproject from Maven -->
       <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>${frontend-maven-plugin-version}</version>
+        <configuration>
+          <workingDirectory>${plugin.path}</workingDirectory>
+        </configuration>
         <executions>
-
           <execution>
-            <!-- we run this early in the build process before
-              maven-resources-plugin is run.  We're exporting the
-              plugin-scripts property from here, so we need to
-              use maven-antrun-plugin 1.6 or up -->
-            <id>generate-sources</id>
-            <phase>generate-sources</phase>
+            <id>install node and yarn</id>
             <goals>
-              <goal>run</goal>
+              <goal>install-node-and-yarn</goal>
             </goals>
             <configuration>
-              <target>
-                <echo>Building plugin javascript file list</echo>
-                <!-- javascript-files will contain all of the javascript in
-                  our project -->
-                <fileset id="javascript-files" dir="${basedir}/src/main/webapp">
-                  <include name="**/*.js" />
-                </fileset>
-                <!-- we need to strip out the top level path which is
-                   our source directory and be sure to change the directory
-                   separators to forward slashes -->
-                <pathconvert pathsep="," dirsep="/" property="plugin-scripts" refid="javascript-files">
-                  <map from="${basedir}/src/main/webapp/" to="" />
-                </pathconvert>
-                <echo>Files: ${plugin-scripts}</echo>
-
-              </target>
-              <!-- this exports plugin-scripts to the maven build, without
-                this line ${plugin-scripts} in the web.xml file won't be
-                replaced -->
-              <exportAntProperties>true</exportAntProperties>
+              <nodeVersion>${node-version}</nodeVersion>
+              <yarnVersion>${yarn-version}</yarnVersion>
+            </configuration>
+          </execution>
+          <execution>
+            <id>yarn install</id>
+            <goals>
+              <goal>yarn</goal>
+            </goals>
+            <configuration>
+              <arguments>install</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>yarn build</id>
+            <goals>
+              <goal>yarn</goal>
+            </goals>
+            <configuration>
+              <arguments>build</arguments>
             </configuration>
           </execution>
         </executions>
       </plugin>
 
       <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <executions>
-          <execution>
-            <!-- defining this maven plugin in the same phase as the
-              maven-antrun-plugin but *after* we've configured the
-              maven-antrun-plugin ensures we filter resources *after*
-              we've discovered the plugin .js files. -->
-            <id>copy-resources</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>resources</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- maven-bundle-plugin config, needed to make this war
-        deployable in karaf, defines the context that this bundle
-        should handle requests on -->
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>bundle-manifest</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <manifestLocation>${webapp-outdir}/META-INF</manifestLocation>
-          <supportedProjectTypes>
-            <supportedProjectType>jar</supportedProjectType>
-            <supportedProjectType>bundle</supportedProjectType>
-            <supportedProjectType>war</supportedProjectType>
-          </supportedProjectTypes>
-          <instructions>
-            <Webapp-Context>${plugin-context}</Webapp-Context>
-            <Web-ContextPath>${plugin-context}</Web-ContextPath>
-
-            <Embed-Directory>WEB-INF/lib</Embed-Directory>
-            <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
-
-            <Export-Package>${osgi.export}</Export-Package>
-            <Import-Package>${osgi.import}</Import-Package>
-            <DynamicImport-Package>${osgi.dynamic}</DynamicImport-Package>
-            <Private-Package>${osgi.private.pkg}</Private-Package>
-
-            <Bundle-ClassPath>.,WEB-INF/classes</Bundle-ClassPath>
-
-            <Bundle-Name>${project.name}</Bundle-Name>
-            <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
-            <Implementation-Title>HawtIO</Implementation-Title>
-            <Implementation-Version>${project.version}</Implementation-Version>
-          </instructions>
-        </configuration>
-      </plugin>
-
-      <!-- We define the maven-war-plugin here and make sure it uses
-        the manifest file generated by the maven-bundle-plugin.  We
-        also ensure it picks up our filtered web.xml and not the one
-        in src/main/resources -->
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
+        <version>3.3.2</version>
         <configuration>
-          <outputFileNameMapping>@{artifactId}@-@{baseVersion}@@{dashClassifier?}@.@{extension}@</outputFileNameMapping>
-          <packagingExcludes>**/classes/OSGI-INF/**</packagingExcludes>
-          <failOnMissingWebXml>false</failOnMissingWebXml>
-          <archive>
-            <manifestFile>${webapp-outdir}/META-INF/MANIFEST.MF</manifestFile>
-          </archive>
           <webResources>
+            <!-- Add the plugin build to web resources -->
             <resource>
               <filtering>true</filtering>
-              <directory>src/main/resources</directory>
+              <directory>${plugin.path}/build</directory>
               <includes>
                 <include>**/*.*</include>
               </includes>
@@ -244,6 +137,86 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>io.hawt</groupId>
+                  <artifactId>hawtio-war</artifactId>
+                  <version>${hawtio.version}</version>
+                  <type>war</type>
+                  <outputDirectory>${project.build.directory}/deploy</outputDirectory>
+                  <destFileName>hawtio.war</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <version>${jetty-version}</version>
+        <configuration>
+          <deployMode>EMBED</deployMode>
+          <scan>10</scan>
+          <webApp>
+            <contextPath>/${project.build.finalName}</contextPath>
+            <resourceBases>
+              <resourceBase>src/main/webapp</resourceBase>
+              <resourceBases>${plugin.path}/build</resourceBases>
+            </resourceBases>
+          </webApp>
+          <contextHandlers>
+            <contextHandler implementation="org.eclipse.jetty.maven.plugin.MavenWebAppContext">
+              <war>${project.build.directory}/deploy/hawtio.war</war>
+              <contextPath>/console</contextPath>
+            </contextHandler>
+          </contextHandlers>
+          <modules>
+            <module>jmx</module>
+          </modules>
+          <systemProperties>
+            <hawtio.authenticationEnabled>false</hawtio.authenticationEnabled>
+            <hawtio.disableProxy>true</hawtio.disableProxy>
+          </systemProperties>
+        </configuration>
+      </plugin>
+
+      <!-- Clean up the plugin's 'build/' and 'node_modules/' directories as well -->
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${basedir}/${plugin.path}/build</directory>
+              <includes>
+                <include>**/*</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+            <fileset>
+              <directory>${basedir}/${plugin.path}/node_modules</directory>
+              <includes>
+                <include>**/*</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

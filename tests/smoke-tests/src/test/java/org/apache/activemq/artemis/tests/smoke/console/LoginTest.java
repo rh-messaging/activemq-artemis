@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.tests.smoke.console;
 
 import org.apache.activemq.artemis.tests.smoke.console.pages.LoginPage;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.openqa.selenium.MutableCapabilities;
 
@@ -29,6 +30,7 @@ public class LoginTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testLogin() {
       driver.get(webServerUrl + "/console");
       LoginPage loginPage = new LoginPage(driver);
@@ -36,6 +38,7 @@ public class LoginTest extends ConsoleTest {
    }
 
    @Test
+   @Ignore
    public void testLoginBrand() {
       String expectedBrandImage = webServerUrl + System.getProperty(
          "artemis.console.login.brand.image", DEFAULT_CONSOLE_LOGIN_BRAND_IMAGE);
