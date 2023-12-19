@@ -248,6 +248,11 @@ final class TimedSequentialFile implements SequentialFile {
    private final class LocalBufferObserver implements TimedBufferObserver {
 
       @Override
+      public boolean supportSync() {
+         return false;
+      }
+
+      @Override
       public void flushBuffer(final ByteBuf byteBuf, final boolean requestedSync, final List<IOCallback> callbacks) {
          final int bytes = byteBuf.readableBytes();
          if (bytes > 0) {
@@ -281,6 +286,11 @@ final class TimedSequentialFile implements SequentialFile {
          } else {
             IOCallback.done(callbacks);
          }
+      }
+
+      @Override
+      public void checkSync(boolean syncRequested, List<IOCallback> callbacks) {
+         throw new UnsupportedOperationException("This method is not supported on mapped");
       }
 
       @Override
