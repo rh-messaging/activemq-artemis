@@ -35,6 +35,7 @@ import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
 import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.RoutingContext.MirrorOption;
+import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.impl.RoutingContextImpl;
@@ -222,6 +223,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
    }
 
    private boolean ignoreAddress(SimpleString address) {
+      if (address.startsWith(server.getConfiguration().getManagementAddress())) {
+         return true;
+      }
       return !addressFilter.match(address);
    }
 
@@ -612,7 +616,9 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
    public static void route(ActiveMQServer server, Message message) throws Exception {
       message.setMessageID(server.getStorageManager().generateID());
       RoutingContext ctx = mirrorControlRouting.get();
-      ctx.clear().setMirrorOption(MirrorOption.disabled);
+      // it is important to use local only at the source to avoid having the message strictly load balancing
+      // to other nodes if the SNF queue has the same name as the one on this node.
+      ctx.clear().setMirrorOption(MirrorOption.disabled).setLoadBalancingType(MessageLoadBalancingType.LOCAL_ONLY);
       server.getPostOffice().route(message, ctx, false);
    }
 

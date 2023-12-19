@@ -102,4 +102,9 @@ public interface Transaction {
    void setTimeout(int timeout);
 
    RefsOperation createRefsOperation(Queue queue, AckReason reason);
+
+   boolean isAsync();
+
+   /** To be used on control transactions that are meant as internal and don't really require a hard sync. */
+   Transaction setAsync(boolean async);
 }

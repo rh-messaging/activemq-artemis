@@ -138,6 +138,16 @@ public class BindingsImplTest extends ActiveMQTestBase {
       }
 
       @Override
+      public boolean isAsync() {
+         return false;
+      }
+
+      @Override
+      public Transaction setAsync(boolean async) {
+         return null;
+      }
+
+      @Override
       public void setProtocolData(Object data) {
 
       }

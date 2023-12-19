@@ -413,7 +413,9 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
                   targetQueue.expire(reference, null, false);
                   break;
                default:
-                  targetQueue.acknowledge(null, reference, reason, null, false);
+                  TransactionImpl transaction = new TransactionImpl(server.getStorageManager()).setAsync(true);
+                  targetQueue.acknowledge(transaction, reference, reason, null, false);
+                  transaction.commit();
                   break;
             }
             OperationContextImpl.getContext().executeOnCompletion(ackMessageOperation);
@@ -436,7 +438,7 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
 
       String internalMirrorID = (String)AMQPMessageBrokerAccessor.getDeliveryAnnotationProperty(message, BROKER_ID);
       if (internalMirrorID == null) {
-         internalMirrorID = getRemoteMirrorId(); // not pasisng the ID means the data was generated on the remote broker
+         internalMirrorID = getRemoteMirrorId(); // not passing the ID means the data was generated on the remote broker
       }
       Long internalIDLong = (Long) AMQPMessageBrokerAccessor.getDeliveryAnnotationProperty(message, INTERNAL_ID);
       String internalAddress = (String) AMQPMessageBrokerAccessor.getDeliveryAnnotationProperty(message, INTERNAL_DESTINATION);
@@ -481,7 +483,7 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
          message.setAddress(internalAddress);
       }
 
-      final TransactionImpl transaction = new MirrorTransaction(server.getStorageManager());
+      final TransactionImpl transaction = new MirrorTransaction(server.getStorageManager()).setAsync(true);
       transaction.addOperation(messageCompletionAck.tx);
       routingContext.setTransaction(transaction);
       duplicateIDCache.addToCache(duplicateIDBytes, transaction);
@@ -554,7 +556,9 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
             if (reference == null) {
                return false;
             } else {
-               targetQueue.acknowledge(null, reference, AckReason.NORMAL, null, false);
+               TransactionImpl tx = new TransactionImpl(server.getStorageManager()).setAsync(true);
+               targetQueue.acknowledge(tx, reference, AckReason.NORMAL, null, false);
+               tx.commit();
                OperationContextImpl.getContext().executeOnCompletion(operation);
                return true;
             }
