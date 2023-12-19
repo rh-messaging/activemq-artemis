@@ -252,7 +252,7 @@ public abstract class ProtonAbstractReceiver extends ProtonInitializable impleme
             currentLargeMessage.addBytes(receiver.recv());
             receiver.advance();
             message = currentLargeMessage;
-            currentLargeMessage.releaseResources(true, true);
+            currentLargeMessage.releaseResources(connection.isLargeMessageSync(), true);
             currentLargeMessage = null;
          } else {
             ReadableBuffer data = receiver.recv();

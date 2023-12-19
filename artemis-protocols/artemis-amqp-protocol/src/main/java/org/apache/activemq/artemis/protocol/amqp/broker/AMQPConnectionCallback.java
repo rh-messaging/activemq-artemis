@@ -181,6 +181,9 @@ public class AMQPConnectionCallback implements FailureListener, CloseListener {
       return connection.isWritable(readyListener);
    }
 
+   public boolean isLargeMessageSync() {
+      return server.getConfiguration().isLargeMessageSync();
+   }
 
    public AMQPSessionCallback createSessionCallback(AMQPConnectionContext connection) {
       return new AMQPSessionCallback(this, manager, connection, this.connection, sessionExecutor, server.newOperationContext());

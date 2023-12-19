@@ -181,6 +181,9 @@ public class AMQPConnectionContext extends ProtonInitializable implements EventH
          handler.createClientSASL();
       }
    }
+   public boolean isLargeMessageSync() {
+      return connectionCallback.isLargeMessageSync();
+   }
 
    public LinkCloseListener getLinkCloseListener() {
       return linkCloseListener;
