@@ -801,6 +801,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setSuppressSessionNotifications(getBoolean(e, "suppress-session-notifications", config.isSuppressSessionNotifications()));
 
+      config.setLargeMessageSync(getBoolean(e, "large-message-sync", config.isLargeMessageSync()));
+
       parseAddressSettings(e, config);
 
       parseResourceLimits(e, config);

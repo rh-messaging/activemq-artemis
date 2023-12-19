@@ -253,6 +253,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    public JournalType journalType = ConfigurationImpl.DEFAULT_JOURNAL_TYPE;
 
+   protected boolean largeMessageSync = ActiveMQDefaultConfiguration.isDefaultLargeMessageSync();
+
    protected boolean journalSyncTransactional = ActiveMQDefaultConfiguration.isDefaultJournalSyncTransactional();
 
    protected boolean journalSyncNonTransactional = ActiveMQDefaultConfiguration.isDefaultJournalSyncNonTransactional();
@@ -3142,6 +3144,18 @@ public class ConfigurationImpl implements Configuration, Serializable {
       JsonObject update = JsonUtil.readJsonObject(status);
       this.jsonStatus = JsonUtil.mergeAndUpdate(getJsonStatus(), update);
    }
+
+   @Override
+   public Configuration setLargeMessageSync(boolean largeMessageSync) {
+      this.largeMessageSync = largeMessageSync;
+      return this;
+   }
+
+   @Override
+   public boolean isLargeMessageSync() {
+      return largeMessageSync;
+   }
+
 
    // extend property utils with ability to auto-fill and locate from collections
    // collection entries are identified by the name() property
