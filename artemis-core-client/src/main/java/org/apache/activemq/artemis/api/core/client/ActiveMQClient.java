@@ -51,6 +51,8 @@ public final class ActiveMQClient {
 
    private static int globalScheduledThreadPoolSize;
 
+   private static  int globalFlowControlThreadPoolSize;
+
    public static final String DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME = RoundRobinConnectionLoadBalancingPolicy.class.getCanonicalName();
 
    public static final long DEFAULT_CLIENT_FAILURE_CHECK_PERIOD = ActiveMQDefaultConfiguration.getDefaultClientFailureCheckPeriod();
@@ -130,6 +132,8 @@ public final class ActiveMQClient {
 
    public static final int DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE = 5;
 
+   public static final int DEFAULT_FLOW_CONTROL_THREAD_POOL_MAX_SIZE = 10;
+
    public static final boolean DEFAULT_CACHE_LARGE_MESSAGE_CLIENT = false;
 
    public static final int DEFAULT_INITIAL_MESSAGE_PACKET_SIZE = 1500;
@@ -146,7 +150,11 @@ public final class ActiveMQClient {
 
    public static final String SCHEDULED_THREAD_POOL_SIZE_PROPERTY_KEY = "activemq.artemis.client.global.scheduled.thread.pool.core.size";
 
+   public static final String FLOW_CONTROL_THREAD_POOL_SIZE_PROPERTY_KEY = "activemq.artemis.client.global.flowcontrol.thread.pool.core.size";
+
    private static ExecutorService globalThreadPool;
+
+   private static ExecutorService globalFlowControlThreadPool;
 
    private static boolean injectedPools = false;
 
@@ -165,6 +173,7 @@ public final class ActiveMQClient {
       if (injectedPools) {
          globalThreadPool = null;
          globalScheduledThreadPool = null;
+         globalFlowControlThreadPool = null;
          injectedPools = false;
          return;
       }
@@ -196,14 +205,29 @@ public final class ActiveMQClient {
             globalScheduledThreadPool = null;
          }
       }
+
+      if (globalFlowControlThreadPool != null) {
+         globalFlowControlThreadPool.shutdownNow();
+         try {
+            if (!globalFlowControlThreadPool.awaitTermination(time, unit)) {
+               globalFlowControlThreadPool.shutdownNow();
+               ActiveMQClientLogger.LOGGER.unableToProcessGlobalFlowControlThreadPoolIn10Sec();
+            }
+         } catch (InterruptedException e) {
+            throw new ActiveMQInterruptedException(e);
+         } finally {
+            globalFlowControlThreadPool = null;
+         }
+      }
    }
 
    /**
     * Warning: This method has to be called before any clients or servers is started on the JVM otherwise previous ServerLocator would be broken after this call.
     */
    public static synchronized void injectPools(ExecutorService globalThreadPool,
-                                               ScheduledExecutorService scheduledThreadPool) {
-      if (globalThreadPool == null || scheduledThreadPool == null)
+                                               ScheduledExecutorService scheduledThreadPool,
+                                               ExecutorService flowControlThreadPool) {
+      if (globalThreadPool == null || scheduledThreadPool == null || flowControlThreadPool == null)
          throw new IllegalArgumentException("thread pools must not be null");
 
       // We call clearThreadPools as that will shutdown any previously used executor
@@ -211,25 +235,31 @@ public final class ActiveMQClient {
 
       ActiveMQClient.globalThreadPool = globalThreadPool;
       ActiveMQClient.globalScheduledThreadPool = scheduledThreadPool;
+      ActiveMQClient.globalFlowControlThreadPool = flowControlThreadPool;
       injectedPools = true;
    }
 
    public static synchronized ExecutorService getGlobalThreadPool() {
-      if (globalThreadPool == null) {
-         ThreadFactory factory = AccessController.doPrivileged(new PrivilegedAction<ThreadFactory>() {
-            @Override
-            public ThreadFactory run() {
-               return new ActiveMQThreadFactory("ActiveMQ-client-global-threads", true, ClientSessionFactoryImpl.class.getClassLoader());
-            }
-         });
+      globalThreadPool = internalGetGlobalThreadPool(globalThreadPool, "ActiveMQ-client-global-threads", ActiveMQClient.globalThreadPoolSize);
+      return globalThreadPool;
+   }
 
-         if (globalThreadPoolSize == -1) {
-            globalThreadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), factory);
+   public static synchronized ExecutorService getGlobalFlowControlThreadPool() {
+      globalFlowControlThreadPool = internalGetGlobalThreadPool(globalFlowControlThreadPool, "ActiveMQ-client-global-flow-control-threads", ActiveMQClient.globalFlowControlThreadPoolSize);
+      return globalFlowControlThreadPool;
+   }
+
+   private static synchronized ExecutorService internalGetGlobalThreadPool(ExecutorService executorService, String groupName, int poolSize) {
+      if (executorService == null) {
+         ThreadFactory factory = AccessController.doPrivileged((PrivilegedAction<ThreadFactory>) () -> new ActiveMQThreadFactory(groupName, true, ClientSessionFactoryImpl.class.getClassLoader()));
+
+         if (poolSize == -1) {
+            executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), factory);
          } else {
-            globalThreadPool = new ActiveMQThreadPoolExecutor(0, ActiveMQClient.globalThreadPoolSize, 60L, TimeUnit.SECONDS, factory);
+            executorService = new ActiveMQThreadPoolExecutor(0, poolSize, 60L, TimeUnit.SECONDS, factory);
          }
       }
-      return globalThreadPool;
+      return executorService;
    }
 
    public static synchronized ScheduledExecutorService getGlobalScheduledThreadPool() {
@@ -254,6 +284,10 @@ public final class ActiveMQClient {
       return globalScheduledThreadPoolSize;
    }
 
+   public static int getGlobalFlowControlThreadPoolSize() {
+      return globalFlowControlThreadPoolSize;
+   }
+
    /**
     * Initializes the global thread pools properties from System properties.  This method will update the global
     * thread pool configuration based on defined System properties (or defaults if they are not set).
@@ -269,7 +303,7 @@ public final class ActiveMQClient {
     */
    public static void initializeGlobalThreadPoolProperties() {
 
-      setGlobalThreadPoolProperties(Integer.valueOf(System.getProperty(ActiveMQClient.THREAD_POOL_MAX_SIZE_PROPERTY_KEY, "" + ActiveMQClient.DEFAULT_GLOBAL_THREAD_POOL_MAX_SIZE)), Integer.valueOf(System.getProperty(ActiveMQClient.SCHEDULED_THREAD_POOL_SIZE_PROPERTY_KEY, "" + ActiveMQClient.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE)));
+      setGlobalThreadPoolProperties(Integer.valueOf(System.getProperty(ActiveMQClient.THREAD_POOL_MAX_SIZE_PROPERTY_KEY, "" + ActiveMQClient.DEFAULT_GLOBAL_THREAD_POOL_MAX_SIZE)), Integer.valueOf(System.getProperty(ActiveMQClient.SCHEDULED_THREAD_POOL_SIZE_PROPERTY_KEY, "" + ActiveMQClient.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE)), Integer.valueOf(System.getProperty(ActiveMQClient.FLOW_CONTROL_THREAD_POOL_SIZE_PROPERTY_KEY, "" + ActiveMQClient.DEFAULT_FLOW_CONTROL_THREAD_POOL_MAX_SIZE)));
    }
 
    /**
@@ -281,13 +315,14 @@ public final class ActiveMQClient {
     * The min value for globalThreadMaxPoolSize is 2. If the value is not -1, but lower than 2, it will be ignored and will default to 2.
     * A value of -1 configures an unbounded thread pool.
     */
-   public static void setGlobalThreadPoolProperties(int globalThreadMaxPoolSize, int globalScheduledThreadPoolSize) {
+   public static void setGlobalThreadPoolProperties(int globalThreadMaxPoolSize, int globalScheduledThreadPoolSize, int globalFlowControlThreadPoolSize) {
 
       if (globalThreadMaxPoolSize < 2 && globalThreadMaxPoolSize != -1)
          globalThreadMaxPoolSize = 2;
 
       ActiveMQClient.globalScheduledThreadPoolSize = globalScheduledThreadPoolSize;
       ActiveMQClient.globalThreadPoolSize = globalThreadMaxPoolSize;
+      ActiveMQClient.globalFlowControlThreadPoolSize = globalFlowControlThreadPoolSize;
    }
 
    /**
