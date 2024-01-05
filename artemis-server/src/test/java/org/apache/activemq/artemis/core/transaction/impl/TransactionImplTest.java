@@ -329,6 +329,11 @@ public class TransactionImplTest extends ActiveMQTestBase {
       }
 
       @Override
+      public void asyncCommit(long txID) throws Exception {
+
+      }
+
+      @Override
       public ArtemisCloseable closeableReadLock() {
          return () -> { };
       }
