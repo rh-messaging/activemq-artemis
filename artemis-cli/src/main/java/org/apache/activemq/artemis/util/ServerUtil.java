@@ -48,10 +48,14 @@ public class ServerUtil {
     * @throws Exception
     */
    public static Process startServer(String artemisInstance, String serverName, int id, int timeout) throws Exception {
-      final Process process = internalStartServer(artemisInstance, serverName);
+      return startServer(artemisInstance, serverName, id, timeout, null);
+   }
+
+   public static Process startServer(String artemisInstance, String serverName, int id, int timeout, File brokerProperties) throws Exception {
+      final Process process = internalStartServer(artemisInstance, serverName, brokerProperties);
 
       // wait for start
-      if (timeout != 0) {
+      if (timeout > 0) {
          waitForServerToStart(id, timeout);
       }
 
@@ -59,7 +63,11 @@ public class ServerUtil {
    }
 
    public static Process startServer(String artemisInstance, String serverName, String uri, int timeout) throws Exception {
-      final Process process = internalStartServer(artemisInstance, serverName);
+      return  startServer(artemisInstance, serverName, uri, timeout, null);
+   }
+
+   public static Process startServer(String artemisInstance, String serverName, String uri, int timeout, File propertiesFile) throws Exception {
+      final Process process = internalStartServer(artemisInstance, serverName, propertiesFile);
 
       // wait for start
       if (timeout != 0) {
@@ -71,8 +79,17 @@ public class ServerUtil {
 
    private static Process internalStartServer(String artemisInstance,
                                               String serverName) throws IOException, ClassNotFoundException {
+      return internalStartServer(artemisInstance, serverName, null);
+   }
+   private static Process internalStartServer(String artemisInstance,
+                                              String serverName,
+                                              File propertiesFile) throws IOException, ClassNotFoundException {
 
-      return execute(artemisInstance, serverName, "run");
+      if (propertiesFile != null) {
+         return execute(artemisInstance, serverName, "run", "--properties", propertiesFile.getAbsolutePath());
+      } else {
+         return execute(artemisInstance, serverName, "run");
+      }
    }
 
    public static Process execute(String artemisInstance, String jobName, String...args) throws IOException, ClassNotFoundException {
@@ -124,7 +141,11 @@ public class ServerUtil {
    }
 
    public static boolean waitForServerToStart(int id, String username, String password, int timeout) throws InterruptedException {
-      return waitForServerToStart("tcp://localhost:" + (61616 + id), username, password, timeout);
+      return waitForServerToStartOnPort(61616 + id, username, password, timeout);
+   }
+
+   public static boolean waitForServerToStartOnPort(int port, String username, String password, int timeout) throws InterruptedException {
+      return waitForServerToStart("tcp://localhost:" + port, username, password, timeout);
    }
 
    public static boolean waitForServerToStart(String uri, long timeout) throws InterruptedException {
@@ -134,7 +155,8 @@ public class ServerUtil {
    public static boolean waitForServerToStart(String uri, String username, String password, long timeout) throws InterruptedException {
       long realTimeout = System.currentTimeMillis() + timeout;
       while (System.currentTimeMillis() < realTimeout) {
-         try (ActiveMQConnectionFactory cf = ActiveMQJMSClient.createConnectionFactory(uri, null); Connection c = cf.createConnection(username, password)) {
+         try (ActiveMQConnectionFactory cf = ActiveMQJMSClient.createConnectionFactory(uri, null);
+              Connection c = cf.createConnection(username, password)) {
             System.out.println("server " + uri + " started");
          } catch (Exception e) {
             System.out.println("awaiting server " + uri + " start at ");
