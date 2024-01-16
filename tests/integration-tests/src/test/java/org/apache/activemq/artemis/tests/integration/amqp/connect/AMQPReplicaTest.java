@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
+import org.apache.activemq.artemis.api.core.management.SimpleManagement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectionAddressType;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
@@ -92,6 +93,11 @@ public class AMQPReplicaTest extends AmqpClientTestSupport {
       } finally {
          loggerHandler.close();
       }
+   }
+
+   @Override
+   protected String getConfiguredProtocols() {
+      return "AMQP,OPENWIRE,CORE";
    }
 
    @Override
@@ -578,6 +584,9 @@ public class AMQPReplicaTest extends AmqpClientTestSupport {
          // Check some messages were sent to SnF queue
          Assert.assertTrue(server_2.locateQueue(replica.getMirrorSNF()).getMessagesAdded() > 0);
       }
+
+      SimpleManagement simpleManagement = new SimpleManagement("tcp://localhost:" + AMQP_PORT_2, null, null);
+      Wait.assertEquals(0, () -> simpleManagement.getMessageCountOnQueue("$ACTIVEMQ_ARTEMIS_MIRROR_mirror-source"), 5000);
 
       try (Connection connection = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT).createConnection()) {
          connection.start();
@@ -1294,6 +1303,70 @@ public class AMQPReplicaTest extends AmqpClientTestSupport {
          validateNoFilesOnLargeDir(server.getConfiguration().getLargeMessagesDirectory(), 0);
          validateNoFilesOnLargeDir(server_2.getConfiguration().getLargeMessagesDirectory(), 0);
       }
+   }
+
+
+   @Test
+   public void testSimpleReplicaTX() throws Exception {
+
+      String brokerConnectionName = "brokerConnectionName:" + UUIDGenerator.getInstance().generateStringUUID();
+      server.setIdentity("targetServer");
+      server.start();
+      server_2 = createServer(AMQP_PORT_2, false);
+      server_2.setIdentity("server_2");
+      server_2.getConfiguration().setName("thisone");
+
+      AMQPBrokerConnectConfiguration amqpConnection = new AMQPBrokerConnectConfiguration(brokerConnectionName, "tcp://localhost:" + AMQP_PORT).setReconnectAttempts(-1).setRetryInterval(100);
+      AMQPMirrorBrokerConnectionElement replica = new AMQPMirrorBrokerConnectionElement().setMessageAcknowledgements(true).setDurable(true);
+      replica.setName("theReplica");
+      amqpConnection.addElement(replica);
+      server_2.getConfiguration().addAMQPConnection(amqpConnection);
+      server_2.getConfiguration().setName("server_2");
+
+      int NUMBER_OF_MESSAGES = 10;
+
+      server_2.start();
+      Wait.assertTrue(server_2::isStarted);
+
+      // We create the address to avoid auto delete on the queue
+      server_2.addAddressInfo(new AddressInfo(getQueueName()).addRoutingType(RoutingType.ANYCAST).setAutoCreated(false));
+      server_2.createQueue(new QueueConfiguration(getQueueName()).setRoutingType(RoutingType.ANYCAST).setAddress(getQueueName()).setAutoCreated(false));
+
+      ConnectionFactory factory = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT_2);
+      Connection connection = factory.createConnection();
+      Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+      MessageProducer producer = session.createProducer(session.createQueue(getQueueName()));
+
+      for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
+         Message message = session.createTextMessage(getText(true, i));
+         message.setIntProperty("i", i);
+         producer.send(message);
+      }
+      session.commit();
+
+      Queue queueOnServer1 = locateQueue(server, getQueueName());
+      Queue snfreplica = server_2.locateQueue(replica.getMirrorSNF());
+      Assert.assertNotNull(snfreplica);
+
+      Wait.assertEquals(0, snfreplica::getMessageCount);
+
+      Wait.assertEquals(NUMBER_OF_MESSAGES, queueOnServer1::getMessageCount, 2000);
+      Queue queueOnServer2 = locateQueue(server_2, getQueueName());
+      Wait.assertEquals(NUMBER_OF_MESSAGES, queueOnServer1::getMessageCount);
+      Wait.assertEquals(NUMBER_OF_MESSAGES, queueOnServer2::getMessageCount);
+
+      MessageConsumer consumer = session.createConsumer(session.createQueue(getQueueName()));
+      connection.start();
+
+      for (int i = 0; i < NUMBER_OF_MESSAGES; i++) {
+         Message m = consumer.receive(1000);
+         Assert.assertNotNull(m);
+      }
+      session.commit();
+
+      Wait.assertEquals(0, snfreplica::getMessageCount);
+      Wait.assertEquals(0, queueOnServer1::getMessageCount);
+      Wait.assertEquals(0, queueOnServer2::getMessageCount);
    }
 
 
