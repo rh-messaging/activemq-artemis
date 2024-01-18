@@ -547,6 +547,13 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
       }
    }
 
+   @Override
+   public void updateProtocolServices(List<ActiveMQComponent> protocolServices) throws Exception {
+      for (ProtocolManagerFactory protocolManagerFactory : protocolMap.values()) {
+         protocolManagerFactory.updateProtocolServices(this.server, protocolServices);
+      }
+   }
+
    // ServerConnectionLifeCycleListener implementation -----------------------------------
 
    private ProtocolManagerFactory getProtocolManager(String protocol) {
@@ -762,19 +769,19 @@ public class RemotingServiceImpl implements RemotingService, ServerConnectionLif
       public void run() {
          while (!closed) {
             try {
-               long now = System.currentTimeMillis();
-
                Set<Pair<Object, Long>> toRemove = new HashSet<>();
-
                for (ConnectionEntry entry : connections.values()) {
                   final RemotingConnection conn = entry.connection;
+                  final long lastCheck = entry.lastCheck;
+                  final long ttl = entry.ttl;
+                  final long now = System.currentTimeMillis();
 
                   boolean flush = true;
 
-                  if (entry.ttl != -1) {
+                  if (ttl != -1) {
                      if (!conn.checkDataReceived()) {
-                        if (now >= entry.lastCheck + entry.ttl) {
-                           toRemove.add(new Pair<>(conn.getID(), entry.ttl));
+                        if (now >= lastCheck + ttl) {
+                           toRemove.add(new Pair<>(conn.getID(), ttl));
 
                            flush = false;
                         }
