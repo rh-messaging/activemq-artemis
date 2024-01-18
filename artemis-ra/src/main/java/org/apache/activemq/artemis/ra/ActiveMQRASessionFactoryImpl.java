@@ -644,18 +644,6 @@ public final class ActiveMQRASessionFactoryImpl extends ActiveMQConnectionForCon
 
       closed = true;
 
-      synchronized (sessions) {
-         for (Iterator<ActiveMQRASession> i = sessions.iterator(); i.hasNext(); ) {
-            ActiveMQRASession session = i.next();
-            try {
-               session.closeSession();
-            } catch (Throwable t) {
-               ActiveMQRALogger.LOGGER.trace("Error closing session", t);
-            }
-            i.remove();
-         }
-      }
-
       synchronized (tempQueues) {
          for (Iterator<TemporaryQueue> i = tempQueues.iterator(); i.hasNext(); ) {
             TemporaryQueue temp = i.next();
@@ -681,6 +669,18 @@ public final class ActiveMQRASessionFactoryImpl extends ActiveMQConnectionForCon
                temp.delete();
             } catch (Throwable t) {
                ActiveMQRALogger.LOGGER.trace("Error deleting temporary queue", t);
+            }
+            i.remove();
+         }
+      }
+
+      synchronized (sessions) {
+         for (Iterator<ActiveMQRASession> i = sessions.iterator(); i.hasNext(); ) {
+            ActiveMQRASession session = i.next();
+            try {
+               session.closeSession();
+            } catch (Throwable t) {
+               ActiveMQRALogger.LOGGER.trace("Error closing session", t);
             }
             i.remove();
          }
