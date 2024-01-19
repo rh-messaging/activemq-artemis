@@ -191,7 +191,7 @@
       <owasp.version>8.4.0</owasp.version>
       <spring.version>5.3.27</spring.version>
 
-      <jackson.version>2.14.1</jackson.version>
+      <jackson.version>2.16.1</jackson.version>
       <jackson-databind.version>${jackson.version}</jackson-databind.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
@@ -779,6 +779,12 @@
                   <artifactId>geronimo-j2ee-management_1.1_spec</artifactId>
                </exclusion>
             </exclusions>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client-jakarta</artifactId>
+            <version>${activemq5-version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
          <dependency>
