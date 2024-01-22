@@ -2324,9 +2324,9 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          msg.setAddress(art.getName());
       }
 
-      // check the user has write access to this address.
+      // check the user has write access to this address (and potentially queue).
       try {
-         securityCheck(CompositeAddress.extractAddressName(art.getName()), CompositeAddress.isFullyQualified(art.getName()) ? CompositeAddress.extractQueueName(art.getName()) : null, CheckType.SEND, this);
+         securityCheck(CompositeAddress.extractAddressName(msg.getAddressSimpleString()), CompositeAddress.isFullyQualified(msg.getAddressSimpleString()) ? CompositeAddress.extractQueueName(msg.getAddressSimpleString()) : null, CheckType.SEND, this);
       } catch (ActiveMQException e) {
          if (!autoCommitSends && tx != null) {
             tx.markAsRollbackOnly(e);
@@ -2357,11 +2357,15 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
          routingContext.setAddress(art.getName());
          routingContext.setRoutingType(art.getRoutingType());
 
+         // Retrieve message size for metrics update before routing,
+         // since large message backing files may be closed once routing completes
+         int mSize = msg instanceof LargeServerMessageImpl ? ((LargeServerMessageImpl)msg).getBodyBufferSize() : msg.getEncodeSize();
+
          result = postOffice.route(msg, routingContext, direct);
 
          logger.debug("Routing result for {} = {}", msg, result);
 
-         updateProducerMetrics(msg, senderName);
+         updateProducerMetrics(msg, senderName, mSize);
       } finally {
          if (!routingContext.isReusable()) {
             routingContext.clear();
@@ -2520,10 +2524,10 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
       return "ServerSession [id=" + getConnectionID() + ":" + getName() + "]";
    }
 
-   private void updateProducerMetrics(Message msg, String senderName) {
+   private void updateProducerMetrics(Message msg, String senderName, int mSize) {
       ServerProducer serverProducer = serverProducers.getServerProducer(senderName, msg, this);
       if (serverProducer != null) {
-         serverProducer.updateMetrics(msg.getUserID(), msg instanceof LargeServerMessageImpl ? ((LargeServerMessageImpl)msg).getBodyBufferSize() : msg.getEncodeSize());
+         serverProducer.updateMetrics(msg.getUserID(), mSize);
       }
    }
 
