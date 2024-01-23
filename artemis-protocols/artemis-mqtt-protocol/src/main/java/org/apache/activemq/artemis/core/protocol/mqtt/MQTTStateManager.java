@@ -54,6 +54,7 @@ public class MQTTStateManager {
    private final Queue sessionStore;
    private static Map<Integer, MQTTStateManager> INSTANCES = new HashMap<>();
    private final Map<String, MQTTConnection> connectedClients  = new ConcurrentHashMap<>();
+   private final long timeout;
 
    /*
     * Even though there may be multiple instances of MQTTProtocolManager (e.g. for MQTT on different ports) we only want
@@ -76,20 +77,33 @@ public class MQTTStateManager {
 
    private MQTTStateManager(ActiveMQServer server) throws Exception {
       this.server = server;
-      sessionStore = server.createQueue(new QueueConfiguration(MQTTUtil.MQTT_SESSION_STORE).setRoutingType(RoutingType.ANYCAST).setLastValue(true).setDurable(true).setInternal(true).setAutoCreateAddress(true), true);
+      this.timeout = server.getConfiguration().getMqttSessionStatePersistenceTimeout();
+      this.sessionStore = server.createQueue(new QueueConfiguration(MQTTUtil.MQTT_SESSION_STORE).setRoutingType(RoutingType.ANYCAST).setLastValue(true).setDurable(true).setInternal(true).setAutoCreateAddress(true), true);
 
       // load session data from queue
       try (LinkedListIterator<MessageReference> iterator = sessionStore.browserIterator()) {
-         try {
-            while (iterator.hasNext()) {
-               MessageReference ref = iterator.next();
-               String clientId = ref.getMessage().getStringProperty(Message.HDR_LAST_VALUE_NAME);
-               MQTTSessionState sessionState = new MQTTSessionState((CoreMessage) ref.getMessage(), this);
-               sessionStates.put(clientId, sessionState);
+         while (iterator.hasNext()) {
+            Message message = iterator.next().getMessage();
+            if (!(message instanceof CoreMessage)) {
+               MQTTLogger.LOGGER.sessionStateMessageIncorrectType(message.getClass().getName().toString());
+               continue;
             }
-         } catch (NoSuchElementException ignored) {
-            // this could happen through paging browsing
+            String clientId = message.getStringProperty(Message.HDR_LAST_VALUE_NAME);
+            if (clientId == null || clientId.length() == 0) {
+               MQTTLogger.LOGGER.sessionStateMessageBadClientId();
+               continue;
+            }
+            MQTTSessionState sessionState;
+            try {
+               sessionState = new MQTTSessionState((CoreMessage) message);
+            } catch (Exception e) {
+               MQTTLogger.LOGGER.errorDeserializingStateMessage(e);
+               continue;
+            }
+            sessionStates.put(clientId, sessionState);
          }
+      } catch (NoSuchElementException ignored) {
+         // this could happen through paging browsing
       }
    }
 
@@ -127,10 +141,9 @@ public class MQTTStateManager {
       if (sessionStates.containsKey(clientId)) {
          return sessionStates.get(clientId);
       } else {
-         MQTTSessionState sessionState = new MQTTSessionState(clientId, this);
+         MQTTSessionState sessionState = new MQTTSessionState(clientId);
          logger.debug("Adding MQTT session state for: {}", clientId);
          sessionStates.put(clientId, sessionState);
-         storeSessionState(sessionState);
          return sessionState;
       }
    }
@@ -175,7 +188,6 @@ public class MQTTStateManager {
          }
       });
       tx.commit();
-      final long timeout = 5000;
       if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
          throw MQTTBundle.BUNDLE.unableToStoreMqttState(timeout);
       }

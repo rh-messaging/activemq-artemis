@@ -801,6 +801,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             if ((forceUpdate || newFilter != oldFilter) && !Objects.equals(oldFilter, newFilter)) {
                changed = true;
                queue.setFilter(newFilter);
+               notifyBindingUpdatedForQueue(queueBinding);
             }
             if ((forceUpdate || queueConfiguration.isConfigurationManaged() != null) && !Objects.equals(queueConfiguration.isConfigurationManaged(), queue.isConfigurationManaged())) {
                changed = true;
@@ -834,6 +835,22 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          return queueBinding;
       }
+   }
+
+   public void notifyBindingUpdatedForQueue(QueueBinding binding) throws Exception {
+      //only the filter could be updated
+      TypedProperties props = new TypedProperties();
+      props.putSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME, binding.getClusterName());
+      Filter filter = binding.getFilter();
+      if (filter != null) {
+         props.putSimpleStringProperty(ManagementHelper.HDR_FILTERSTRING, filter.getFilterString());
+      }
+      props.putIntProperty(ManagementHelper.HDR_DISTANCE, binding.getDistance());
+      props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, binding.getAddress());
+
+      String uid = UUIDGenerator.getInstance().generateStringUUID();
+      logger.debug("ClusterCommunication::Sending notification for updateBinding {} from server {}", binding, server);
+      managementService.sendNotification(new Notification(uid, CoreNotificationType.BINDING_UPDATED, props));
    }
 
    @Override
@@ -1969,7 +1986,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          AddressSettings settings = addressSettingsRepository.getMatch(queue.getAddress().toString());
          if (!queue.isInternalQueue() && queue.isAutoDelete() && QueueManagerImpl.consumerCountCheck(queue) && (initialCheck || QueueManagerImpl.delayCheck(queue, settings)) && QueueManagerImpl.messageCountCheck(queue) && (initialCheck || queueWasUsed(queue, settings))) {
             // we only reap queues on the initialCheck if they are actually empty
-            boolean validInitialCheck = initialCheck && queue.getMessageCount() == 0 && !queue.getPagingStore().isPaging();
+            PagingStore queuePagingStore = queue.getPagingStore();
+            boolean isPaging = queuePagingStore != null && queuePagingStore.isPaging();
+            boolean validInitialCheck = initialCheck && queue.getMessageCount() == 0 && !isPaging;
             if (validInitialCheck || queue.isSwept()) {
                if (logger.isDebugEnabled()) {
                   if (initialCheck) {
