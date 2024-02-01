@@ -86,37 +86,39 @@
       <karaf.version>4.4.4</karaf.version>
       <pax.exam.version>4.13.5</pax.exam.version>
       <commons.config.version>2.9.0</commons.config.version>
-      <commons.lang.version>3.13.0</commons.lang.version>
+      <commons.lang.version>3.14.0</commons.lang.version>
       <activemq5-version>5.18.3</activemq5-version>
-      <apache.derby.version>10.14.2.0</apache.derby.version>
+      <apache.derby.version>10.15.2.0</apache.derby.version>
       <commons.beanutils.version>1.9.4</commons.beanutils.version>
-      <commons.dbcp2.version>2.7.0</commons.dbcp2.version>
-      <commons.pool2.version>2.7.0</commons.pool2.version>
+      <commons.logging.version>1.3.0</commons.logging.version>
+      <commons.dbcp2.version>2.11.0</commons.dbcp2.version>
+      <commons.pool2.version>2.12.0</commons.pool2.version>
       <commons.collections.version>3.2.2</commons.collections.version>
       <commons.text.version>1.10.0</commons.text.version>
-      <commons.io.version>2.10.0</commons.io.version>
-      <commons.codec.version>1.15</commons.codec.version>
+      <commons.io.version>2.15.1</commons.io.version>
+      <commons.codec.version>1.16.0</commons.codec.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
-      <caffeine.version>3.1.6</caffeine.version>
-      <guava.version>32.0.1-jre</guava.version>
+      <caffeine.version>3.1.8</caffeine.version>
+      <guava.version>33.0.0-jre</guava.version>
       <hawtio.version>2.17.7</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
-      <jetty.version>10.0.16</jetty.version>
+      <jetty.version>10.0.20</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
-      <jgroups.version>5.3.0.Final</jgroups.version>
-      <errorprone.version>2.20.0</errorprone.version>
+      <jgroups.version>5.3.2.Final</jgroups.version>
+      <errorprone.version>2.24.1</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.3.2</jib.maven.plugin.version>
+      <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
       <checkstyle.version>10.12.7</checkstyle.version>
-      <mockito.version>5.4.0</mockito.version>
-      <jctools.version>2.1.2</jctools.version>
-      <netty.version>4.1.101.Final</netty.version>
+      <mockito.version>5.10.0</mockito.version>
+      <jctools.version>4.0.2</jctools.version>
+      <netty.version>4.1.106.Final</netty.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
-      <curator.version>5.5.0</curator.version>
-      <zookeeper.version>3.8.3</zookeeper.version>
+      <curator.version>5.6.0</curator.version>
+      <zookeeper.version>3.9.1</zookeeper.version>
       <woodstox.version>4.4.0</woodstox.version>
-      <pem-keystore.version>2.2.2</pem-keystore.version>
+      <pem-keystore.version>2.3.0</pem-keystore.version>
       <!-- This overrides the Apache parent POM due to https://issues.apache.org/jira/browse/MSHADE-462. Once that issue
            is resolved and a new Apache parent is released then we can get rid of this. -->
       <version.maven-shade-plugin>3.4.1</version.maven-shade-plugin>
@@ -125,23 +127,18 @@
       <asciidoctor.maven.plugin.version>2.2.4</asciidoctor.maven.plugin.version>
       <asciidoctorj.pdf.version>2.3.9</asciidoctorj.pdf.version>
 
-      <!-- tracing -->
-      <opentelemetry.version>1.24.0</opentelemetry.version>
-      <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-
       <!-- this is basically for tests -->
       <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
       <protonj2.version>1.0.0-M19</protonj2.version>
-      <slf4j.version>2.0.9</slf4j.version>
-      <log4j.version>2.21.1</log4j.version>
+      <slf4j.version>2.0.11</slf4j.version>
+      <log4j.version>2.22.1</log4j.version>
       <qpid.jms.version>1.10.0</qpid.jms.version>
       <johnzon.version>1.2.21</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
       <hawtdispatch.version>1.22</hawtdispatch.version>
       <picocli.version>4.7.5</picocli.version>
-      <jline.version>3.23.0</jline.version>
-      <jansi.version>2.4.0</jansi.version>
+      <jline.version>3.25.1</jline.version>
       <jakarta.activation-api.version>1.2.2</jakarta.activation-api.version>
       <jakarta.annotation-api.version>1.3.5</jakarta.annotation-api.version>
       <jakarta.ejb-api.version>3.2.6</jakarta.ejb-api.version>
@@ -160,18 +157,18 @@
       <owb.version>1.7.0</owb.version>
       <arquillian.version>1.1.11.Final</arquillian.version>
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
-      <version.org.jacoco>0.8.10</version.org.jacoco>
-      <version.org.jacoco.plugin>0.8.10</version.org.jacoco.plugin>
+      <version.org.jacoco>0.8.11</version.org.jacoco>
+      <version.org.jacoco.plugin>0.8.11</version.org.jacoco.plugin>
       <version.micrometer>1.12.2</version.micrometer>
       <hamcrest.version>2.1</hamcrest.version>
       <junit.version>4.13.2</junit.version>
-      <junit5.version>5.8.2</junit5.version>
+      <junit5.version>5.10.1</junit5.version>
       <surefire.version>2.22.2</surefire.version>
       <version.jaxb.runtime>2.3.3</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
-      <postgresql.version>42.4.3</postgresql.version>
-      <testcontainers.version>1.17.6</testcontainers.version>
-      <selenium.version>4.8.3</selenium.version>
+      <postgresql.version>42.7.1</postgresql.version>
+      <testcontainers.version>1.19.4</testcontainers.version>
+      <selenium.version>4.17.0</selenium.version>
       <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.13</apache.httpcore.version>
       <apache.httpclient.version>4.5.13</apache.httpclient.version>
@@ -184,11 +181,11 @@
 
       <!-- used on tests -->
       <groovy.version>4.0.13</groovy.version>
-      <vertx.version>4.3.3</vertx.version>
+      <vertx.version>4.5.2</vertx.version>
       <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>8.4.0</owasp.version>
+      <owasp.version>9.0.9</owasp.version>
       <spring.version>5.3.27</spring.version>
 
       <jackson.version>2.16.1</jackson.version>
@@ -255,7 +252,7 @@
 
       <directory-version>2.0.0.AM25</directory-version>
       <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
-      <bc-java-version>1.75</bc-java-version>
+      <bc-java-version>1.77</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
       <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
@@ -341,7 +338,7 @@
          <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-            <version>3.2</version>
+            <version>5.2.0</version>
             <scope>test</scope>
          </dependency>
 
@@ -365,6 +362,12 @@
          <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
+            <version>${apache.derby.version}</version>
+            <scope>test</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
             <version>${apache.derby.version}</version>
             <scope>test</scope>
          </dependency>
@@ -515,7 +518,7 @@
          <dependency>
             <groupId>net.java.dev.javacc</groupId>
             <artifactId>javacc</artifactId>
-            <version>4.0</version>
+            <version>7.0.13</version>
             <!-- License: BSD -->
          </dependency>
          <dependency>
@@ -586,23 +589,6 @@
          </dependency>
          <!-- ## End Examples Dependencies ## -->
 
-         <!-- ### START opentelemetry Dependencies ### -->
-         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-bom</artifactId>
-            <version>${opentelemetry.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
-         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-bom-alpha</artifactId>
-            <version>${opentelemetry-alpha.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
-         <!-- ### END opentelemetry Dependencies ### -->
-
          <!--needed to compile the bootstrap jar-->
          <dependency>
             <groupId>org.jgroups</groupId>
@@ -634,13 +620,6 @@
             <artifactId>jline</artifactId>
             <version>${jline.version}</version>
             <!-- License: BSD 3-Clause -->
-         </dependency>
-         <dependency>
-            <!-- used by jline to provide an ansi terminal -->
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>${jansi.version}</version>
-            <!-- License: Apache 2.0 -->
          </dependency>
          <!--needed to compile transport jar-->
          <dependency>
@@ -850,7 +829,7 @@
          <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>1.2</version>
+            <version>${commons.logging.version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
 
@@ -1978,6 +1957,84 @@
             <groupId>com.google.cloud.tools</groupId>
             <artifactId>jib-maven-plugin</artifactId>
             <version>${jib.maven.plugin.version}</version>
+         </plugin>
+         <plugin>
+            <!-- run using "mvn versions:display-dependency-updates" -->
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>versions-maven-plugin</artifactId>
+            <version>${versions.maven.plugin.version}</version>
+            <configuration>
+               <ruleSet>
+                  <ignoreVersions>
+                     <!-- ignore release candidates, alphas, betas, milestones, etc. -->
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>.*-[Rr][Cc]\d$</version>
+                     </ignoreVersion>
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>.*.[Aa]lpha\d*$</version>
+                     </ignoreVersion>
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>.*-beta\d*$</version>
+                     </ignoreVersion>
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>.*[-\.]M\d$</version>
+                     </ignoreVersion>
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>.*[-\.]MR$</version>
+                     </ignoreVersion>
+
+                     <!-- there's some really old Apache deps with weird versions numbers that we should ignore -->
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>20040.*</version>
+                     </ignoreVersion>
+                     <ignoreVersion>
+                        <type>regex</type>
+                        <version>2003[01].*</version>
+                     </ignoreVersion>
+                  </ignoreVersions>
+                  <rules>
+                     <!-- ignore Jetty 11 & 12 until we move to Jakarta -->
+                     <rule>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <comparisonMethod>maven</comparisonMethod>
+                        <ignoreVersions>
+                           <ignoreVersion>
+                              <type>regex</type>
+                              <version>1[12]\..*</version>
+                           </ignoreVersion>
+                        </ignoreVersions>
+                     </rule>
+                     <!-- ignore Spring 6 until we move to Jakarta -->
+                     <rule>
+                        <groupId>org.springframework</groupId>
+                        <comparisonMethod>maven</comparisonMethod>
+                        <ignoreVersions>
+                           <ignoreVersion>
+                              <type>regex</type>
+                              <version>6\..*</version>
+                           </ignoreVersion>
+                        </ignoreVersions>
+                     </rule>
+                     <!-- ignore Derby >= 10.16 until we move to JDK 17 -->
+                     <rule>
+                        <groupId>org.apache.derby</groupId>
+                        <comparisonMethod>maven</comparisonMethod>
+                        <ignoreVersions>
+                           <ignoreVersion>
+                              <type>regex</type>
+                              <version>10.1[67]\..*</version>
+                           </ignoreVersion>
+                        </ignoreVersions>
+                     </rule>
+                  </rules>
+               </ruleSet>
+            </configuration>
          </plugin>
       </plugins>
    </build>
