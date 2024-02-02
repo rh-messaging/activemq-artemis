@@ -83,6 +83,7 @@ import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
 import org.apache.activemq.artemis.core.io.SequentialFile;
 import org.apache.activemq.artemis.core.io.aio.AIOSequentialFileFactory;
 import org.apache.activemq.artemis.core.journal.JournalLoadInformation;
+import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.management.impl.ActiveMQServerControlImpl;
 import org.apache.activemq.artemis.core.paging.PagingManager;
 import org.apache.activemq.artemis.core.paging.PagingStoreFactory;
@@ -395,6 +396,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
    private String propertiesFileUrl;
 
+   private List<Consumer<RecordInfo>> extraRecordsLoader;
+
    private final ActiveMQComponent networkCheckMonitor = new ActiveMQComponent() {
       @Override
       public void start() throws Exception {
@@ -529,6 +532,14 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       try (AutoCloseable lock = managementLock()) {
          replayManager.replay(start, end, address, target, filter);
       }
+   }
+
+   @Override
+   public void registerRecordsLoader(Consumer<RecordInfo> recordsLoader) {
+      if (extraRecordsLoader == null) {
+         extraRecordsLoader = new ArrayList<>();
+      }
+      extraRecordsLoader.add(recordsLoader);
    }
 
    /**
@@ -1433,6 +1444,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       messagingServerControl = null;
       memoryManager = null;
       backupManager = null;
+      extraRecordsLoader = null;
       this.storageManager = null;
 
       sessions.clear();
@@ -3388,6 +3400,8 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          return;
       }
 
+      loadProtocolServices();
+
       pagingManager.reloadStores();
 
       Set<Long> storedLargeMessages = new HashSet<>();
@@ -3499,10 +3513,11 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       }
    }
 
-   private void startProtocolServices() throws Exception {
-
+   private void loadProtocolServices() {
       remotingService.loadProtocolServices(protocolServices);
+   }
 
+   private void startProtocolServices() throws Exception {
       for (ProtocolManagerFactory protocolManagerFactory : protocolManagerFactories) {
          protocolManagerFactory.loadProtocolServices(this, protocolServices);
       }
@@ -3750,7 +3765,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
 
       storageManager.recoverLargeMessagesOnFolder(storedLargeMessages);
 
-      journalInfo[1] = storageManager.loadMessageJournal(postOffice, pagingManager, resourceManager, queueBindingInfosMap, duplicateIDMap, pendingLargeMessages, storedLargeMessages, pendingNonTXPageCounter, journalLoader);
+      journalInfo[1] = storageManager.loadMessageJournal(postOffice, pagingManager, resourceManager, queueBindingInfosMap, duplicateIDMap, pendingLargeMessages, storedLargeMessages, pendingNonTXPageCounter, journalLoader, extraRecordsLoader);
 
       journalLoader.handleDuplicateIds(duplicateIDMap);
 
@@ -3769,8 +3784,6 @@ public class ActiveMQServerImpl implements ActiveMQServer {
             ActiveMQServerLogger.LOGGER.errorRecoveringPageCounter(e);
          }
       }
-
-      // TODO load users/roles
 
       journalLoader.cleanUp();
 
@@ -4678,5 +4691,10 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       } else {
          return managementLock::unlock;
       }
+   }
+
+   @Override
+   public IOCriticalErrorListener getIoCriticalErrorListener() {
+      return ioCriticalErrorListener;
    }
 }
