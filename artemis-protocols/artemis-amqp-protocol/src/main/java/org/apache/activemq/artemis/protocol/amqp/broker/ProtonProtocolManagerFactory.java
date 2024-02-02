@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.broker;
 
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Map;
 
@@ -26,14 +27,20 @@ import org.apache.activemq.artemis.core.persistence.Persister;
 import org.apache.activemq.artemis.core.server.ActiveMQComponent;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.protocol.amqp.connect.AMQPBrokerConnectionManager;
+import org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager;
+import org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManagerProvider;
 import org.apache.activemq.artemis.spi.core.protocol.AbstractProtocolManagerFactory;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManager;
 import org.apache.activemq.artemis.spi.core.protocol.ProtocolManagerFactory;
 import org.apache.activemq.artemis.utils.uri.BeanSupport;
 import org.osgi.service.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(service = ProtocolManagerFactory.class)
 public class ProtonProtocolManagerFactory extends AbstractProtocolManagerFactory<AmqpInterceptor> {
+
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    public static final String AMQP_PROTOCOL_NAME = "AMQP";
 
@@ -76,6 +83,13 @@ public class ProtonProtocolManagerFactory extends AbstractProtocolManagerFactory
     *  As the broker may choose to not load the AMQP Protocol */
    @Override
    public void loadProtocolServices(ActiveMQServer server, List<ActiveMQComponent> services) {
+      try {
+         AckManager ackManager = AckManagerProvider.getManager(server, false);
+         server.registerRecordsLoader(ackManager::reload);
+      } catch (Exception e) {
+         logger.warn(e.getMessage(), e);
+      }
+
       List<AMQPBrokerConnectConfiguration> amqpServicesConfiguration = server.getConfiguration().getAMQPConnection();
       if (amqpServicesConfiguration != null && amqpServicesConfiguration.size() > 0) {
          AMQPBrokerConnectionManager bridgeService = new AMQPBrokerConnectionManager(this, amqpServicesConfiguration, server);
