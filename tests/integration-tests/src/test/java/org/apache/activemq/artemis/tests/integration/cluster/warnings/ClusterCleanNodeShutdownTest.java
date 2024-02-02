@@ -16,7 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.cluster.warnings;
 
-import java.lang.invoke.MethodHandles;
 import org.apache.activemq.artemis.core.server.cluster.impl.MessageLoadBalancingType;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.integration.cluster.distribution.ClusterTestBase;
