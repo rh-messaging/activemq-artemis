@@ -14,15 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
+import React, { useState } from 'react'
 import { ArtemisTabs } from './views/ArtemisTabView';
-import { PageSection, TextContent, Text, PageSectionVariants } from '@patternfly/react-core';
+import { PageSection, TextContent, Text, PageSectionVariants, Button, Modal, ModalVariant } from '@patternfly/react-core';
 import { Grid } from '@patternfly/react-core';
 import { GridItem } from '@patternfly/react-core';
+import { BrokerTopology } from './brokers/BrokerTopology';
 
 
 
 export const Artemis: React.FunctionComponent = () => {
+  const [ topologyOpen, setTopologyOpen] = useState<boolean>(false);
+
+  function openBrokerTopology(): void {
+    setTopologyOpen(true);
+  }
 
   return ( 
     <React.Fragment>
@@ -31,6 +37,7 @@ export const Artemis: React.FunctionComponent = () => {
           <GridItem span={2}>
           <TextContent>
             <Text component="h1">Broker</Text>
+            <Button onClick={() => openBrokerTopology()}>View</Button>
             </TextContent>
           </GridItem>
       </Grid>
@@ -40,6 +47,19 @@ export const Artemis: React.FunctionComponent = () => {
         <PageSection isFilled>
           <ArtemisTabs/>
         </PageSection>
+
+        <Modal
+        aria-label='connection-close-modal'
+        variant={ModalVariant.large}
+        title="broker Diagram"
+        isOpen={topologyOpen}
+        actions={[
+          <Button key="cancel" variant="secondary" onClick={() => setTopologyOpen(false)}>
+            Cancel
+          </Button>
+        ]}>
+          <BrokerTopology/>
+          </Modal>
     </React.Fragment>
   )
 }

@@ -43,27 +43,25 @@ configManager.addProductInfo('Artemis Plugin', '__PACKAGE_VERSION_PLACEHOLDER__'
 // Branding and styles can be customised from a plugin as follows
 configManager.configure(config => {
   config.branding = {
-    appName: 'Artemis Console',
+    appName: 'AMQ7 Console',
     showAppName: false,
-    appLogoUrl: '/artemis-plugin/branding/activemq.png',
+    appLogoUrl: '/artemis-plugin/branding/Logo-RedHat-A-Reverse-RGB.png',
     css: '/artemis-plugin/branding/app.css',
-    favicon: '/artemis-plugin/branding/favicon.png',
+    favicon: '/artemis-plugin/branding/favicon.ico',
   }
   config.login = {
-    description: 'Login page for Artemis Console.',
-    links: [
-      { url: 'https://activemq.apache.org/components/artemis/documentation/', text: 'Documentation' },
-      { url: 'https://activemq.apache.org/', text: 'Website' },
-    ],
+    description: 'Login page for AMQ7 Console.'
   }
   config.about = {
-    title: 'ActiveMQ Artemis Management Console',
+    title: 'AMQ7 Broker Management Console',
     description: '',
     productInfo: [
+      { name: 'AMQ', value: '${amq.broker.version}' },
       { name: 'Artemis', value: '${project.version}' },
+      { name: 'HawtIO', value: '${hawtio.version}' },
     ],
-    copyright: 'ActiveMQ',
-    imgSrc: '/artemis-plugin/branding/activemq.png',
+    copyright: ' ',
+    imgSrc: '/artemis-plugin/branding/Logo-RedHat-A-Reverse-RGB.png',
   }
   // If you want to disable specific plugins, you can specify the paths to disable them.
   //config.disabledRoutes = ['/simple-plugin']
