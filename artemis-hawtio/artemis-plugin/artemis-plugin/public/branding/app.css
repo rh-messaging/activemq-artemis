@@ -19,17 +19,6 @@
 
 .pf-c-login,
 .pf-c-about-modal-box__hero {
-  background-image: url("./background.png") !important;
+  background-image: url("./background.svg") !important;
   background-size: cover;
-}
-
-:root {
-  --pf-global--active-color--100: #B21054;
-  --pf-global--active-color--200: #B24E78;
-  --pf-global--active-color--300: #2b9af3;
-  --pf-global--active-color--400: #73bcf7;
-  --pf-global--link--Color: #B21054;
-  --pf-global--link--Color--hover: #B24E78;
-  --pf-v5-global--primary-color--100: #B21054;
-  --pf-v5-global--primary-color--200: #B24E78;
 }
