@@ -42,7 +42,6 @@
 
             <!-- Handled later in web subdir for console bits -->
             <exclude>io.hawt:hawtio-war:war</exclude>
-            <exclude>org.apache.activemq:activemq-branding:war</exclude>
             <exclude>org.apache.activemq:artemis-plugin:war</exclude>
             <exclude>com.redhat.amq-broker:artemis-prometheus-metrics-plugin-servlet:war</exclude>
          </excludes>
