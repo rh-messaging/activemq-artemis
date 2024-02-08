@@ -128,9 +128,9 @@
 
       <!-- Management Console Dependencies -->
       <dependency>
-         <groupId>org.apache.activemq</groupId>
-         <artifactId>artemis-console</artifactId>
-         <version>${project.version} </version>
+         <groupId>io.hawt</groupId>
+         <artifactId>hawtio-war</artifactId>
+         <version>${hawtio.version}</version>
          <type>war</type>
       </dependency>
       <dependency>
@@ -142,6 +142,12 @@
       <dependency>
          <groupId>org.apache.activemq</groupId>
          <artifactId>artemis-plugin</artifactId>
+         <version>${project.version} </version>
+         <type>war</type>
+      </dependency>
+      <dependency>
+         <groupId>com.redhat.amq-broker</groupId>
+         <artifactId>redhat-branding</artifactId>
          <version>${project.version} </version>
          <type>war</type>
       </dependency>
