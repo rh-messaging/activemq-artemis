@@ -30,9 +30,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
+import org.apache.activemq.artemis.api.core.management.ActiveMQServerControl;
+import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.impl.AddressInfo;
+import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
@@ -90,7 +93,9 @@ public class PagingLimitTest extends ActiveMQTestBase {
 
       final int PAGE_SIZE = 10 * 1024;
 
-      server = createServer(true, config, PAGE_SIZE, PAGE_MAX, -1, -1, null, 300L, drop ? "DROP" : "FAIL", null);
+      int pageLimitMessages = 300;
+
+      server = createServer(true, config, PAGE_SIZE, PAGE_MAX, -1, -1, null, Long.valueOf(pageLimitMessages), drop ? "DROP" : "FAIL", null);
       server.start();
 
       server.addAddressInfo(new AddressInfo(queueNameTX).addRoutingType(RoutingType.ANYCAST));
@@ -101,15 +106,62 @@ public class PagingLimitTest extends ActiveMQTestBase {
       Wait.assertTrue(() -> server.locateQueue(queueNameNonTX) != null);
       Wait.assertTrue(() -> server.locateQueue(queueNameTX) != null);
 
-      testPageLimitMessageFailInternal(queueNameTX, protocol, true, drop);
-      testPageLimitMessageFailInternal(queueNameNonTX, protocol, false, drop);
+      testPageLimitMessageFailInternal(queueNameTX, protocol, true, drop, pageLimitMessages);
+      testPageLimitMessageFailInternal(queueNameNonTX, protocol, false, drop, pageLimitMessages);
 
+
+      // Update PageLimitMessages to 400
+      pageLimitMessages = 400;
+      ActiveMQServerControl serverControl = (ActiveMQServerControl)server.getManagementService().getResource(ResourceNames.BROKER);
+      AddressSettings defaultAddressSettings = AddressSettings.fromJSON(serverControl.getAddressSettingsAsJSON("#"));
+      defaultAddressSettings.setPageLimitMessages(Long.valueOf(pageLimitMessages));
+      serverControl.addAddressSettings("#", defaultAddressSettings.toJSON());
+
+
+      String queueNameTX1 = queueNameTX + "1";
+      String queueNameNonTX1 = queueNameNonTX + "1";
+
+      server.addAddressInfo(new AddressInfo(queueNameTX1).addRoutingType(RoutingType.ANYCAST));
+      server.createQueue(new QueueConfiguration(queueNameTX1).setRoutingType(RoutingType.ANYCAST));
+      server.addAddressInfo(new AddressInfo(queueNameNonTX1).addRoutingType(RoutingType.ANYCAST));
+      server.createQueue(new QueueConfiguration(queueNameNonTX1).setRoutingType(RoutingType.ANYCAST));
+
+      Wait.assertTrue(() -> server.locateQueue(queueNameTX1) != null);
+      Wait.assertTrue(() -> server.locateQueue(queueNameNonTX1) != null);
+
+      testPageLimitMessageFailInternal(queueNameTX1, protocol, true, drop, pageLimitMessages);
+      testPageLimitMessageFailInternal(queueNameNonTX1, protocol, false, drop, pageLimitMessages);
+
+      // Update PageLimitMessages to 500
+      pageLimitMessages = 500;
+      defaultAddressSettings.setPageLimitMessages(Long.valueOf(pageLimitMessages));
+      serverControl.addAddressSettings("#", defaultAddressSettings.toJSON());
+
+
+      server.stop();
+      server.start();
+
+
+      String queueNameTX2 = queueNameTX + "2";
+      String queueNameNonTX2 = queueNameNonTX + "2";
+
+      server.addAddressInfo(new AddressInfo(queueNameTX2).addRoutingType(RoutingType.ANYCAST));
+      server.createQueue(new QueueConfiguration(queueNameTX2).setRoutingType(RoutingType.ANYCAST));
+      server.addAddressInfo(new AddressInfo(queueNameNonTX2).addRoutingType(RoutingType.ANYCAST));
+      server.createQueue(new QueueConfiguration(queueNameNonTX2).setRoutingType(RoutingType.ANYCAST));
+
+      Wait.assertTrue(() -> server.locateQueue(queueNameTX2) != null);
+      Wait.assertTrue(() -> server.locateQueue(queueNameNonTX2) != null);
+
+      testPageLimitMessageFailInternal(queueNameTX2, protocol, true, drop, pageLimitMessages);
+      testPageLimitMessageFailInternal(queueNameNonTX2, protocol, false, drop, pageLimitMessages);
    }
 
    private void testPageLimitMessageFailInternal(String queueName,
                                                  String protocol,
                                                  boolean transacted,
-                                                 boolean drop) throws Exception {
+                                                 boolean drop,
+                                                 int pageLimitMessages) throws Exception {
       org.apache.activemq.artemis.core.server.Queue serverQueue = server.locateQueue(queueName);
       Assert.assertNotNull(serverQueue);
 
@@ -130,7 +182,7 @@ public class PagingLimitTest extends ActiveMQTestBase {
             Assert.assertTrue(serverQueue.getPagingStore().isPaging());
          }
 
-         for (int i = 0; i < 300; i++) {
+         for (int i = 0; i < pageLimitMessages; i++) {
             if (i == 200) {
                // the initial sent has to be consumed on transaction as we need a sync on the consumer for AMQP
                try (MessageConsumer consumer = session.createConsumer(queue)) {
@@ -203,7 +255,7 @@ public class PagingLimitTest extends ActiveMQTestBase {
 
 
 
-         for (int i = 300; i < 450; i++) {
+         for (int i = pageLimitMessages; i < pageLimitMessages + 150; i++) {
             try {
                TextMessage message = session.createTextMessage("hello world " + i);
                message.setIntProperty("i", i);
@@ -240,7 +292,7 @@ public class PagingLimitTest extends ActiveMQTestBase {
             logger.debug("Expected exception, ok!", e);
          }
 
-         for (int i = 150; i < 450; i++) { // we will consume half of the messages
+         for (int i = 150; i < pageLimitMessages + 150; i++) { // we will consume half of the messages
             TextMessage message = (TextMessage) consumer.receive(5000);
             Assert.assertNotNull(message);
             Assert.assertEquals("hello world " + i, message.getText());
