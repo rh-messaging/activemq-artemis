@@ -56,7 +56,7 @@ Highlights:
   property useless. Some existing users rely on this behavior so it has been restored and properly deprecated for future
   removal.
 
-## 2.28.0
+## 2.28.0.PATCH.3270
 [Full release notes](https://issues.apache.org/jira/secure/ReleaseNote.jspa?version=12352523&projectId=12315920)
 
 Highlights:

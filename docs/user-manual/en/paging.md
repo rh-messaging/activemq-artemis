@@ -213,7 +213,7 @@ So, if your system has too many queues it is recommended to minimize the page-si
 
 ## Page Limits and Page Full Policy
 
-Since version `2.28.0` is possible to configure limits on how much data is paged. This is to avoid a single destination using the entire disk in case their consumers are gone.
+Since version `2.28.0.PATCH.3270` is possible to configure limits on how much data is paged. This is to avoid a single destination using the entire disk in case their consumers are gone.
 
 You can configure either `page-limit-bytes` or `page-limit-messages`, along with `page-full-policy` on the address settings limiting how much data will be recorded in paging.
 

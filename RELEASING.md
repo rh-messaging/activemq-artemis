@@ -73,10 +73,10 @@ When prompted make sure the new development version matches with the next expect
 [INFO] Checking dependencies and plugins for snapshots ...
 What is the release version for "ActiveMQ Artemis Parent"? (artemis-pom) 2.27.0: :
 What is the SCM release tag or label for "ActiveMQ Artemis Parent"? (artemis-pom) 2.27.0: :
-What is the new development version for "ActiveMQ Artemis Parent"? (artemis-pom) 2.27.1-SNAPSHOT: : 2.28.0-SNAPSHOT
+What is the new development version for "ActiveMQ Artemis Parent"? (artemis-pom) 2.27.1-SNAPSHOT: : 2.28.0.PATCH.3270-SNAPSHOT
 ```
 
-Otherwise snapshots would be created at 2.27.1-SNAPSHOT and left to go stale rather than get cleaned out if the next release is actually 2.28.0. (Unless we did ever release 2.27.1 in that example).
+Otherwise snapshots would be created at 2.27.1-SNAPSHOT and left to go stale rather than get cleaned out if the next release is actually 2.28.0.PATCH.3270. (Unless we did ever release 2.27.1 in that example).
 
 For more information look at the prepare plugin:
 
