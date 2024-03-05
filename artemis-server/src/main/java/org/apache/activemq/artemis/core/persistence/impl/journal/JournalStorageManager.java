@@ -827,7 +827,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    @Override
-   public final void addBytesToLargeMessage(final SequentialFile file,
+   public void addBytesToLargeMessage(final SequentialFile file,
                                             final long messageId,
                                             final ActiveMQBuffer bytes) throws Exception {
       try (ArtemisCloseable lock = closeableReadLock()) {
@@ -864,7 +864,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    @Override
-   public final void addBytesToLargeMessage(final SequentialFile file,
+   public void addBytesToLargeMessage(final SequentialFile file,
                                             final long messageId,
                                             final byte[] bytes) throws Exception {
       try (ArtemisCloseable lock = closeableReadLock()) {
