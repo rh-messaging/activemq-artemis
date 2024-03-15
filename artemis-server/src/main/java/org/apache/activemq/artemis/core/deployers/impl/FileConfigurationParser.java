@@ -71,7 +71,7 @@ import org.apache.activemq.artemis.core.config.federation.FederationStreamConfig
 import org.apache.activemq.artemis.core.config.federation.FederationTransformerConfiguration;
 import org.apache.activemq.artemis.core.config.federation.FederationUpstreamConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ColocatedPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.DistributedPrimitiveManagerConfiguration;
+import org.apache.activemq.artemis.core.config.ha.DistributedLockManagerConfiguration;
 import org.apache.activemq.artemis.core.config.ha.PrimaryOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicaPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicatedPolicyConfiguration;
@@ -203,6 +203,10 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
    private static final String CREATEADDRESS_NAME = "createAddress";
 
    private static final String DELETEADDRESS_NAME = "deleteAddress";
+
+   private static final String VIEW_NAME = "view";
+
+   private static final String EDIT_NAME = "edit";
 
    // Address parsing
 
@@ -839,6 +843,12 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setLargeMessageSync(getBoolean(e, "large-message-sync", config.isLargeMessageSync()));
 
+      config.setViewPermissionMethodMatchPattern(getString(e, "view-permission-method-match-pattern", config.getViewPermissionMethodMatchPattern(), NO_CHECK));
+
+      config.setManagementMessageRbac(getBoolean(e, "management-message-rbac", config.isManagementMessageRbac()));
+
+      config.setManagementRbacPrefix(getString(e, "management-rbac-prefix", config.getManagementRbacPrefix(), NO_CHECK));
+
       parseAddressSettings(e, config);
 
       parseResourceLimits(e, config);
@@ -1151,6 +1161,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       ArrayList<String> browseRoles = new ArrayList<>();
       ArrayList<String> createAddressRoles = new ArrayList<>();
       ArrayList<String> deleteAddressRoles = new ArrayList<>();
+      ArrayList<String> viewRoles = new ArrayList<>();
+      ArrayList<String> editRoles = new ArrayList<>();
       ArrayList<String> allRoles = new ArrayList<>();
       NodeList children = node.getChildNodes();
       for (int i = 0; i < children.getLength(); i++) {
@@ -1187,6 +1199,10 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
                   createAddressRoles.add(role.trim());
                } else if (DELETEADDRESS_NAME.equals(type)) {
                   deleteAddressRoles.add(role.trim());
+               } else if (VIEW_NAME.equals(type)) {
+                  viewRoles.add(role.trim());
+               } else if (EDIT_NAME.equals(type)) {
+                  editRoles.add(role.trim());
                } else {
                   ActiveMQServerLogger.LOGGER.rolePermissionConfigurationError(type);
                }
@@ -1198,7 +1214,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       }
 
       for (String role : allRoles) {
-         securityRoles.add(new Role(role, send.contains(role), consume.contains(role), createDurableQueue.contains(role), deleteDurableQueue.contains(role), createNonDurableQueue.contains(role), deleteNonDurableQueue.contains(role), manageRoles.contains(role), browseRoles.contains(role), createAddressRoles.contains(role), deleteAddressRoles.contains(role)));
+         securityRoles.add(new Role(role, send.contains(role), consume.contains(role), createDurableQueue.contains(role), deleteDurableQueue.contains(role), createNonDurableQueue.contains(role), deleteNonDurableQueue.contains(role), manageRoles.contains(role), browseRoles.contains(role), createAddressRoles.contains(role), deleteAddressRoles.contains(role), viewRoles.contains(role), editRoles.contains(role)));
       }
 
       return securityMatch;
@@ -1823,7 +1839,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       configuration.setClusterName(getString(policyNode, "cluster-name", configuration.getClusterName(), NO_CHECK));
       configuration.setInitialReplicationSyncTimeout(getLong(policyNode, "initial-replication-sync-timeout", configuration.getInitialReplicationSyncTimeout(), GT_ZERO));
       configuration.setRetryReplicationWait(getLong(policyNode, "retry-replication-wait", configuration.getRetryReplicationWait(), GT_ZERO));
-      configuration.setDistributedManagerConfiguration(createDistributedPrimitiveManagerConfiguration(policyNode));
+      configuration.setDistributedManagerConfiguration(createDistributedLockManagerConfiguration(policyNode));
       configuration.setCoordinationId(getString(policyNode, "coordination-id", configuration.getCoordinationId(), NOT_NULL_OR_EMPTY));
       configuration.setMaxSavedReplicatedJournalsSize(getInteger(policyNode, "max-saved-replicated-journals-size", configuration.getMaxSavedReplicatedJournalsSize(), MINUS_ONE_OR_GE_ZERO));
       return configuration;
@@ -1837,14 +1853,14 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       configuration.setClusterName(getString(policyNode, "cluster-name", configuration.getClusterName(), NO_CHECK));
       configuration.setMaxSavedReplicatedJournalsSize(getInteger(policyNode, "max-saved-replicated-journals-size", configuration.getMaxSavedReplicatedJournalsSize(), MINUS_ONE_OR_GE_ZERO));
       configuration.setRetryReplicationWait(getLong(policyNode, "retry-replication-wait", configuration.getRetryReplicationWait(), GT_ZERO));
-      configuration.setDistributedManagerConfiguration(createDistributedPrimitiveManagerConfiguration(policyNode));
+      configuration.setDistributedManagerConfiguration(createDistributedLockManagerConfiguration(policyNode));
       return configuration;
    }
 
-   private DistributedPrimitiveManagerConfiguration createDistributedPrimitiveManagerConfiguration(Element policyNode) {
+   private DistributedLockManagerConfiguration createDistributedLockManagerConfiguration(Element policyNode) {
       final Element managerNode = (Element) policyNode.getElementsByTagName("manager").item(0);
       final String className = getString(managerNode, "class-name",
-                                         ActiveMQDefaultConfiguration.getDefaultDistributedPrimitiveManagerClassName(),
+                                         ActiveMQDefaultConfiguration.getDefaultDistributedLockManagerClassName(),
                                          NO_CHECK);
       final Map<String, String> properties;
       if (parameterExists(managerNode, "properties")) {
@@ -1860,7 +1876,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
       } else {
          properties = new HashMap<>(1);
       }
-      return new DistributedPrimitiveManagerConfiguration(className, properties);
+      return new DistributedLockManagerConfiguration(className, properties);
    }
 
    private SharedStorePrimaryPolicyConfiguration createSharedStorePrimaryHaPolicy(Element policyNode) {

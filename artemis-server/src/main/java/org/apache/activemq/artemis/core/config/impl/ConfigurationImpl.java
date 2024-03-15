@@ -29,6 +29,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -51,6 +52,8 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.Adler32;
+import java.util.zip.Checksum;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.BroadcastGroupConfiguration;
@@ -60,16 +63,6 @@ import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.TransportConfiguration;
-import org.apache.activemq.artemis.core.config.TransformerConfiguration;
-import org.apache.activemq.artemis.core.config.ha.ColocatedPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.ReplicationBackupPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.ReplicationPrimaryPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.SharedStoreBackupPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.ha.SharedStorePrimaryPolicyConfiguration;
-import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
-import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
-import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.ClusterConnectionConfiguration;
 import org.apache.activemq.artemis.core.config.Configuration;
@@ -82,16 +75,26 @@ import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
+import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
+import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
+import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
+import org.apache.activemq.artemis.core.config.ha.ColocatedPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.ha.LiveOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicaPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.ha.ReplicatedPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.ha.ReplicationBackupPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.ha.ReplicationPrimaryPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.ha.SharedStoreBackupPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.ha.SharedStorePrimaryPolicyConfiguration;
+import org.apache.activemq.artemis.core.config.routing.ConnectionRouterConfiguration;
 import org.apache.activemq.artemis.core.config.routing.NamedPropertyConfiguration;
 import org.apache.activemq.artemis.core.config.storage.DatabaseStorageConfiguration;
 import org.apache.activemq.artemis.core.remoting.impl.invm.InVMConnectorFactory;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
 import org.apache.activemq.artemis.core.security.Role;
-import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.ActiveMQMessageBundle;
+import org.apache.activemq.artemis.core.server.ActiveMQServerLogger;
 import org.apache.activemq.artemis.core.server.JournalType;
 import org.apache.activemq.artemis.core.server.NetworkHealthCheck;
 import org.apache.activemq.artemis.core.server.SecuritySettingPlugin;
@@ -130,13 +133,9 @@ import org.apache.commons.beanutils.MappedPropertyDescriptor;
 import org.apache.commons.beanutils.MethodUtils;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.beanutils.expression.DefaultResolver;
+import org.apache.commons.beanutils.expression.Resolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
-import java.util.zip.Adler32;
-import java.util.zip.Checksum;
-
-import org.apache.commons.beanutils.expression.Resolver;
 
 public class ConfigurationImpl implements Configuration, Serializable {
 
@@ -435,13 +434,18 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    private String literalMatchMarkers = ActiveMQDefaultConfiguration.getLiteralMatchMarkers();
 
+   private String viewPermissionMethodMatchPattern = ActiveMQDefaultConfiguration.getViewPermissionMethodMatchPattern();
+
+   private String managementRbacPrefix = ActiveMQDefaultConfiguration.getManagementRbacPrefix();
+
+   private boolean managementMessagesRbac = ActiveMQDefaultConfiguration.getManagementMessagesRbac();
+
    /**
     * Parent folder for all data folders.
     */
    private File artemisInstance;
    private transient JsonObject jsonStatus = JsonLoader.createObjectBuilder().build();
    private transient Checksum transientChecksum = null;
-
 
    private JsonObject getJsonStatus() {
       if (jsonStatus == null) {
@@ -884,9 +888,9 @@ public class ConfigurationImpl implements Configuration, Serializable {
             switch (haPolicyType) {
                case PRIMARY_ONLY:
                   return (T) new LiveOnlyPolicyConfiguration();
-               case REPLICATED:
+               case REPLICATION_PRIMARY_QUORUM_VOTING:
                   return (T) new ReplicatedPolicyConfiguration();
-               case REPLICA:
+               case REPLICATION_BACKUP_QUORUM_VOTING:
                   return (T) new ReplicaPolicyConfiguration();
                case SHARED_STORE_PRIMARY:
                   return (T) new SharedStorePrimaryPolicyConfiguration();
@@ -894,9 +898,9 @@ public class ConfigurationImpl implements Configuration, Serializable {
                   return (T) new SharedStoreBackupPolicyConfiguration();
                case COLOCATED:
                   return (T) new ColocatedPolicyConfiguration();
-               case REPLICATION_PRIMARY:
+               case REPLICATION_PRIMARY_LOCK_MANAGER:
                   return (T) ReplicationPrimaryPolicyConfiguration.withDefault();
-               case REPLICATION_BACKUP:
+               case REPLICATION_BACKUP_LOCK_MANAGER:
                   return (T) ReplicationBackupPolicyConfiguration.withDefault();
             }
 
@@ -3307,6 +3311,36 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public boolean isLargeMessageSync() {
       return largeMessageSync;
+   }
+
+   @Override
+   public String getViewPermissionMethodMatchPattern() {
+      return viewPermissionMethodMatchPattern;
+   }
+
+   @Override
+   public void setViewPermissionMethodMatchPattern(String permissionMatchPattern) {
+      viewPermissionMethodMatchPattern = permissionMatchPattern;
+   }
+
+   @Override
+   public boolean isManagementMessageRbac() {
+      return managementMessagesRbac;
+   }
+
+   @Override
+   public void setManagementMessageRbac(boolean val) {
+      this.managementMessagesRbac = val;
+   }
+
+   @Override
+   public String getManagementRbacPrefix() {
+      return managementRbacPrefix;
+   }
+
+   @Override
+   public void setManagementRbacPrefix(String prefix) {
+      this.managementRbacPrefix = prefix;
    }
 
    // extend property utils with ability to auto-fill and locate from collections
