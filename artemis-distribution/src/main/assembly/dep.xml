@@ -41,7 +41,7 @@
             <exclude>org.apache.activemq:artemis-boot</exclude>
 
             <!-- Handled later in web subdir for console bits -->
-            <exclude>io.hawt:hawtio-war:war</exclude>
+            <exclude>org.apache.activemq:artemis-console:war</exclude>
             <exclude>org.apache.activemq:activemq-branding:war</exclude>
             <exclude>org.apache.activemq:artemis-plugin:war</exclude>
             <exclude>com.redhat.amq-broker:redhat-branding:war</exclude>
@@ -72,7 +72,7 @@
       <!-- Management Console Dependencies -->
       <dependencySet>
          <includes>
-            <include>io.hawt:hawtio-war</include>
+            <include>org.apache.activemq:artemis-console:war</include>
          </includes>
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
