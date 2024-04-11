@@ -1055,6 +1055,21 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
    }
 
    @Override
+   public boolean isInternalQueue() {
+      if (AuditLogger.isBaseLoggingEnabled()) {
+         AuditLogger.isInternal(queue);
+      }
+      checkStarted();
+
+      clearIO();
+      try {
+         return queue.isInternalQueue();
+      } finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
    public String countMessages(final String filterStr, final String groupByProperty) throws Exception {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.countMessages(queue, filterStr, groupByProperty);
@@ -1696,7 +1711,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
          try {
             long index = 0;
             long start = (long) (page - 1) * pageSize;
-            long end = Math.min(page * pageSize, queue.getMessageCount());
+            long end = Math.min((long) page * pageSize, queue.getMessageCount());
 
             ArrayList<CompositeData> c = new ArrayList<>();
             Filter thefilter = FilterImpl.createFilter(filter);
