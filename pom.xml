@@ -76,7 +76,7 @@
 
    <properties>
       <amq.broker.version>7.12.0</amq.broker.version>
-      <artemis.prometheus.metrics.plugin.version>2.1.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
+      <artemis.prometheus.metrics.plugin.version>3.0.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <keycloak.version>18.0.13.redhat-00001</keycloak.version>
@@ -93,7 +93,7 @@
 
       <activemq-artemis-native-version>2.0.0</activemq-artemis-native-version>
       <karaf.version>4.4.6</karaf.version>
-      <artemis-console-war-version>1.0.0-SNAPSHOT</artemis-console-war-version>
+      <artemis-console-war-version>0.0.4</artemis-console-war-version>
       <pax.exam.version>4.13.5</pax.exam.version>
       <commons.config.version>2.10.1</commons.config.version>
       <commons.lang.version>3.14.0</commons.lang.version>
@@ -110,7 +110,7 @@
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.1.8</caffeine.version>
       <guava.version>33.0.0-jre</guava.version>
-      <hawtio.version>4.0.0-RC1</hawtio.version>
+      <hawtio.version>4.0.0.redhat-00072</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>11.0.18</jetty.version>
       <jgroups.version>5.3.2.Final</jgroups.version>

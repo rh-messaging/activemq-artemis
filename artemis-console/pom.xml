@@ -77,7 +77,8 @@
             **/lib/log4j*.jar,
             **/lib/jolokia-service-discovery*.jar,
             **/lib/jolokia-service-history*.jar,
-            **/lib/jolokia-service-notif*.jar
+            **/lib/jolokia-service-notif*.jar,
+            **/lib/jolokia-service-jsr160*.jar
           </packagingExcludes>
           <failOnMissingWebXml>false</failOnMissingWebXml>
           <webResources>
@@ -86,7 +87,6 @@
               <directory>src/main/webapp</directory>
               <includes>
                 <include>**/*.svg</include>
-                <include>hawtconfig.json</include>
                 <!-- include any other file types you want to filter -->
               </includes>
             </resource>
