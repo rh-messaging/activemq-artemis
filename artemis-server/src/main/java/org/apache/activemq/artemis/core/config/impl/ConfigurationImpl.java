@@ -75,7 +75,6 @@ import org.apache.activemq.artemis.core.config.FederationConfiguration;
 import org.apache.activemq.artemis.core.config.HAPolicyConfiguration;
 import org.apache.activemq.artemis.core.config.MetricsConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
-import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.config.WildcardConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPFederationBrokerPlugin;
@@ -116,6 +115,7 @@ import org.apache.activemq.artemis.json.JsonArrayBuilder;
 import org.apache.activemq.artemis.json.JsonObject;
 import org.apache.activemq.artemis.json.JsonObjectBuilder;
 import org.apache.activemq.artemis.utils.ByteUtil;
+import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.Env;
 import org.apache.activemq.artemis.utils.JsonLoader;
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
@@ -797,7 +797,17 @@ public class ConfigurationImpl implements Configuration, Serializable {
                   }
                } else {                             // Value into scalar
                   if (value instanceof String) {
-                     newValue = getConvertUtils().convert((String) value, type);
+                     String possibleDotClassValue = (String)value;
+                     if (type != String.class && possibleDotClassValue.endsWith(DOT_CLASS)) {
+                        final String clazzName = possibleDotClassValue.substring(0, possibleDotClassValue.length() - DOT_CLASS.length());
+                        try {
+                           newValue = ClassloadingUtil.getInstanceWithTypeCheck(clazzName, type, this.getClass().getClassLoader());
+                        } catch (Exception e) {
+                           throw new InvocationTargetException(e, " for dot class value: " + possibleDotClassValue + ", on: " + bean);
+                        }
+                     } else {
+                        newValue = getConvertUtils().convert(possibleDotClassValue, type);
+                     }
                   } else if (value instanceof String[]) {
                      newValue = getConvertUtils().convert(((String[]) value)[0], type);
                   } else {
@@ -837,14 +847,6 @@ public class ConfigurationImpl implements Configuration, Serializable {
       beanUtils.getConvertUtils().register(new Converter() {
          @Override
          public <T> T convert(Class<T> type, Object value) {
-            TransformerConfiguration instance = new TransformerConfiguration(value.toString());
-            return (T) instance;
-         }
-      }, TransformerConfiguration.class);
-
-      beanUtils.getConvertUtils().register(new Converter() {
-         @Override
-         public <T> T convert(Class<T> type, Object value) {
             //we only care about DATABASE type as it is the only one used
             if (StoreConfiguration.StoreType.DATABASE.toString().equals(value)) {
                return (T) new DatabaseStorageConfiguration();
@@ -880,11 +882,13 @@ public class ConfigurationImpl implements Configuration, Serializable {
          public <T> T convert(Class<T> type, Object value) {
             Map convertedValue = new HashMap();
             for (String entry : value.toString().split(",")) {
-               String[] kv = entry.split("=");
-               if (2 != kv.length) {
-                  throw new IllegalArgumentException("map value " + value + " not in k=v format");
+               if (!entry.isBlank()) {
+                  String[] kv = entry.split("=");
+                  if (2 != kv.length) {
+                     throw new IllegalArgumentException("map value " + value + " not in k=v format");
+                  }
+                  convertedValue.put(kv[0], kv[1]);
                }
-               convertedValue.put(kv[0], kv[1]);
             }
             return (T) convertedValue;
          }
@@ -2348,6 +2352,11 @@ public class ConfigurationImpl implements Configuration, Serializable {
       return brokerPlugins;
    }
 
+   // for properties type inference
+   public void addBrokerPlugin(ActiveMQServerBasePlugin type) {
+      registerBrokerPlugin(type);
+   }
+
    @Override
    public List<ActiveMQServerConnectionPlugin> getBrokerConnectionPlugins() {
       return brokerConnectionPlugins;
@@ -3580,27 +3589,27 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
          Object instance = null;
          try {
+            // we don't know the type, infer from add method add(X x) or add(String key, X x)
+            final String addPropertyName = addPropertyNameBuilder.toString();
+            final Method[] methods = hostingBean.getClass().getMethods();
+            final Method candidate = Arrays.stream(methods).filter(method -> method.getName().equals(addPropertyName) && ((method.getParameterCount() == 1) || (method.getParameterCount() == 2
+               // has a String key
+               && String.class.equals(method.getParameterTypes()[0])
+               // but not initialised from a String form (eg: uri)
+               && !String.class.equals(method.getParameterTypes()[1])))).sorted((method1, method2) -> method2.getParameterCount() - method1.getParameterCount()).findFirst().orElse(null);
+
+            if (candidate == null) {
+               throw new IllegalArgumentException("failed to locate add method for collection property " + addPropertyName);
+            }
+            Class type = candidate.getParameterTypes()[candidate.getParameterCount() - 1];
+
             if (name.indexOf(DOT_CLASS) > 0) {
                final String clazzName = name.substring(0, name.length() - DOT_CLASS.length());
-               instance = this.getClass().getClassLoader().loadClass(clazzName).getDeclaredConstructor().newInstance();
+               instance = ClassloadingUtil.getInstanceWithTypeCheck(clazzName, type, this.getClass().getClassLoader());
             } else {
-               // we don't know the type, infer from add method add(X x) or add(String key, X x)
-               final String addPropertyName = addPropertyNameBuilder.toString();
-               final Method[] methods = hostingBean.getClass().getMethods();
-               final Method candidate = Arrays.stream(methods).filter(method -> method.getName().equals(addPropertyName) && ((method.getParameterCount() == 1) || (method.getParameterCount() == 2
-                  // has a String key
-                  && String.class.equals(method.getParameterTypes()[0])
-                  // but not initialised from a String form (eg: uri)
-                  && !String.class.equals(method.getParameterTypes()[1])))).sorted((method1, method2) -> method2.getParameterCount() - method1.getParameterCount()).findFirst().orElse(null);
-
-               if (candidate == null) {
-                  throw new IllegalArgumentException("failed to locate add method for collection property " + addPropertyName);
-               }
-
-               instance = candidate.getParameterTypes()[candidate.getParameterCount() - 1].getDeclaredConstructor().newInstance();
+               instance = type.getDeclaredConstructor().newInstance();
             }
             // initialise with name
-
             try {
                beanUtilsBean.setProperty(instance, "name", name);
             } catch (Throwable ignored) {
@@ -3613,7 +3622,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
             if (logger.isDebugEnabled()) {
                logger.debug("Failed to add entry for {} to collection: {}", name, hostingBean, e);
             }
-            throw new IllegalArgumentException("failed to add entry for collection key " + name, e);
+            throw new IllegalArgumentException("failed to add entry for collection key " + name + ", cause " + e.getMessage(), e);
          }
       }
 
