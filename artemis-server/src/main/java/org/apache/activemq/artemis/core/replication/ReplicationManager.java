@@ -781,6 +781,9 @@ public final class ReplicationManager implements ActiveMQComponent {
       } finally {
          if (file.isOpen())
             file.close();
+         if (pageStore != null) {
+            sendReplicatePacket(new ReplicationPageEventMessage(pageStore, id, false, remotingConnection.isVersionUsingLongOnPageReplication()));
+         }
       }
    }
 
