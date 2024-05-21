@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collection;
+import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -76,39 +77,81 @@ import org.apache.activemq.artemis.logs.AssertionLoggerHandler;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.XmlProvider;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(Parameterized.class)
-public class FileConfigurationTest extends ConfigurationImplTest {
+public class FileConfigurationTest extends AbstractConfigurationTestBase {
 
-   @BeforeClass
-   public static void setupProperties() {
-      System.setProperty("a2Prop", "a2");
-      System.setProperty("falseProp", "false");
-      System.setProperty("trueProp", "true");
-      System.setProperty("ninetyTwoProp", "92");
-   }
+   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   @AfterClass
-   public static void clearProperties() {
-      System.clearProperty("a2Prop");
-      System.clearProperty("falseProp");
-      System.clearProperty("trueProp");
-      System.clearProperty("ninetyTwoProp");
-   }
+   private static Boolean origXxeEnabled;
+
+   protected boolean xxeEnabled;
 
    @Parameterized.Parameters(name = "xxeEnabled={0}")
    public static Collection getParameters() {
       return Arrays.asList(new Boolean[] {true, false});
    }
 
-   public FileConfigurationTest(boolean xxeEnabled) {
+   @BeforeClass
+   public static void beforeAll() {
+      if (origXxeEnabled == null) {
+         origXxeEnabled = XmlProvider.isXxeEnabled();
+      }
+
+      logger.trace("BeforeAll - origXxeEnabled={}, isXxeEnabled={}", origXxeEnabled, XmlProvider.isXxeEnabled());
+   }
+
+   @AfterClass
+   public static void afterAll() {
+      logger.trace("AfterAll - origXxeEnabled={}, isXxeEnabled={} ", origXxeEnabled, XmlProvider.isXxeEnabled());
+      if (origXxeEnabled != null) {
+         logger.trace("AfterAll - Resetting XxeEnabled={}", origXxeEnabled);
+         XmlProvider.setXxeEnabled(origXxeEnabled);
+      }
+   }
+
+   @Override
+   @Before
+   public void setUp() throws Exception {
+      logger.trace("Running setUp - xxeEnabled={}", xxeEnabled);
       XmlProvider.setXxeEnabled(xxeEnabled);
+
+      setupProperties();
+
+      super.setUp();
+   }
+
+   @After
+   public void afterEach() {
+      clearProperties();
+   }
+
+   public void setupProperties() {
+      System.setProperty("a2Prop", "a2");
+      System.setProperty("falseProp", "false");
+      System.setProperty("trueProp", "true");
+      System.setProperty("ninetyTwoProp", "92");
+   }
+
+   public void clearProperties() {
+      System.clearProperty("a2Prop");
+      System.clearProperty("falseProp");
+      System.clearProperty("trueProp");
+      System.clearProperty("ninetyTwoProp");
+   }
+
+   public FileConfigurationTest(boolean xxeEnabled) {
+      this.xxeEnabled = xxeEnabled;
    }
 
    protected String getConfigurationName() {
@@ -116,8 +159,18 @@ public class FileConfigurationTest extends ConfigurationImplTest {
    }
 
    @Override
+   protected Configuration createConfiguration() throws Exception {
+      // This may be set for the entire testsuite, but on this test we need this out
+      System.clearProperty("brokerconfig.maxDiskUsage");
+      FileConfiguration fc = new FileConfiguration();
+      FileDeploymentManager deploymentManager = new FileDeploymentManager(getConfigurationName());
+      deploymentManager.addDeployable(fc);
+      deploymentManager.readConfiguration();
+      return fc;
+   }
+
    @Test
-   public void testDefaults() {
+   public void testFileConfiguration() {
       // Check they match the values from the test file
       Assert.assertEquals("SomeNameForUseOnTheApplicationServer", conf.getName());
       Assert.assertEquals(false, conf.isPersistenceEnabled());
@@ -927,15 +980,24 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       assertEquals("value3", metricPluginOptions.get("key3"));
    }
 
-   @Override
-   protected Configuration createConfiguration() throws Exception {
-      // This may be set for the entire testsuite, but on this test we need this out
-      System.clearProperty("brokerconfig.maxDiskUsage");
-      FileConfiguration fc = new FileConfiguration();
-      FileDeploymentManager deploymentManager = new FileDeploymentManager(getConfigurationName());
-      deploymentManager.addDeployable(fc);
-      deploymentManager.readConfiguration();
-      return fc;
+   @Test
+   public void testSetGetAttributes() throws Exception {
+      doSetGetAttributesTestImpl(conf);
+   }
+
+   @Test
+   public void testGetSetInterceptors() {
+      doGetSetInterceptorsTestImpl(conf);
+   }
+
+   @Test
+   public void testSerialize() throws Exception {
+      doSerializeTestImpl(conf);
+   }
+
+   @Test
+   public void testSetConnectionRoutersPolicyConfiguration() throws Throwable {
+      doSetConnectionRoutersPolicyConfigurationTestImpl(new FileConfiguration());
    }
 
    private Configuration createConfiguration(String filename) throws Exception {
