@@ -28,6 +28,7 @@ import javax.jms.TextMessage;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -208,15 +209,23 @@ public class LargeMessageRetentionTest extends SoakTestBase {
 
          serverControl.replay(queueName, queueName, "producerI=0 AND messageI>=0 AND messageI<10");
 
+         HashSet<Integer> receivedMessages = new HashSet<>();
+
          for (int i = 0; i < 10; i++) {
             TextMessage message = (TextMessage) consumer.receive(300_000);
             Assert.assertNotNull(message);
             logger.info("Received replay message {}", i);
             Assert.assertEquals(0, message.getIntProperty("producerI"));
-            Assert.assertEquals(i, message.getIntProperty("messageI"));
+            receivedMessages.add(message.getIntProperty("messageI"));
             Assert.assertEquals(bufferStr, message.getText());
          }
          Assert.assertNull(consumer.receiveNoWait());
+
+         Assert.assertEquals(10, receivedMessages.size());
+         for (int i = 0; i < 10; i++) {
+            Assert.assertTrue(receivedMessages.contains(i));
+         }
+
       }
    }
 
