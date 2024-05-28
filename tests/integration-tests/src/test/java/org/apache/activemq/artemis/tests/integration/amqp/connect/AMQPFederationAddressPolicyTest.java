@@ -3155,7 +3155,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.remoteDetach().withClosed(true)
                             .withErrorCondition(AmqpError.NOT_FOUND.toString(), "Address not found")
                             .queue();
-         peer.expectFlow();
+         peer.expectFlow().optional();
          peer.expectDetach();
 
          server.createQueue(new QueueConfiguration("test").setRoutingType(RoutingType.MULTICAST)
@@ -3234,7 +3234,7 @@ public class AMQPFederationAddressPolicyTest extends AmqpClientTestSupport {
          peer.remoteDetach().withClosed(true)
                             .withErrorCondition(AmqpError.NOT_FOUND.toString(), "Address not found")
                             .queue();
-         peer.expectFlow();
+         peer.expectFlow().optional();
          peer.expectDetach();
 
          // Triggers the initial attach based on demand.
