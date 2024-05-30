@@ -2294,13 +2294,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                while (iter.hasNext()) {
                   MessageReference ref = iter.next();
 
-                  if (ref.isPaged() && queueDestroyed) {
-                     // this means the queue is being removed
-                     // hence paged references are just going away through
-                     // page cleanup
-                     continue;
-                  }
-
                   if (filter1 == null || filter1.match(ref.getMessage())) {
                      if (messageAction.actMessage(tx, ref)) {
                         iter.remove();
@@ -2337,7 +2330,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             }
          }
 
-         if (pageIterator != null && !queueDestroyed) {
+         if (pageIterator != null) {
             while (pageIterator.hasNext()) {
                PagedReference reference = pageIterator.next();
                pageIterator.remove();
@@ -2362,7 +2355,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
          if (txCount > 0) {
             tx.commit();
-            tx = null;
          }
 
          if (filter != null && !queueDestroyed && pageSubscription != null) {
@@ -3374,6 +3366,25 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          return queueMemorySize.getSize() < pageSubscription.getPagingStore().getMaxSize() &&
             intermediateMessageReferences.size() + messageReferences.size() < MAX_DEPAGE_NUM;
       } else {
+
+         /*
+           queueMemorySize.getSize() = How many bytes the messages in memory (read from paging or journal, ready to delivery) are occupying
+           queueMemorySize.getElements() = How many elements are in memory ready to be delivered.
+           deliveringMetrics.getMessageCount() = How many messages are in the client's buffer for the consumers.
+           deliveringMetrics.getPersistentSize() = How many bytes are in the client's buffer for the consumers.
+
+           At all times the four rules have to be satisfied, and they can be switched off.
+
+           Notice in case all of these are -1, we will use the previous semantic on fetching data from paging on the other part of the 'if' in this method.
+
+           Also notice in case needsDepageResult = false, we will check for the maxReadBytes and then print a warning if there are more delivering than we can handle.
+
+           maxRead(Bytes or messages) will limit reading messages by the number of delivering + available messages (bytes or message-count)
+           prefetch (bytes or messages) will limit reading messages by the number of available messages, without using the delivering
+
+           prefetch(bytes and messages) should be <= max-read(bytes and messages) at all times.
+          */
+
          boolean needsDepageResult =
             (maxReadBytes <= 0 || (queueMemorySize.getSize() + deliveringMetrics.getPersistentSize()) < maxReadBytes) &&
             (prefetchBytes <= 0 || (queueMemorySize.getSize() < prefetchBytes)) &&
