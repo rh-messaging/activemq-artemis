@@ -31,7 +31,9 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.QueueQueryResult;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
+import org.apache.activemq.artemis.tests.util.RandomUtil;
 import org.apache.activemq.artemis.utils.CompositeAddress;
+import org.apache.activemq.artemis.utils.Wait;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -276,5 +278,36 @@ public class FullQualifiedQueueTest extends ActiveMQTestBase {
       } catch (ActiveMQNonExistentQueueException e) {
          //expected.
       }
+   }
+
+   @Test
+   public void testFilteredQueue() throws Exception {
+      testFilteredQueue(true);
+   }
+
+   @Test
+   public void testFilteredQueueNegative() throws Exception {
+      testFilteredQueue(false);
+   }
+
+   private void testFilteredQueue(boolean useProperty) throws Exception {
+      final String key = "myKey";
+      final String value = RandomUtil.randomString();
+      server.createQueue(new QueueConfiguration(anycastQ1).setAddress(anycastAddress).setRoutingType(RoutingType.ANYCAST).setFilterString(key + "='" + value + "'"));
+
+      ClientSessionFactory cf = createSessionFactory(locator);
+      ClientSession session = cf.createSession();
+      session.start();
+
+      ClientProducer producer = session.createProducer(anycastAddress);
+      ClientMessage m = session.createMessage(true);
+      if (useProperty) {
+         m.putStringProperty(key, value);
+      }
+      producer.send(m);
+
+
+      Wait.assertEquals(1L, () -> server.getAddressInfo(anycastAddress).getRoutedMessageCount(), 2000, 100);
+      Wait.assertEquals(useProperty ? 1L : 0L, () -> server.locateQueue(anycastQ1).getMessageCount(), 2000, 100);
    }
 }
