@@ -80,7 +80,7 @@ public class StompWithLargeMessagesTest extends StompTestBase {
 
       try {
          String address = "testLargeMessageAddress";
-         server.createQueue(new QueueConfiguration(address).setRoutingType(RoutingType.ANYCAST));
+         server.createQueue(QueueConfiguration.of(address).setRoutingType(RoutingType.ANYCAST));
 
          // STOMP default is UTF-8 == 1 byte per char.
          int largeMessageStringSize = 10 * 1024 * 1024; // 10MB
@@ -391,7 +391,7 @@ public class StompWithLargeMessagesTest extends StompTestBase {
 //         this.sendJmsMessage(msg);
 //      }
 //
-//      IntegrationTestLogger.LOGGER.info("Message count for {}: {}", getQueueName(), server.getActiveMQServer().locateQueue(SimpleString.toSimpleString(getQueueName())).getMessageCount());
+//      IntegrationTestLogger.LOGGER.info("Message count for {}: {}", getQueueName(), server.getActiveMQServer().locateQueue(SimpleString.of(getQueueName())).getMessageCount());
 //
 //      StompClientConnection connV12 = StompClientConnectionFactory.createClientConnection("1.2", hostname, port);
 //      connV12.connect(defUser, defPass);

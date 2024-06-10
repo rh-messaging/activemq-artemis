@@ -54,7 +54,7 @@ public class QueueQueryTest extends ActiveMQTestBase {
    public void testQueueQueryDefaultsOnStaticQueue() throws Exception {
       SimpleString addressName = SimpleString.of(UUID.randomUUID().toString());
       SimpleString queueName = SimpleString.of(UUID.randomUUID().toString());
-      server.createQueue(new QueueConfiguration(queueName).setAddress(addressName));
+      server.createQueue(QueueConfiguration.of(queueName).setAddress(addressName));
       QueueQueryResult queueQueryResult = server.queueQuery(queueName);
       assertTrue(queueQueryResult.isExists());
       assertEquals(RoutingType.MULTICAST, queueQueryResult.getRoutingType());
@@ -79,13 +79,13 @@ public class QueueQueryTest extends ActiveMQTestBase {
 
    @Test
    public void testQueueQueryOnStaticQueueWithFQQN() throws Exception {
-//      SimpleString addressName = SimpleString.toSimpleString(UUID.randomUUID().toString());
-//      SimpleString queueName = SimpleString.toSimpleString(UUID.randomUUID().toString());
+//      SimpleString addressName = SimpleString.of(UUID.randomUUID().toString());
+//      SimpleString queueName = SimpleString.of(UUID.randomUUID().toString());
       SimpleString addressName = SimpleString.of("myAddress");
       SimpleString queueName = SimpleString.of("myQueue");
       SimpleString fqqn = addressName.concat("::").concat(queueName);
 //      server.createQueue(fqqn, RoutingType.MULTICAST, fqqn, null, true, false);
-      server.createQueue(new QueueConfiguration(fqqn));
+      server.createQueue(QueueConfiguration.of(fqqn));
       QueueQueryResult queueQueryResult = server.queueQuery(fqqn);
       assertEquals(queueName, queueQueryResult.getName());
       assertEquals(addressName, queueQueryResult.getAddress());
@@ -111,7 +111,7 @@ public class QueueQueryTest extends ActiveMQTestBase {
          .setDefaultLastValueKey(lastValueKey)
          .setDefaultExclusiveQueue(true)
          .setDefaultNonDestructive(true));
-      server.createQueue(new QueueConfiguration(queueName).setAddress(addressName).setRoutingType(RoutingType.ANYCAST).setFilterString(filter).setDurable(false).setTemporary(true));
+      server.createQueue(QueueConfiguration.of(queueName).setAddress(addressName).setRoutingType(RoutingType.ANYCAST).setFilterString(filter).setDurable(false).setTemporary(true));
       QueueQueryResult queueQueryResult = server.queueQuery(queueName);
       assertTrue(queueQueryResult.isExists());
       assertEquals(RoutingType.ANYCAST, queueQueryResult.getRoutingType());
