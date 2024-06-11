@@ -119,6 +119,11 @@
          </dependency>
          <dependency>
             <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-jakarta-openwire-protocol</artifactId>
+            <version>${project.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-jakarta-ra</artifactId>
             <version>${project.version}</version>
          </dependency>
@@ -227,12 +232,6 @@
             <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-website</artifactId>
             <version>${project.version}</version>
-         </dependency>
-         <dependency>
-            <groupId>com.redhat.amq-broker</groupId>
-            <artifactId>redhat-branding</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
          </dependency>
       </dependencies>
    </dependencyManagement>
