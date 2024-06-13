@@ -548,4 +548,8 @@ public interface ActiveMQMessageBundle {
 
    @Message(id = 229252, value = "Invalid HAPolicy property: {}")
    RuntimeException unsupportedHAPolicyPropertyType(String invalidHAPolicy);
+
+   @Message(id = 229254, value = "Already replicating, started={}")
+   ActiveMQIllegalStateException alreadyReplicating(boolean status);
+
 }
