@@ -127,6 +127,11 @@
          <artifactId>artemis-plugin</artifactId>
          <type>war</type>
       </dependency>
+      <dependency>
+         <groupId>com.redhat.amq-broker</groupId>
+         <artifactId>redhat-branding</artifactId>
+         <type>war</type>
+      </dependency>
       <!-- quorum -->
       <dependency>
          <groupId>org.apache.activemq</groupId>
