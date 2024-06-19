@@ -274,7 +274,7 @@
       <testFailureIgnore>true</testFailureIgnore>
       <fast-tests>false</fast-tests>
 
-      <project.build.outputTimestamp>2024-05-13T13:47:10Z</project.build.outputTimestamp>
+      <project.build.outputTimestamp>2024-06-19T17:15:11Z</project.build.outputTimestamp>
    </properties>
 
    <scm>
