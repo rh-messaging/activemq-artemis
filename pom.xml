@@ -81,6 +81,9 @@
       <maven.compiler.target>11</maven.compiler.target>
       <keycloak.version>18.0.11.redhat-00001</keycloak.version>
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
+      <netty.transport.native.epoll.aarch.version>4.1.108.Final-redhat-00001</netty.transport.native.epoll.aarch.version>
+      <netty.transport.native.epoll.ppcle.version>4.1.108.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
+      <netty.transport.native.epoll.s390x.version>4.1.108.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <!-- disable keycloak community profile -->
       <product>true</product>
 
@@ -260,7 +263,7 @@
       <bc-java-version>1.78.1</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
-      <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
+      <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
 
       <!-- Ignore failed tests by default because there are "known" failures in the full test-suite.
            This will be set to false for the "fast-tests" profile as none of those tests should fail. -->
