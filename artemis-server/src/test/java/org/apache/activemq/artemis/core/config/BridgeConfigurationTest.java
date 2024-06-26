@@ -68,6 +68,7 @@ public class BridgeConfigurationTest {
       Assert.assertEquals(12, bridgeConfiguration.getCallTimeout());
       Assert.assertEquals(ComponentConfigurationRoutingType.MULTICAST, bridgeConfiguration.getRoutingType());
       Assert.assertEquals(1, bridgeConfiguration.getConcurrency());
+      Assert.assertEquals(321, bridgeConfiguration.getPendingAckTimeout());
    }
 
    @Test
@@ -107,6 +108,7 @@ public class BridgeConfigurationTest {
       Assert.assertEquals("102400", jsonObject.get(BridgeConfiguration.MIN_LARGE_MESSAGE_SIZE).toString());
       Assert.assertEquals("30000", jsonObject.get(BridgeConfiguration.CALL_TIMEOUT).toString());
       Assert.assertEquals("1", jsonObject.get(BridgeConfiguration.CONCURRENCY).toString());
+      Assert.assertEquals("60000", jsonObject.get(BridgeConfiguration.PENDING_ACK_TIMEOUT).toString());
 
       // also should contain default non-null values of string fields
       Assert.assertEquals("\"ACTIVEMQ.CLUSTER.ADMIN.USER\"", jsonObject.get(BridgeConfiguration.USER).toString());
@@ -194,6 +196,7 @@ public class BridgeConfigurationTest {
       objectBuilder.add(BridgeConfiguration.ROUTING_TYPE, "MULTICAST");
       objectBuilder.add(BridgeConfiguration.CONCURRENCY, 1);
       objectBuilder.add(BridgeConfiguration.CONFIGURATION_MANAGED, true);
+      objectBuilder.add(BridgeConfiguration.PENDING_ACK_TIMEOUT, 321);
 
       return objectBuilder.build();
    }

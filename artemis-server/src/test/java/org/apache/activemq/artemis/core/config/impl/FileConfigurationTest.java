@@ -368,7 +368,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals("org.foo.BridgeTransformer3", bc.getTransformerConfiguration().getClassName());
             Assert.assertEquals("bridgeTransformerValue1", bc.getTransformerConfiguration().getProperties().get("bridgeTransformerKey1"));
             Assert.assertEquals("bridgeTransformerValue2", bc.getTransformerConfiguration().getProperties().get("bridgeTransformerKey2"));
-
+            Assert.assertEquals(123456, bc.getPendingAckTimeout());
          }
       }
 
