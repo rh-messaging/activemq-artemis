@@ -165,13 +165,13 @@
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.11</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
-      <version.micrometer>1.12.2</version.micrometer>
-      <hamcrest.version>2.1</hamcrest.version>
+      <version.micrometer>1.13.1</version.micrometer>
+      <hamcrest.version>2.2</hamcrest.version>
       <junit.version>4.13.2</junit.version>
       <junit5.version>5.10.2</junit5.version>
-      <version.jaxb.runtime>2.3.3</version.jaxb.runtime>
+      <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
-      <postgresql.version>42.7.2</postgresql.version>
+      <postgresql.version>42.7.3</postgresql.version>
       <testcontainers.version>1.19.8</testcontainers.version>
       <selenium.version>4.22.0</selenium.version>
       <exec-maven-plugin.version>3.3.0</exec-maven-plugin.version>
@@ -186,7 +186,7 @@
 
       <!-- used on tests -->
       <groovy.version>4.0.21</groovy.version>
-      <hadoop.minikdc.version>3.3.1</hadoop.minikdc.version>
+      <hadoop.minikdc.version>3.4.0</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
       <owasp.version>9.2.0</owasp.version>
@@ -866,7 +866,7 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-pmd-plugin</artifactId>
-               <version>3.21.2</version>
+               <version>3.23.0</version>
                <configuration>
                   <linkXRef>true</linkXRef>
                   <minimumTokens>100</minimumTokens>
