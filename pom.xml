@@ -104,7 +104,7 @@
       <commons.codec.version>1.17.0</commons.codec.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.1.8</caffeine.version>
-      <guava.version>33.0.0-jre</guava.version>
+      <guava.version>33.2.1-jre</guava.version>
       <hawtio.version>2.17.7</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.21</jetty.version>
@@ -119,15 +119,11 @@
       <mockito.version>5.12.0</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.111.Final</netty.version>
-      <hdrhistogram.version>2.1.12</hdrhistogram.version>
+      <hdrhistogram.version>2.2.2</hdrhistogram.version>
       <curator.version>5.7.0</curator.version>
       <zookeeper.version>3.9.2</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>2.4.0</pem-keystore.version>
-
-      <!-- This overrides the Apache parent POM. Once a new Apache parent is released with the latest version then we
-           can get rid of this. -->
-      <version.maven-plugin-tools>3.11.0</version.maven-plugin-tools>
 
       <!-- docs -->
       <asciidoctor.maven.plugin.version>3.0.0</asciidoctor.maven.plugin.version>
@@ -163,12 +159,12 @@
       <owb.version>2.0.27</owb.version>
       <arquillian.version>1.8.0.Final</arquillian.version>
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
-      <version.org.jacoco>0.8.11</version.org.jacoco>
+      <version.org.jacoco>0.8.12</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
       <version.micrometer>1.13.1</version.micrometer>
       <hamcrest.version>2.2</hamcrest.version>
       <junit.version>4.13.2</junit.version>
-      <junit5.version>5.10.2</junit5.version>
+      <junit5.version>5.10.3</junit5.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.3</postgresql.version>
@@ -189,7 +185,7 @@
       <hadoop.minikdc.version>3.4.0</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>9.2.0</owasp.version>
+      <owasp.version>10.0.0</owasp.version>
       <spring.version>5.3.37</spring.version>
 
       <jackson.version>2.17.1</jackson.version>
@@ -256,7 +252,7 @@
       <proton.trace.frames>false</proton.trace.frames>
 
       <directory-version>2.0.0.AM25</directory-version>
-      <directory-jdbm2-version>2.0.0-M1</directory-jdbm2-version>
+      <directory-jdbm2-version>2.0.0-M3</directory-jdbm2-version>
       <bc-java-version>1.78.1</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
@@ -875,7 +871,7 @@
             <plugin>
                <groupId>org.codehaus.mojo</groupId>
                <artifactId>build-helper-maven-plugin</artifactId>
-               <version>1.8</version>
+               <version>3.6.0</version>
             </plugin>
             <plugin>
                <groupId>org.codehaus.mojo</groupId>

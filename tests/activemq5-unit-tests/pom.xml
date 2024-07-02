@@ -98,12 +98,6 @@
       </dependency>
 
       <dependency>
-        <groupId>org.osgi</groupId>
-        <artifactId>org.osgi.core</artifactId>
-        <version>6.0.0</version>
-      </dependency>
-
-      <dependency>
          <groupId>org.apache.derby</groupId>
          <artifactId>derby</artifactId>
          <scope>test</scope>
@@ -222,19 +216,6 @@
                   </goals>
                </execution>
             </executions>
-         </plugin>
-
-         <plugin>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>maven-bundle-plugin</artifactId>
-            <version>5.1.9</version>
-            <inherited>true</inherited>
-            <extensions>true</extensions>
-            <configuration>
-               <instructions>
-                  <Bundle-Activator>org.apache.activemq.util.osgi.Activator</Bundle-Activator>
-               </instructions>
-            </configuration>
          </plugin>
 
          <plugin>
