@@ -81,25 +81,11 @@
             **/lib/log4j*.jar
           </packagingExcludes>
           <failOnMissingWebXml>false</failOnMissingWebXml>
-          <webResources>
-            <resource>
-              <filtering>true</filtering>
-              <directory>src/main/webapp</directory>
-              <includes>
-                <include>**/*.svg</include>
-                <!-- include any other file types you want to filter -->
-              </includes>
-            </resource>
-          </webResources>
           <overlays>
             <overlay>
               <groupId>io.hawt</groupId>
               <artifactId>hawtio-war</artifactId>
               <excludes>
-                <exclude>hawtconfig.json</exclude>
-                <exclude>img/icons/**/*</exclude>
-                <exclude>img/**/*</exclude>
-                <exclude>fonts/glyphicons**</exclude>
                 <exclude>WEB-INF/lib/guava*.jar</exclude>
                 <exclude>WEB-INF/lib/checker-qual-*.jar</exclude>
                 <exclude>WEB-INF/lib/error_prone_annotations-*.jar</exclude>
