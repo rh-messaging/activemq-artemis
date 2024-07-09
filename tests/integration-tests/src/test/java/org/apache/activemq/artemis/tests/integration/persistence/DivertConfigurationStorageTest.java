@@ -16,27 +16,20 @@
  */
 package org.apache.activemq.artemis.tests.integration.persistence;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedDivertConfiguration;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.Map;
 
 public class DivertConfigurationStorageTest  extends StorageManagerTestBase {
 
    public DivertConfigurationStorageTest(StoreConfiguration.StoreType storeType) {
       super(storeType);
-   }
-
-   @Override
-   @Before
-   public void setUp() throws Exception {
-      super.setUp();
    }
 
    @Test
@@ -57,9 +50,7 @@ public class DivertConfigurationStorageTest  extends StorageManagerTestBase {
 
       journal.storeDivertConfiguration(new PersistedDivertConfiguration(configuration));
 
-      journal.stop();
-
-      journal.start();
+      rebootStorage();
 
       List<PersistedDivertConfiguration> divertConfigurations = journal.recoverDivertConfigurations();
 
@@ -78,10 +69,6 @@ public class DivertConfigurationStorageTest  extends StorageManagerTestBase {
       Assert.assertEquals("prop1", properties.get("key1"));
       Assert.assertEquals("prop2", properties.get("key2"));
       Assert.assertEquals("prop3", properties.get("key3"));
-      journal.stop();
-
-      journal = null;
-
    }
 
    @Test
@@ -97,9 +84,7 @@ public class DivertConfigurationStorageTest  extends StorageManagerTestBase {
 
       journal.storeDivertConfiguration(new PersistedDivertConfiguration(configuration));
 
-      journal.stop();
-
-      journal.start();
+      rebootStorage();
 
       List<PersistedDivertConfiguration> divertConfigurations = journal.recoverDivertConfigurations();
 
@@ -112,9 +97,5 @@ public class DivertConfigurationStorageTest  extends StorageManagerTestBase {
       Assert.assertEquals(configuration.getForwardingAddress(), persistedDivertConfiguration.getDivertConfiguration().getForwardingAddress());
       Assert.assertEquals(configuration.getRoutingName(), persistedDivertConfiguration.getDivertConfiguration().getRoutingName());
       Assert.assertNull(persistedDivertConfiguration.getDivertConfiguration().getTransformerConfiguration());
-      journal.stop();
-
-      journal = null;
-
    }
 }
