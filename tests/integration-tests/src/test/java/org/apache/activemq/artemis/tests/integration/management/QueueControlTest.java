@@ -4307,6 +4307,21 @@ public class QueueControlTest extends ManagementTestBase {
    }
 
    @Test
+   public void testSendMessageToQueueWithFilter() throws Exception {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString queue = RandomUtil.randomSimpleString();
+
+      session.createQueue(new QueueConfiguration(queue).setAddress(address).setDurable(durable).setFilterString("foo = 'foo'"));
+
+      QueueControl queueControl = createManagementControl(address, queue);
+
+      queueControl.sendMessage(new HashMap<>(), Message.BYTES_TYPE, Base64.encodeBytes("theBody".getBytes()), true, "myUser", "myPassword");
+      queueControl.sendMessage(Map.of("foo", "foo"), Message.BYTES_TYPE, Base64.encodeBytes("theBody".getBytes()), true, "myUser", "myPassword");
+
+      Wait.assertEquals(1, () -> getMessageCount(queueControl));
+   }
+
+   @Test
    public void testSendMessageWithProperties() throws Exception {
       SimpleString address = RandomUtil.randomSimpleString();
       SimpleString queue = RandomUtil.randomSimpleString();
