@@ -418,7 +418,7 @@ public class TransactionImplTest extends ServerTestBase {
       }
 
       @Override
-      public void pageWrite(PagedMessage message, long pageNumber) {
+      public void pageWrite(SimpleString address, PagedMessage message, long pageNumber) {
 
       }
 
