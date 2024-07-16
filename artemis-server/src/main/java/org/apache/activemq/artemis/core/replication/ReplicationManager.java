@@ -301,9 +301,9 @@ public final class ReplicationManager implements ActiveMQComponent {
       }
    }
 
-   public void pageWrite(final PagedMessage message, final long pageNumber) {
+   public void pageWrite(final SimpleString address, final PagedMessage message, final long pageNumber) {
       if (enabled) {
-         sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber, remotingConnection.isVersionUsingLongOnPageReplication()));
+         sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber, remotingConnection.isVersionUsingLongOnPageReplication(), address));
       }
    }
 

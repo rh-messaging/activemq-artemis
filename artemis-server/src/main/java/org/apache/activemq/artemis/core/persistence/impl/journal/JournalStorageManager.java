@@ -399,7 +399,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
    }
 
    @Override
-   public void pageWrite(final PagedMessage message, final long pageNumber) {
+   public void pageWrite(final SimpleString address, final PagedMessage message, final long pageNumber) {
       if (messageJournal.isHistory()) {
          try (ArtemisCloseable lock = closeableReadLock()) {
 
@@ -426,7 +426,7 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
 
          try (ArtemisCloseable lock = closeableReadLock()) {
             if (isReplicated())
-               replicator.pageWrite(message, pageNumber);
+               replicator.pageWrite(address, message, pageNumber);
          }
       }
    }
@@ -712,8 +712,11 @@ public class JournalStorageManager extends AbstractJournalStorageManager {
       Map<SimpleString, Collection<Integer>> info = new HashMap<>();
       for (SimpleString storeName : pagingManager.getStoreNames()) {
          PagingStore store = pagingManager.getPageStore(storeName);
-         info.put(storeName, store.getCurrentIds());
-         store.forceAnotherPage();
+         Collection<Integer> ids = store.getCurrentIds();
+         info.put(storeName, ids);
+         if (!ids.isEmpty()) {
+            store.forceAnotherPage();
+         }
       }
       return info;
    }
