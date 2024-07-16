@@ -79,18 +79,9 @@
    <url>https://activemq.apache.org/components/artemis/</url>
 
    <properties>
-      <amq.broker.version>8.0.0</amq.broker.version>
-      <artemis.prometheus.metrics.plugin.version>2.2.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <maven.compiler.release>11</maven.compiler.release>
-      <keycloak.version>18.0.11.redhat-00001</keycloak.version>
-      <jboss.logging.version>3.5.0.Final</jboss.logging.version>
-      <netty.transport.native.epoll.aarch.version>4.1.111.Final-redhat-00002</netty.transport.native.epoll.aarch.version>
-      <netty.transport.native.epoll.ppcle.version>4.1.111.Final-redhat-00002</netty.transport.native.epoll.ppcle.version>
-      <netty.transport.native.epoll.s390x.version>4.1.111.Final-redhat-00002</netty.transport.native.epoll.s390x.version>
-      <!-- disable keycloak community profile -->
-      <product>true</product>
 
       <retryTests>false</retryTests>
       <logging.config>log4j2-tests-config.properties</logging.config>
@@ -101,7 +92,7 @@
       <pax.exam.version>4.13.5</pax.exam.version>
       <commons.config.version>2.11.0</commons.config.version>
       <commons.lang.version>3.14.0</commons.lang.version>
-      <activemq5-version>5.11.0.redhat-630517</activemq5-version>
+      <activemq5-version>5.18.4</activemq5-version>
       <apache.derby.version>10.15.2.0</apache.derby.version>
       <commons.beanutils.version>1.9.4</commons.beanutils.version>
       <commons.logging.version>1.3.3</commons.logging.version>
@@ -114,7 +105,7 @@
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.1.8</caffeine.version>
       <guava.version>33.2.1-jre</guava.version>
-      <hawtio.version>2.0.0.fuse-7_13_0-00012-redhat-00001</hawtio.version>
+      <hawtio.version>2.17.7</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.22</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
@@ -185,7 +176,7 @@
 
       <!-- for JakartaEE -->
       <version.batavia>1.0.15.Final</version.batavia>
-      <jakarta.jms-api.version.alt>3.1.0.redhat-00003</jakarta.jms-api.version.alt>
+      <jakarta.jms-api.version.alt>3.1.0</jakarta.jms-api.version.alt>
       <jakarta.transaction-api.version.alt>2.0.1</jakarta.transaction-api.version.alt>
       <jakarta.resource-api.version.alt>2.1.0</jakarta.resource-api.version.alt>
 
@@ -265,7 +256,7 @@
       <bc-java-version>1.78.1</bc-java-version>
 
       <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
-      <netty-transport-native-kqueue-classifier></netty-transport-native-kqueue-classifier>
+      <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
 
       <fast-tests>false</fast-tests>
 
