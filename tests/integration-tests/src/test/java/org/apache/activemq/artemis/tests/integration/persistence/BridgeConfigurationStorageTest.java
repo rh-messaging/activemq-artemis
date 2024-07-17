@@ -25,19 +25,12 @@ import org.apache.activemq.artemis.core.config.StoreConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.persistence.config.PersistedBridgeConfiguration;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public class BridgeConfigurationStorageTest extends StorageManagerTestBase {
 
    public BridgeConfigurationStorageTest(StoreConfiguration.StoreType storeType) {
       super(storeType);
-   }
-
-   @Override
-   @Before
-   public void setUp() throws Exception {
-      super.setUp();
    }
 
    @Test
