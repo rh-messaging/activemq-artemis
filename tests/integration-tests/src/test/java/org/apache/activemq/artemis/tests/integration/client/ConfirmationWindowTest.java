@@ -35,12 +35,12 @@ import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.fail;
 
 public class ConfirmationWindowTest extends ActiveMQTestBase {
 
@@ -48,7 +48,7 @@ public class ConfirmationWindowTest extends ActiveMQTestBase {
    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Override
-   @BeforeEach
+   @Before
    public void setUp() throws Exception {
       super.setUp();
       server = createServer(false, createDefaultNettyConfig());
@@ -67,7 +67,7 @@ public class ConfirmationWindowTest extends ActiveMQTestBase {
       final int maxChunkSize = 99;
       String queueName = RandomUtil.randomString();
 
-      server.createQueue(QueueConfiguration.of(queueName).setAddress(queueName).setRoutingType(RoutingType.ANYCAST));
+      server.createQueue(new QueueConfiguration(queueName).setAddress(queueName).setRoutingType(RoutingType.ANYCAST));
 
       /* artificially prevent the broker from responding to the last commit from the client; this will simulate the
        * original error condition
