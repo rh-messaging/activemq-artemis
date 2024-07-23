@@ -25,8 +25,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.protonj2.test.driver.ProtonTestClient;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,11 +36,10 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   @Test
-   @Timeout(30)
+   @Test(timeout = 30_000L)
    public void testBrokerHandlesOutOfOrderDeliveryIdInTransfer() throws Exception {
       server.start();
-      server.createQueue(QueueConfiguration.of("test").setRoutingType(RoutingType.ANYCAST)
+      server.createQueue(new QueueConfiguration("test").setRoutingType(RoutingType.ANYCAST)
                                                       .setAddress("test")
                                                       .setAutoCreated(false));
 
@@ -77,8 +75,8 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
 
          receivingPeer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-         Wait.assertTrue(() -> server.queueQuery(SimpleString.of("test")).isExists(), 5000, 100);
-         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.of("test")).getConsumerCount(), 5000, 100);
+         Wait.assertTrue(() -> server.queueQuery(SimpleString.toSimpleString("test")).isExists(), 5000, 100);
+         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.toSimpleString("test")).getConsumerCount(), 5000, 100);
 
          // Broker response
          receivingPeer.expectTransfer();
@@ -95,7 +93,7 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
 
          logger.info("Sent transfer with delivery ID:100, now sending incorrect delivery ID:99");
 
-         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.of("test")).getDeliveringCount(), 5000, 100);
+         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.toSimpleString("test")).getDeliveringCount(), 5000, 100);
 
          // Next message with incorrect delivery ID (should be 101 but send as 99)
          receivingPeer.remoteTransfer().withDeliveryId(99)
@@ -103,18 +101,17 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
                                        .withMessageAnnotations().withAnnotation("x-opt-jms-dest", 0).also()
                                        .now();
 
-         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.of("test")).getConsumerCount(), 5000, 100);
-         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.of("test")).getDeliveringCount(), 5000, 100);
+         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.toSimpleString("test")).getConsumerCount(), 5000, 100);
+         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.toSimpleString("test")).getDeliveringCount(), 5000, 100);
 
          receivingPeer.waitForScriptToComplete();
       }
    }
 
-   @Test
-   @Timeout(30)
+   @Test(timeout = 30_000L)
    public void testBrokerHandlesNewTransferSentBeforeLastTransferCompleted() throws Exception {
       server.start();
-      server.createQueue(QueueConfiguration.of("test").setRoutingType(RoutingType.ANYCAST)
+      server.createQueue(new QueueConfiguration("test").setRoutingType(RoutingType.ANYCAST)
                                                       .setAddress("test")
                                                       .setAutoCreated(false));
 
@@ -150,8 +147,8 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
 
          receivingPeer.waitForScriptToComplete(5, TimeUnit.SECONDS);
 
-         Wait.assertTrue(() -> server.queueQuery(SimpleString.of("test")).isExists(), 5000, 100);
-         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.of("test")).getConsumerCount(), 5000, 100);
+         Wait.assertTrue(() -> server.queueQuery(SimpleString.toSimpleString("test")).isExists(), 5000, 100);
+         Wait.assertEquals(1, () -> server.locateQueue(SimpleString.toSimpleString("test")).getConsumerCount(), 5000, 100);
 
          // Initial message with correct delivery ID indicating more bytes to come
          receivingPeer.remoteTransfer().withDeliveryId(100)
@@ -171,8 +168,8 @@ public class AMQPProtocolErrorHandlingTest extends AmqpClientTestSupport {
                                        .withMessageAnnotations().withAnnotation("x-opt-jms-dest", 0).also()
                                        .now();
 
-         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.of("test")).getConsumerCount(), 5000, 100);
-         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.of("test")).getDeliveringCount(), 5000, 100);
+         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.toSimpleString("test")).getConsumerCount(), 5000, 100);
+         Wait.assertEquals(0, () -> server.locateQueue(SimpleString.toSimpleString("test")).getDeliveringCount(), 5000, 100);
 
          receivingPeer.waitForScriptToComplete();
       }
