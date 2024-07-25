@@ -233,6 +233,12 @@
             <artifactId>artemis-website</artifactId>
             <version>${project.version}</version>
          </dependency>
+         <dependency>
+            <groupId>com.redhat.amq-broker</groupId>
+            <artifactId>redhat-branding</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+         </dependency>
       </dependencies>
    </dependencyManagement>
 </project>
