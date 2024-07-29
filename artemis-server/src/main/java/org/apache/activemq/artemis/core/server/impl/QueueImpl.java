@@ -2271,7 +2271,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                                       QueueIterateAction messageAction) throws Exception {
       int count = 0;
       int txCount = 0;
-      Integer expectedHits = messageAction.expectedHits();
       // This is to avoid scheduling depaging while iterQueue is happening
       // this should minimize the use of the paged executor.
       depagePending = true;
@@ -2287,7 +2286,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
             try (LinkedListIterator<MessageReference> iter = iterator()) {
 
-               while (iter.hasNext()) {
+               while (iter.hasNext() && !messageAction.expectedHitsReached(count)) {
                   MessageReference ref = iter.next();
 
                   if (ref.isPaged() && queueDestroyed) {
@@ -2304,9 +2303,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                      }
                      txCount++;
                      count++;
-                     if (expectedHits != null && count >= expectedHits.intValue()) {
-                        break;
-                     }
                   }
                }
 
@@ -2318,11 +2314,18 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
                   txCount = 0;
                }
 
+               if (messageAction.expectedHitsReached(count)) {
+                  return count;
+               }
+
                List<MessageReference> cancelled = scheduledDeliveryHandler.cancel(ref -> filter1 == null ? true : filter1.match(ref.getMessage()));
                for (MessageReference messageReference : cancelled) {
                   messageAction.actMessage(tx, messageReference);
                   count++;
                   txCount++;
+                  if (messageAction.expectedHitsReached(count)) {
+                     break;
+                  }
                }
 
                if (txCount > 0) {
@@ -2334,7 +2337,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
 
          if (pageIterator != null && !queueDestroyed) {
-            while (pageIterator.hasNext()) {
+            while (pageIterator.hasNext() && !messageAction.expectedHitsReached(count)) {
                PagedReference reference = pageIterator.next();
                pageIterator.remove();
 
@@ -2749,12 +2752,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       final Integer expectedHits = messageCount > 0 ? messageCount : null;
       final DuplicateIDCache targetDuplicateCache = postOffice.getDuplicateIDCache(toAddress);
 
-      return iterQueue(flushLimit, filter, new QueueIterateAction() {
-         @Override
-         public Integer expectedHits() {
-            return expectedHits;
-         }
-
+      return iterQueue(flushLimit, filter, new QueueIterateAction(expectedHits) {
          @Override
          public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
             boolean ignored = false;
@@ -2813,11 +2811,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
 
       final HashMap<String, Long> queues = new HashMap<>();
 
-      return iterQueue(DEFAULT_FLUSH_LIMIT, filter, new QueueIterateAction() {
-         @Override
-         public Integer expectedHits() {
-            return expectedHits;
-         }
+      return iterQueue(DEFAULT_FLUSH_LIMIT, filter, new QueueIterateAction(expectedHits) {
 
          @Override
          public boolean actMessage(Transaction tx, MessageReference ref) throws Exception {
@@ -4457,8 +4451,14 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
     */
    abstract class QueueIterateAction {
 
-      public Integer expectedHits() {
-         return null;
+      protected Integer expectedHits;
+
+      QueueIterateAction(Integer expectedHits) {
+         this.expectedHits = expectedHits;
+      }
+
+      QueueIterateAction() {
+         this.expectedHits = null;
       }
 
       /**
@@ -4469,6 +4469,10 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
        * @throws Exception
        */
       public abstract boolean actMessage(Transaction tx, MessageReference ref) throws Exception;
+
+      public boolean expectedHitsReached(int currentHits) {
+         return expectedHits != null && currentHits >= expectedHits.intValue();
+      }
    }
 
    /* For external use we need to use a synchronized version since the list is not thread safe */
