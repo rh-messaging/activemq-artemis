@@ -41,6 +41,8 @@ import javax.jms.TopicSubscriber;
 
 import java.io.Serializable;
 
+import org.apache.activemq.artemis.api.core.QueueConfiguration;
+import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.junit.Assert;
 import org.junit.Before;
@@ -147,10 +149,18 @@ public class BasicSecurityTest extends BasicOpenWireTest {
 
          MessageProducer producer = null;
 
-         producer = receivingSession.createProducer(dest);
+         try {
+            receivingSession.createProducer(dest);
+            fail("Should not be able to create a producer when not authorized to send");
+         } catch (JMSSecurityException ex) {
+            // expected
+         }
+
+         producer = receivingSession.createProducer(null);
 
          try {
-            producer.send(message);
+            producer.send(dest, message);
+            fail("exception expected");
          } catch (JMSSecurityException e) {
             //expected
             producer.close();
@@ -173,6 +183,84 @@ public class BasicSecurityTest extends BasicOpenWireTest {
 
          assertNotNull(received);
          assertEquals("Hello World", received.getText());
+      } finally {
+         if (sendingConn != null) {
+            sendingConn.close();
+         }
+
+         if (receivingConn != null) {
+            receivingConn.close();
+         }
+      }
+   }
+
+   @Test
+   public void testSendReceiveAuthorizationOnComposite() throws Exception {
+      Connection sendingConn = null;
+      Connection receivingConn = null;
+
+      final String compositeName = queueName + "," + queueName2;
+
+      //Sender
+      try {
+         Destination composite = new ActiveMQQueue(compositeName);
+         Destination dest1 = new ActiveMQQueue(queueName);
+         Destination dest2 = new ActiveMQQueue(queueName2);
+
+         // Server must have this composite version of the Address and Queue for this test to work
+         // as the user does not have auto create permissions and it will try to create this.
+         server.createQueue(new QueueConfiguration(compositeName).setAddress(compositeName).setRoutingType(RoutingType.ANYCAST));
+
+         receivingConn = factory.createConnection("openwireReceiver", "ReCeIvEr");
+         receivingConn.start();
+
+         sendingConn = factory.createConnection("openwireSender", "SeNdEr");
+         sendingConn.start();
+
+         Session sendingSession = sendingConn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         Session receivingSession = receivingConn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         TextMessage message = sendingSession.createTextMessage("Hello World");
+
+         MessageProducer producer = null;
+
+         try {
+            receivingSession.createProducer(composite);
+            fail("Should get a security exception on create");
+         } catch (JMSSecurityException ex) {
+            // expected
+         }
+
+         producer = receivingSession.createProducer(null);
+
+         try {
+            producer.send(composite, message);
+            fail("exception expected");
+         } catch (JMSSecurityException e) {
+            //expected
+            producer.close();
+         }
+
+         producer = sendingSession.createProducer(composite);
+         producer.send(message);
+
+         try {
+            sendingSession.createConsumer(dest1);
+            fail("exception expected");
+         } catch (JMSSecurityException e) {
+            e.printStackTrace();
+            //expected
+         }
+
+         MessageConsumer consumer1 = receivingSession.createConsumer(dest1);
+         TextMessage received1 = (TextMessage) consumer1.receive(5000);
+         MessageConsumer consumer2 = receivingSession.createConsumer(dest2);
+         TextMessage received2 = (TextMessage) consumer2.receive(5000);
+
+         assertNotNull(received1);
+         assertEquals("Hello World", received1.getText());
+         assertNotNull(received2);
+         assertEquals("Hello World", received2.getText());
       } finally {
          if (sendingConn != null) {
             sendingConn.close();
@@ -448,5 +536,4 @@ public class BasicSecurityTest extends BasicOpenWireTest {
          }
       }
    }
-
 }
