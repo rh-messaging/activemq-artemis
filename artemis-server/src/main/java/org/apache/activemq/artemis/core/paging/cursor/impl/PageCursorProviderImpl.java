@@ -250,7 +250,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
       scheduleCleanup();
    }
 
-   private long getNumberOfMessagesOnSubscriptions() {
+   protected long getNumberOfMessagesOnSubscriptions() {
       AtomicLong largerCounter = new AtomicLong();
       activeCursors.forEach((id, sub) -> {
          long value = sub.getCounter().getValue();
@@ -262,7 +262,8 @@ public class PageCursorProviderImpl implements PageCursorProvider {
       return largerCounter.get();
    }
 
-   void checkClearPageLimit() {
+   @Override
+   public void checkClearPageLimit() {
       pagingStore.checkPageLimit(getNumberOfMessagesOnSubscriptions());
    }
 
