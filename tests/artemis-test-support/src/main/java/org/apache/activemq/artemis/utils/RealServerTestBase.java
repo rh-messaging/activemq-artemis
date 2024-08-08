@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.RoutingType;
 import org.apache.activemq.artemis.api.core.SimpleString;
@@ -91,6 +92,11 @@ public class RealServerTestBase extends ActiveMQTestBase {
       File etcPlace = new File(serverPlace, "etc");
       File stopMe = new File(etcPlace, STOP_FILE_NAME);
       Assert.assertTrue(stopMe.createNewFile());
+   }
+
+   protected static void stopServerWithFile(String serverLocation, Process process, int timeout, TimeUnit unit) throws Exception {
+      stopServerWithFile(serverLocation);
+      process.waitFor(timeout, unit);
    }
 
    public static String getServerLocation(String serverName) {
