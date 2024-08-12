@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -47,6 +48,8 @@ public class AmqpFlowControlFailTest {
 
    @RunWith(Parameterized.class)
    public static class AmqpFlowControlFailDispositionTests extends JMSClientTestSupport {
+
+	   private static final int MIN_LARGE_MESSAGE_SIZE = 16 * 1024;
 
       @Parameterized.Parameter()
       public boolean useModified;
@@ -75,8 +78,8 @@ public class AmqpFlowControlFailTest {
       @Override
       protected void configureAMQPAcceptorParameters(Map<String, Object> params) {
          params.put("amqpUseModifiedForTransientDeliveryErrors", useModified);
+         params.put("amqpMinLargeMessageSize", MIN_LARGE_MESSAGE_SIZE);
       }
-
 
       @Test(timeout = 10_000)
       public void testAddressFullDisposition() throws Exception {
@@ -104,6 +107,53 @@ public class AmqpFlowControlFailTest {
          } finally {
             connection.close();
          }
+      }
+
+      @Test(timeout = 30_000)
+      public void testFailedLargeMessageSendWhenNoSpaceCleansUpLargeFile() throws Exception {
+         AmqpClient client = createAmqpClient(getBrokerAmqpConnectionURI());
+         AmqpConnection connection = client.connect();
+
+         int expectedRemainingLargeMessageFiles = 0;
+
+         try {
+            AmqpSession session = connection.createSession();
+            AmqpSender sender = session.createSender(getQueueName(), null, null, outcomes);
+            AmqpMessage message = createAmqpLargeMessage();
+            boolean rejected = false;
+
+            for (int i = 0; i < 1000; i++) {
+               try {
+                  sender.send(message);
+                  expectedRemainingLargeMessageFiles++;
+               } catch (IOException e) {
+                  rejected = true;
+                  assertTrue(String.format("Unexpected message expected %s to contain %s", e.getMessage(), expectedMessage),
+                		     e.getMessage().contains(expectedMessage));
+                  break;
+               }
+            }
+
+            assertTrue("Expected messages to be refused by broker", rejected);
+         } finally {
+            connection.close();
+         }
+
+         validateNoFilesOnLargeDir(getLargeMessagesDir(), expectedRemainingLargeMessageFiles);
+      }
+
+      private AmqpMessage createAmqpLargeMessage() {
+         AmqpMessage message = new AmqpMessage();
+
+         byte[] payload = new byte[MIN_LARGE_MESSAGE_SIZE * 2];
+         for (int i = 0; i < payload.length; i++) {
+            payload[i] = (byte) 65;
+         }
+
+         message.setMessageAnnotation("x-opt-big-blob", new String(payload, StandardCharsets.UTF_8));
+         message.setText("test");
+
+         return message;
       }
    }
 
