@@ -877,6 +877,18 @@ public final class PriorityLinkedListTest extends Assert {
       iter.remove();
    }
 
+   @Test
+   public void testMixupIterator3() {
+      list.addTail(b, 4);
+      list.addTail(c, 9);
+      LinkedListIterator<Wibble> iter = list.iterator();
+      assertTrue(iter.hasNext());
+      assertEquals(c, iter.next());
+      iter.remove();
+      list.addTail(a, 0);
+      assertTrue(iter.hasNext());
+      assertEquals(b, iter.next());
+   }
 
    @Test
    public void testPeek() {
