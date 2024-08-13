@@ -376,7 +376,7 @@ public class BridgeConfigurationEncodingTest {
       assertEquals(configuration.getDiscoveryGroupName(), persistedBridgeConfiguration.getDiscoveryGroupName());
       assertEquals(configuration.isHA(), persistedBridgeConfiguration.isHA());
       assertEquals(configuration.getRetryInterval(), persistedBridgeConfiguration.getRetryInterval());
-      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier());
+      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier(), 0.0);
       assertEquals(configuration.getInitialConnectAttempts(), persistedBridgeConfiguration.getInitialConnectAttempts());
       assertEquals(configuration.getReconnectAttempts(), persistedBridgeConfiguration.getReconnectAttempts());
       assertEquals(configuration.getReconnectAttemptsOnSameNode(), persistedBridgeConfiguration.getReconnectAttemptsOnSameNode());
@@ -452,7 +452,7 @@ public class BridgeConfigurationEncodingTest {
       assertEquals(configuration.getDiscoveryGroupName(), persistedBridgeConfiguration.getDiscoveryGroupName());
       assertEquals(configuration.isHA(), persistedBridgeConfiguration.isHA());
       assertEquals(configuration.getRetryInterval(), persistedBridgeConfiguration.getRetryInterval());
-      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier());
+      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier(), 0.0);
       assertEquals(configuration.getInitialConnectAttempts(), persistedBridgeConfiguration.getInitialConnectAttempts());
       assertEquals(configuration.getReconnectAttempts(), persistedBridgeConfiguration.getReconnectAttempts());
       assertEquals(configuration.getReconnectAttemptsOnSameNode(), persistedBridgeConfiguration.getReconnectAttemptsOnSameNode());
@@ -522,7 +522,7 @@ public class BridgeConfigurationEncodingTest {
       assertEquals(configuration.getDiscoveryGroupName(), persistedBridgeConfiguration.getDiscoveryGroupName());
       assertEquals(configuration.isHA(), persistedBridgeConfiguration.isHA());
       assertEquals(configuration.getRetryInterval(), persistedBridgeConfiguration.getRetryInterval());
-      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier());
+      assertEquals(configuration.getRetryIntervalMultiplier(), persistedBridgeConfiguration.getRetryIntervalMultiplier(), 0.0);
       assertEquals(configuration.getInitialConnectAttempts(), persistedBridgeConfiguration.getInitialConnectAttempts());
       assertEquals(configuration.getReconnectAttempts(), persistedBridgeConfiguration.getReconnectAttempts());
       assertEquals(configuration.getReconnectAttemptsOnSameNode(), persistedBridgeConfiguration.getReconnectAttemptsOnSameNode());
