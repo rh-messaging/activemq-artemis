@@ -109,7 +109,7 @@
       <jsr305.version>3.0.2</jsr305.version>
       <jetty.version>10.0.22</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
-      <jgroups.version>5.3.10.Final</jgroups.version>
+      <jgroups.version>5.3.11.Final</jgroups.version>
       <errorprone.version>2.30.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.4.3</jib.maven.plugin.version>
@@ -262,7 +262,7 @@
 
       <fast-tests>false</fast-tests>
 
-      <project.build.outputTimestamp>2024-08-14T18:39:34Z</project.build.outputTimestamp>
+      <project.build.outputTimestamp>2024-08-16T14:23:17Z</project.build.outputTimestamp>
    </properties>
 
    <scm>
