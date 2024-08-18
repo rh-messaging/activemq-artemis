@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.core.paging.impl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -186,6 +187,10 @@ public final class PagingManagerImpl implements PagingManager {
    @Override
    public void addBlockedStore(PagingStore store) {
       blockedStored.add(store);
+   }
+
+   public Set<PagingStore> getBlockedSet() {
+      return new HashSet<>(blockedStored);
    }
 
    @Override
