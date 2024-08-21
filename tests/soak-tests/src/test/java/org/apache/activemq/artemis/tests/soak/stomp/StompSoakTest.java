@@ -45,12 +45,10 @@ import org.apache.activemq.artemis.tests.integration.stomp.util.StompClientConne
 import org.apache.activemq.artemis.tests.soak.SoakTestBase;
 import org.apache.activemq.artemis.utils.cli.helper.HelperCreate;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 public class StompSoakTest extends SoakTestBase {
 
@@ -63,7 +61,7 @@ public class StompSoakTest extends SoakTestBase {
 
    Process serverProcess;
 
-   @BeforeAll
+   @BeforeClass
    public static void createServer() throws Exception {
       {
          File serverLocation = getFileServerLocation(SERVER_NAME_0);
@@ -145,7 +143,7 @@ public class StompSoakTest extends SoakTestBase {
                logger.debug("Creating session for destination {}", destination);
                try (Session session = connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE)) {
                   MessageProducer producer = session.createProducer(ActiveMQDestination.createDestination(RoutingType.MULTICAST,
-                                                                                                          SimpleString.of(destination)));
+                                                                                                          new SimpleString(destination)));
 
                   logger.debug("Sending {} messages to destination {}", NUMBER_OF_MESSAGES, destination);
 
@@ -166,7 +164,7 @@ public class StompSoakTest extends SoakTestBase {
          errors.incrementAndGet();
       }
 
-      Assertions.assertTrue(done.await(10, TimeUnit.MINUTES));
+      assertTrue(done.await(10, TimeUnit.MINUTES));
 
       try {
          if (c != null)
@@ -178,6 +176,6 @@ public class StompSoakTest extends SoakTestBase {
       } catch (Throwable ignored) {
       }
 
-      Assertions.assertEquals(0, errors.get());
+      assertEquals(0, errors.get());
    }
 }
