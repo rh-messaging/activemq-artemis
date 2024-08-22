@@ -48,8 +48,7 @@ public class AmqpFlowControlFailTest {
 
    @RunWith(Parameterized.class)
    public static class AmqpFlowControlFailDispositionTests extends JMSClientTestSupport {
-
-	   private static final int MIN_LARGE_MESSAGE_SIZE = 16 * 1024;
+      private static final int MIN_LARGE_MESSAGE_SIZE = 16 * 1024;
 
       @Parameterized.Parameter()
       public boolean useModified;
@@ -129,7 +128,7 @@ public class AmqpFlowControlFailTest {
                } catch (IOException e) {
                   rejected = true;
                   assertTrue(String.format("Unexpected message expected %s to contain %s", e.getMessage(), expectedMessage),
-                		     e.getMessage().contains(expectedMessage));
+                             e.getMessage().contains(expectedMessage));
                   break;
                }
             }
