@@ -22,6 +22,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.io.BufferedReader;
@@ -50,12 +51,14 @@ import org.apache.activemq.artemis.utils.TestParameters;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.cli.helper.HelperCreate;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
@@ -136,19 +139,19 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
    private void startDC2(SimpleManagement managementDC2) throws Exception {
       processDC2 = startServer(DC2_NODE, -1, -1, new File(getServerLocation(DC2_NODE), "broker.properties"));
-      ServerUtil.waitForServerToStart(2, 10_000);
       processDC2_REPLICA = startServer(DC2_REPLICA_NODE, -1, -1, new File(getServerLocation(DC2_REPLICA_NODE), "broker.properties"));
+      ServerUtil.waitForServerToStart(2, 10_000);
       Wait.assertTrue(managementDC2::isReplicaSync);
    }
 
    private void startDC1(SimpleManagement managementDC1) throws Exception {
       processDC1 = startServer(DC1_NODE, -1, -1, new File(getServerLocation(DC1_NODE), "broker.properties"));
-      ServerUtil.waitForServerToStart(0, 10_000);
       processDC1_REPLICA = startServer(DC1_REPLICA_NODE, -1, -1, new File(getServerLocation(DC1_REPLICA_NODE), "broker.properties"));
+      ServerUtil.waitForServerToStart(0, 10_000);
       Wait.assertTrue(managementDC1::isReplicaSync);
    }
 
-   private static void createMirroredServer(String serverName,
+   private static void createMirroredServer(boolean paging, String serverName,
                                     String connectionName,
                                     String mirrorURI,
                                     int portOffset,
@@ -163,7 +166,6 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
       HelperCreate cliCreateServer = new HelperCreate();
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
-      cliCreateServer.setNoWeb(true);
       cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
       cliCreateServer.addArgs("--queues", QUEUE_NAME);
       cliCreateServer.setPortOffset(portOffset);
@@ -185,19 +187,19 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       brokerProperties.put("AMQPConnections." + connectionName + ".connectionElements.mirror.sync", "false");
       brokerProperties.put("largeMessageSync", "false");
 
-      brokerProperties.put("addressSettings.#.maxSizeMessages", "50");
-      brokerProperties.put("addressSettings.#.maxReadPageMessages", "2000");
-      brokerProperties.put("addressSettings.#.maxReadPageBytes", "-1");
-      brokerProperties.put("addressSettings.#.prefetchPageMessages", "500");
-      // if we don't use pageTransactions we may eventually get a few duplicates
-      brokerProperties.put("mirrorPageTransaction", "true");
+      if (paging) {
+         brokerProperties.put("addressSettings.#.maxSizeMessages", "50");
+         brokerProperties.put("addressSettings.#.maxReadPageMessages", "2000");
+         brokerProperties.put("addressSettings.#.maxReadPageBytes", "-1");
+         brokerProperties.put("addressSettings.#.prefetchPageMessages", "500");
+         brokerProperties.put("mirrorPageTransaction", "true");
+      }
+
       File brokerPropertiesFile = new File(serverLocation, "broker.properties");
       saveProperties(brokerProperties, brokerPropertiesFile);
 
       File brokerXml = new File(serverLocation, "/etc/broker.xml");
       assertTrue(brokerXml.exists());
-      // Adding redistribution delay to broker configuration
-      assertTrue(FileUtil.findReplace(brokerXml, "<address-setting match=\"#\">", "<address-setting match=\"#\">\n\n" + "            <redistribution-delay>0</redistribution-delay>\n"));
       assertTrue(FileUtil.findReplace(brokerXml, "<page-size-bytes>10M</page-size-bytes>", "<page-size-bytes>100K</page-size-bytes>"));
 
       if (TRACE_LOGS) {
@@ -208,10 +210,19 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
    private static void replaceLogs(File serverLocation) throws Exception {
       File log4j = new File(serverLocation, "/etc/log4j2.properties");
-      assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO", "logger.artemis_utils.level=INFO\n" + "\n" + "logger.endpoint.name=org.apache.activemq.artemis.core.replication.ReplicationEndpoint\n" + "logger.endpoint.level=DEBUG\n" + "appender.console.filter.threshold.type = ThresholdFilter\n" + "appender.console.filter.threshold.level = info"));
+      assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO",
+                                      "logger.artemis_utils.level=INFO\n" + "\n" +
+                                         "logger.endpoint.name=org.apache.activemq.artemis.core.replication.ReplicationEndpoint\n" +
+                                         "logger.endpoint.level=INFO\n" +
+                                         "logger.ack.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager\n" +
+                                         "logger.ack.level=TRACE\n" +
+                                         "logger.mirrorTarget.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AMQPMirrorControllerTarget\n" +
+                                         "logger.mirrorTarget.level=INFO\n" +
+                                         "appender.console.filter.threshold.type = ThresholdFilter\n" +
+                                         "appender.console.filter.threshold.level = info"));
    }
 
-   private static void createMirroredBackupServer(String serverName, int portOffset, String clusterStatic, String mirrorURI) throws Exception {
+   private static void createMirroredBackupServer(boolean paging, String serverName, int portOffset, String clusterStatic, String mirrorURI) throws Exception {
       File serverLocation = getFileServerLocation(serverName);
       if (REUSE_SERVERS && serverLocation.exists()) {
          deleteDirectory(new File(serverLocation, "data"));
@@ -222,7 +233,6 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       HelperCreate cliCreateServer = new HelperCreate();
       cliCreateServer.setAllowAnonymous(true).setArtemisInstance(serverLocation);
       cliCreateServer.setMessageLoadBalancing("ON_DEMAND");
-      cliCreateServer.setNoWeb(true);
       cliCreateServer.setArgs("--no-stomp-acceptor", "--no-hornetq-acceptor", "--no-mqtt-acceptor", "--no-amqp-acceptor", "--max-hops", "1", "--name", DC1_NODE);
       cliCreateServer.setPortOffset(portOffset);
       cliCreateServer.setClustered(true);
@@ -239,32 +249,39 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       brokerProperties.put("AMQPConnections.mirror.connectionElements.mirror.sync", "false");
       brokerProperties.put("largeMessageSync", "false");
 
-      brokerProperties.put("addressSettings.#.maxSizeMessages", "1");
-      brokerProperties.put("addressSettings.#.maxReadPageMessages", "2000");
-      brokerProperties.put("addressSettings.#.maxReadPageBytes", "-1");
-      brokerProperties.put("addressSettings.#.prefetchPageMessages", "500");
+      brokerProperties.put("mirrorAckManagerQueueAttempts", "5");
+      brokerProperties.put("mirrorAckManagerPageAttempts", "500000");
+      brokerProperties.put("mirrorAckManagerRetryDelay", "500");
+
       // if we don't use pageTransactions we may eventually get a few duplicates
       brokerProperties.put("mirrorPageTransaction", "true");
+
+      if (paging) {
+         brokerProperties.put("addressSettings.#.maxSizeMessages", "1");
+         brokerProperties.put("addressSettings.#.maxReadPageMessages", "2000");
+         brokerProperties.put("addressSettings.#.maxReadPageBytes", "-1");
+         brokerProperties.put("addressSettings.#.prefetchPageMessages", "500");
+         // if we don't use pageTransactions we may eventually get a few duplicates
+         brokerProperties.put("mirrorPageTransaction", "true");
+      }
+
       File brokerPropertiesFile = new File(serverLocation, "broker.properties");
       saveProperties(brokerProperties, brokerPropertiesFile);
 
 
       File brokerXml = new File(serverLocation, "/etc/broker.xml");
       assertTrue(brokerXml.exists());
-      // Adding redistribution delay to broker configuration
-      assertTrue(FileUtil.findReplace(brokerXml, "<address-setting match=\"#\">", "<address-setting match=\"#\">\n\n" + "            <redistribution-delay>0</redistribution-delay> <!-- added by SimpleMirrorSoakTest.java --> \n"));
-      assertTrue(FileUtil.findReplace(brokerXml, "<page-size-bytes>10M</page-size-bytes>", "<page-size-bytes>100K</page-size-bytes>"));
 
       if (TRACE_LOGS) {
          replaceLogs(serverLocation);
       }
    }
 
-   public static void createRealServers() throws Exception {
-      createMirroredServer(DC1_NODE, "mirror", uriWithAlternate(DC2_IP, DC2_BACKUP_IP), 0, true, uri(DC1_BACKUP_IP));
-      createMirroredBackupServer(DC1_REPLICA_NODE, 1, uri(DC1_IP), uriWithAlternate(DC2_IP, DC2_BACKUP_IP));
-      createMirroredServer(DC2_NODE, "mirror", uriWithAlternate(DC1_IP, DC1_BACKUP_IP), 2, true, uri(DC2_BACKUP_IP));
-      createMirroredBackupServer(DC2_REPLICA_NODE, 3, uri(DC2_IP), uriWithAlternate(DC1_IP, DC1_BACKUP_IP));
+   public static void createRealServers(boolean paging) throws Exception {
+      createMirroredServer(paging, DC1_NODE, "mirror", uriWithAlternate(DC2_IP, DC2_BACKUP_IP), 0, true, uri(DC1_BACKUP_IP));
+      createMirroredBackupServer(paging, DC1_REPLICA_NODE, 1, uri(DC1_IP), uriWithAlternate(DC2_IP, DC2_BACKUP_IP));
+      createMirroredServer(paging, DC2_NODE, "mirror", uriWithAlternate(DC1_IP, DC1_BACKUP_IP), 2, true, uri(DC2_BACKUP_IP));
+      createMirroredBackupServer(paging, DC2_REPLICA_NODE, 3, uri(DC2_IP), uriWithAlternate(DC1_IP, DC1_BACKUP_IP));
    }
 
    @Test
@@ -278,7 +295,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
    }
 
    private void testMirror(boolean laterStart) throws Exception {
-      createRealServers();
+      createRealServers(true);
 
       SimpleManagement managementDC1 = new SimpleManagement(uri(DC1_IP), null, null);
       SimpleManagement managementDC2 = new SimpleManagement(uri(DC2_IP), null, null);
@@ -311,7 +328,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          MessageConsumer consumer = session.createConsumer(session.createQueue(QUEUE_NAME));
          for (int i = 0; i < NUMBER_MESSAGES; i++) {
             TextMessage message = (TextMessage) consumer.receive(30_000);
-            Assertions.assertNotNull(message);
+            assertNotNull(message);
             receivedIDs.add(message.getIntProperty("i"));
             if (i > 0 && i % SEND_COMMIT == 0) {
                logger.info("Received {} messages", i);
@@ -322,12 +339,113 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          session.commit();
       }
 
-      Assertions.assertEquals(NUMBER_MESSAGES, receivedIDs.size());
+      assertEquals(NUMBER_MESSAGES, receivedIDs.size());
       for (int i = 0; i < NUMBER_MESSAGES; i++) {
-         Assertions.assertTrue(receivedIDs.contains(i));
+         assertTrue(receivedIDs.contains(i));
       }
    }
 
+   @Test
+   public void testQuickACKRandomProtocol() throws Exception {
+      String protocol = randomProtocol();
+      logger.info("using protocol {}", protocol);
+
+      // There shouldn't be any semantic difference for the test based on the protocol we choose to run
+      // However I will make this a random choice to make sure we cover eventually all the protocols.
+      // I didn't want to waste time on the testsuite/CI running all 3 protocols on every run for this case
+      testQuickACK(protocol);
+   }
+
+   private void testQuickACK(final String protocol) throws Exception {
+      createRealServers(false);
+
+
+      SimpleManagement managementDC1 = new SimpleManagement(uri(DC1_IP), null, null);
+      SimpleManagement managementDC2 = new SimpleManagement(uri(DC2_IP), null, null);
+      SimpleManagement managementDC2Backup = new SimpleManagement(uri(DC2_BACKUP_IP), null, null);
+
+      startDC1(managementDC1);
+      ConnectionFactory connectionFactoryDC1A = CFUtil.createConnectionFactory(protocol, uri(DC1_IP));
+
+      final int startAt = 300;
+      final int killAt = 800;
+      final int totalMessages = 1000;
+      String snfQueue = "$ACTIVEMQ_ARTEMIS_MIRROR_mirror";
+
+      try (Connection connection = connectionFactoryDC1A.createConnection()) {
+         connection.start();
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         Queue queue = session.createQueue(QUEUE_NAME);
+         MessageProducer producer = session.createProducer(queue);
+         MessageConsumer consumer = session.createConsumer(queue);
+
+         for (int i = 0; i < totalMessages; i++) {
+            if (i % 100 == 0) {
+               logger.info("Sent and received {}", i);
+            }
+
+            if (i == startAt) {
+               // lazy start to allow messages accumulated in the SNF
+               processDC2 = startServer(DC2_NODE, -1, -1, new File(getServerLocation(DC2_NODE), "broker.properties"));
+               processDC2_REPLICA = startServer(DC2_REPLICA_NODE, -1, -1, new File(getServerLocation(DC2_REPLICA_NODE), "broker.properties"));
+            } else if (i == killAt) { // kill the live on DC2
+               logger.info("KillAt {}", killAt);
+               ServerUtil.waitForServerToStart(2, 10_000);
+               Wait.assertTrue(managementDC2::isReplicaSync);
+               processDC2.destroyForcibly();
+               assertTrue(processDC2.waitFor(10, TimeUnit.SECONDS));
+            }
+
+            String text = "hello hello hello " + i;
+            TextMessage message = session.createTextMessage(text);
+            message.setIntProperty("i", i);
+            producer.send(message);
+            TextMessage textMessage = (TextMessage) consumer.receive(5000);
+            assertNotNull(textMessage);
+            assertEquals(text, textMessage.getText());
+         }
+
+      }
+
+      final int oddSend = 33;
+      try (Connection connection = connectionFactoryDC1A.createConnection()) {
+         connection.start();
+         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+         Queue queue = session.createQueue(QUEUE_NAME);
+         MessageProducer producer = session.createProducer(queue);
+         for (int i = 0; i < oddSend; i++) {
+            TextMessage message = session.createTextMessage("oddSend " + i);
+            message.setIntProperty("oddSend", i);
+            producer.send(message);
+         }
+         session.commit();
+      }
+
+      Wait.assertEquals(0, () -> getMessageCount(managementDC1, snfQueue));
+      Wait.assertEquals(oddSend, () -> getMessageCount(managementDC1, QUEUE_NAME));
+      Wait.assertEquals(oddSend, () -> getMessageCount(managementDC2Backup, QUEUE_NAME));
+
+      ConnectionFactory cfDC2Backup = CFUtil.createConnectionFactory(protocol, uri(DC2_BACKUP_IP));
+
+      try (Connection connection = cfDC2Backup.createConnection()) {
+         connection.start();
+         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+         Queue queue = session.createQueue(QUEUE_NAME);
+         MessageConsumer consumer = session.createConsumer(queue);
+         for (int i = 0; i < oddSend; i++) {
+            TextMessage message = (TextMessage) consumer.receive(5000);
+            assertNotNull(message);
+            assertEquals("oddSend " + i, message.getText());
+         }
+         assertNull(consumer.receiveNoWait());
+         session.commit();
+      }
+
+      Wait.assertEquals(0, () -> getMessageCount(managementDC1, snfQueue));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC2Backup, snfQueue));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC1, QUEUE_NAME));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC2Backup, QUEUE_NAME));
+   }
 
    @Test
    public void testMultipleSenders() throws Exception {
@@ -337,7 +455,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          logger.warn("lsof is not available in this platform, we will ignore this test - {}", e.getMessage(), e);
          Assumptions.abort("lsof is not available");
       }
-      createRealServers();
+      createRealServers(true);
 
       SimpleManagement managementDC1 = new SimpleManagement(uri(DC1_IP), null, null);
       SimpleManagement managementDC2 = new SimpleManagement(uri(DC2_IP), null, null);
@@ -369,7 +487,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          });
       }
 
-      Assertions.assertTrue(latch.await(5, TimeUnit.MINUTES));
+      assertTrue(latch.await(5, TimeUnit.MINUTES));
 
       int openFiles = lsof();
 
@@ -377,8 +495,8 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
       // lsof is showing a file descriptor associated with multiple threads. So it is expected to have quite a few repetitions
       // when the issue is happening we would have around 40k, 50k entries or a lot more if you add more messages.
-      Assertions.assertTrue(openFiles < 4000, () -> "There was " + openFiles + " open files");
-      Assertions.assertEquals(0, errors.get(), "There are errors on the senders");
+      assertTrue(openFiles < 4000, () -> "There was " + openFiles + " open files");
+      assertEquals(0, errors.get(), "There are errors on the senders");
 
    }
 
@@ -398,11 +516,12 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
             filesCounter.incrementAndGet();
          });
       }
-      Assertions.assertTrue(process.waitFor(10, TimeUnit.SECONDS));
+      assertTrue(process.waitFor(10, TimeUnit.SECONDS));
       return filesCounter.get();
    }
 
    private static void sendMessages(String queueName) throws JMSException {
+      long start = System.currentTimeMillis();
       ConnectionFactory connectionFactoryDC1A = CFUtil.createConnectionFactory("amqp", uri(DC1_IP));
       try (Connection connection = connectionFactoryDC1A.createConnection()) {
          Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -415,6 +534,10 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
             if (i > 0 && i % SEND_COMMIT == 0) {
                logger.info("Sent {} messages on {}", i, queueName);
                session.commit();
+
+               long timePassed = System.currentTimeMillis() - start;
+               double secondsPassed = timePassed / 1000f;
+               logger.info("sent {} messages, msgs/second = {}", i, (i / secondsPassed));
             }
          }
 

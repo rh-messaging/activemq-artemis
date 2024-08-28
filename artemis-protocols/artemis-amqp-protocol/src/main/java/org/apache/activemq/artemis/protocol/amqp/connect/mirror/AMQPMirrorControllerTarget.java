@@ -46,6 +46,8 @@ import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessage;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPMessageBrokerAccessor;
 import org.apache.activemq.artemis.protocol.amqp.broker.AMQPSessionCallback;
 import org.apache.activemq.artemis.protocol.amqp.broker.ProtonProtocolManager;
+import org.apache.activemq.artemis.protocol.amqp.exceptions.ActiveMQAMQPException;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPConnectionContext;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPSessionContext;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPTunneledCoreLargeMessageReader;
@@ -63,6 +65,8 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.activemq.artemis.protocol.amqp.connect.mirror.AMQPMirrorControllerSource.ADDRESS;
 import static org.apache.activemq.artemis.protocol.amqp.connect.mirror.AMQPMirrorControllerSource.ADD_ADDRESS;
@@ -176,6 +180,59 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
    private MessageReader coreLargeMessageReader;
 
    private AckManager ackManager;
+
+   @Override
+   public void close(boolean remoteLinkClose) throws ActiveMQAMQPException {
+      super.close(remoteLinkClose);
+      AckManager localAckManager = ackManager;
+      if (localAckManager != null) {
+         localAckManager.unregisterMirror(this);
+      }
+   }
+
+   /** This method will wait both replication and storage to finish their current operations. */
+   public void flush() {
+      CountDownLatch latch = new CountDownLatch(1);
+      connection.runNow(() -> {
+         OperationContext oldContext = OperationContextImpl.getContext();
+         try {
+            OperationContextImpl.setContext(mirrorContext);
+            mirrorContext.executeOnCompletion(new IOCallback() {
+               @Override
+               public void done() {
+                  latch.countDown();
+               }
+
+               @Override
+               public void onError(int errorCode, String errorMessage) {
+                  logger.warn("error code = {} / message = {}", errorCode, errorMessage);
+                  latch.countDown();
+               }
+            });
+         } finally {
+            OperationContextImpl.setContext(oldContext);
+         }
+      });
+
+      long timeout;
+      try {
+         timeout = connection.getProtocolManager().getAckManagerFlushTimeout();
+      } catch (Throwable e) {
+         // This is redundant code that should not occur
+         // Only real possibility for this would be a Mocking test, or some embedded usage
+         logger.warn("Could not access the connection and protocol manager, using a default timeout of 10 seconds for AckManagerFlushTimeout", e);
+         timeout = 10_000;
+      }
+
+      try {
+         if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
+            ActiveMQAMQPProtocolLogger.LOGGER.timedOutAckManager(timeout);
+         }
+      } catch (InterruptedException e) {
+         ActiveMQAMQPProtocolLogger.LOGGER.interruptedAckManager(e);
+         Thread.currentThread().interrupt();
+      }
+   }
 
    public AMQPMirrorControllerTarget(AMQPSessionCallback sessionSPI,
                                      AMQPConnectionContext connection,
@@ -412,6 +469,7 @@ public class AMQPMirrorControllerTarget extends ProtonAbstractReceiver implement
 
       if (ackManager == null) {
          ackManager = AckManagerProvider.getManager(server);
+         ackManager.registerMirror(this);
       }
 
       ackManager.ack(nodeID, targetQueue, messageID, reason, true);

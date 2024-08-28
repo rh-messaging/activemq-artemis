@@ -19,8 +19,10 @@ package org.apache.activemq.artemis.protocol.amqp.connect.mirror;
 
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
@@ -31,7 +33,6 @@ import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.io.IOCriticalErrorListener;
-import org.apache.activemq.artemis.core.journal.Journal;
 import org.apache.activemq.artemis.core.journal.RecordInfo;
 import org.apache.activemq.artemis.core.journal.collections.JournalHashMap;
 import org.apache.activemq.artemis.core.journal.collections.JournalHashMapProvider;
@@ -63,7 +64,7 @@ public class AckManager implements ActiveMQComponent {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   final Journal journal;
+   final Set<AMQPMirrorControllerTarget> mirrorControllerTargets = new HashSet<>();
    final LongSupplier sequenceGenerator;
    final JournalHashMapProvider<AckRetry, AckRetry, Queue> journalHashMapProvider;
    final ActiveMQServer server;
@@ -77,9 +78,10 @@ public class AckManager implements ActiveMQComponent {
       this.server = server;
       this.configuration = server.getConfiguration();
       this.ioCriticalErrorListener = server.getIoCriticalErrorListener();
-      this.journal = server.getStorageManager().getMessageJournal();
       this.sequenceGenerator = server.getStorageManager()::generateID;
-      journalHashMapProvider = new JournalHashMapProvider<>(sequenceGenerator, journal, AckRetry.getPersister(), JournalRecordIds.ACK_RETRY, OperationContextImpl::getContext, server.getPostOffice()::findQueue, server.getIoCriticalErrorListener());
+
+      // The JournalHashMap has to use the storage manager to guarantee we are using the Replicated Journal Wrapper in case this is a replicated journal
+      journalHashMapProvider = new JournalHashMapProvider<>(sequenceGenerator, server.getStorageManager(), AckRetry.getPersister(), JournalRecordIds.ACK_RETRY, OperationContextImpl::getContext, server.getPostOffice()::findQueue, server.getIoCriticalErrorListener());
       this.referenceIDSupplier = new ReferenceIDSupplier(server);
    }
 
@@ -149,13 +151,28 @@ public class AckManager implements ActiveMQComponent {
 
       HashMap<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> retries = sortRetries();
 
+      flushMirrorTargets();
+
       if (retries.isEmpty()) {
          logger.trace("Nothing to retry!, server={}", server);
          return false;
       }
 
-      progress = new MultiStepProgress(sortRetries());
+      progress = new MultiStepProgress(retries);
       return true;
+   }
+
+   public synchronized void registerMirror(AMQPMirrorControllerTarget mirrorTarget) {
+      this.mirrorControllerTargets.add(mirrorTarget);
+   }
+
+   public synchronized void unregisterMirror(AMQPMirrorControllerTarget mirrorTarget) {
+      this.mirrorControllerTargets.remove(mirrorTarget);
+   }
+
+   private synchronized void flushMirrorTargets() {
+      logger.debug("scanning and flushing mirror targets");
+      mirrorControllerTargets.forEach(AMQPMirrorControllerTarget::flush);
    }
 
    // Sort the ACK list by address
