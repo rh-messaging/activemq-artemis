@@ -387,7 +387,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
                processDC2_REPLICA = startServer(DC2_REPLICA_NODE, -1, -1, new File(getServerLocation(DC2_REPLICA_NODE), "broker.properties"));
             } else if (i == killAt) { // kill the live on DC2
                logger.info("KillAt {}", killAt);
-               ServerUtil.waitForServerToStart(1, 10_000);
+               ServerUtil.waitForServerToStart(2, 10_000);
                Wait.assertTrue(managementDC2::isReplicaSync);
                processDC2.destroyForcibly();
                assertTrue(processDC2.waitFor(10, TimeUnit.SECONDS));
@@ -401,6 +401,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
             assertNotNull(textMessage);
             assertEquals(text, textMessage.getText());
          }
+
       }
 
       final int oddSend = 33;
