@@ -110,13 +110,14 @@
       <jetty.version>10.0.23</jetty.version>
       <jetty-servlet-api.version>4.0.6</jetty-servlet-api.version>
       <jgroups.version>5.3.11.Final</jgroups.version>
-      <errorprone.version>2.30.0</errorprone.version>
+      <errorprone.version>2.31.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.4.3</jib.maven.plugin.version>
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
+      <maven.pmd.plugin.version>3.25.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
       <checkstyle.version>10.18.0</checkstyle.version>
-      <mockito.version>5.12.0</mockito.version>
+      <mockito.version>5.13.0</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.112.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
@@ -169,7 +170,7 @@
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.4</postgresql.version>
       <testcontainers.version>1.20.1</testcontainers.version>
-      <selenium.version>4.23.1</selenium.version>
+      <selenium.version>4.24.0</selenium.version>
       <exec-maven-plugin.version>3.4.1</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
@@ -869,7 +870,7 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-pmd-plugin</artifactId>
-               <version>3.24.0</version>
+               <version>${maven.pmd.plugin.version}</version>
                <configuration>
                   <linkXRef>true</linkXRef>
                   <minimumTokens>100</minimumTokens>
