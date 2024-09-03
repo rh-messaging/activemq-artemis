@@ -159,18 +159,22 @@ public class FilterImpl implements Filter {
    private static Object getHeaderFieldValue(final Message msg, final SimpleString fieldName) {
       if (FilterConstants.ACTIVEMQ_USERID.equals(fieldName)) {
          if (msg.getUserID() == null) {
-            // Proton stores JMSMessageID as NATIVE_MESSAGE_ID that is an arbitrary string
+            // Artemis can store JMSMessageID as NATIVE_MESSAGE_ID that is an arbitrary string,
+            // in wrapper used internally when converting from Core to AMQP.
             String amqpNativeID = msg.getStringProperty(NATIVE_MESSAGE_ID);
             if (amqpNativeID != null) {
                return SimpleString.of(amqpNativeID);
+            } else {
+               return null;
             }
-         }
-         // It's the stringified (hex) representation of a user id that can be used in a selector expression
-         String userID = msg.getUserID().toString();
-         if (userID.startsWith("ID:")) {
-            return SimpleString.of(userID);
          } else {
-            return SimpleString.of("ID:" + msg.getUserID());
+            // It's the stringified (hex) representation of a user id that can be used in a selector expression
+            String userID = msg.getUserID().toString();
+            if (userID.startsWith("ID:")) {
+               return SimpleString.of(userID);
+            } else {
+               return SimpleString.of("ID:" + msg.getUserID());
+            }
          }
       } else if (FilterConstants.ACTIVEMQ_PRIORITY.equals(fieldName)) {
          return (int) msg.getPriority();
