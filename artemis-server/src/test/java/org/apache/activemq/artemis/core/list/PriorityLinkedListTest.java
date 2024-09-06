@@ -16,11 +16,14 @@
  */
 package org.apache.activemq.artemis.core.list;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 
 import io.netty.util.collection.LongObjectHashMap;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.collections.NodeStore;
 import org.apache.activemq.artemis.utils.collections.LinkedListImpl;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
@@ -85,8 +88,18 @@ public final class PriorityLinkedListTest extends Assert {
 
    private PriorityLinkedListImpl<Wibble> list;
 
-   protected PriorityLinkedListImpl<Wibble> getList() {
-      return new PriorityLinkedListImpl<>(10);
+   int lastRemovedLevel;
+   Wibble lastRemovedWibble;
+
+   private PriorityLinkedListImpl<Wibble> getList() {
+      return new PriorityLinkedListImpl<>(10) {
+         @Override
+         protected void removed(int level, Wibble element) {
+            super.removed(level, element);
+            lastRemovedWibble = element;
+            lastRemovedLevel = level;
+         }
+      };
    }
 
    @Before
@@ -912,36 +925,7 @@ public final class PriorityLinkedListTest extends Assert {
          list.addHead(new Wibble("" + i, i), i % 10);
       }
 
-      class WibbleNodeStore implements NodeStore<Wibble> {
-         LongObjectHashMap<LinkedListImpl.Node<Wibble>> list = new LongObjectHashMap<>();
-
-         @Override
-         public void storeNode(Wibble element, LinkedListImpl.Node<Wibble> node) {
-            list.put(element.id, node);
-         }
-
-         @Override
-         public LinkedListImpl.Node<Wibble> getNode(String listID, long id) {
-            return list.get(id);
-         }
-
-         @Override
-         public void removeNode(Wibble element, LinkedListImpl.Node<Wibble> node) {
-            list.remove(element.id);
-         }
-
-         @Override
-         public void clear() {
-            list.clear();
-         }
-
-         @Override
-         public int size() {
-            return list.size();
-         }
-      }
-
-      list.setNodeStore(new WibbleNodeStore());
+      list.setNodeStore(WibbleNodeStore::new);
 
       // remove every 3rd
       for (int i = 3; i <= 3000; i += 3) {
@@ -971,19 +955,65 @@ public final class PriorityLinkedListTest extends Assert {
 
    }
 
+   @Test
+   public void testRemoveWithRandomOrderID() {
+
+      list.setNodeStore(WibbleNodeStore::new);
+
+      ArrayList<Integer> usedIds = new ArrayList<>();
+
+      int elements = 50;
+
+      for (int i = 1; i <= elements; i++) {
+         int level = RandomUtil.randomInterval(0, 2);
+         list.addTail(new Wibble("" + i, i, level), level);
+         usedIds.add(i);
+      }
+
+      HashMap<Integer, Wibble> hashMapOutput = new HashMap<>(elements);
+
+      while (usedIds.size() > 0) {
+         Integer idToRemove = usedIds.remove(RandomUtil.randomInterval(0, usedIds.size() - 1));
+         Wibble wibble = list.removeWithID("", idToRemove);
+         assertNotNull(wibble);
+         assertEquals(idToRemove.intValue(), wibble.id);
+         assertSame(wibble, lastRemovedWibble);
+         // removing from the wrong could create a mess in the linked list nodes
+         assertEquals(wibble.level, lastRemovedLevel);
+         hashMapOutput.put(idToRemove, wibble);
+      }
+
+      assertEquals(elements, hashMapOutput.size());
+
+      for (int i = 1; i <= elements; i++) {
+         Wibble wibble = hashMapOutput.remove(i);
+         assertNotNull(wibble);
+         assertEquals(i, wibble.id);
+      }
+
+      assertEquals(0, hashMapOutput.size());
+   }
+
    static class Wibble {
 
       String s1;
       long id;
 
+      int level;
+
       Wibble(final String s, long id) {
+         this(s, id, 4);
+      }
+
+      Wibble(final String s, long id, int level) {
          this.s1 = s;
          this.id = id;
+         this.level = level;
       }
 
       @Override
       public String toString() {
-         return s1;
+         return "s = " + s1 + ", id = " + id + ", level = " + level;
       }
 
       @Override
@@ -1001,5 +1031,35 @@ public final class PriorityLinkedListTest extends Assert {
          return Objects.hash(s1);
       }
    }
+
+   class WibbleNodeStore implements NodeStore<Wibble> {
+      LongObjectHashMap<LinkedListImpl.Node<Wibble>> list = new LongObjectHashMap<>();
+
+      @Override
+      public void storeNode(Wibble element, LinkedListImpl.Node<Wibble> node) {
+         list.put(element.id, node);
+      }
+
+      @Override
+      public LinkedListImpl.Node<Wibble> getNode(String listID, long id) {
+         return list.get(id);
+      }
+
+      @Override
+      public void removeNode(Wibble element, LinkedListImpl.Node<Wibble> node) {
+         list.remove(element.id);
+      }
+
+      @Override
+      public void clear() {
+         list.clear();
+      }
+
+      @Override
+      public int size() {
+         return list.size();
+      }
+   }
+
 
 }

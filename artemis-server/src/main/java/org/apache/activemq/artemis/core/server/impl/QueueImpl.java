@@ -114,7 +114,6 @@ import org.apache.activemq.artemis.utils.ReusableLatch;
 import org.apache.activemq.artemis.utils.SizeAwareMetric;
 import org.apache.activemq.artemis.utils.actors.ArtemisExecutor;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
-import org.apache.activemq.artemis.utils.collections.NodeStore;
 import org.apache.activemq.artemis.utils.collections.LinkedListIterator;
 import org.apache.activemq.artemis.utils.collections.NodeStoreFactory;
 import org.apache.activemq.artemis.utils.collections.PriorityLinkedList;
@@ -218,12 +217,12 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    // This is where messages are stored
    protected final PriorityLinkedList<MessageReference> messageReferences = new PriorityLinkedListImpl<>(QueueImpl.NUM_PRIORITIES, MessageReferenceImpl.getSequenceComparator());
 
-   private NodeStore<MessageReference> nodeStore;
+   private NodeStoreFactory<MessageReference> nodeStoreFactory;
 
    private void checkIDSupplier(NodeStoreFactory<MessageReference> nodeStoreFactory) {
-      if (this.nodeStore == null) {
-         this.nodeStore = nodeStoreFactory.newNodeStore();
-         messageReferences.setNodeStore(nodeStore);
+      if (this.nodeStoreFactory == null) {
+         this.nodeStoreFactory = nodeStoreFactory;
+         messageReferences.setNodeStore( () -> nodeStoreFactory.newNodeStore().setName(String.valueOf(name)));
       }
    }
 
@@ -1813,22 +1812,6 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    @Override
-   public synchronized MessageReference getReference(final long id1) throws ActiveMQException {
-      try (LinkedListIterator<MessageReference> iterator = iterator()) {
-
-         while (iterator.hasNext()) {
-            MessageReference ref = iterator.next();
-
-            if (ref.getMessage().getMessageID() == id1) {
-               return ref;
-            }
-         }
-
-         return null;
-      }
-   }
-
-   @Override
    public long getMessageCount() {
       if (pageSubscription != null) {
          // messageReferences will have depaged messages which we need to discount from the counter as they are
@@ -3080,6 +3063,11 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    }
 
    private int getPriority(MessageReference ref) {
+      if (isInternalQueue()) {
+         // if it's an internal queue we need to send the events on their original ordering
+         // for example an ACK arriving before the send on a Mirror..
+         return 4;
+      }
       try {
          return ref.getMessage().getPriority();
       } catch (Throwable e) {
@@ -4521,6 +4509,13 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       }
 
       @Override
+      public MessageReference removeLastElement() {
+         synchronized (QueueImpl.this) {
+            return iter.removeLastElement();
+         }
+      }
+
+      @Override
       public void remove() {
          synchronized (QueueImpl.this) {
             iter.remove();
@@ -4542,7 +4537,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          return pagingIterator;
       }
 
-      Iterator<? extends MessageReference> lastIterator = null;
+      LinkedListIterator<? extends MessageReference> lastIterator = null;
 
       MessageReference cachedNext = null;
       HashSet<PagePosition> previouslyBrowsed = new HashSet<>();
@@ -4641,6 +4636,15 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       public void remove() {
          if (lastIterator != null) {
             lastIterator.remove();
+         }
+      }
+
+      @Override
+      public MessageReference removeLastElement() {
+         if (lastIterator != null) {
+            return lastIterator.removeLastElement();
+         } else {
+            return null;
          }
       }
 

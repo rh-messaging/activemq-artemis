@@ -1213,32 +1213,6 @@ public class QueueImplTest extends ActiveMQTestBase {
       Assert.assertEquals(getMessagesAdded(queue), 3);
    }
 
-   @Test
-   public void testGetReference() throws Exception {
-      QueueImpl queue = getTemporaryQueue();
-      MessageReference messageReference = generateReference(queue, 1);
-      MessageReference messageReference2 = generateReference(queue, 2);
-      MessageReference messageReference3 = generateReference(queue, 3);
-      queue.addHead(messageReference, false);
-      queue.addHead(messageReference2, false);
-      queue.addHead(messageReference3, false);
-      Assert.assertEquals(queue.getReference(2), messageReference2);
-
-   }
-
-   @Test
-   public void testGetNonExistentReference() throws Exception {
-      QueueImpl queue = getTemporaryQueue();
-      MessageReference messageReference = generateReference(queue, 1);
-      MessageReference messageReference2 = generateReference(queue, 2);
-      MessageReference messageReference3 = generateReference(queue, 3);
-      queue.addHead(messageReference, false);
-      queue.addHead(messageReference2, false);
-      queue.addHead(messageReference3, false);
-      Assert.assertNull(queue.getReference(5));
-
-   }
-
    /**
     * Test the paused and resumed states with async deliveries.
     *

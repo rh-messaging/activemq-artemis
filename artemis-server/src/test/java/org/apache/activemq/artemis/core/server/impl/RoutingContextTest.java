@@ -615,11 +615,6 @@ public class RoutingContextTest {
       }
 
       @Override
-      public MessageReference getReference(long id) throws ActiveMQException {
-         return null;
-      }
-
-      @Override
       public int deleteAllReferences() throws Exception {
          return 0;
       }

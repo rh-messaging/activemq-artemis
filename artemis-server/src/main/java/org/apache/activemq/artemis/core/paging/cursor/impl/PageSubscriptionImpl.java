@@ -1457,6 +1457,11 @@ public final class PageSubscriptionImpl implements PageSubscription {
 
       @Override
       public void remove() {
+         removeLastElement();
+      }
+
+      @Override
+      public PagedReference removeLastElement() {
          PagedReference delivery = currentDelivery;
          if (delivery != null) {
             PageCursorInfo info = PageSubscriptionImpl.this.getPageInfo(delivery.getPagedMessage().getPageNumber());
@@ -1464,6 +1469,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
                info.remove(delivery.getPagedMessage().getMessageNumber());
             }
          }
+         return delivery;
       }
 
       @Override
