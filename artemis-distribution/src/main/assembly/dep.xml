@@ -45,6 +45,7 @@
             <exclude>org.apache.activemq:activemq-branding:war</exclude>
             <exclude>org.apache.activemq:artemis-plugin:war</exclude>
             <exclude>com.redhat.amq-broker:redhat-branding:war</exclude>
+            <exclude>com.redhat.amq-broker:artemis-prometheus-metrics-plugin-servlet:war</exclude>
          </excludes>
          <outputDirectory>lib</outputDirectory>
          <unpack>false</unpack>
@@ -98,6 +99,17 @@
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
          <outputFileNameMapping>artemis-plugin.war</outputFileNameMapping>
+         <useProjectArtifact>false</useProjectArtifact>
+         <directoryMode>0755</directoryMode>
+         <fileMode>0644</fileMode>
+      </dependencySet>
+      <dependencySet>
+         <includes>
+            <include>com.redhat.amq-broker:artemis-prometheus-metrics-plugin-servlet:war</include>
+         </includes>
+         <outputDirectory>web</outputDirectory>
+         <unpack>false</unpack>
+         <outputFileNameMapping>metrics.war</outputFileNameMapping>
          <useProjectArtifact>false</useProjectArtifact>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
