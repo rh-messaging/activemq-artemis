@@ -79,7 +79,7 @@
       <artemis.prometheus.metrics.plugin.version>2.1.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
-      <keycloak.version>18.0.13.redhat-00001</keycloak.version>
+      <keycloak.version>18.0.16.redhat-00001</keycloak.version>
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
       <netty.transport.native.epoll.aarch.version>4.1.108.Final-redhat-00001</netty.transport.native.epoll.aarch.version>
       <netty.transport.native.epoll.ppcle.version>4.1.108.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
