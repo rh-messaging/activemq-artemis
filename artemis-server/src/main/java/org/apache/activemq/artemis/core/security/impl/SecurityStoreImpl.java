@@ -18,8 +18,11 @@ package org.apache.activemq.artemis.core.security.impl;
 
 import javax.security.auth.Subject;
 import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -50,6 +53,7 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager3;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager4;
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager5;
 import org.apache.activemq.artemis.spi.core.security.jaas.NoCacheLoginException;
+import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.collections.TypedProperties;
@@ -100,7 +104,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                             final String managementClusterPassword,
                             final NotificationService notificationService,
                             final long authenticationCacheSize,
-                            final long authorizationCacheSize) {
+                            final long authorizationCacheSize) throws NoSuchAlgorithmException {
       this.securityRepository = securityRepository;
       this.securityManager = securityManager;
       this.securityEnabled = securityEnabled;
@@ -116,6 +120,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                                           .expireAfterWrite(invalidationInterval, TimeUnit.MILLISECONDS)
                                           .recordStats()
                                           .build();
+            logger.trace("Created authn cache: {}; maxSize: {}; invalidationInterval: {}", authenticationCache, authenticationCacheSize, invalidationInterval);
          }
          if (authorizationCacheSize == 0) {
             authorizationCache = null;
@@ -125,6 +130,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
                                          .expireAfterWrite(invalidationInterval, TimeUnit.MILLISECONDS)
                                          .recordStats()
                                          .build();
+            logger.trace("Created authz cache: {}; maxSize: {}; invalidationInterval: {}", authorizationCache, authorizationCacheSize, invalidationInterval);
          }
          this.securityRepository.registerListener(this);
       } else {
@@ -185,7 +191,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
          boolean check = true;
 
          Subject subject = null;
-         Pair<Boolean, Subject> cacheEntry = getAuthenticationCacheEntry(user, password, connection);
+         String authnCacheKey = createAuthenticationCacheKey(user, password, connection);
+         Pair<Boolean, Subject> cacheEntry = getAuthenticationCacheEntry(authnCacheKey);
          if (cacheEntry != null) {
             if (!cacheEntry.getA()) {
                // cached authentication failed previously so don't check again
@@ -212,7 +219,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
             if (securityManager instanceof ActiveMQSecurityManager5) {
                try {
                   subject = ((ActiveMQSecurityManager5) securityManager).authenticate(user, password, connection, securityDomain);
-                  putAuthenticationCacheEntry(user, password, connection, subject);
+                  putAuthenticationCacheEntry(authnCacheKey, subject);
                   validatedUser = getUserFromSubject(subject);
                } catch (NoCacheLoginException e) {
                   handleNoCacheLoginException(e);
@@ -435,7 +442,8 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
     * @return the authenticated Subject with all associated role principals
     */
    private Subject getSubjectForAuthorization(SecurityAuth auth, ActiveMQSecurityManager5 securityManager) {
-      Pair<Boolean, Subject> cached = getAuthenticationCacheEntry(auth.getUsername(), auth.getPassword(), auth.getRemotingConnection());
+      String authnCacheKey = createAuthenticationCacheKey(auth.getUsername(), auth.getPassword(), auth.getRemotingConnection());
+      Pair<Boolean, Subject> cached = getAuthenticationCacheEntry(authnCacheKey);
 
       if (cached == null && auth.getUsername() == null && auth.getPassword() == null && auth.getRemotingConnection() instanceof ManagementRemotingConnection) {
          AccessControlContext accessControlContext = AccessController.getContext();
@@ -451,7 +459,7 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       if (cached == null) {
          try {
             Subject subject = securityManager.authenticate(auth.getUsername(), auth.getPassword(), auth.getRemotingConnection(), auth.getSecurityDomain());
-            putAuthenticationCacheEntry(auth.getUsername(), auth.getPassword(), auth.getRemotingConnection(), subject);
+            putAuthenticationCacheEntry(authnCacheKey, subject);
             return subject;
          } catch (NoCacheLoginException e) {
             handleNoCacheLoginException(e);
@@ -465,28 +473,28 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       logger.debug("Skipping authentication cache due to exception: {}", e.getMessage());
    }
 
-   private void putAuthenticationCacheEntry(String user,
-                                            String password,
-                                            RemotingConnection connection,
-                                            Subject subject) {
+   private void putAuthenticationCacheEntry(String key, Subject subject) {
       if (authenticationCache != null) {
-         authenticationCache.put(createAuthenticationCacheKey(user, password, connection), new Pair<>(subject != null, subject));
+         Pair<Boolean, Subject> value = new Pair<>(subject != null, subject);
+         authenticationCache.put(key, value);
+         logger.trace("Put into authn cache; key: {}; value: {}", key, value);
       }
    }
 
-   private Pair<Boolean, Subject> getAuthenticationCacheEntry(String user,
-                                                              String password,
-                                                              RemotingConnection connection) {
+   private Pair<Boolean, Subject> getAuthenticationCacheEntry(String key) {
       if (authenticationCache == null) {
          return null;
       } else {
-         return authenticationCache.getIfPresent(createAuthenticationCacheKey(user, password, connection));
+         Pair<Boolean, Subject> value = authenticationCache.getIfPresent(key);
+         logger.trace("Get from authn cache; key: {}; value: {}", key, value);
+         return value;
       }
    }
 
-   private void putAuthorizationCacheEntry(ConcurrentHashSet<SimpleString> set, String key) {
+   private void putAuthorizationCacheEntry(ConcurrentHashSet<SimpleString> value, String key) {
       if (authorizationCache != null) {
-         authorizationCache.put(key, set);
+         authorizationCache.put(key, value);
+         logger.trace("Put into authz cache; key: {}; value: {}", key, value);
       }
    }
 
@@ -494,19 +502,23 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
       if (authorizationCache == null) {
          return null;
       } else {
-         return authorizationCache.getIfPresent(key);
+         ConcurrentHashSet<SimpleString> value = authorizationCache.getIfPresent(key);
+         logger.trace("Get from authz cache; key: {}; value: {}", key, value);
+         return value;
       }
    }
 
    public void invalidateAuthorizationCache() {
       if (authorizationCache != null) {
          authorizationCache.invalidateAll();
+         logger.trace("Invalidated authz cache");
       }
    }
 
    public void invalidateAuthenticationCache() {
       if (authenticationCache != null) {
          authenticationCache.invalidateAll();
+         logger.trace("Invalidated authn cache");
       }
    }
 
@@ -538,7 +550,11 @@ public class SecurityStoreImpl implements SecurityStore, HierarchicalRepositoryC
    }
 
    private String createAuthenticationCacheKey(String username, String password, RemotingConnection connection) {
-      return username + password + CertificateUtil.getCertSubjectDN(connection);
+      try {
+         return ByteUtil.bytesToHex(MessageDigest.getInstance("SHA-256").digest((username + password + CertificateUtil.getCertSubjectDN(connection)).getBytes(StandardCharsets.UTF_8)));
+      } catch (NoSuchAlgorithmException e) {
+         throw new RuntimeException(e);
+      }
    }
 
    private String createAuthorizationCacheKey(String user, CheckType checkType) {
