@@ -507,10 +507,11 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       assertFalse(conf.getAddressSettings().get("a2").isEnableIngressTimestamp());
       assertEquals(Integer.valueOf(500), conf.getAddressSettings().get("a2").getIDCacheSize());
 
-      Assert.assertEquals(111, conf.getMirrorAckManagerQueueAttempts());
-      Assert.assertEquals(222, conf.getMirrorAckManagerPageAttempts());
-      Assert.assertEquals(333, conf.getMirrorAckManagerRetryDelay());
-      Assert.assertTrue(conf.isMirrorPageTransaction());
+      assertEquals(111, conf.getMirrorAckManagerQueueAttempts());
+      assertTrue(conf.isMirrorAckManagerWarnUnacked());
+      assertEquals(222, conf.getMirrorAckManagerPageAttempts());
+      assertEquals(333, conf.getMirrorAckManagerRetryDelay());
+      assertTrue(conf.isMirrorPageTransaction());
 
       assertTrue(conf.getResourceLimitSettings().containsKey("myUser"));
       assertEquals(104, conf.getResourceLimitSettings().get("myUser").getMaxConnections());

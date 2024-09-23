@@ -442,6 +442,8 @@ public class ConfigurationImpl implements Configuration, Serializable {
 
    private int mirrorAckManagerMaxPageAttempts = ActiveMQDefaultConfiguration.getMirrorAckManagerMaxPageAttempts();
 
+   private boolean mirrorAckManagerWarnUnacked = ActiveMQDefaultConfiguration.getMirrorAckManagerWarnUnacked();
+
    private int mirrorAckManagerRetryDelay = ActiveMQDefaultConfiguration.getMirrorAckManagerRetryDelay();
 
    private boolean mirrorPageTransaction = ActiveMQDefaultConfiguration.getDefaultMirrorPageTransaction();
@@ -3383,6 +3385,17 @@ public class ConfigurationImpl implements Configuration, Serializable {
    @Override
    public int getMirrorAckManagerQueueAttempts() {
       return mirrorAckManagerMinQueueAttempts;
+   }
+
+   @Override
+   public boolean isMirrorAckManagerWarnUnacked() {
+      return mirrorAckManagerWarnUnacked;
+   }
+
+   @Override
+   public ConfigurationImpl setMirrorAckManagerWarnUnacked(boolean warnUnacked) {
+      this.mirrorAckManagerWarnUnacked = warnUnacked;
+      return this;
    }
 
    @Override

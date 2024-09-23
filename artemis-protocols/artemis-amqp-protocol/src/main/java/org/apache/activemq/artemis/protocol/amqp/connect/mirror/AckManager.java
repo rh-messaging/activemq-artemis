@@ -56,6 +56,7 @@ import org.apache.activemq.artemis.core.server.impl.AddressInfo;
 import org.apache.activemq.artemis.core.server.mirror.MirrorController;
 import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.apache.activemq.artemis.core.transaction.impl.TransactionImpl;
+import org.apache.activemq.artemis.protocol.amqp.logger.ActiveMQAMQPProtocolLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +78,7 @@ public class AckManager implements ActiveMQComponent {
    ActiveMQScheduledComponent scheduledComponent;
 
    public AckManager(ActiveMQServer server) {
+      assert server != null && server.getConfiguration() != null;
       this.server = server;
       this.configuration = server.getConfiguration();
       this.ioCriticalErrorListener = server.getIoCriticalErrorListener();
@@ -252,7 +254,7 @@ public class AckManager implements ActiveMQComponent {
                   page.usageDown();
                }
             }
-            validateExpiredSet(acksToRetry);
+            validateExpiredSet(address, acksToRetry);
          } else {
             logger.trace("Page Scan not required for address {}", address);
          }
@@ -275,16 +277,19 @@ public class AckManager implements ActiveMQComponent {
 
    }
 
-   private void validateExpiredSet(LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queuesToRetry) {
-      queuesToRetry.forEach(this::validateExpireSet);
+   private void validateExpiredSet(SimpleString address, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>> queuesToRetry) {
+      queuesToRetry.forEach((q, r) -> this.validateExpireSet(address, q, r));
    }
 
-   private void validateExpireSet(long queueID, JournalHashMap<AckRetry, AckRetry, Queue> retries) {
+   private void validateExpireSet(SimpleString address, long queueID, JournalHashMap<AckRetry, AckRetry, Queue> retries) {
       for (AckRetry retry : retries.valuesCopy()) {
          if (retry.getQueueAttempts() >= configuration.getMirrorAckManagerQueueAttempts()) {
             if (retry.attemptedPage() >= configuration.getMirrorAckManagerPageAttempts()) {
+               if (configuration.isMirrorAckManagerWarnUnacked()) {
+                  ActiveMQAMQPProtocolLogger.LOGGER.ackRetryFailed(retry, address, queueID);
+               }
                if (logger.isDebugEnabled()) {
-                  logger.debug("Retried {} {} times, giving up on the entry now", retry, retry.getPageAttempts());
+                  logger.debug("Retried {} {} times, giving up on the entry now. Configured Page Attempts={}", retry, retry.getPageAttempts(), configuration.getMirrorAckManagerPageAttempts());
                }
                retries.remove(retry);
             } else {
@@ -292,6 +297,8 @@ public class AckManager implements ActiveMQComponent {
                   logger.trace("Retry {} attempted {} times on paging", retry, retry.getPageAttempts());
                }
             }
+         } else {
+            logger.debug("Retry {} queue attempted {} times on paging, QueueAttempts {} Configuration Page Attempts={}", retry, retry.getQueueAttempts(), retry.getPageAttempts(), configuration.getMirrorAckManagerPageAttempts());
          }
       }
    }
@@ -410,9 +417,14 @@ public class AckManager implements ActiveMQComponent {
       if (reference == null) {
          if (logger.isDebugEnabled()) {
             logger.debug("ACK Manager could not find reference nodeID={} (while localID={}), messageID={} on queue {}, server={}. Adding retry with minQueue={}, maxPage={}, delay={}", nodeID, referenceIDSupplier.getDefaultNodeID(), messageID, targetQueue.getName(), server, configuration.getMirrorAckManagerQueueAttempts(), configuration.getMirrorAckManagerPageAttempts(), configuration.getMirrorAckManagerRetryDelay());
-            printQueueDebug(targetQueue);
          }
+
          if (allowRetry) {
+            if (configuration != null && configuration.isMirrorAckManagerWarnUnacked() && targetQueue.getConsumerCount() > 0) {
+               ActiveMQAMQPProtocolLogger.LOGGER.unackWithConsumer(targetQueue.getConsumerCount(), targetQueue.getName(), nodeID, messageID);
+            } else {
+               logger.debug("There are {} consumers on queue {}, what made Ack for message with nodeID={}, messageID={} enter a retry list", targetQueue.getConsumerCount(), targetQueue.getName(), nodeID, messageID);
+            }
             addRetry(nodeID, targetQueue, messageID, reason);
          }
          return false;
@@ -426,10 +438,6 @@ public class AckManager implements ActiveMQComponent {
          doACK(targetQueue, reference, reason);
          return true;
       }
-   }
-
-   private void printQueueDebug(Queue targetQueue) {
-      logger.debug("... queue {}/{} had {} consumers, {} messages, {} scheduled messages, {} delivering messages, paging={}", targetQueue.getID(), targetQueue.getName(), targetQueue.getConsumerCount(), targetQueue.getMessageCount(), targetQueue.getScheduledCount(), targetQueue.getDeliveringCount(), targetQueue.getPagingStore().isPaging());
    }
 
    private void doACK(Queue targetQueue, MessageReference reference, AckReason reason) {
