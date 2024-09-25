@@ -64,6 +64,9 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
+
+   private static final String SNF_QUEUE = "$ACTIVEMQ_ARTEMIS_MIRROR_mirror";
+
    // Set this to true and log4j will be configured with some relevant log.trace for the AckManager at the server's
    private static final boolean TRACE_LOGS = Boolean.parseBoolean(TestParameters.testProperty(TEST_NAME, "TRACE_LOGS", "false"));
    private static final int NUMBER_MESSAGES = TestParameters.testProperty(TEST_NAME, "NUMBER_MESSAGES", 200);
@@ -76,6 +79,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
     * Time each consumer takes to process a message received to allow some messages accumulating.
     * This sleep happens right before the commit.
     */
+   private static final String QUEUE_NAME_LIST = "queueTest,Div,Div.0,Div.1,Div.2";
    private static final String QUEUE_NAME = "queueTest";
 
    private static String body;
@@ -177,7 +181,6 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       cliCreateServer.createServer();
 
       Properties brokerProperties = new Properties();
-      brokerProperties.put("messageExpiryScanPeriod", "1000");
       brokerProperties.put("AMQPConnections." + connectionName + ".uri", mirrorURI);
       brokerProperties.put("AMQPConnections." + connectionName + ".retryInterval", "1000");
       brokerProperties.put("AMQPConnections." + connectionName + ".type", AMQPBrokerConnectionAddressType.MIRROR.toString());
@@ -265,7 +268,6 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
       File brokerPropertiesFile = new File(serverLocation, "broker.properties");
       saveProperties(brokerProperties, brokerPropertiesFile);
-
 
       File brokerXml = new File(serverLocation, "/etc/broker.xml");
       assertTrue(brokerXml.exists());
@@ -367,9 +369,10 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       ConnectionFactory connectionFactoryDC1A = CFUtil.createConnectionFactory(protocol, uri(DC1_IP));
 
       final int startAt = 300;
-      final int killAt = 800;
-      final int totalMessages = 1_600;
-      String snfQueue = "$ACTIVEMQ_ARTEMIS_MIRROR_mirror";
+      final int killAt = 500;
+      final int failbackAt = 700;
+      final int lastKillAt = 1200;
+      final int totalMessages = 1_800;
 
       try (Connection connection = connectionFactoryDC1A.createConnection()) {
          connection.start();
@@ -420,7 +423,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          session.commit();
       }
 
-      Wait.assertEquals(0, () -> getMessageCount(managementDC1, snfQueue));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC1, SNF_QUEUE));
       Wait.assertEquals(oddSend, () -> getMessageCount(managementDC1, QUEUE_NAME));
       Wait.assertEquals(oddSend, () -> getMessageCount(managementDC2Backup, QUEUE_NAME));
 
@@ -440,10 +443,16 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
          session.commit();
       }
 
-      Wait.assertEquals(0, () -> getMessageCount(managementDC1, snfQueue));
-      Wait.assertEquals(0, () -> getMessageCount(managementDC2Backup, snfQueue));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC1, SNF_QUEUE));
+      Wait.assertEquals(0, () -> getMessageCount(managementDC2Backup, SNF_QUEUE));
       Wait.assertEquals(0, () -> getMessageCount(managementDC1, QUEUE_NAME));
       Wait.assertEquals(0, () -> getMessageCount(managementDC2Backup, QUEUE_NAME));
+
+      LogAssert.assertServerLogsForMirror(getFileServerLocation(DC1_NODE));
+      LogAssert.assertServerLogsForMirror(getFileServerLocation(DC1_REPLICA_NODE));
+      LogAssert.assertServerLogsForMirror(getFileServerLocation(DC2_NODE));
+      LogAssert.assertServerLogsForMirror(getFileServerLocation(DC2_REPLICA_NODE));
+
    }
 
    @Test
