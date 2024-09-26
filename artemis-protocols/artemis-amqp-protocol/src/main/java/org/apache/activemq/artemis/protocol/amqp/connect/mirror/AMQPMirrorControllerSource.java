@@ -212,6 +212,10 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
          return;
       }
 
+      if (addressInfo.isTemporary()) {
+         return;
+      }
+
       if (ignoreAddress(addressInfo.getName())) {
          return;
       }
@@ -249,6 +253,11 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
 
          return;
       }
+
+      if (queueConfiguration.isTemporary()) {
+         return;
+      }
+
       if (ignoreAddress(queueConfiguration.getAddress())) {
          if (logger.isTraceEnabled()) {
             logger.trace("Skipping create {}, queue address {} doesn't match filter", queueConfiguration, queueConfiguration.getAddress());
@@ -344,14 +353,21 @@ public class AMQPMirrorControllerSource extends BasicMirrorController<Sender> im
          return;
       }
 
-      logger.trace("sendMessage::{} send message {}", server, message);
-
       try {
          context.setReusable(false);
 
          String nodeID = idSupplier.getServerID(message);
 
-         if (nodeID != null && nodeID.equals(getRemoteMirrorId())) {
+         String remoteID = getRemoteMirrorId();
+
+         if (remoteID == null) {
+            if (AMQPMirrorControllerTarget.getControllerInUse() != null) {
+               // In case source has not yet connected, we need to take the ID from the Target in use to avoid infinite reflections
+               remoteID = AMQPMirrorControllerTarget.getControllerInUse().getRemoteMirrorId();
+            }
+         }
+
+         if (nodeID != null && nodeID.equals(remoteID)) {
             logger.trace("sendMessage::Message {} already belonged to the node, {}, it won't circle send", message, getRemoteMirrorId());
             return;
          }
