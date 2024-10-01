@@ -132,6 +132,7 @@ var Artemis;
             ],
             operationOptions: [
                 {id: 'EQUALS', name: 'Equals'},
+                {id: 'NOT_EQUALS', name: 'Not Equals'},
                 {id: 'CONTAINS', name: 'Contains'},
                 {id: 'NOT_CONTAINS', name: 'Does Not Contain'},
                 {id: 'GREATER_THAN', name: 'Greater Than'},
@@ -146,7 +147,7 @@ var Artemis;
                 operation: "",
                 value: "",
                 sortOrder: "asc",
-                sortColumn: "connectionID"
+                sortField: "connectionID"
             },
             text: {
                 fieldText: "Filter Field..",
@@ -204,7 +205,7 @@ var Artemis;
             ctrl.filter.values.operation = "";
             ctrl.filter.values.value = "";
             ctrl.filter.sortOrder = "asc";
-            ctrl.filter.sortColumn = "connectionID";
+            ctrl.filter.sortField = "connectionID";
             ctrl.filter.text.fieldText = "Filter Field..";
             ctrl.filter.text.operationText = "Operation..";
             ctrl.filter.text.sortOrderText = "ascending";
@@ -222,7 +223,7 @@ var Artemis;
                     operation: ctrl.filter.values.operation,
                     value: ctrl.filter.values.value,
                     sortOrder: ctrl.filter.values.sortOrder,
-                    sortColumn: ctrl.filter.values.sortColumn
+                    sortField: ctrl.filter.values.sortField
                 };
 
                 if (ctrl.refreshed == true) {
