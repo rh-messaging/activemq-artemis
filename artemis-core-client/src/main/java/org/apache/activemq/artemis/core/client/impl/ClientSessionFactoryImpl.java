@@ -769,7 +769,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                      failoverRetries++;
                      if (failoverRetryPredicate.test(false, failoverRetries)) {
                         waitForRetry(failoverRetryInterval);
-                        failoverRetryInterval = getNextRetryInterval(failoverRetryInterval);
+                        failoverRetryInterval = serverLocator.getNextRetryInterval(failoverRetryInterval, retryIntervalMultiplier, maxRetryInterval);
                      }
                   }
                }
@@ -994,7 +994,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                if (waitForRetry(interval))
                   return count;
 
-               interval = getNextRetryInterval(interval);
+               interval = serverLocator.getNextRetryInterval(interval, retryIntervalMultiplier, maxRetryInterval);
             } else {
                logger.debug("Could not connect to any server. Didn't have reconnection configured on the ClientSessionFactory");
                return count;
@@ -1003,17 +1003,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       return count;
-   }
-
-   private long getNextRetryInterval(long retryInterval) {
-      // Exponential back-off
-      long nextRetryInterval = (long) (retryInterval * retryIntervalMultiplier);
-
-      if (nextRetryInterval > maxRetryInterval) {
-         nextRetryInterval = maxRetryInterval;
-      }
-
-      return nextRetryInterval;
    }
 
    @Override

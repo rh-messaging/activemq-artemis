@@ -76,4 +76,42 @@ public class InitialConnectionTest extends ActiveMQTestBase {
       long timeEnd = System.currentTimeMillis();
       Assert.assertTrue("3 connectors, at 100 milliseconds each try, initialConnectAttempt=2, it should have waited at least 600 (- 100 from the last try that we don't actually wait, just throw ) milliseconds", timeEnd - timeStart >= 500);
    }
+
+   @Test
+   public void testRetryIntervalMultiplier() {
+      int interval = 100;
+      double multiplier = 10.0;
+      int attempts = 3;
+      ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61610?retryInterval=" + interval + "&retryIntervalMultiplier=" + multiplier + "&initialConnectAttempts=" + attempts);
+      long timeStart = System.currentTimeMillis();
+      try {
+         connectionFactory.createConnection();
+         fail("Creating connection here should have failed");
+      } catch (JMSException e) {
+         // expected
+      }
+      long duration = System.currentTimeMillis() - timeStart;
+      long toWait = 1100;
+      assertTrue("Waited only " + duration + "ms, but should have waiting " + toWait, duration >= toWait);
+   }
+
+   @Test
+   public void testMaxRetryInterval() {
+      int interval = 100;
+      double multiplier = 50.0;
+      int attempts = 3;
+      int maxInterval = 1000;
+      ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61610?retryInterval=" + interval + "&retryIntervalMultiplier=" + multiplier + "&initialConnectAttempts=" + attempts + "&maxRetryInterval=" + maxInterval);
+      long timeStart = System.currentTimeMillis();
+      try {
+         connectionFactory.createConnection();
+         fail("Creating connection here should have failed");
+      } catch (JMSException e) {
+         // expected
+      }
+      long duration = System.currentTimeMillis() - timeStart;
+      long toWait = 1100;
+      assertTrue("Waited only " + duration + "ms, but should have waited " + toWait, duration >= toWait);
+      assertTrue("Waited " + duration + "ms, but should have only waited " + (toWait + 500), duration <= toWait + 500);
+   }
 }
