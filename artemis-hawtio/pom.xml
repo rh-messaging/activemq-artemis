@@ -58,7 +58,6 @@
         <module>activemq-branding</module>
         <module>artemis-plugin</module>
         <module>artemis-console</module>
-        <module>redhat-branding</module>
     </modules>
 
 </project>
