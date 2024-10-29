@@ -117,13 +117,13 @@
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.25.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.18.2</checkstyle.version>
+      <checkstyle.version>10.19.0</checkstyle.version>
       <mockito.version>5.14.2</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.114.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
       <curator.version>5.7.1</curator.version>
-      <zookeeper.version>3.9.2</zookeeper.version>
+      <zookeeper.version>3.9.3</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>2.4.0</pem-keystore.version>
 
@@ -190,7 +190,7 @@
       <owasp.version>10.0.4</owasp.version>
       <spring.version>5.3.39</spring.version>
 
-      <jackson.version>2.18.0</jackson.version>
+      <jackson.version>2.18.1</jackson.version>
       <jackson-databind.version>${jackson.version}</jackson-databind.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
@@ -385,8 +385,9 @@
                   <artifactId>dependency-check-maven</artifactId>
                   <version>${owasp.version}</version>
                   <configuration>
-                     <!-- <skipProvidedScope>true</skipProvidedScope>
-                      <skipRuntimeScope>true</skipRuntimeScope> -->
+                     <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                     <skipTestScope>true</skipTestScope>
+                     <skipProvidedScope>true</skipProvidedScope>
                   </configuration>
                   <executions>
                      <execution>
