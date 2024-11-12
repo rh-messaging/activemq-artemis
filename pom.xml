@@ -117,7 +117,7 @@
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.25.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.20.0</checkstyle.version>
+      <checkstyle.version>10.20.1</checkstyle.version>
       <mockito.version>5.14.2</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.114.Final</netty.version>
@@ -163,7 +163,7 @@
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.12</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
-      <version.micrometer>1.13.6</version.micrometer>
+      <version.micrometer>1.13.7</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
       <junit5.version>5.11.3</junit5.version>
@@ -183,7 +183,7 @@
       <jakarta.resource-api.version.alt>2.1.0</jakarta.resource-api.version.alt>
 
       <!-- used on tests -->
-      <groovy.version>4.0.23</groovy.version>
+      <groovy.version>4.0.24</groovy.version>
       <hadoop.minikdc.version>3.4.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
