@@ -125,10 +125,10 @@
       <curator.version>5.7.1</curator.version>
       <zookeeper.version>3.9.3</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
-      <pem-keystore.version>2.4.0</pem-keystore.version>
+      <pem-keystore.version>3.0.0</pem-keystore.version>
 
       <!-- docs -->
-      <asciidoctor.maven.plugin.version>3.1.0</asciidoctor.maven.plugin.version>
+      <asciidoctor.maven.plugin.version>3.1.1</asciidoctor.maven.plugin.version>
       <asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 
       <!-- this is basically for tests -->
@@ -163,7 +163,7 @@
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.12</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
-      <version.micrometer>1.14.0</version.micrometer>
+      <version.micrometer>1.14.1</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
       <junit5.version>5.11.3</junit5.version>
