@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -100,6 +101,7 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
    private Scanner scanner;
    private ScheduledExecutorScheduler scannerScheduler;
    private Map<String, List<Runnable>> scannerTasks = new HashMap<>();
+   private LinkOption[] scannerLinkOptions = new LinkOption[]{LinkOption.NOFOLLOW_LINKS};
 
    @Override
    public void configure(ComponentDTO config, String artemisInstance, String artemisHome) throws Exception {
@@ -341,7 +343,7 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
       }
 
       if (scanner == null) {
-         scanner = new Scanner(scannerScheduler);
+         scanner = new Scanner(scannerScheduler, false);
          scanner.setScanInterval(scanPeriod);
          scanner.setReportDirs(false);
          scanner.setReportExistingFilesOnStartup(false);
@@ -360,9 +362,9 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
       return scanner;
    }
 
-   private void addScannerTask(File file, Runnable task) {
+   private void addScannerTask(File file, Runnable task) throws IOException {
       File parentFile = getParentStoreFile(file);
-      String storeFilename = file.toPath().toString();
+      String storeFilename = file.toPath().toRealPath(scannerLinkOptions).toString();
       List<Runnable> tasks = scannerTasks.get(storeFilename);
       if (tasks == null) {
          tasks = new ArrayList<>();
@@ -372,7 +374,7 @@ public class WebServerComponent implements ExternalComponent, WebServerComponent
       getScanner().addDirectory(parentFile.toPath());
    }
 
-   private void addStoreResourceScannerTask(String storeFilename, String storeType, SslContextFactory.Server sslFactory) {
+   private void addStoreResourceScannerTask(String storeFilename, String storeType, SslContextFactory.Server sslFactory) throws IOException {
       if (storeFilename != null) {
          File storeFile = getStoreFile(storeFilename);
          addScannerTask(storeFile, () -> {
