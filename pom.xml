@@ -99,7 +99,7 @@
       <commons.pool2.version>2.12.0</commons.pool2.version>
       <commons.collections.version>3.2.2</commons.collections.version>
       <commons.text.version>1.12.0</commons.text.version>
-      <commons.io.version>2.17.0</commons.io.version>
+      <commons.io.version>2.18.0</commons.io.version>
       <commons.codec.version>1.17.1</commons.codec.version>
       <commons.compress.version>1.27.1</commons.compress.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
@@ -135,7 +135,7 @@
       <proton.version>0.34.1</proton.version>
       <protonj2.version>1.0.0-M22</protonj2.version>
       <slf4j.version>2.0.16</slf4j.version>
-      <log4j.version>2.24.1</log4j.version>
+      <log4j.version>2.24.2</log4j.version>
       <qpid.jms.version>1.12.1</qpid.jms.version>
       <johnzon.version>1.2.21</johnzon.version>
       <hawtbuff.version>1.11</hawtbuff.version>
@@ -169,7 +169,7 @@
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.4</postgresql.version>
-      <testcontainers.version>1.20.3</testcontainers.version>
+      <testcontainers.version>1.20.4</testcontainers.version>
       <selenium.version>4.26.0</selenium.version>
       <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
