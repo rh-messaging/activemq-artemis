@@ -170,7 +170,7 @@
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.4</postgresql.version>
       <testcontainers.version>1.20.4</testcontainers.version>
-      <selenium.version>4.26.0</selenium.version>
+      <selenium.version>4.27.0</selenium.version>
       <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
@@ -190,7 +190,7 @@
       <owasp.version>11.1.0</owasp.version>
       <spring.version>5.3.39</spring.version>
 
-      <jackson.version>2.18.1</jackson.version>
+      <jackson.version>2.18.2</jackson.version>
       <jackson-databind.version>${jackson.version}</jackson-databind.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
