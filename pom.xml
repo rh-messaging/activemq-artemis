@@ -79,6 +79,7 @@
 
    <properties>
       <amq.broker.version>8.0.0</amq.broker.version>
+      <artemis.prometheus.metrics.plugin.version>2.2.0.redhat-00001</artemis.prometheus.metrics.plugin.version>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
       <maven.compiler.release>11</maven.compiler.release>
