@@ -88,7 +88,7 @@
 
       <activemq-artemis-native-version>2.0.0</activemq-artemis-native-version>
       <karaf.version>4.4.6</karaf.version>
-      <pax.exam.version>4.13.5</pax.exam.version>
+      <pax.exam.version>4.14.0</pax.exam.version>
       <commons.config.version>2.11.0</commons.config.version>
       <commons.lang.version>3.17.0</commons.lang.version>
       <activemq5-version>5.18.6</activemq5-version>
@@ -187,7 +187,7 @@
       <hadoop.minikdc.version>3.4.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>11.1.0</owasp.version>
+      <owasp.version>11.1.1</owasp.version>
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.18.2</jackson.version>
