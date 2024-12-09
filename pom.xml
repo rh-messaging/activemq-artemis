@@ -85,7 +85,7 @@
       <maven.compiler.release>11</maven.compiler.release>
       <keycloak.version>18.0.16.redhat-00001</keycloak.version>
       <jboss.logging.version>3.5.0.Final</jboss.logging.version>
-      <netty.transport.native.epoll.aarch.version>4.1.114.Final-redhat-00001</netty.transport.native.epoll.aarch.version>
+      <netty.transport.native.epoll.aarch.version>4.1.115.Final-redhat-00001</netty.transport.native.epoll.aarch.version>
       <netty.transport.native.epoll.ppcle.version>4.1.114.Final-redhat-00001</netty.transport.native.epoll.ppcle.version>
       <netty.transport.native.epoll.s390x.version>4.1.114.Final-redhat-00001</netty.transport.native.epoll.s390x.version>
       <!-- disable keycloak community profile -->
