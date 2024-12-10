@@ -170,6 +170,10 @@ public class LVQTest extends ActiveMQTestBase {
       producer.send(m2);
       producer.send(m3);
       producer.send(m4);
+      Queue serverQueue = server.locateQueue(qName1);
+      Wait.assertEquals(2L, serverQueue::getMessageCount, 5000, 100);
+      Wait.assertEquals(4L, serverQueue::getMessagesAdded, 5000, 100);
+      Wait.assertEquals(2L, serverQueue::getMessagesReplaced, 5000, 100);
       clientSession.start();
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
@@ -179,6 +183,7 @@ public class LVQTest extends ActiveMQTestBase {
       assertNotNull(m);
       m.acknowledge();
       assertEquals(m.getBodyBuffer().readString(), "m4");
+      assertNull(consumer.receiveImmediate());
    }
 
    @Test
