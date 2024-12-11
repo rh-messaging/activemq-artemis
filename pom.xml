@@ -83,6 +83,10 @@
       <maven.compiler.source>17</maven.compiler.source>
       <maven.compiler.target>17</maven.compiler.target>
       <maven.compiler.release>17</maven.compiler.release>
+      <keycloak.version>18.0.16.redhat-00001</keycloak.version>
+      <jboss.logging.version>3.5.0.Final</jboss.logging.version>
+      <!-- disable keycloak community profile -->
+      <product>true</product>
 
       <retryTests>false</retryTests>
       <logging.config>log4j2-tests-config.properties</logging.config>
