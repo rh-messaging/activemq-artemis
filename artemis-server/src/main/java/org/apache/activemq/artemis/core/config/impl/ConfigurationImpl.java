@@ -971,7 +971,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
       return property.substring(0, property.length() - PROPERTY_CLASS_SUFFIX.length());
    }
 
-   private void trackError(HashMap<String, String> errors, Map.Entry<String,?> entry, Throwable oops) {
+   private void trackError(HashMap<String, String> errors, Map.Entry<String, ?> entry, Throwable oops) {
       logger.debug("failed to populate property entry({}), reason: {}", entry, oops);
       errors.put(entry.toString(), oops.toString());
    }
@@ -3244,7 +3244,7 @@ public class ConfigurationImpl implements Configuration, Serializable {
          int r = idCacheSize / msgNumInFlight;
 
          // This setting is here to accomodate the current default setting.
-         if ( (r >= RANGE_SIZE_MIN) && (r <= RANGE_SZIE_MAX)) {
+         if ((r >= RANGE_SIZE_MIN) && (r <= RANGE_SZIE_MAX)) {
             sizeGood = true;
          }
       }

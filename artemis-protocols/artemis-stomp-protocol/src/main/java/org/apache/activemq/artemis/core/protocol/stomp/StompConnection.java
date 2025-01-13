@@ -498,7 +498,8 @@ public final class StompConnection extends AbstractRemotingConnection {
       try {
          StompSession stompSession = getSession(txID);
 
-         if (stompSession.isNoLocal()) {
+         // only set the connection ID property if we have a noLocal subscription
+         if (stompSession.getNoLocalSubscriptionCount() > 0) {
             message.putStringProperty(CONNECTION_ID_PROPERTY_NAME_STRING, getID().toString());
          }
          if (isEnableMessageID()) {
@@ -565,7 +566,7 @@ public final class StompConnection extends AbstractRemotingConnection {
       checkDestination(destination);
       checkRoutingSemantics(destination, subscriptionType);
       if (noLocal) {
-         String noLocalFilter = CONNECTION_ID_PROPERTY_NAME_STRING + " <> '" + getID().toString() + "'";
+         String noLocalFilter = "(" + CONNECTION_ID_PROPERTY_NAME_STRING + " <> '" + getID().toString() + "' OR " + CONNECTION_ID_PROPERTY_NAME_STRING + " IS NULL)";
          if (selector == null) {
             selector = noLocalFilter;
          } else {

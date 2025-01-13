@@ -109,7 +109,7 @@ public class JMXAccessControlList {
 
    public void addToDefaultAccess(String method, String... roles) {
       if (roles != null) {
-         if ( method.equals(WILDCARD)) {
+         if (method.equals(WILDCARD)) {
             defaultAccess.addCatchAll(roles);
          } else if (method.endsWith(WILDCARD)) {
             String prefix = method.replace(WILDCARD, "");
@@ -120,7 +120,7 @@ public class JMXAccessControlList {
       }
    }
 
-   public void addToRoleAccess(String domain,String key, String method, String... roles) {
+   public void addToRoleAccess(String domain, String key, String method, String... roles) {
       TreeMap<String, Access> domainMap = new TreeMap<>(keyComparator);
       domainMap = domainAccess.putIfAbsent(domain, domainMap);
       if (domainMap == null) {

@@ -224,7 +224,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    private void checkIDSupplier(NodeStoreFactory<MessageReference> nodeStoreFactory) {
       if (this.nodeStoreFactory == null) {
          this.nodeStoreFactory = nodeStoreFactory;
-         messageReferences.setNodeStore( () -> nodeStoreFactory.newNodeStore().setName(String.valueOf(name)));
+         messageReferences.setNodeStore(() -> nodeStoreFactory.newNodeStore().setName(String.valueOf(name)));
       }
    }
 
@@ -1512,7 +1512,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
             ConsumerHolder<Consumer> newConsumerHolder = new ConsumerHolder<>(consumer, this);
             if (consumers.add(newConsumerHolder)) {
                if (delayBeforeDispatch >= 0) {
-                  dispatchStartTimeUpdater.compareAndSet(this,-1, delayBeforeDispatch + System.currentTimeMillis());
+                  dispatchStartTimeUpdater.compareAndSet(this, -1, delayBeforeDispatch + System.currentTimeMillis());
                }
                refCountForConsumers.increment();
             }
