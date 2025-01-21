@@ -44,6 +44,7 @@
             <exclude>org.apache.activemq:artemis-console:war</exclude>
             <exclude>org.apache.activemq:activemq-branding:war</exclude>
             <exclude>org.apache.activemq:artemis-plugin:war</exclude>
+            <exclude>com.redhat.amq-broker:redhat-branding:war</exclude>
          </excludes>
          <outputDirectory>lib</outputDirectory>
          <unpack>false</unpack>
@@ -72,7 +73,7 @@
          <includes>
             <include>org.apache.activemq:artemis-console:war</include>
          </includes>
-         <outputDirectory>web/console.war</outputDirectory>
+         <outputDirectory>web/hawtio.war</outputDirectory>
          <unpack>true</unpack>
          <!-- Exclude these jar files from console since they are already provided in the broker distribution.
               If any of these jars is dropped from the broker distribution they should be added back to the console. -->
@@ -90,11 +91,11 @@
       </dependencySet>
       <dependencySet>
          <includes>
-            <include>org.apache.activemq:activemq-branding:war</include>
+            <include>com.redhat.amq-broker:redhat-branding:war</include>
          </includes>
          <outputDirectory>web</outputDirectory>
          <unpack>false</unpack>
-         <outputFileNameMapping>activemq-branding.war</outputFileNameMapping>
+         <outputFileNameMapping>redhat-branding.war</outputFileNameMapping>
          <useProjectArtifact>false</useProjectArtifact>
          <directoryMode>0755</directoryMode>
          <fileMode>0644</fileMode>
