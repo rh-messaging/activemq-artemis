@@ -103,7 +103,7 @@
       <commons.codec.version>1.17.2</commons.codec.version>
       <commons.compress.version>1.27.1</commons.compress.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
-      <caffeine.version>3.1.8</caffeine.version>
+      <caffeine.version>3.2.0</caffeine.version>
       <guava.version>33.4.0-jre</guava.version>
       <hawtio.version>2.17.7</hawtio.version>
       <jsr305.version>3.0.2</jsr305.version>
@@ -170,7 +170,7 @@
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.5</postgresql.version>
       <testcontainers.version>1.20.4</testcontainers.version>
-      <selenium.version>4.27.0</selenium.version>
+      <selenium.version>4.28.0</selenium.version>
       <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
@@ -187,7 +187,7 @@
       <hadoop.minikdc.version>3.4.1</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>12.0.0</owasp.version>
+      <owasp.version>12.0.1</owasp.version>
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.18.2</jackson.version>
