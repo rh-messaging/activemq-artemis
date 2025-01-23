@@ -36,7 +36,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.openqa.selenium.MutableCapabilities;
 
 import javax.management.ObjectName;
 
@@ -46,8 +45,8 @@ public class QueuesTest extends ConsoleTest {
    @Rule
    public RetryRule retryRule = new RetryRule(2);
 
-   public QueuesTest(MutableCapabilities browserOptions) {
-      super(browserOptions);
+   public QueuesTest(String browser) {
+      super(browser);
    }
 
    @Test
