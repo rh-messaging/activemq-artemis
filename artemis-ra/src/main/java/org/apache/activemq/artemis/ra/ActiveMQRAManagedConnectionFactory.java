@@ -74,11 +74,6 @@ public final class ActiveMQRAManagedConnectionFactory implements ManagedConnecti
    private XARecoveryConfig resourceRecovery;
 
    /**
-    * Used to configure whether the connection should be part of the JTA TX. This is when the RA doesn not have access to the Transaction manager to deduct whether this is the case.
-    */
-   private boolean inJtaTransaction;
-
-   /**
     * Constructor
     */
    public ActiveMQRAManagedConnectionFactory() {
@@ -187,8 +182,7 @@ public final class ActiveMQRAManagedConnectionFactory implements ManagedConnecti
       logger.trace("Looking for connection matching credentials: {}", credential);
 
       for (Object obj : connectionSet) {
-         if (obj instanceof ActiveMQRAManagedConnection) {
-            ActiveMQRAManagedConnection mc = (ActiveMQRAManagedConnection) obj;
+         if (obj instanceof ActiveMQRAManagedConnection mc) {
             ManagedConnectionFactory mcf = mc.getManagedConnectionFactory();
 
             if ((mc.getUserName() == null || mc.getUserName() != null && mc.getUserName().equals(credential.getUserName())) && mcf.equals(this)) {
@@ -280,8 +274,7 @@ public final class ActiveMQRAManagedConnectionFactory implements ManagedConnecti
          return false;
       }
 
-      if (obj instanceof ActiveMQRAManagedConnectionFactory) {
-         ActiveMQRAManagedConnectionFactory other = (ActiveMQRAManagedConnectionFactory) obj;
+      if (obj instanceof ActiveMQRAManagedConnectionFactory other) {
 
          return mcfProperties.equals(other.getProperties()) && ra.equals(other.getResourceAdapter());
       } else {

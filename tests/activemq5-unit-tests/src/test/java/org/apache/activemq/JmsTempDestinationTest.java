@@ -46,8 +46,6 @@ import org.slf4j.LoggerFactory;
  * @version
  */
 public class JmsTempDestinationTest {
-
-   private static final Logger LOG = LoggerFactory.getLogger(JmsTempDestinationTest.class);
    private Connection connection;
    private ActiveMQConnectionFactory factory;
    protected List<Connection> connections = Collections.synchronizedList(new ArrayList<>());
@@ -175,7 +173,7 @@ public class JmsTempDestinationTest {
       int count = 500;
       int dataSize = 1024;
 
-      ArrayList<BytesMessage> list = new ArrayList<>(count);
+      List<BytesMessage> list = new ArrayList<>(count);
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
       Queue queue = session.createTemporaryQueue();
       MessageProducer producer = session.createProducer(queue);

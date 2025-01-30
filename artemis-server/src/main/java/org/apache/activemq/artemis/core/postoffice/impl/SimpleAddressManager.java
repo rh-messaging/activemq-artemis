@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -179,7 +180,7 @@ public class SimpleAddressManager implements AddressManager {
    public Collection<Binding> getDirectBindings(final SimpleString address) throws Exception {
       SimpleString realAddress = CompositeAddress.extractAddressName(address);
 
-      ArrayList<Binding> outputList = new ArrayList<>();
+      List<Binding> outputList = new ArrayList<>();
 
       directBindingMap.compute(realAddress, (key, bindings) -> {
          if (bindings != null) {
@@ -303,8 +304,8 @@ public class SimpleAddressManager implements AddressManager {
 
       bindings.addBinding(binding);
 
-      if (binding instanceof LocalQueueBinding) {
-         localBindingsMap.put(binding.getID(), (LocalQueueBinding) binding);
+      if (binding instanceof LocalQueueBinding localQueueBinding) {
+         localBindingsMap.put(binding.getID(), localQueueBinding);
       }
 
       return addedNewBindings;
@@ -376,7 +377,7 @@ public class SimpleAddressManager implements AddressManager {
       Set<RoutingType> eset1 = set1 == null || set1.isEmpty() ? Collections.emptySet() : EnumSet.copyOf(set1);
       Set<RoutingType> eset2 = set2 == null || set2.isEmpty() ? Collections.emptySet() : EnumSet.copyOf(set2);
 
-      if (eset1.size() == 0 && eset2.size() == 0) {
+      if (eset1.isEmpty() && eset2.isEmpty()) {
          return true;
       }
 
@@ -391,8 +392,7 @@ public class SimpleAddressManager implements AddressManager {
       final Bindings bindings = this.mappings.get(addressName);
       if (bindings != null) {
          for (Binding binding : bindings.getBindings()) {
-            if (binding instanceof QueueBinding && binding.isLocal()) {
-               final QueueBinding queueBinding = (QueueBinding) binding;
+            if (binding instanceof QueueBinding queueBinding && binding.isLocal()) {
                final RoutingType routingType = queueBinding.getQueue().getRoutingType();
                if (!routingTypes.contains(routingType) && binding.getAddress().equals(addressName)) {
                   throw ActiveMQMessageBundle.BUNDLE.invalidRoutingTypeDelete(routingType, addressName.toString());
@@ -436,8 +436,7 @@ public class SimpleAddressManager implements AddressManager {
          Bindings bindings = mappings.get(info.getName());
          if (bindings != null) {
             for (Binding binding : bindings.getBindings()) {
-               if (binding instanceof LocalQueueBinding) {
-                  LocalQueueBinding localQueueBinding = (LocalQueueBinding)binding;
+               if (binding instanceof LocalQueueBinding localQueueBinding) {
                   if (!localQueueBinding.getQueue().isMirrorController() && !localQueueBinding.getQueue().isInternalQueue()) {
                      mirrorController.createQueue(localQueueBinding.getQueue().getQueueConfiguration());
                   }

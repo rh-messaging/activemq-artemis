@@ -41,7 +41,6 @@ import org.apache.activemq.artemis.api.core.management.ManagementHelper;
 import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.core.client.impl.ClientSessionFactoryInternal;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
-import org.apache.activemq.artemis.core.client.impl.TopologyMemberImpl;
 import org.apache.activemq.artemis.core.config.BridgeConfiguration;
 import org.apache.activemq.artemis.core.config.TransformerConfiguration;
 import org.apache.activemq.artemis.core.filter.Filter;
@@ -92,8 +91,6 @@ public class ClusterConnectionBridge extends BridgeImpl {
    private final ServerLocatorInternal discoveryLocator;
 
    private final String storeAndForwardPrefix;
-
-   private TopologyMemberImpl member;
 
    public ClusterConnectionBridge(final ClusterConnection clusterConnection,
                                   final ClusterManager clusterManager,
@@ -349,28 +346,28 @@ public class ClusterConnectionBridge extends BridgeImpl {
 
       // Build the address matching part of the selector
       StringBuilder builder = new StringBuilder("(");
-      if (includes.size() > 0) {
-         if (excludes.size() > 0)
+      if (!includes.isEmpty()) {
+         if (!excludes.isEmpty())
             builder.append("(");
          for (int i = 0; i < includes.size(); i++) {
             builder.append("(" + ManagementHelper.HDR_ADDRESS + " LIKE '" + includes.get(i) + "%')");
             if (i < includes.size() - 1)
                builder.append(" OR ");
          }
-         if (excludes.size() > 0)
+         if (!excludes.isEmpty())
             builder.append(")");
       }
 
       // Build the address exclusion part of the selector
-      if (excludes.size() > 0) {
-         if (includes.size() > 0)
+      if (!excludes.isEmpty()) {
+         if (!includes.isEmpty())
             builder.append(" AND (");
          for (int i = 0; i < excludes.size(); i++) {
             builder.append("(" + ManagementHelper.HDR_ADDRESS + " NOT LIKE '" + excludes.get(i) + "%')");
             if (i < excludes.size() - 1)
                builder.append(" AND ");
          }
-         if (includes.size() > 0)
+         if (!includes.isEmpty())
             builder.append(")");
       }
       builder.append(")");

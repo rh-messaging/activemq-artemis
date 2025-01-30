@@ -208,7 +208,7 @@ public class LDAPLoginModule implements AuditLoginModule {
           * requests (by verifying that the supplied password is not empty) and
           * react appropriately.
           */
-         if (password == null || password.length() == 0) {
+         if (password == null || password.isEmpty()) {
             throw new FailedLoginException("Password cannot be null or empty");
          }
 
@@ -507,7 +507,7 @@ public class LDAPLoginModule implements AuditLoginModule {
          logger.debug("  base DN: {}", getLDAPPropertyValue(ConfigKey.ROLE_BASE));
          logger.debug("  filter: {}", filter);
       }
-      HashSet<String> haveSeenNames = new HashSet<>();
+      Set<String> haveSeenNames = new HashSet<>();
       Queue<String> pendingNameExpansion = new LinkedList<>();
       NamingEnumeration<SearchResult> results = null;
       try {
@@ -721,7 +721,7 @@ public class LDAPLoginModule implements AuditLoginModule {
       }
    }
 
-   protected void extendInitialEnvironment(Set<LDAPLoginProperty> moduleConfig, Hashtable<String, String> initialContextEnv) {
+   protected void extendInitialEnvironment(Set<LDAPLoginProperty> moduleConfig, Map<String, String> initialContextEnv) {
       // sub-classes may override the method if the default implementation is not sufficient:
       // add all non-module configs to initial DirContext environment to support passing
       // any custom/future property to InitialDirContext construction

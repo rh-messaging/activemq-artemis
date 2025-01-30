@@ -86,8 +86,6 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
 
    private String password;
 
-   private String passwordCodec;
-
    private String protocolManagerFactoryStr;
 
    private String deserializationDenyList;
@@ -96,12 +94,13 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
 
    private boolean cacheDestinations;
 
-   // keeping this field for serialization compatibility only. do not use it
-   private boolean finalizeChecks;
-
    private boolean ignoreJTA;
 
    private boolean enable1xPrefixes = ActiveMQJMSClient.DEFAULT_ENABLE_1X_PREFIXES;
+
+   // keeping this field for serialization compatibility only. do not use it
+   @SuppressWarnings("unused")
+   private boolean finalizeCheck;
 
    @Override
    public void writeExternal(ObjectOutput out) throws IOException {
@@ -110,8 +109,8 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
       try {
          out.writeUTF(uri.toASCIIString());
       } catch (Exception e) {
-         if (e instanceof IOException) {
-            throw (IOException) e;
+         if (e instanceof IOException ioException) {
+            throw ioException;
          }
          throw new IOException(e);
       }
@@ -139,8 +138,8 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
       try {
          uri = parser.createSchema(scheme, this);
       } catch (Exception e) {
-         if (e instanceof IOException) {
-            throw (IOException) e;
+         if (e instanceof IOException ioException) {
+            throw ioException;
          }
          throw new IOException(e);
       }
@@ -432,7 +431,7 @@ public class ActiveMQConnectionFactory extends JNDIStorable implements Connectio
          throw new IllegalArgumentException(Context.PROVIDER_URL + " or " + "brokerURL is required");
       }
       try {
-         if (url != null && url.length() > 0) {
+         if (url != null && !url.isEmpty()) {
             url = updateBrokerURL(url, props);
             setBrokerURL(url);
          }

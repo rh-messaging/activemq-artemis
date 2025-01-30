@@ -132,7 +132,7 @@ public class ProducerThread extends Thread {
 
       producer.send(message);
       if (verbose) {
-         context.out.println(threadName + " Sent: " + (message instanceof TextMessage ? ((TextMessage) message).getText() : message.getJMSMessageID()));
+         context.out.println(threadName + " Sent: " + (message instanceof TextMessage tm ? tm.getText() : message.getJMSMessageID()));
       }
 
       if (transactionBatchSize > 0 && sentCount.get() > 0 && sentCount.get() % transactionBatchSize == 0) {
@@ -199,7 +199,7 @@ public class ProducerThread extends Thread {
       answer.setLongProperty("count", i);
       answer.setStringProperty("ThreadSent", threadName);
 
-      if (properties != null && properties.length() != 0) {
+      if (properties != null && !properties.isEmpty()) {
          applyProperties(answer);
       }
 

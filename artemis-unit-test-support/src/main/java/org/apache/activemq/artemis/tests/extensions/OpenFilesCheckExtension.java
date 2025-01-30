@@ -65,15 +65,15 @@ public class OpenFilesCheckExtension implements Extension, AfterAllCallback {
    }
 
    public static long getOpenFD() {
-      if (os instanceof UnixOperatingSystemMXBean) {
-         return ((UnixOperatingSystemMXBean) os).getOpenFileDescriptorCount();
+      if (os instanceof UnixOperatingSystemMXBean bean) {
+         return bean.getOpenFileDescriptorCount();
       } else {
          return 0;
       }
    }
 
    public static List<String> getOpenFiles(boolean filtered) {
-      ArrayList<String> openFiles = new ArrayList<>();
+      List<String> openFiles = new ArrayList<>();
 
       try {
          String outputLine;

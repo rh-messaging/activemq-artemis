@@ -18,6 +18,7 @@ package org.apache.activemq.artemis.core.server.impl;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -41,7 +42,7 @@ public class NamedNodeIdLocatorForReplication extends NodeLocator {
    private final String nodeID;
    private final long retryReplicationWait;
    private final Queue<Pair<TransportConfiguration, TransportConfiguration>> configurations = new LinkedList<>();
-   private final ArrayList<Pair<TransportConfiguration, TransportConfiguration>> triedConfigurations = new ArrayList<>();
+   private final List<Pair<TransportConfiguration, TransportConfiguration>> triedConfigurations = new ArrayList<>();
    private boolean found;
 
    public NamedNodeIdLocatorForReplication(String nodeID,
@@ -61,12 +62,12 @@ public class NamedNodeIdLocatorForReplication extends NodeLocator {
    public void locateNode(long timeout) throws ActiveMQException {
       try {
          lock.lock();
-         if (configurations.size() == 0) {
+         if (configurations.isEmpty()) {
             try {
                if (timeout != -1L) {
                   ConcurrentUtil.await(condition, timeout);
                } else {
-                  while (configurations.size() == 0) {
+                  while (configurations.isEmpty()) {
                      condition.await(retryReplicationWait, TimeUnit.MILLISECONDS);
                      configurations.addAll(triedConfigurations);
                      triedConfigurations.clear();

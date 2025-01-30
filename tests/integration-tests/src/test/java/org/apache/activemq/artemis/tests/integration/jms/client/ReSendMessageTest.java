@@ -59,7 +59,7 @@ public class ReSendMessageTest extends JMSTestBase {
       conn.start();
 
       Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
-      ArrayList<Message> msgs = new ArrayList<>();
+      List<Message> msgs = new ArrayList<>();
 
       for (int i = 0; i < 10; i++) {
          BytesMessage bm = sess.createBytesMessage();
@@ -93,7 +93,7 @@ public class ReSendMessageTest extends JMSTestBase {
       conn.start();
 
       Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
-      ArrayList<Message> msgs = new ArrayList<>();
+      List<Message> msgs = new ArrayList<>();
 
       for (int i = 0; i < 1; i++) {
          MapMessage mm = sess.createMapMessage();
@@ -118,7 +118,7 @@ public class ReSendMessageTest extends JMSTestBase {
       internalTestResend(msgs, sess);
    }
 
-   public void internalTestResend(final ArrayList<Message> msgs, final Session sess) throws Exception {
+   public void internalTestResend(final List<Message> msgs, final Session sess) throws Exception {
       MessageProducer prod = sess.createProducer(queue);
 
       for (Message msg : msgs) {
@@ -148,14 +148,12 @@ public class ReSendMessageTest extends JMSTestBase {
 
          sess.commit();
 
-         if (copiedMessage instanceof BytesMessage) {
-            BytesMessage copiedBytes = (BytesMessage) copiedMessage;
+         if (copiedMessage instanceof BytesMessage copiedBytes) {
 
             for (int i = 0; i < copiedBytes.getBodyLength(); i++) {
                assertEquals(ActiveMQTestBase.getSamplebyte(i), copiedBytes.readByte());
             }
-         } else if (copiedMessage instanceof MapMessage) {
-            MapMessage copiedMap = (MapMessage) copiedMessage;
+         } else if (copiedMessage instanceof MapMessage copiedMap) {
             MapMessage originalMap = (MapMessage) originalMessage;
             if (originalMap.getString("str") != null) {
                assertEquals(originalMap.getString("str"), copiedMap.getString("str"));
@@ -169,11 +167,11 @@ public class ReSendMessageTest extends JMSTestBase {
             if (originalMap.getObject("object") != null) {
                assertEquals(originalMap.getObject("object"), copiedMap.getObject("object"));
             }
-         } else if (copiedMessage instanceof ObjectMessage) {
-            assertNotSame(((ObjectMessage) originalMessage).getObject(), ((ObjectMessage) copiedMessage).getObject());
-            assertEquals(((ObjectMessage) originalMessage).getObject(), ((ObjectMessage) copiedMessage).getObject());
-         } else if (copiedMessage instanceof TextMessage) {
-            assertEquals(((TextMessage) originalMessage).getText(), ((TextMessage) copiedMessage).getText());
+         } else if (copiedMessage instanceof ObjectMessage objectMessage) {
+            assertNotSame(((ObjectMessage) originalMessage).getObject(), objectMessage.getObject());
+            assertEquals(((ObjectMessage) originalMessage).getObject(), objectMessage.getObject());
+         } else if (copiedMessage instanceof TextMessage textMessage) {
+            assertEquals(((TextMessage) originalMessage).getText(), textMessage.getText());
          }
       }
 

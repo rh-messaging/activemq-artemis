@@ -17,10 +17,6 @@
 
 package org.apache.activemq.artemis.tests.integration.client;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
@@ -28,8 +24,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
-
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +46,10 @@ import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RemoveSubscriptionRaceTest extends ActiveMQTestBase {
 
@@ -183,14 +182,13 @@ public class RemoveSubscriptionRaceTest extends ActiveMQTestBase {
    int countAddMessage() throws Exception {
       StorageManager manager = server.getStorageManager();
 
-      if (manager instanceof JournalStorageManager) {
-         JournalStorageManager journalStorageManager = (JournalStorageManager) manager;
+      if (manager instanceof JournalStorageManager journalStorageManager) {
          journalStorageManager.getMessageJournal().scheduleCompactAndBlock(5_000);
       } else {
          return 0;
       }
 
-      HashMap<Integer, AtomicInteger> journalCounts = countJournal(server.getConfiguration());
+      Map<Integer, AtomicInteger> journalCounts = countJournal(server.getConfiguration());
       AtomicInteger value = journalCounts.get((int) JournalRecordIds.ADD_MESSAGE_PROTOCOL);
       if (value == null) {
          return 0;

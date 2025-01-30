@@ -34,6 +34,7 @@ import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -77,12 +78,6 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
    private static final boolean REUSE_SERVERS = Boolean.parseBoolean(TestParameters.testProperty(TEST_NAME, "REUSE_SERVERS", "false"));
 
    private static final int SEND_COMMIT = TestParameters.testProperty(TEST_NAME, "SEND_COMMIT", 50);
-
-   /*
-    * Time each consumer takes to process a message received to allow some messages accumulating.
-    * This sleep happens right before the commit.
-    */
-   private static final String QUEUE_NAME_LIST = "queueTest,Div,Div.0,Div.1,Div.2";
    private static final String QUEUE_NAME = "queueTest";
 
    private static String body;
@@ -215,16 +210,17 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
 
    private static void replaceLogs(File serverLocation) throws Exception {
       File log4j = new File(serverLocation, "/etc/log4j2.properties");
-      assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO",
-                                      "logger.artemis_utils.level=INFO\n" + "\n" +
-                                         "logger.endpoint.name=org.apache.activemq.artemis.core.replication.ReplicationEndpoint\n" +
-                                         "logger.endpoint.level=INFO\n" +
-                                         "logger.ack.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager\n" +
-                                         "logger.ack.level=TRACE\n" +
-                                         "logger.mirrorTarget.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AMQPMirrorControllerTarget\n" +
-                                         "logger.mirrorTarget.level=INFO\n" +
-                                         "appender.console.filter.threshold.type = ThresholdFilter\n" +
-                                         "appender.console.filter.threshold.level = info"));
+      assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO", """
+         logger.artemis_utils.level=INFO
+
+         logger.endpoint.name=org.apache.activemq.artemis.core.replication.ReplicationEndpoint
+         logger.endpoint.level=INFO
+         logger.ack.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager
+         logger.ack.level=TRACE
+         logger.mirrorTarget.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AMQPMirrorControllerTarget
+         logger.mirrorTarget.level=INFO
+         appender.console.filter.threshold.type = ThresholdFilter
+         appender.console.filter.threshold.level = info"""));
    }
 
    private static void createMirroredBackupServer(boolean paging, String serverName, int portOffset, String clusterStatic, String mirrorURI) throws Exception {
@@ -325,7 +321,7 @@ public class ReplicatedBothNodesMirrorTest extends SoakTestBase {
       }
 
       // Mirror failover could challenge the order
-      HashSet<Integer> receivedIDs = new HashSet<>();
+      Set<Integer> receivedIDs = new HashSet<>();
 
       ConnectionFactory connectionFactoryDC2 = CFUtil.createConnectionFactory("amqp", uri(DC2_IP));
       try (Connection connection = connectionFactoryDC2.createConnection()) {

@@ -41,7 +41,6 @@ import org.apache.activemq.artemis.api.core.management.ResourceNames;
 import org.apache.activemq.artemis.api.jms.ActiveMQJMSClient;
 import org.apache.activemq.artemis.api.jms.JMSFactoryType;
 import org.apache.activemq.artemis.core.config.Configuration;
-import org.apache.activemq.artemis.core.filter.Filter;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.postoffice.BindingType;
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
@@ -99,8 +98,6 @@ import org.w3c.dom.NodeList;
  */
 @Deprecated
 public class JMSServerManagerImpl extends CleaningActivateCallback implements JMSServerManager {
-
-   private static final String REJECT_FILTER = Filter.GENERIC_IGNORED_FILTER;
 
    private BindingRegistry registry;
 
@@ -246,7 +243,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
 
    public void recoverregistryBindings(String name, PersistedType type) throws NamingException {
       List<String> bindings = unRecoveredBindings.get(name);
-      if ((bindings != null) && (bindings.size() > 0)) {
+      if (bindings != null && !bindings.isEmpty()) {
          Map<String, List<String>> mapBindings;
          Map<String, ?> objects;
 
@@ -490,7 +487,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
                String[] usedBindings = null;
 
                if (bindings != null) {
-                  ArrayList<String> bindingsToAdd = new ArrayList<>();
+                  List<String> bindingsToAdd = new ArrayList<>();
 
                   for (String bindingsItem : bindings) {
                      if (bindToBindings(bindingsItem, destination)) {
@@ -564,7 +561,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
                   throw new IllegalArgumentException("Queue does not exist");
                }
 
-               ArrayList<String> bindingsToAdd = new ArrayList<>();
+               List<String> bindingsToAdd = new ArrayList<>();
 
                if (bindings != null) {
                   for (String bindingsItem : bindings) {
@@ -1006,7 +1003,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
 
             ActiveMQConnectionFactory cf = internalCreateCF(cfConfig);
 
-            ArrayList<String> bindingsToAdd = new ArrayList<>();
+            List<String> bindingsToAdd = new ArrayList<>();
 
             for (String bindingsItem : bindings) {
                if (bindToBindings(bindingsItem, cf)) {
@@ -1162,7 +1159,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
             cf = ActiveMQJMSClient.createConnectionFactoryWithoutHA(groupConfig, cfConfig.getFactoryType());
          }
       } else {
-         if (cfConfig.getConnectorNames() == null || cfConfig.getConnectorNames().size() == 0) {
+         if (cfConfig.getConnectorNames() == null || cfConfig.getConnectorNames().isEmpty()) {
             throw ActiveMQJMSServerBundle.BUNDLE.noConnectorNameOnCF();
          }
 
@@ -1456,7 +1453,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
                                                    final String name) throws Exception {
       checkInitialised();
       List<String> registryBindings = bindingsMap.remove(name);
-      if (registryBindings == null || registryBindings.size() == 0) {
+      if (registryBindings == null || registryBindings.isEmpty()) {
          return false;
       } else {
          keys.remove(name);
@@ -1477,7 +1474,7 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
                                                    final String bindings) throws Exception {
       checkInitialised();
       List<String> registryBindings = bindingsMap.get(name);
-      if (registryBindings == null || registryBindings.size() == 0) {
+      if (registryBindings == null || registryBindings.isEmpty()) {
          return false;
       }
 
@@ -1633,11 +1630,11 @@ public class JMSServerManagerImpl extends CleaningActivateCallback implements JM
 
          Element e = XMLUtil.urlToElement(url);
 
-         if (config instanceof FileJMSConfiguration) {
+         if (config instanceof FileJMSConfiguration fileJMSConfiguration) {
             NodeList children = e.getElementsByTagName("jms");
             //if the "jms" element exists then parse it
             if (children.getLength() > 0) {
-               ((FileJMSConfiguration) config).parse((Element) children.item(0), url);
+               fileJMSConfiguration.parse((Element) children.item(0), url);
                JMSServerManagerImpl.this.deploy();
             }
          }

@@ -17,10 +17,12 @@
 package org.apache.activemq.artemis.tests.unit.core.persistence.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.activemq.artemis.api.core.ActiveMQBuffer;
 import org.apache.activemq.artemis.api.core.ActiveMQBuffers;
@@ -116,15 +118,15 @@ public class BatchIDGeneratorUnitTest extends ActiveMQTestBase {
    }
 
    protected void loadIDs(final Journal journal, final BatchingIDGenerator batch) throws Exception {
-      ArrayList<RecordInfo> records = new ArrayList<>();
-      ArrayList<PreparedTransactionInfo> tx = new ArrayList<>();
+      List<RecordInfo> records = new ArrayList<>();
+      List<PreparedTransactionInfo> tx = new ArrayList<>();
 
       journal.start();
       journal.load(records, tx, null);
 
       assertEquals(0, tx.size());
 
-      assertTrue(records.size() > 0, "Contains " + records.size());
+      assertFalse(records.isEmpty(), "Contains " + records.size());
 
       for (RecordInfo record : records) {
          if (record.userRecordType == JournalRecordIds.ID_COUNTER_RECORD) {

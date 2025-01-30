@@ -22,6 +22,8 @@ import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import org.apache.activemq.artemis.core.client.ActiveMQClientLogger;
@@ -61,7 +63,7 @@ public class RefCountMessage {
    }
 
    private static class DebugState implements Runnable {
-      private final ArrayList<Exception> debugCrumbs = new ArrayList<>();
+      private final List<Exception> debugCrumbs = new ArrayList<>();
 
       // this means the object is accounted for and it should not print any warnings
       volatile boolean accounted;
@@ -129,7 +131,7 @@ public class RefCountMessage {
    private static final AtomicIntegerFieldUpdater<RefCountMessage> REF_COUNT_UPDATER = AtomicIntegerFieldUpdater.newUpdater(RefCountMessage.class, "refCount");
    private static final AtomicIntegerFieldUpdater<RefCountMessage> REF_USAGE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(RefCountMessage.class, "usageCount");
 
-   private volatile HashMap userContext;
+   private volatile Map userContext;
 
    private volatile int durableRefCount = 0;
 
@@ -155,8 +157,8 @@ public class RefCountMessage {
    }
 
    public static void deferredDebug(Message message, String debugMessage, Object... args) {
-      if (message instanceof RefCountMessage && isRefDebugEnabled()) {
-         deferredDebug((RefCountMessage) message, debugMessage, args);
+      if (message instanceof RefCountMessage countMessage && isRefDebugEnabled()) {
+         deferredDebug(countMessage, debugMessage, args);
       }
    }
 

@@ -35,7 +35,6 @@ import org.apache.activemq.artemis.core.server.impl.QueueImpl;
 import org.apache.activemq.artemis.core.server.management.Notification;
 import org.apache.activemq.artemis.core.server.management.NotificationListener;
 import org.apache.activemq.artemis.protocol.amqp.client.ProtonClientProtocolManager;
-import org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager;
 import org.apache.activemq.artemis.protocol.amqp.connect.mirror.ReferenceIDSupplier;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPConnectionContext;
 import org.apache.activemq.artemis.protocol.amqp.proton.AMQPConstants;
@@ -75,8 +74,6 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
    }
 
    private final ActiveMQServer server;
-
-   private AckManager ackRetryManager;
 
    private ReferenceIDSupplier referenceIDSupplier;
 
@@ -374,8 +371,8 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
       // For tunneled messages we need to check the type as our interceptor only cares about
       // AMQP message right now so there's not notification point for other types that cross
       if (incomingInterceptors != null && !incomingInterceptors.isEmpty()) {
-         if (message instanceof AMQPMessage) {
-            return super.invokeInterceptors(this.incomingInterceptors, (AMQPMessage) message, connection);
+         if (message instanceof AMQPMessage amqpMessage) {
+            return super.invokeInterceptors(this.incomingInterceptors, amqpMessage, connection);
          } else {
             return null;
          }
@@ -388,8 +385,8 @@ public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, 
       // For tunneled messages we need to check the type as our interceptor only cares about
       // AMQP message right now so there's not notification point for other types that cross
       if (outgoingInterceptors != null && !outgoingInterceptors.isEmpty()) {
-         if (message instanceof AMQPMessage) {
-            return super.invokeInterceptors(this.outgoingInterceptors, (AMQPMessage) message, connection);
+         if (message instanceof AMQPMessage amqpMessage) {
+            return super.invokeInterceptors(this.outgoingInterceptors, amqpMessage, connection);
          } else {
             return null;
          }

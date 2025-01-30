@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -82,8 +81,6 @@ public class ArtemisDependencyDocPlugin extends ArtemisAbstractPlugin {
    @Parameter
    private String file;
 
-   private MavenProject project;
-
    @Override
    protected boolean isIgnore() {
       return false;
@@ -111,7 +108,7 @@ public class ArtemisDependencyDocPlugin extends ArtemisAbstractPlugin {
    }
 
    private String getPackageName(org.eclipse.aether.artifact.Artifact artifact) {
-      return artifact.getGroupId() + ":" + artifact.getArtifactId() + (artifact.getClassifier() != null && !artifact.getClassifier().equals("") ? ":" + artifact.getClassifier() : "");
+      return artifact.getGroupId() + ":" + artifact.getArtifactId() + (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty() ? ":" + artifact.getClassifier() : "");
    }
 
    private String getGroupOrder(String group) {
@@ -131,7 +128,7 @@ public class ArtemisDependencyDocPlugin extends ArtemisAbstractPlugin {
    @Override
    protected void doExecute() {
 
-      HashMap<String, String> keys = new HashMap<>();
+      Map<String, String> keys = new HashMap<>();
 
       if (detailKey != null) {
          if (detailValue == null) {
@@ -184,7 +181,7 @@ public class ArtemisDependencyDocPlugin extends ArtemisAbstractPlugin {
 
                ArtifactResult result = resolveArtifact(art);
 
-               HashMap<String, String> filter = new HashMap<>();
+               Map<String, String> filter = new HashMap<>();
                filter.put("X{detail}", detail);
                filter.put("X{group}", art.getGroupId());
                filter.put("X{artifact}", art.getArtifactId());
@@ -197,7 +194,7 @@ public class ArtemisDependencyDocPlugin extends ArtemisAbstractPlugin {
 
                filter.put("X{uri}", uri);
 
-               if (uri.equals("")) {
+               if (uri.isEmpty()) {
                   filter.put("X{fileMD}", result.getArtifact().getFile().getName());
                } else {
                   filter.put("X{fileMD}", "link:" + uri + "[" + result.getArtifact().getFile().getName() + "]");

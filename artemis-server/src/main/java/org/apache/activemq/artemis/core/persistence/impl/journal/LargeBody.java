@@ -47,8 +47,6 @@ public class LargeBody {
 
    long NO_PENDING_ID = -1;
 
-   private long pendingRecordID = NO_PENDING_ID;
-
    StorageManager storageManager;
 
    private long messageID = -1;
@@ -358,7 +356,7 @@ public class LargeBody {
             byte[] bufferToWrite;
             if (bytesRead <= 0) {
                break;
-            } else if ((bytesRead == bufferBytes.length && this.storageManager instanceof JournalStorageManager && !((JournalStorageManager) this.storageManager).isReplicated() &&
+            } else if ((bytesRead == bufferBytes.length && this.storageManager instanceof JournalStorageManager manager && !manager.isReplicated() &&
                         !(this.storageManager instanceof JDBCJournalStorageManager))) {
                // ARTEMIS-1220: We cannot reuse the same buffer if it's replicated
                // otherwise there could be another thread still using the buffer on a

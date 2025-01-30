@@ -36,20 +36,20 @@ public class TransportConfigurationUtil {
 
    private static final Map<String, Map<String, Object>> DEFAULTS = new HashMap<>();
 
-   private static final HashMap<String, Object> EMPTY_HELPER = new HashMap<>();
+   private static final Map<String, Object> EMPTY_HELPER = new HashMap<>();
 
    public static Map<String, Object> getDefaults(String className) {
       if (className == null) {
-         /* Returns a new clone of the empty helper.  This allows any parent objects to update the map key/values
+         /* Returns a new map.  This allows any parent objects to update the map key/values
             without polluting the EMPTY_HELPER map. */
-         return (Map<String, Object>) EMPTY_HELPER.clone();
+         return new HashMap<>();
       }
 
       if (!DEFAULTS.containsKey(className)) {
          Object object = instantiateObject(className, TransportConfigurationHelper.class);
-         if (object != null && object instanceof TransportConfigurationHelper) {
+         if (object != null && object instanceof TransportConfigurationHelper helper) {
 
-            DEFAULTS.put(className, ((TransportConfigurationHelper) object).getDefaults());
+            DEFAULTS.put(className, helper.getDefaults());
          } else {
             DEFAULTS.put(className, EMPTY_HELPER);
          }

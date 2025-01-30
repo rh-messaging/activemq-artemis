@@ -94,19 +94,18 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       FluentPropertyBeanIntrospectorWithIgnores.addIgnore(ServerLocatorImpl.class.getName(), "setThreadPools");
    }
 
-   private static final long serialVersionUID = -1615857864410205260L;
-
    // This is the default value
    private ClientProtocolManagerFactory protocolManagerFactory = new ActiveMQClientProtocolManagerFactory().setLocator(this);
 
    private final boolean ha;
 
-   // this is not used... I'm only keeping it here because of Serialization compatibility and Wildfly usage on JNDI.
-   private boolean finalizeCheck;
-
    private boolean clusterConnection;
 
    private transient String identity;
+
+   // this is not used... I'm only keeping it here because of Serialization compatibility and Wildfly usage on JNDI.
+   @SuppressWarnings("unused")
+   private boolean finalizeCheck;
 
    private final Set<ClientSessionFactoryInternal> factories = new HashSet<>();
 
@@ -610,7 +609,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       }
       if (topologyMember.getPrimary() == null && topologyMember.getBackup() != null) {
          // This shouldn't happen, however I wanted this to consider all possible cases
-         return (ClientSessionFactoryInternal) createSessionFactory(topologyMember.getBackup());
+         return createSessionFactory(topologyMember.getBackup());
       }
       // it shouldn't happen
       return null;
@@ -1569,7 +1568,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       TopologyMember actMember = topology.getMember(nodeID);
 
       if (actMember != null && actMember.getPrimary() != null && actMember.getBackup() != null) {
-         HashSet<ClientSessionFactory> clonedFactories = new HashSet<>();
+         Set<ClientSessionFactory> clonedFactories = new HashSet<>();
          synchronized (factories) {
             clonedFactories.addAll(factories);
          }
@@ -1616,7 +1615,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       synchronized (topologyArrayGuard) {
          Collection<TopologyMemberImpl> membersCopy = topology.getMembers();
 
-         if (membersCopy.size() == 0) {
+         if (membersCopy.isEmpty()) {
             //it could happen when primary is down, in that case we keeps the old copy
             //and don't update
             return;
@@ -1961,7 +1960,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    private void feedInterceptors(final List<Interceptor> interceptors, final String interceptorList) {
       interceptors.clear();
 
-      if (interceptorList == null || interceptorList.trim().equals("")) {
+      if (interceptorList == null || interceptorList.trim().isEmpty()) {
          return;
       }
       AccessController.doPrivileged((PrivilegedAction<Object>) () -> {

@@ -19,7 +19,6 @@ package org.apache.activemq.artemis.cli.commands.tools.xml;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,7 +70,7 @@ public class XMLMessageImporter {
       long timestamp = 0L;
       long id = 0L;
       org.apache.activemq.artemis.utils.UUID userId = null;
-      ArrayList<String> queues = new ArrayList<>();
+      List<String> queues = new ArrayList<>();
 
       // get message's attributes
       for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -103,8 +102,6 @@ public class XMLMessageImporter {
       message.setUserID(userId);
 
       boolean endLoop = false;
-
-      File largeMessageTemporaryFile = null;
       // loop through the XML and gather up all the message's data (i.e. body, properties, queues, etc.)
       while (reader.hasNext()) {
          int eventType = reader.getEventType();
@@ -157,7 +154,7 @@ public class XMLMessageImporter {
       return type;
    }
 
-   private void processMessageQueues(ArrayList<String> queues) {
+   private void processMessageQueues(List<String> queues) {
       for (int i = 0; i < reader.getAttributeCount(); i++) {
          if (XmlDataConstants.QUEUE_NAME.equals(reader.getAttributeLocalName(i))) {
             String queueName = reader.getAttributeValue(i);
@@ -234,13 +231,10 @@ public class XMLMessageImporter {
    }
 
    private void processMessageBody(final ICoreMessage message, boolean decodeTextMessage) throws XMLStreamException, IOException {
-      File tempFileName = null;
-      boolean isLarge = false;
 
       for (int i = 0; i < reader.getAttributeCount(); i++) {
          String attributeName = reader.getAttributeLocalName(i);
          if (XmlDataConstants.MESSAGE_IS_LARGE.equals(attributeName)) {
-            isLarge = Boolean.parseBoolean(reader.getAttributeValue(i));
          }
       }
       reader.next();
@@ -265,7 +259,7 @@ public class XMLMessageImporter {
          currentEventType = reader.getEventType();
          if (currentEventType == XMLStreamConstants.END_ELEMENT) {
             break;
-         } else if (currentEventType == XMLStreamConstants.CHARACTERS && reader.isWhiteSpace() && cdata.length() > 0) {
+         } else if (currentEventType == XMLStreamConstants.CHARACTERS && reader.isWhiteSpace() && !cdata.isEmpty()) {
             /* when we hit a whitespace CHARACTERS event we know that the entire CDATA is complete so decode, pass back to
              * the processor, and reset the cdata for the next event(s)
              */

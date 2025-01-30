@@ -146,8 +146,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
       int tempDestinationCount = 0;
       for (RemotingConnection remotingConnection : server.getRemotingService().getConnections()) {
-         if (remotingConnection instanceof OpenWireConnection) {
-            OpenWireConnection openWireConnection = (OpenWireConnection) remotingConnection;
+         if (remotingConnection instanceof OpenWireConnection openWireConnection) {
             if (openWireConnection.getState() != null && openWireConnection.getState().getTempDestinations() != null) {
                tempDestinationCount += openWireConnection.getState().getTempDestinations().size();
             }
@@ -1674,7 +1673,7 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
          connection1.close();
 
          // need to wait here because the ActiveMQ client's temp destination map is updated asynchronously, not waiting can introduce a race
-         assertTrue(Wait.waitFor(() -> ((ActiveMQConnection)connection2).activeTempDestinations.size() == 0, 2000, 100));
+         assertTrue(Wait.waitFor(() -> ((ActiveMQConnection) connection2).activeTempDestinations.isEmpty(), 2000, 100));
 
          waitForBindings(this.server, tempQueue.getQueueName(), true, 0, 0, 5000);
          //send again
@@ -1704,9 +1703,9 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
          subscriber.setMessageListener(receivedMessages::add);
          topicConnection.start();
 
-         Wait.waitFor(() -> receivedMessages.size() > 0);
+         Wait.waitFor(() -> !receivedMessages.isEmpty());
 
-         assertTrue(receivedMessages.size() > 0);
+         assertFalse(receivedMessages.isEmpty());
 
          for (Message message : receivedMessages) {
             assertNotNull(message);
@@ -1717,12 +1716,10 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
    @Test
    public void testXAResourceCommitSuspendedNotRemoved() throws Exception {
-      Queue queue = null;
 
       Xid xid = newXID();
       try (XAConnection xaconnection = xaFactory.createXAConnection()) {
          XASession session = xaconnection.createXASession();
-         queue = session.createQueue(queueName);
          session.getXAResource().start(xid, XAResource.TMNOFLAGS);
          session.getXAResource().end(xid, XAResource.TMSUSPEND);
 
@@ -1744,12 +1741,10 @@ public class SimpleOpenWireTest extends BasicOpenWireTest {
 
    @Test
    public void testXAResourceRolledBackSuspendedNotRemoved() throws Exception {
-      Queue queue = null;
 
       Xid xid = newXID();
       try (XAConnection xaconnection = xaFactory.createXAConnection()) {
          XASession session = xaconnection.createXASession();
-         queue = session.createQueue(queueName);
          session.getXAResource().start(xid, XAResource.TMNOFLAGS);
          session.getXAResource().end(xid, XAResource.TMSUSPEND);
 

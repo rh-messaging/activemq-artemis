@@ -19,6 +19,7 @@ package org.apache.activemq.artemis.utils.bean;
 
 import java.io.StringReader;
 import java.lang.invoke.MethodHandles;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -45,7 +46,7 @@ public class MetaBean<T> {
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private CopyOnWriteArrayList<MetaData<T>> metaData = new CopyOnWriteArrayList<>();
+   private List<MetaData<T>> metaData = new CopyOnWriteArrayList<>();
 
    /**
     * Accepted types:
@@ -113,13 +114,13 @@ public class MetaBean<T> {
             } else if (type == String.class || type == SimpleString.class) {
                logger.trace("Setting {} as String {}", name, value);
                builder.add(name, String.valueOf(value));
-            } else if (Number.class.isAssignableFrom(type) && value instanceof Number) {
+            } else if (Number.class.isAssignableFrom(type) && value instanceof Number number) {
                if (value instanceof Double || value instanceof Float) {
                   logger.trace("Setting {} as double {}", name, value);
-                  builder.add(name, ((Number) value).doubleValue());
+                  builder.add(name, number.doubleValue());
                } else {
                   logger.trace("Setting {} as long {}", name, value);
-                  builder.add(name, ((Number) value).longValue());
+                  builder.add(name, number.longValue());
                }
             } else if (type == Boolean.class) {
                builder.add(name, (Boolean) value);

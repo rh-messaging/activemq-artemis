@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -87,7 +88,7 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
 
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-   private static final List<String> websocketRegistryNames = Collections.EMPTY_LIST;
+   private static final List<String> websocketRegistryNames = Collections.emptyList();
 
    private static final IdGenerator BROKER_ID_GENERATOR = new IdGenerator();
    private static final IdGenerator ID_GENERATOR = new IdGenerator();
@@ -107,9 +108,9 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
    private BrokerId brokerId;
    protected final ProducerId advisoryProducerId = new ProducerId();
 
-   private final CopyOnWriteArrayList<OpenWireConnection> connections = new CopyOnWriteArrayList<>();
+   private final List<OpenWireConnection> connections = new CopyOnWriteArrayList<>();
 
-   private final ConcurrentHashMap<String, OpenWireConnection> clientIdSet = new ConcurrentHashMap<>();
+   private final ConcurrentMap<String, OpenWireConnection> clientIdSet = new ConcurrentHashMap<>();
 
    private String brokerName;
 
@@ -327,8 +328,8 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
    private int getActorThreadshold(Acceptor acceptorUsed) {
       int actorThreshold = TransportConstants.DEFAULT_TCP_RECEIVEBUFFER_SIZE;
 
-      if (acceptorUsed instanceof NettyAcceptor) {
-         actorThreshold = ((NettyAcceptor) acceptorUsed).getTcpReceiveBufferSize();
+      if (acceptorUsed instanceof NettyAcceptor acceptor) {
+         actorThreshold = acceptor.getTcpReceiveBufferSize();
       }
 
       if (this.actorThresholdBytes > 0) {
@@ -523,7 +524,7 @@ public class OpenWireProtocolManager  extends AbstractProtocolManager<Command, O
       String separator = "";
 
       synchronized (members) {
-         if (members.size() > 0) {
+         if (!members.isEmpty()) {
             for (TopologyMember member : members) {
                connectedBrokers.append(separator).append(member.toURI());
                separator = ",";

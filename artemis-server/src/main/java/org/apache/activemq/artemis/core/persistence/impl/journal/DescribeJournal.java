@@ -460,7 +460,7 @@ public final class DescribeJournal {
          }
       }
 
-      if (counters.size() > 0) {
+      if (!counters.isEmpty()) {
          out.println("### Page Counters");
          printCounters(out, counters);
       }
@@ -496,7 +496,7 @@ public final class DescribeJournal {
 
       String missingTX = bufferFailingTransactions.toString();
 
-      if (missingTX.length() > 0) {
+      if (!missingTX.isEmpty()) {
          out.println();
          out.println("### Failed Transactions (Missing commit/prepare/rollback record) ###");
       }
@@ -551,13 +551,12 @@ public final class DescribeJournal {
          return "** null **";
       }
       if (safe && !isSafe(obj)) {
-         if (obj instanceof MessageDescribe) {
-            MessageDescribe describe = (MessageDescribe)obj;
+         if (obj instanceof MessageDescribe messageDescribe) {
             try {
-               return describe.getMsg().getClass().getSimpleName() + "(safe data, size=" + describe.getMsg().getPersistentSize() + ")";
+               return messageDescribe.getMsg().getClass().getSimpleName() + "(safe data, size=" + messageDescribe.getMsg().getPersistentSize() + ")";
             } catch (Throwable e) {
                e.printStackTrace();
-               return describe.getMsg().getClass().getSimpleName() + "(safe data)";
+               return messageDescribe.getMsg().getClass().getSimpleName() + "(safe data)";
             }
          } else {
             return obj.getClass().getSimpleName() + "(safe data)";

@@ -24,6 +24,7 @@ import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,9 +66,6 @@ public class BatchCommitTest extends ActiveMQTestBase {
    private static final int BUFFER_TIMEOUT = 10 * 1024;
 
    private static final int MAX_AIO = 255;
-
-   private static final int OK = 100;
-   private static final int ERROR = 101;
 
    private static final int RECORDS = 10000;
 
@@ -208,8 +206,8 @@ public class BatchCommitTest extends ActiveMQTestBase {
       OrderedExecutorFactory orderedExecutorFactory = getExecutorFactory();
       setupJournal(journalType, getTestDir(), orderedExecutorFactory);
 
-      ArrayList<RecordInfo> commited = new ArrayList<>();
-      ArrayList<PreparedTransactionInfo> prepared = new ArrayList<>();
+      List<RecordInfo> commited = new ArrayList<>();
+      List<PreparedTransactionInfo> prepared = new ArrayList<>();
       AtomicInteger failedTX = new AtomicInteger(0);
 
       journal.start();

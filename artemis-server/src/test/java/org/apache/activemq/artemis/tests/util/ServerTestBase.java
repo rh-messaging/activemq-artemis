@@ -102,8 +102,6 @@ public abstract class ServerTestBase extends ArtemisTestCase {
 
    private final Collection<ActiveMQServer> servers = new ArrayList<>();
 
-   private String testDir;
-
    // Temp folder at ./target/tmp/<TestClassName>/<generated>
    // Cleans itself, but ./target/tmp/ deleted below as well.
    @TempDir(factory = TargetTempDirFactory.class)
@@ -610,7 +608,7 @@ public abstract class ServerTestBase extends ArtemisTestCase {
    private List<Exception> checkCsfStopped() throws Exception {
       if (!Wait.waitFor(ClientSessionFactoryImpl.CLOSE_RUNNABLES::isEmpty, 5_000)) {
          List<ClientSessionFactoryImpl.CloseRunnable> closeRunnables = new ArrayList<>(ClientSessionFactoryImpl.CLOSE_RUNNABLES);
-         ArrayList<Exception> exceptions = new ArrayList<>();
+         List<Exception> exceptions = new ArrayList<>();
 
          if (!closeRunnables.isEmpty()) {
             for (ClientSessionFactoryImpl.CloseRunnable closeRunnable : closeRunnables) {

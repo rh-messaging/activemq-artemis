@@ -16,7 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.cluster.failover;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
 
@@ -39,8 +38,6 @@ import org.apache.activemq.artemis.utils.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,8 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FailoverTest extends FailoverTestBase {
-
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Override
    @BeforeEach
@@ -123,8 +118,8 @@ public class FailoverTest extends FailoverTestBase {
    public void testFailBack() throws Exception {
       boolean doFailBack = true;
       HAPolicy haPolicy = backupServer.getServer().getHAPolicy();
-      if (haPolicy instanceof ReplicaPolicy) {
-         ((ReplicaPolicy) haPolicy).setMaxSavedReplicatedJournalsSize(1);
+      if (haPolicy instanceof ReplicaPolicy policy) {
+         policy.setMaxSavedReplicatedJournalsSize(1);
       }
 
       simpleFailover(haPolicy instanceof ReplicaPolicy || haPolicy instanceof ReplicationBackupPolicy, doFailBack);

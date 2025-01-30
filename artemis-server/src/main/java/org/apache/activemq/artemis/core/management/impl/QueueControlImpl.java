@@ -1744,7 +1744,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
             long start = (long) (page - 1) * pageSize;
             long end = Math.min((long) page * pageSize, queue.getMessageCount());
 
-            ArrayList<CompositeData> c = new ArrayList<>();
+            List<CompositeData> c = new ArrayList<>();
             Filter thefilter = FilterImpl.createFilter(filter);
 
             final int attributeSizeLimit = addressSettingsRepository.getMatch(address).getManagementMessageAttributeSizeLimit();
@@ -1805,7 +1805,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
             final int attributeSizeLimit = addressSettings.getManagementMessageAttributeSizeLimit();
             final int limit = addressSettings.getManagementBrowsePageSize();
             int currentPageSize = 0;
-            ArrayList<CompositeData> c = new ArrayList<>();
+            List<CompositeData> c = new ArrayList<>();
             Filter thefilter = FilterImpl.createFilter(filter);
             try (LinkedListIterator<MessageReference> iterator = queue.browserIterator()) {
                try {
@@ -1962,8 +1962,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
 
          for (Consumer consumer : consumers) {
 
-            if (consumer instanceof ServerConsumer) {
-               ServerConsumer serverConsumer = (ServerConsumer) consumer;
+            if (consumer instanceof ServerConsumer serverConsumer) {
                JsonObjectBuilder obj = JsonLoader.createObjectBuilder()
                        .add(ConsumerField.ID.getAlternativeName(), serverConsumer.getID())
                        .add(ConsumerField.SEQUENTIAL_ID.getAlternativeName(), serverConsumer.getSequentialID())
@@ -2151,8 +2150,7 @@ public class QueueControlImpl extends AbstractControl implements QueueControl {
                   List<TransactionOperation> allOperations = transaction.getAllOperations();
 
                   for (TransactionOperation operation : allOperations) {
-                     if (operation instanceof RefsOperation) {
-                        RefsOperation refsOperation = (RefsOperation) operation;
+                     if (operation instanceof RefsOperation refsOperation) {
                         List<MessageReference> references = refsOperation.getReferencesToAcknowledge();
                         for (MessageReference reference : references) {
                            if (reference != null && reference.getQueue().getName().equals(queue.getName())) {

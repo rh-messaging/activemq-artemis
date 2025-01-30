@@ -244,7 +244,7 @@ public class MQTTUtil {
        * Maintain the original order of the properties by using a decomposable name that indicates the original order.
        */
       List<MqttProperties.StringPair> userProperties = getProperty(List.class, properties, USER_PROPERTY);
-      if (userProperties != null && userProperties.size() != 0) {
+      if (userProperties != null && !userProperties.isEmpty()) {
          message.putIntProperty(MQTT_USER_PROPERTY_EXISTS_KEY, userProperties.size());
          for (int i = 0; i < userProperties.size(); i++) {
             String key = new StringBuilder()
@@ -316,7 +316,7 @@ public class MQTTUtil {
                case PUBLISH:
                   MqttPublishVariableHeader publishHeader = (MqttPublishVariableHeader) message.variableHeader();
                   String topicName = publishHeader.topicName();
-                  if (topicName == null || topicName.length() == 0) {
+                  if (topicName == null || topicName.isEmpty()) {
                      topicName = "<empty>";
                   }
                   log.append("(" + publishHeader.packetId() + ")")
@@ -328,9 +328,9 @@ public class MQTTUtil {
                   for (MqttProperties.MqttProperty property : ((MqttPublishMessage)message).variableHeader().properties().listAll()) {
                      Object value = property.value();
                      if (value != null) {
-                        if (value instanceof byte[]) {
-                           value = new String((byte[]) value, StandardCharsets.UTF_8);
-                        } else if (value instanceof ArrayList && ((ArrayList)value).size() > 0 && ((ArrayList)value).get(0) instanceof MqttProperties.StringPair) {
+                        if (value instanceof byte[] bytes) {
+                           value = new String(bytes, StandardCharsets.UTF_8);
+                        } else if (value instanceof ArrayList<?> list && !list.isEmpty() && list.get(0) instanceof MqttProperties.StringPair) {
                            StringBuilder userProperties = new StringBuilder();
                            userProperties.append("[");
                            for (MqttProperties.StringPair pair : (ArrayList<MqttProperties.StringPair>) value) {
@@ -428,7 +428,7 @@ public class MQTTUtil {
          return "<empty>";
       }
       String publishPayload = message.payload().toString(StandardCharsets.UTF_8);
-      if (publishPayload.length() == 0) {
+      if (publishPayload.isEmpty()) {
          return "<empty>";
       }
       return publishPayload.length() > maxPayloadLogSize ? publishPayload.substring(0, maxPayloadLogSize) : publishPayload;

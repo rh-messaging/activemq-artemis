@@ -19,9 +19,9 @@ package org.apache.activemq.artemis.utils.critical;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ConcurrentModificationException;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.activemq.artemis.core.server.ActiveMQScheduledComponent;
 import org.apache.activemq.artemis.utils.ActiveMQThreadFactory;
@@ -40,8 +40,6 @@ public class CriticalAnalyzerImpl implements CriticalAnalyzer {
    private volatile long checkTimeNanoSeconds = TimeUnit.SECONDS.toNanos(60);
 
    private final ActiveMQScheduledComponent scheduledComponent;
-
-   private final AtomicBoolean running = new AtomicBoolean(false);
 
    public CriticalAnalyzerImpl() {
       // this will make the scheduled component to start its own pool
@@ -78,7 +76,7 @@ public class CriticalAnalyzerImpl implements CriticalAnalyzer {
       components.clear();
    }
 
-   private CopyOnWriteArrayList<CriticalAction> actions = new CopyOnWriteArrayList<>();
+   private List<CriticalAction> actions = new CopyOnWriteArrayList<>();
 
    private final ConcurrentHashSet<CriticalComponent> components = new ConcurrentHashSet<>();
 

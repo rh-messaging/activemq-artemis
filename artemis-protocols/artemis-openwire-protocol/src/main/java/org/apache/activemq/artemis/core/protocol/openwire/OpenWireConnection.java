@@ -363,8 +363,8 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
                setLastCommand(null);
             }
 
-            if (response instanceof ExceptionResponse) {
-               Throwable cause = ((ExceptionResponse)response).getException();
+            if (response instanceof ExceptionResponse exceptionResponse) {
+               Throwable cause = exceptionResponse.getException();
                if (!responseRequired) {
                   serviceException(cause);
                   response = null;
@@ -867,8 +867,8 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
    }
 
    private static int getSize(Command command) {
-      if (command instanceof ActiveMQMessage) {
-         return ((ActiveMQMessage) command).getSize();
+      if (command instanceof ActiveMQMessage activeMQMessage) {
+         return activeMQMessage.getSize();
       } else {
          return MINIMAL_SIZE_ESTIAMTE;
       }
@@ -972,7 +972,7 @@ public class OpenWireConnection extends AbstractRemotingConnection implements Se
          ss.addConsumer(info);
          info.setLastDeliveredSequenceId(RemoveInfo.LAST_DELIVERED_UNKNOWN);
 
-         if (consumersList.size() == 0) {
+         if (consumersList.isEmpty()) {
             return;
          }
 

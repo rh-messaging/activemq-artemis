@@ -20,8 +20,8 @@ import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
-import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -40,22 +40,18 @@ import org.apache.activemq.artemis.tests.util.CFUtil;
 import org.apache.activemq.artemis.tests.util.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class AMQPMirrorExpiryQueueTest extends ActiveMQTestBase {
 
-   private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
    private static final String EXPIRY_QUEUE = AMQPMirrorExpiryQueueTest.class.getName() + "_ExpiryOut";
 
    protected TransportConfiguration newAcceptorConfig(int port, String name) {
-      HashMap<String, Object> params = new HashMap<>();
+      Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.PORT_PROP_NAME, String.valueOf(port));
       params.put(TransportConstants.PROTOCOLS_PROP_NAME, "AMQP,CORE,OPENWIRE");
-      HashMap<String, Object> amqpParams = new HashMap<>();
+      Map<String, Object> amqpParams = new HashMap<>();
       TransportConfiguration tc = new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, params, name, amqpParams);
       return tc;
    }

@@ -69,8 +69,8 @@ public class MessageUtil {
    public static byte[] getJMSCorrelationIDAsBytes(Message message) {
       Object obj = message.getObjectProperty(CORRELATIONID_HEADER_NAME);
 
-      if (obj instanceof byte[]) {
-         return (byte[]) obj;
+      if (obj instanceof byte[] bytes) {
+         return bytes;
       } else {
          return null;
       }
@@ -158,7 +158,7 @@ public class MessageUtil {
    }
 
    public static Set<String> getPropertyNames(Message message) {
-      HashSet<String> set = new HashSet<>();
+      Set<String> set = new HashSet<>();
 
       for (SimpleString propName : message.getPropertyNames()) {
          if (propName.equals(Message.HDR_GROUP_ID)) {
@@ -273,10 +273,10 @@ public class MessageUtil {
    private static int getInteger(final Object value) {
       Objects.requireNonNull(value);
       final int integer;
-      if (value instanceof Integer) {
-         integer = (Integer) value;
-      } else if (value instanceof Number) {
-         integer = ((Number) value).intValue();
+      if (value instanceof Integer integerValue) {
+         integer = integerValue;
+      } else if (value instanceof Number number) {
+         integer = number.intValue();
       } else {
          integer = Integer.parseInt(value.toString());
       }

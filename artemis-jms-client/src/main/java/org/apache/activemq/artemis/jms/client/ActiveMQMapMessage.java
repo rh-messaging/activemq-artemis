@@ -284,8 +284,8 @@ public class ActiveMQMapMessage extends ActiveMQMessage implements MapMessage {
    public Object getObject(final String name) throws JMSException {
       Object val = map.getProperty(SimpleString.of(name));
 
-      if (val instanceof SimpleString) {
-         val = ((SimpleString) val).toString();
+      if (val instanceof SimpleString string) {
+         val = string.toString();
       }
 
       return val;
@@ -341,7 +341,7 @@ public class ActiveMQMapMessage extends ActiveMQMessage implements MapMessage {
       if (name == null) {
          throw ActiveMQJMSClientBundle.BUNDLE.nameCannotBeNull();
       }
-      if (name.equals("")) {
+      if (name.isEmpty()) {
          throw ActiveMQJMSClientBundle.BUNDLE.nameCannotBeEmpty();
       }
    }

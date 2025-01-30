@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -109,7 +110,7 @@ public class ClusteredBridgeReconnectTest extends ClusterTestBase {
       ClusterConnectionBridge bridge = (ClusterConnectionBridge) record.getBridge();
 
       Wait.assertEquals(2, () -> bridge.getSessionFactory().getServerLocator().getTopology().getMembers().size());
-      ArrayList<TopologyMemberImpl> originalmembers = new ArrayList<>(bridge.getSessionFactory().getServerLocator().getTopology().getMembers());
+      List<TopologyMemberImpl> originalmembers = new ArrayList<>(bridge.getSessionFactory().getServerLocator().getTopology().getMembers());
 
       AtomicInteger errors = new AtomicInteger(0);
 
@@ -141,7 +142,7 @@ public class ClusteredBridgeReconnectTest extends ClusterTestBase {
 
          Wait.waitFor(() -> BridgeTestAccessor.withinRefs(bridge, (refs) -> {
             synchronized (refs) {
-               if (refs.size() > 0) {
+               if (!refs.isEmpty()) {
                   executorFail.execute(() -> {
                      bridge.connectionFailed(new ActiveMQException("bye"), false);
                   });
@@ -162,7 +163,7 @@ public class ClusteredBridgeReconnectTest extends ClusterTestBase {
       assertEquals(0, errors.get());
       Wait.assertEquals(2, () -> bridge.getSessionFactory().getServerLocator().getTopology().getMembers().size());
 
-      ArrayList<TopologyMemberImpl> afterReconnectedMembers = new ArrayList<>(bridge.getSessionFactory().getServerLocator().getTopology().getMembers());
+      List<TopologyMemberImpl> afterReconnectedMembers = new ArrayList<>(bridge.getSessionFactory().getServerLocator().getTopology().getMembers());
 
       boolean allFound = true;
 
@@ -383,11 +384,11 @@ public class ClusteredBridgeReconnectTest extends ClusterTestBase {
       boolean localBindingPaused = false;
       boolean remoteBindingPaused = true;
       for (Binding bd : bindings0.getBindings()) {
-         if (bd instanceof LocalQueueBinding) {
-            localBindingPaused = ((LocalQueueBinding)bd).getQueue().isPaused();
+         if (bd instanceof LocalQueueBinding localQueueBinding) {
+            localBindingPaused = localQueueBinding.getQueue().isPaused();
          }
-         if (bd instanceof RemoteQueueBinding) {
-            remoteBindingPaused = ((RemoteQueueBinding)bd).getQueue().isPaused();
+         if (bd instanceof RemoteQueueBinding remoteQueueBinding) {
+            remoteBindingPaused = remoteQueueBinding.getQueue().isPaused();
          }
       }
       assertTrue(localBindingPaused);

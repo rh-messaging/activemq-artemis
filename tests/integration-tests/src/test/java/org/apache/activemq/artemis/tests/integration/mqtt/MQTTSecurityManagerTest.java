@@ -106,14 +106,14 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
          assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
          Map<String, MQTTSessionState> sessionStates = null;
          Acceptor acceptor = server.getRemotingService().getAcceptor("MQTT");
-         if (acceptor instanceof AbstractAcceptor) {
-            ProtocolManager protocolManager = ((AbstractAcceptor) acceptor).getProtocolMap().get("MQTT");
-            if (protocolManager instanceof MQTTProtocolManager) {
-               sessionStates = ((MQTTProtocolManager) protocolManager).getStateManager().getSessionStates();
+         if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
+            ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get("MQTT");
+            if (protocolManager instanceof MQTTProtocolManager mqttProtocolManager) {
+               sessionStates = mqttProtocolManager.getStateManager().getSessionStates();
             }
          }
          assertEquals(1, sessionStates.size());
-         assertTrue(sessionStates.keySet().contains(clientID));
+         assertTrue(sessionStates.containsKey(clientID));
          for (MQTTSessionState state : sessionStates.values()) {
             assertEquals(clientID, state.getClientId());
          }
@@ -139,14 +139,14 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
          assertTrue(Wait.waitFor(() -> finalConnection.isConnected(), 5000, 100), "Should be connected");
          Map<String, MQTTSessionState> sessionStates = null;
          Acceptor acceptor = server.getRemotingService().getAcceptor("MQTT");
-         if (acceptor instanceof AbstractAcceptor) {
-            ProtocolManager protocolManager = ((AbstractAcceptor) acceptor).getProtocolMap().get("MQTT");
-            if (protocolManager instanceof MQTTProtocolManager) {
-               sessionStates = ((MQTTProtocolManager) protocolManager).getStateManager().getSessionStates();
+         if (acceptor instanceof AbstractAcceptor abstractAcceptor) {
+            ProtocolManager protocolManager = abstractAcceptor.getProtocolMap().get("MQTT");
+            if (protocolManager instanceof MQTTProtocolManager manager) {
+               sessionStates = manager.getStateManager().getSessionStates();
             }
          }
          assertEquals(1, sessionStates.size());
-         assertTrue(sessionStates.keySet().contains(clientID));
+         assertTrue(sessionStates.containsKey(clientID));
          for (MQTTSessionState state : sessionStates.values()) {
             assertEquals(clientID, state.getClientId());
          }
@@ -157,7 +157,7 @@ public class MQTTSecurityManagerTest extends MQTTTestSupport {
          assertTrue(Wait.waitFor(() -> finalConnection2.isConnected(), 5000, 100), "Should be connected");
          Wait.assertFalse(() -> finalConnection.isConnected(), 5000, 100);
          assertEquals(1, sessionStates.size());
-         assertTrue(sessionStates.keySet().contains(clientID));
+         assertTrue(sessionStates.containsKey(clientID));
          for (MQTTSessionState state : sessionStates.values()) {
             assertEquals(clientID, state.getClientId());
          }

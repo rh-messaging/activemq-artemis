@@ -596,7 +596,7 @@ public final class JMSBridgeImpl implements JMSBridge {
                }
             }
 
-            if (messages.size() > 0) {
+            if (!messages.isEmpty()) {
                // Clear outstanding messages so they don't get retransmitted and duplicated on the other side of the bridge
                logger.trace("Clearing up messages before stopping...");
                messages.clear();
@@ -1050,8 +1050,8 @@ public final class JMSBridgeImpl implements JMSBridge {
 
          Object cf = cff.createConnectionFactory();
 
-         if (cf instanceof ActiveMQConnectionFactory && registry != null) {
-            registry.register(XARecoveryConfig.newConfig((ActiveMQConnectionFactory) cf, username, password, null));
+         if (cf instanceof ActiveMQConnectionFactory factory && registry != null) {
+            registry.register(XARecoveryConfig.newConfig(factory, username, password, null));
          }
 
          if (qualityOfServiceMode == QualityOfServiceMode.ONCE_AND_ONLY_ONCE && !(cf instanceof XAConnectionFactory)) {
@@ -1083,12 +1083,11 @@ public final class JMSBridgeImpl implements JMSBridge {
          boolean ha = false;
          BridgeFailoverListener failoverListener = null;
 
-         if (conn instanceof ActiveMQConnection) {
+         if (conn instanceof ActiveMQConnection activeMQConn) {
             ActiveMQConnectionFactory activeMQCF = (ActiveMQConnectionFactory) cf;
             ha = activeMQCF.isHA();
 
             if (ha) {
-               ActiveMQConnection activeMQConn = (ActiveMQConnection) conn;
                failoverListener = new BridgeFailoverListener(isSource);
                activeMQConn.setFailoverListener(failoverListener);
             }
@@ -1620,8 +1619,8 @@ public final class JMSBridgeImpl implements JMSBridge {
             if (val instanceof byte[] == false) {
                //Can't set byte[] array props through the JMS API - if we're bridging an ActiveMQ Artemis message it might have such props
                msg.setObjectProperty(propName, entry.getValue());
-            } else if (msg instanceof ActiveMQMessage) {
-               ((ActiveMQMessage) msg).getCoreMessage().putBytesProperty(propName, (byte[]) val);
+            } else if (msg instanceof ActiveMQMessage activeMQMessage) {
+               activeMQMessage.getCoreMessage().putBytesProperty(propName, (byte[]) val);
             }
          }
       }
@@ -1685,10 +1684,10 @@ public final class JMSBridgeImpl implements JMSBridge {
                   try {
                      msg = sourceConsumer.receive(1000);
 
-                     if (msg instanceof ActiveMQMessage) {
+                     if (msg instanceof ActiveMQMessage activeMQMessage) {
                         // We need to check the buffer mainly in the case of LargeMessages
                         // As we need to reconstruct the buffer before resending the message
-                        ((ActiveMQMessage) msg).checkBuffer();
+                        activeMQMessage.checkBuffer();
                      }
                   } catch (JMSException jmse) {
                      if (logger.isTraceEnabled()) {

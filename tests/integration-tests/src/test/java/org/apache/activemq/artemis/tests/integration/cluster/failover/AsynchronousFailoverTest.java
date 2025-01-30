@@ -76,7 +76,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase {
 
       volatile boolean failed;
 
-      ArrayList<Throwable> errors = new ArrayList<>();
+      List<Throwable> errors = new ArrayList<>();
 
       boolean isFailed() {
          return failed;
@@ -95,7 +95,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase {
       }
 
       void checkForExceptions() throws Throwable {
-         if (errors.size() > 0) {
+         if (!errors.isEmpty()) {
             logger.warn("Exceptions on test:");
             for (Throwable e : errors) {
                logger.warn(e.getMessage(), e);

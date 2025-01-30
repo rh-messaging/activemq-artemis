@@ -72,8 +72,8 @@ public class ReloadableProperties {
             // want to checksum in read order
             @Override
             public synchronized Object put(Object key, Object value) {
-               String sKey = key instanceof String ? (String)key : null;
-               String sValue = value instanceof String ? (String)value : null;
+               String sKey = key instanceof String s ? s : null;
+               String sValue = value instanceof String s ? s : null;
                if (sKey != null && sValue != null) {
                   adler32.update(sKey.getBytes(StandardCharsets.UTF_8));
                   adler32.update('=');
@@ -111,7 +111,7 @@ public class ReloadableProperties {
    }
 
    private void updateStatus() {
-      HashMap<String, String> statusAttributes = new HashMap<>();
+      Map<String, String> statusAttributes = new HashMap<>();
       statusAttributes.put("Alder32", String.valueOf(checksum));
       statusAttributes.put("reloadTime", String.valueOf(reloadTime));
       ServerStatus.getInstance().update(JAAS_COMPONENT + "/properties/" + key.file.getName(),  statusAttributes);

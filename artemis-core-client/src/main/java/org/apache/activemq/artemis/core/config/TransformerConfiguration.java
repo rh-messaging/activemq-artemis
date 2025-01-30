@@ -79,7 +79,7 @@ public final class TransformerConfiguration implements Serializable {
       TransformerConfiguration result = new TransformerConfiguration(json.getString(CLASS_NAME));
 
       if (json.containsKey(PROPERTIES)) {
-         HashMap<String, String> properties = new HashMap<>();
+         Map<String, String> properties = new HashMap<>();
          for (Map.Entry<String, JsonValue> propEntry: json.getJsonObject(PROPERTIES).entrySet()) {
             if (propEntry.getValue().getValueType() == JsonValue.ValueType.STRING) {
                properties.put(propEntry.getKey(), ((JsonString) propEntry.getValue()).getString());
@@ -95,7 +95,7 @@ public final class TransformerConfiguration implements Serializable {
 
    public JsonObjectBuilder createJsonObjectBuilder() {
       JsonObjectBuilder tcBuilder = JsonLoader.createObjectBuilder().add(TransformerConfiguration.CLASS_NAME, getClassName());
-      if (getProperties() != null && getProperties().size() > 0) {
+      if (getProperties() != null && !getProperties().isEmpty()) {
          JsonObjectBuilder propBuilder = JsonLoader.createObjectBuilder();
          getProperties().forEach(propBuilder::add);
          tcBuilder.add(TransformerConfiguration.PROPERTIES, propBuilder);

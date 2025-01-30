@@ -173,11 +173,11 @@ public class SaslKrb5LDAPSecurityTest extends AbstractLdapTestUnit {
 
    private void createArtemisServer(String securityConfigScope) {
       ActiveMQJAASSecurityManager securityManager = new ActiveMQJAASSecurityManager(securityConfigScope);
-      HashMap<String, Object> params = new HashMap<>();
+      Map<String, Object> params = new HashMap<>();
       params.put(TransportConstants.PORT_PROP_NAME, String.valueOf(5672));
       params.put(TransportConstants.PROTOCOLS_PROP_NAME, "AMQP");
 
-      HashMap<String, Object> amqpParams = new HashMap<>();
+      Map<String, Object> amqpParams = new HashMap<>();
       amqpParams.put("saslMechanisms", "GSSAPI");
       amqpParams.put("saslLoginConfigScope", "amqp-sasl-gssapi");
 
@@ -203,7 +203,7 @@ public class SaslKrb5LDAPSecurityTest extends AbstractLdapTestUnit {
          (InetSocketAddress)kdcServer.getTransports()[0].getAcceptor().getLocalAddress();
       int port = addr.getPort();
       File krb5conf = new File(testDir, "krb5.conf").getAbsoluteFile();
-      String krb5confBody = MessageFormat.format(sb.toString(), getRealm(), "localhost", Integer.toString(port), System.getProperty("line.separator"));
+      String krb5confBody = MessageFormat.format(sb.toString(), getRealm(), "localhost", Integer.toString(port), System.lineSeparator());
       FileUtils.writeStringToFile(krb5conf, krb5confBody, StandardCharsets.UTF_8);
       System.setProperty("java.security.krb5.conf", krb5conf.getAbsolutePath());
 
@@ -319,7 +319,7 @@ public class SaslKrb5LDAPSecurityTest extends AbstractLdapTestUnit {
       env.put(Context.SECURITY_CREDENTIALS, CREDENTIALS);
       DirContext ctx = new InitialDirContext(env);
 
-      HashSet<String> set = new HashSet<>();
+      Set<String> set = new HashSet<>();
 
       NamingEnumeration<NameClassPair> list = ctx.list("ou=system");
 
@@ -350,7 +350,7 @@ public class SaslKrb5LDAPSecurityTest extends AbstractLdapTestUnit {
       try {
          Subject.doAs(loginContext.getSubject(), (PrivilegedExceptionAction<Object>) () -> {
 
-            HashSet<String> set = new HashSet<>();
+            Set<String> set = new HashSet<>();
 
             DirContext ctx = new InitialDirContext(env);
             NamingEnumeration<NameClassPair> list = ctx.list("ou=system");

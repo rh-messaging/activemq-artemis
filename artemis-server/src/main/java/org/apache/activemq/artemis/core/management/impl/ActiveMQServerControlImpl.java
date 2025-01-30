@@ -424,8 +424,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
       try {
          HAPolicy haPolicy = server.getHAPolicy();
-         if (haPolicy instanceof SharedStoreBackupPolicy) {
-            ((SharedStoreBackupPolicy) haPolicy).setFailoverOnServerShutdown(failoverOnServerShutdown);
+         if (haPolicy instanceof SharedStoreBackupPolicy sharedStoreBackupPolicy) {
+            sharedStoreBackupPolicy.setFailoverOnServerShutdown(failoverOnServerShutdown);
          }
       } finally {
          blockOnIO();
@@ -442,8 +442,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
       try {
          HAPolicy haPolicy = server.getHAPolicy();
-         if (haPolicy instanceof SharedStoreBackupPolicy) {
-            return ((SharedStoreBackupPolicy) haPolicy).isFailoverOnServerShutdown();
+         if (haPolicy instanceof SharedStoreBackupPolicy sharedStoreBackupPolicy) {
+            return sharedStoreBackupPolicy.isFailoverOnServerShutdown();
          } else {
             return false;
          }
@@ -862,9 +862,8 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       }
       try (AutoCloseable lock = server.managementLock()) {
          Activation activation = server.getActivation();
-         if (activation instanceof SharedNothingPrimaryActivation) {
-            SharedNothingPrimaryActivation primaryActivation = (SharedNothingPrimaryActivation) activation;
-            primaryActivation.freezeReplication();
+         if (activation instanceof SharedNothingPrimaryActivation sharedNothingPrimaryActivation) {
+            sharedNothingPrimaryActivation.freezeReplication();
             return true;
          }
          return false;
@@ -1273,7 +1272,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
       SimpleString filter = filterStr == null ? null : SimpleString.of(filterStr);
       try {
-         if (filterStr != null && !filterStr.trim().equals("")) {
+         if (filterStr != null && !filterStr.trim().isEmpty()) {
             filter = SimpleString.of(filterStr);
          }
 
@@ -1690,7 +1689,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
          StringBuilder result = new StringBuilder();
          for (SimpleString string : sortAddress) {
-            if (result.length() > 0) {
+            if (!result.isEmpty()) {
                result.append(separator);
             }
             result.append(string);
@@ -1952,7 +1951,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
          DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
          Map<Xid, Long> xids = resourceManager.getPreparedTransactionsWithCreationTime();
-         ArrayList<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
+         List<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
          Collections.sort(xidsSortedByCreationTime, Entry.comparingByValue());
          String[] s = new String[xidsSortedByCreationTime.size()];
          int i = 0;
@@ -1981,11 +1980,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
       try {
          Map<Xid, Long> xids = resourceManager.getPreparedTransactionsWithCreationTime();
-         if (xids == null || xids.size() == 0) {
+         if (xids == null || xids.isEmpty()) {
             return "";
          }
 
-         ArrayList<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
+         List<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
          Collections.sort(xidsSortedByCreationTime, Entry.comparingByValue());
 
          JsonArrayBuilder txDetailListJson = JsonLoader.createArrayBuilder();
@@ -2024,11 +2023,11 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
       clearIO();
       try {
          Map<Xid, Long> xids = resourceManager.getPreparedTransactionsWithCreationTime();
-         if (xids == null || xids.size() == 0) {
+         if (xids == null || xids.isEmpty()) {
             return "<h3>*** Prepared Transaction Details ***</h3><p>No entry.</p>";
          }
 
-         ArrayList<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
+         List<Entry<Xid, Long>> xidsSortedByCreationTime = new ArrayList<>(xids.entrySet());
          Collections.sort(xidsSortedByCreationTime, new Comparator<Entry<Xid, Long>>() {
             @Override
             public int compare(final Entry<Xid, Long> entry1, final Entry<Xid, Long> entry2) {
@@ -2291,11 +2290,10 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
          clearIO();
          try {
             for (Binding binding : postOffice.getMatchingBindings(SimpleString.of(address))) {
-               if (binding instanceof LocalQueueBinding) {
-                  Queue queue = ((LocalQueueBinding) binding).getQueue();
+               if (binding instanceof LocalQueueBinding localQueueBinding) {
+                  Queue queue = localQueueBinding.getQueue();
                   for (Consumer consumer : queue.getConsumers()) {
-                     if (consumer instanceof ServerConsumer) {
-                        ServerConsumer serverConsumer = (ServerConsumer) consumer;
+                     if (consumer instanceof ServerConsumer serverConsumer) {
                         RemotingConnection connection = null;
 
                         for (RemotingConnection potentialConnection : remotingService.getConnections()) {
@@ -2407,7 +2405,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
          try {
             List<ServerSession> sessions = server.getSessions(connectionID);
             for (ServerSession session : sessions) {
-               if (session.getName().equals(ID.toString())) {
+               if (session.getName().equals(ID)) {
                   session.close(true, force);
                   return true;
                }
@@ -2433,7 +2431,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
          try {
             Set<ServerSession> sessions = server.getSessions();
             for (ServerSession session : sessions) {
-               if (session.getName().equals(sessionID.toString())) {
+               if (session.getName().equals(sessionID)) {
                   Set<ServerConsumer> serverConsumers = session.getServerConsumers();
                   for (ServerConsumer serverConsumer : serverConsumers) {
                      if (serverConsumer.sequentialID() == Long.parseLong(ID)) {
@@ -4166,8 +4164,7 @@ public class ActiveMQServerControlImpl extends AbstractControl implements Active
 
          clearIO();
          HAPolicy haPolicy = server.getHAPolicy();
-         if (haPolicy instanceof PrimaryOnlyPolicy) {
-            PrimaryOnlyPolicy primaryOnlyPolicy = (PrimaryOnlyPolicy) haPolicy;
+         if (haPolicy instanceof PrimaryOnlyPolicy primaryOnlyPolicy) {
 
             if (primaryOnlyPolicy.getScaleDownPolicy() == null) {
                primaryOnlyPolicy.setScaleDownPolicy(new ScaleDownPolicy());

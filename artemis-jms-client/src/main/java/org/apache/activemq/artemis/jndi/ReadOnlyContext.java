@@ -84,8 +84,8 @@ public class ReadOnlyContext implements Context, Serializable {
       } else {
          this.environment = new Hashtable<>(env);
       }
-      this.bindings = Collections.EMPTY_MAP;
-      this.treeBindings = Collections.EMPTY_MAP;
+      this.bindings = Collections.emptyMap();
+      this.treeBindings = Collections.emptyMap();
    }
 
    public ReadOnlyContext(Hashtable environment, Map<String, Object> bindings) {
@@ -148,7 +148,7 @@ public class ReadOnlyContext implements Context, Serializable {
     * @throws javax.naming.NamingException
     */
    protected Map<String, Object> internalBind(String name, Object value) throws NamingException {
-      assert name != null && name.length() > 0;
+      assert name != null && !name.isEmpty();
       assert !frozen;
 
       Map<String, Object> newBindings = new HashMap<>();
@@ -162,7 +162,7 @@ public class ReadOnlyContext implements Context, Serializable {
       } else {
          String segment = name.substring(0, pos);
          assert segment != null;
-         assert !segment.equals("");
+         assert !segment.isEmpty();
          Object o = treeBindings.get(segment);
          if (o == null) {
             o = newContext();
@@ -206,7 +206,7 @@ public class ReadOnlyContext implements Context, Serializable {
 
    @Override
    public Object lookup(String name) throws NamingException {
-      if (name.length() == 0) {
+      if (name.isEmpty()) {
          return this;
       }
       Object result = treeBindings.get(name);
@@ -227,23 +227,21 @@ public class ReadOnlyContext implements Context, Serializable {
             // and look for it in the bindings map.
             CompositeName path = new CompositeName(name);
 
-            if (path.size() == 0) {
+            if (path.isEmpty()) {
                return this;
             } else {
                String first = path.get(0);
                Object obj = bindings.get(first);
                if (obj == null) {
                   throw new NameNotFoundException(name);
-               } else if (obj instanceof Context && path.size() > 1) {
-                  Context subContext = (Context) obj;
+               } else if (obj instanceof Context subContext && path.size() > 1) {
                   obj = subContext.lookup(path.getSuffix(1));
                }
                return obj;
             }
          }
       }
-      if (result instanceof LinkRef) {
-         LinkRef ref = (LinkRef) result;
+      if (result instanceof LinkRef ref) {
          result = lookup(ref.getLinkName());
       }
       if (result instanceof Reference) {
@@ -255,12 +253,12 @@ public class ReadOnlyContext implements Context, Serializable {
             throw (NamingException) new NamingException("could not look up : " + name).initCause(e);
          }
       }
-      if (result instanceof ReadOnlyContext) {
+      if (result instanceof ReadOnlyContext context) {
          String prefix = getNameInNamespace();
-         if (prefix.length() > 0) {
+         if (!prefix.isEmpty()) {
             prefix = prefix + SEPARATOR;
          }
-         result = new ReadOnlyContext((ReadOnlyContext) result, environment, prefix + name);
+         result = new ReadOnlyContext(context, environment, prefix + name);
       }
       return result;
    }
@@ -294,8 +292,8 @@ public class ReadOnlyContext implements Context, Serializable {
       Object o = lookup(name);
       if (o == this) {
          return new ListEnumeration();
-      } else if (o instanceof Context) {
-         return ((Context) o).list("");
+      } else if (o instanceof Context context) {
+         return context.list("");
       } else {
          throw new NotContextException();
       }
@@ -306,8 +304,8 @@ public class ReadOnlyContext implements Context, Serializable {
       Object o = lookup(name);
       if (o == this) {
          return new ListBindingEnumeration();
-      } else if (o instanceof Context) {
-         return ((Context) o).listBindings("");
+      } else if (o instanceof Context context) {
+         return context.listBindings("");
       } else {
          throw new NotContextException();
       }

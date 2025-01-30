@@ -16,10 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.amqp.connect;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageConsumer;
@@ -33,8 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.activemq.artemis.api.core.Message;
 import org.apache.activemq.artemis.api.core.QueueConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -45,7 +41,6 @@ import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBroker
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
 import org.apache.activemq.artemis.core.config.ha.PrimaryOnlyPolicyConfiguration;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
-import org.apache.activemq.artemis.core.postoffice.QueueBinding;
 import org.apache.activemq.artemis.core.postoffice.impl.LocalQueueBinding;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -66,10 +61,15 @@ import org.apache.activemq.transport.amqp.client.AmqpConnection;
 import org.apache.activemq.transport.amqp.client.AmqpMessage;
 import org.apache.activemq.transport.amqp.client.AmqpSender;
 import org.apache.activemq.transport.amqp.client.AmqpSession;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class AMQPRedistributeClusterTest extends AmqpTestSupport {
 
@@ -238,14 +238,13 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
       String subscriptionQueueName;
 
       {
-         HashSet<String> subscriptionSet = new HashSet<>();
+         Set<String> subscriptionSet = new HashSet<>();
          // making sure the queues created on a1 are propagated into b1
          a1.getPostOffice().getBindingsForAddress(TOPIC_NAME_SIMPLE_STRING).forEach((n, b) -> {
             logger.debug("{} = {}", n, b);
-            if (b instanceof LocalQueueBinding) {
-               QueueBinding qb = (QueueBinding) b;
-               subscriptionSet.add(qb.getUniqueName().toString());
-               Wait.assertTrue(() -> b1.locateQueue(qb.getUniqueName()) != null);
+            if (b instanceof LocalQueueBinding localQueueBinding) {
+               subscriptionSet.add(localQueueBinding.getUniqueName().toString());
+               Wait.assertTrue(() -> b1.locateQueue(localQueueBinding.getUniqueName()) != null);
             }
          });
          assertEquals(1, subscriptionSet.size());
@@ -255,9 +254,8 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
       // making sure the queues created on a2 are propagated into b2
       a2.getPostOffice().getBindingsForAddress(TOPIC_NAME_SIMPLE_STRING).forEach((n, b) -> {
          logger.debug("{} = {}", n, b);
-         if (b instanceof LocalQueueBinding) {
-            QueueBinding qb = (QueueBinding) b;
-            Wait.assertTrue(() -> b2.locateQueue(qb.getUniqueName()) != null);
+         if (b instanceof LocalQueueBinding localQueueBinding) {
+            Wait.assertTrue(() -> b2.locateQueue(localQueueBinding.getUniqueName()) != null);
          }
       });
 
@@ -362,9 +360,9 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
       List<RemoteQueueBinding> remoteQueueBindings_a2 = new ArrayList<>();
       // making sure the queues created on a2 are propagated into b2
       a2.getPostOffice().getBindingsForAddress(TOPIC_NAME_SIMPLE_STRING).forEach((a, b) -> {
-         if (b instanceof RemoteQueueBindingImpl && b.getClusterName().toString().startsWith(subscriptionName + "_0")) {
+         if (b instanceof RemoteQueueBindingImpl impl && b.getClusterName().toString().startsWith(subscriptionName + "_0")) {
             logger.debug("{} = {}", a, b);
-            remoteQueueBindings_a2.add((RemoteQueueBinding) b);
+            remoteQueueBindings_a2.add(impl);
          }
       });
 
@@ -443,9 +441,9 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
       List<RemoteQueueBinding> remoteQueueBindings_a2 = new ArrayList<>();
       // making sure the queues created on a2 are propagated into b2
       a2.getPostOffice().getBindingsForAddress(TOPIC_NAME_SIMPLE_STRING).forEach((a, b) -> {
-         if (b instanceof RemoteQueueBindingImpl && b.getClusterName().toString().startsWith(subscriptionName + "_0")) {
+         if (b instanceof RemoteQueueBindingImpl impl && b.getClusterName().toString().startsWith(subscriptionName + "_0")) {
             logger.debug("{} = {}", a, b);
-            remoteQueueBindings_a2.add((RemoteQueueBinding) b);
+            remoteQueueBindings_a2.add(impl);
          }
       });
 
@@ -479,7 +477,7 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
 
       message = new AmqpMessage();
       message.setAddress(TOPIC_NAME);
-      ArrayList<String> singleQueue = new ArrayList<>();
+      List<String> singleQueue = new ArrayList<>();
       singleQueue.add("my-topic-shared-subscription_3:global");
       singleQueue.add("IDONTEXIST");
       message.setDeliveryAnnotation(AMQPMirrorControllerSource.TARGET_QUEUES.toString(), singleQueue);
@@ -568,8 +566,8 @@ public class AMQPRedistributeClusterTest extends AmqpTestSupport {
       try {
          Wait.assertEquals(0, queue::getMessageCount);
       } catch (Throwable e) {
-         if (e instanceof AssertionError) {
-            throw (AssertionError) e;
+         if (e instanceof AssertionError error) {
+            throw error;
          } else {
             throw new RuntimeException(e.getMessage(), e);
          }

@@ -483,8 +483,8 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
             Stream<Binding> bindingStream = server.getPostOffice().getAllBindings();
 
             bindingStream.forEach(binding -> {
-               if (binding instanceof QueueBinding) {
-                  Queue queue = ((QueueBinding) binding).getQueue();
+               if (binding instanceof QueueBinding queueBinding) {
+                  Queue queue = queueBinding.getQueue();
                   for (AMQPBrokerConnectionElement connectionElement : brokerConnectConfiguration.getConnectionElements()) {
                      validateMatching(queue, connectionElement);
                   }
@@ -568,15 +568,14 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       MirrorController currentMirrorController = server.getMirrorController();
 
       // This following block is to avoid a duplicate on mirror controller
-      if (currentMirrorController != null && currentMirrorController instanceof AMQPMirrorControllerSource) {
-         Queue queue = checkCurrentMirror(this, (AMQPMirrorControllerSource) currentMirrorController);
+      if (currentMirrorController != null && currentMirrorController instanceof AMQPMirrorControllerSource source) {
+         Queue queue = checkCurrentMirror(this, source);
          // on this case we already had a mirror installed before, we won't duplicate it
          if (queue != null) {
             queue.deliverAsync();
             return queue;
          }
-      } else if (currentMirrorController != null && currentMirrorController instanceof AMQPMirrorControllerAggregation) {
-         AMQPMirrorControllerAggregation aggregation = (AMQPMirrorControllerAggregation) currentMirrorController;
+      } else if (currentMirrorController != null && currentMirrorController instanceof AMQPMirrorControllerAggregation aggregation) {
 
          for (AMQPMirrorControllerSource source : aggregation.getPartitions()) {
             Queue queue = checkCurrentMirror(this, source);
@@ -636,10 +635,10 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
          server.installMirrorController(newPartition);
       } else {
          // Replace a standard implementation by an aggregated supporting multiple targets
-         if (currentMirrorController instanceof AMQPMirrorControllerSource) {
+         if (currentMirrorController instanceof AMQPMirrorControllerSource source) {
             // replacing the simple mirror control for an aggregator
             AMQPMirrorControllerAggregation remoteAggregation = new AMQPMirrorControllerAggregation();
-            remoteAggregation.addPartition((AMQPMirrorControllerSource) currentMirrorController);
+            remoteAggregation.addPartition(source);
             currentMirrorController = remoteAggregation;
             server.installMirrorController(remoteAggregation);
          }
@@ -853,7 +852,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
             source.setAddress(queue.getAddress().toString());
             sender.setSource(source);
             if (brokerID != null) {
-               HashMap<Symbol, Object> mapProperties = new HashMap<>(1, 1); // this map is expected to have a single element, so load factor = 1
+               Map<Symbol, Object> mapProperties = new HashMap<>(1, 1); // this map is expected to have a single element, so load factor = 1
                mapProperties.put(AMQPMirrorControllerSource.BROKER_ID, brokerID);
                sender.setProperties(mapProperties);
             }
@@ -999,7 +998,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
          tunnelCoreMessages = verifyCapabilities(sender.getDesiredCapabilities(), AmqpSupport.CORE_MESSAGE_TUNNELING_SUPPORT) &&
                               verifyOfferedCapabilities(sender, AmqpSupport.CORE_MESSAGE_TUNNELING_SUPPORT);
 
-         return (Consumer) sessionSPI.createSender(senderContext, queueName, null, false);
+         return sessionSPI.createSender(senderContext, queueName, null, false);
       }
 
       @Override
@@ -1149,7 +1148,7 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
       }
 
       public static boolean isApplicable(final String username, final String password) {
-         return username != null && username.length() > 0 && password != null && password.length() > 0;
+         return username != null && !username.isEmpty() && password != null && !password.isEmpty();
       }
    }
 
@@ -1234,10 +1233,10 @@ public class AMQPBrokerConnection implements ClientConnectionLifeCycleListener, 
    public static boolean isCoreMessageTunnelingEnabled(AMQPMirrorBrokerConnectionElement configuration) {
       final Object property = configuration.getProperties().get(AmqpSupport.TUNNEL_CORE_MESSAGES);
 
-      if (property instanceof Boolean) {
-         return (Boolean) property;
-      } else if (property instanceof String) {
-         return Boolean.parseBoolean((String) property);
+      if (property instanceof Boolean booleanValue) {
+         return booleanValue;
+      } else if (property instanceof String string) {
+         return Boolean.parseBoolean(string);
       } else {
          return DEFAULT_CORE_MESSAGE_TUNNELING_ENABLED;
       }

@@ -17,11 +17,6 @@
 
 package org.apache.activemq.artemis.tests.soak.brokerConnection.mirror;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageConsumer;
@@ -29,11 +24,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
-
 import java.io.File;
 import java.io.StringWriter;
 import java.lang.invoke.MethodHandles;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.activemq.artemis.api.core.management.SimpleManagement;
+import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectionAddressType;
 import org.apache.activemq.artemis.core.persistence.impl.journal.JournalRecordIds;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -53,11 +48,15 @@ import org.apache.activemq.artemis.utils.FileUtil;
 import org.apache.activemq.artemis.utils.TestParameters;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutor;
-import org.apache.activemq.artemis.cli.commands.helper.HelperCreate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SingleMirrorSoakTest extends SoakTestBase {
 
@@ -164,23 +163,29 @@ public class SingleMirrorSoakTest extends SoakTestBase {
       File brokerXml = new File(serverLocation, "/etc/broker.xml");
       assertTrue(brokerXml.exists());
       // Adding redistribution delay to broker configuration
-      assertTrue(FileUtil.findReplace(brokerXml, "<address-setting match=\"#\">", "<address-setting match=\"#\">\n\n" + "            <redistribution-delay>0</redistribution-delay> <!-- added by SimpleMirrorSoakTest.java --> \n"));
+      assertTrue(FileUtil.findReplace(brokerXml, "<address-setting match=\"#\">", """
+         <address-setting match="#">
+
+                     <redistribution-delay>0</redistribution-delay> <!-- added by SimpleMirrorSoakTest.java -->
+         """));
 
       if (TRACE_LOGS) {
          File log4j = new File(serverLocation, "/etc/log4j2.properties");
-         assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO", "logger.artemis_utils.level=INFO\n" +
-            "\n" + "logger.ack.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager\n"
-            + "logger.ack.level=TRACE\n"
-            + "logger.config.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl\n"
-            + "logger.config.level=TRACE\n"
-            + "logger.counter.name=org.apache.activemq.artemis.core.paging.cursor.impl.PageSubscriptionCounterImpl\n"
-            + "logger.counter.level=DEBUG\n"
-            + "logger.queue.name=org.apache.activemq.artemis.core.server.impl.QueueImpl\n"
-            + "logger.queue.level=DEBUG\n"
-            + "logger.rebuild.name=org.apache.activemq.artemis.core.paging.cursor.impl.PageCounterRebuildManager\n"
-            + "logger.rebuild.level=DEBUG\n"
-            + "appender.console.filter.threshold.type = ThresholdFilter\n"
-            + "appender.console.filter.threshold.level = info"));
+         assertTrue(FileUtil.findReplace(log4j, "logger.artemis_utils.level=INFO", """
+            logger.artemis_utils.level=INFO
+
+            logger.ack.name=org.apache.activemq.artemis.protocol.amqp.connect.mirror.AckManager
+            logger.ack.level=TRACE
+            logger.config.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+            logger.config.level=TRACE
+            logger.counter.name=org.apache.activemq.artemis.core.paging.cursor.impl.PageSubscriptionCounterImpl
+            logger.counter.level=DEBUG
+            logger.queue.name=org.apache.activemq.artemis.core.server.impl.QueueImpl
+            logger.queue.level=DEBUG
+            logger.rebuild.name=org.apache.activemq.artemis.core.paging.cursor.impl.PageCounterRebuildManager
+            logger.rebuild.level=DEBUG
+            appender.console.filter.threshold.type = ThresholdFilter
+            appender.console.filter.threshold.level = info"""));
       }
 
    }
@@ -306,7 +311,7 @@ public class SingleMirrorSoakTest extends SoakTestBase {
       server.getConfiguration().setPagingDirectory(getServerLocation(DC2_NODE) + "/data/paging");
       server.start();
       server.getStorageManager().getMessageJournal().scheduleCompactAndBlock(10_000);
-      HashMap<Integer, AtomicInteger> records = countJournal(server.getConfiguration());
+      Map<Integer, AtomicInteger> records = countJournal(server.getConfiguration());
       AtomicInteger duplicateRecordsCount = records.get((int) JournalRecordIds.DUPLICATE_ID);
       assertNotNull(duplicateRecordsCount);
       // 1000 credits by default

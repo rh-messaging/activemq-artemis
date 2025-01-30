@@ -1620,10 +1620,10 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       // Implementors should override this to provide their optimized version
       final SparseArrayLinkedList<RecordInfo> records = new SparseArrayLinkedList<>();
       final JournalLoadInformation info = load(records, preparedTransactions, transactionFailure, fixBadTx);
-      if (committedRecords instanceof ArrayList) {
+      if (committedRecords instanceof ArrayList list) {
          final long survivedRecordsCount = records.size();
          if (survivedRecordsCount <= Integer.MAX_VALUE) {
-            ((ArrayList) committedRecords).ensureCapacity((int) survivedRecordsCount);
+            list.ensureCapacity((int) survivedRecordsCount);
          }
       }
       records.clear(committedRecords::add);
@@ -1759,7 +1759,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
       compactorLock.writeLock().lock();
       try {
-         ArrayList<JournalFile> dataFilesToProcess;
+         List<JournalFile> dataFilesToProcess;
 
          boolean previousReclaimValue = isAutoReclaim();
 
@@ -1888,8 +1888,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    /** this private method will return a list of data files that need to be cleaned up.
     *  It will get the list, and replace it on the journal structure, while a separate thread would be able
     *  to read it, and append to a new list that will be replaced on the journal. */
-   private ArrayList<JournalFile> getDataListToCompact() throws Exception {
-      ArrayList<JournalFile> dataFilesToProcess = new ArrayList<>(filesRepository.getDataFilesCount());
+   private List<JournalFile> getDataListToCompact() throws Exception {
+      List<JournalFile> dataFilesToProcess = new ArrayList<>(filesRepository.getDataFilesCount());
       // We need to guarantee that the journal is frozen for this short time
       // We don't freeze the journal as we compact, only for the short time where we replace records
       journalLock.writeLock().lock();
@@ -1911,7 +1911,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
          filesRepository.clearDataFiles();
 
-         if (dataFilesToProcess.size() == 0) {
+         if (dataFilesToProcess.isEmpty()) {
             logger.trace("Finishing compacting, nothing to process");
             return null;
          }
@@ -2385,7 +2385,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       }
 
       synchronized (processBackupLock) {
-         ArrayList<JournalFile> filesToMove;
+         List<JournalFile> filesToMove;
          filesToMove = new ArrayList<>(historyPendingFiles.size());
          filesToMove.addAll(historyPendingFiles);
          historyPendingFiles.clear();
@@ -2654,8 +2654,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
                            " live size = " +
                            file.getLiveSize() +
                            "\n");
-         if (file instanceof JournalFileImpl) {
-            builder.append(((JournalFileImpl) file).debug());
+         if (file instanceof JournalFileImpl journalFile) {
+            builder.append(journalFile.debug());
 
          }
       }
@@ -2667,8 +2667,8 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
       if (currentFile != null) {
          builder.append("CurrentFile:" + currentFile + " posCounter = " + currentFile.getPosCount() + "\n");
 
-         if (currentFile instanceof JournalFileImpl) {
-            builder.append(((JournalFileImpl) currentFile).debug());
+         if (currentFile instanceof JournalFileImpl journalFile) {
+            builder.append(journalFile.debug());
          }
       } else {
          builder.append("CurrentFile: No current file at this point!");
@@ -2921,7 +2921,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    protected SequentialFile createControlFile(final List<JournalFile> files,
                                               final List<JournalFile> newFiles,
                                               final Pair<String, String> cleanupRename) throws Exception {
-      ArrayList<Pair<String, String>> cleanupList;
+      List<Pair<String, String>> cleanupList;
       if (cleanupRename == null) {
          cleanupList = null;
       } else {
@@ -3291,9 +3291,9 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
     * @throws Exception
     */
    private void checkControlFile(AtomicReference<ByteBuffer> wholeFileBufferRef) throws Exception {
-      ArrayList<String> dataFiles = new ArrayList<>();
-      ArrayList<String> newFiles = new ArrayList<>();
-      ArrayList<Pair<String, String>> renames = new ArrayList<>();
+      List<String> dataFiles = new ArrayList<>();
+      List<String> newFiles = new ArrayList<>();
+      List<Pair<String, String>> renames = new ArrayList<>();
 
       SequentialFile controlFile = AbstractJournalUpdateTask.readControlFile(fileFactory, dataFiles, newFiles, renames, wholeFileBufferRef);
       if (controlFile != null) {
@@ -3340,7 +3340,7 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
    private void cleanupTmpFiles(final String extension) throws Exception {
       List<String> leftFiles = fileFactory.listFiles(getFileExtension() + extension);
 
-      if (leftFiles.size() > 0) {
+      if (!leftFiles.isEmpty()) {
          ActiveMQJournalLogger.LOGGER.tempFilesLeftOpen();
 
          for (String fileToDelete : leftFiles) {
@@ -3492,10 +3492,10 @@ public class JournalImpl extends JournalBase implements TestableJournal, Journal
 
    private void criticalIO(Throwable e, SequentialFile file) throws Exception {
       fileFactory.onIOError(e, e.getMessage(), file);
-      if (e instanceof Exception) {
-         throw (Exception) e;
-      } else if (e instanceof IllegalStateException) {
-         throw (IllegalStateException) e;
+      if (e instanceof Exception exception) {
+         throw exception;
+      } else if (e instanceof IllegalStateException illegalStateException) {
+         throw illegalStateException;
       } else {
          IOException ioex = new IOException();
          ioex.initCause(e);

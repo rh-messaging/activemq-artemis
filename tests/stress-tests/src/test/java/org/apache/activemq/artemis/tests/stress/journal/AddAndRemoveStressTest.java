@@ -108,14 +108,14 @@ public class AddAndRemoveStressTest extends ActiveMQTestBase {
 
       impl.start();
 
-      ArrayList<RecordInfo> info = new ArrayList<>();
-      ArrayList<PreparedTransactionInfo> trans = new ArrayList<>();
+      List<RecordInfo> info = new ArrayList<>();
+      List<PreparedTransactionInfo> trans = new ArrayList<>();
 
       impl.load(info, trans, null);
 
       impl.forceMoveNextFile();
 
-      if (info.size() > 0) {
+      if (!info.isEmpty()) {
          System.out.println("Info ID: " + info.get(0).id);
       }
 
@@ -170,12 +170,12 @@ public class AddAndRemoveStressTest extends ActiveMQTestBase {
 
       impl.start();
 
-      ArrayList<RecordInfo> info = new ArrayList<>();
-      ArrayList<PreparedTransactionInfo> trans = new ArrayList<>();
+      List<RecordInfo> info = new ArrayList<>();
+      List<PreparedTransactionInfo> trans = new ArrayList<>();
 
       impl.load(info, trans, null);
 
-      if (info.size() > 0) {
+      if (!info.isEmpty()) {
          System.out.println("Info ID: " + info.get(0).id);
       }
 

@@ -354,9 +354,10 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
 
       //now add HashMap, test should pass.
       denyList = null;
-      allowList = "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1," +
-         "org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2," +
-         "java.util.HashMap";
+      allowList = """
+         org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass1,\
+         org.apache.activemq.artemis.tests.unit.util.deserialization.pkg1.TestClass2,\
+         java.util.HashMap""";
 
       result = readSerializedObject(allowList, denyList, serailizeFile);
       assertNull(result);
@@ -607,8 +608,8 @@ public class ObjectInputStreamWithClassLoaderTest extends ActiveMQTestBase {
       @Override
       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
          Object obj = method.invoke(anObject, args);
-         if (obj instanceof Integer) {
-            return ((Integer) obj).intValue() * 2;
+         if (obj instanceof Integer integer) {
+            return integer.intValue() * 2;
          } else {
             return obj;
          }

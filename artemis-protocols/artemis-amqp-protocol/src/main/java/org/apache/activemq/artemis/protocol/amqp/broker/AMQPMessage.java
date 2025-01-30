@@ -269,7 +269,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       if (messageAnnotations == null) {
          return null;
       }
-      HashMap newAnnotation = new HashMap();
+      Map newAnnotation = new HashMap();
       messageAnnotations.getValue().forEach((a, b) -> {
          // These properties should not be copied when re-routing the messages
          if (!a.toString().startsWith("x-opt-ORIG") && !a.toString().equals("x-opt-routing-type")) {
@@ -589,7 +589,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
             map = new HashMap<>();
             this.applicationProperties = new ApplicationProperties(map);
          } else {
-            map = Collections.EMPTY_MAP;
+            map = Collections.emptyMap();
          }
       }
 
@@ -609,7 +609,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
             map = new HashMap<>();
             this.messageAnnotations = new MessageAnnotations(map);
          } else {
-            map = Collections.EMPTY_MAP;
+            map = Collections.emptyMap();
          }
       }
 
@@ -917,8 +917,8 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
       for (SimpleString name : getPropertyNames()) {
          Object value = getObjectProperty(name.toString());
          //some property is Binary, which is not available for management console
-         if (value instanceof Binary) {
-            value = ((Binary)value).getArray();
+         if (value instanceof Binary binary) {
+            value = binary.getArray();
          }
          map.put(applicationPropertiesPrefix + name, JsonUtil.truncate(value, valueSizeLimit));
       }
@@ -1466,10 +1466,10 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
          Object objscheduledTime = getMessageAnnotation(AMQPMessageSupport.SCHEDULED_DELIVERY_TIME);
          Object objdelay = getMessageAnnotation(AMQPMessageSupport.SCHEDULED_DELIVERY_DELAY);
 
-         if (objscheduledTime != null && objscheduledTime instanceof Number) {
-            this.scheduledTime = ((Number) objscheduledTime).longValue();
-         } else if (objdelay != null && objdelay instanceof Number) {
-            this.scheduledTime = System.currentTimeMillis() + ((Number) objdelay).longValue();
+         if (objscheduledTime != null && objscheduledTime instanceof Number number) {
+            this.scheduledTime = number.longValue();
+         } else if (objdelay != null && objdelay instanceof Number number) {
+            this.scheduledTime = System.currentTimeMillis() + number.longValue();
          } else {
             this.scheduledTime = 0;
          }
@@ -1615,13 +1615,13 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    private Object getApplicationObjectProperty(String key) {
       Object value = getApplicationPropertiesMap(false).get(key);
-      if (value instanceof Number) {
+      if (value instanceof Number number) {
          // AMQP Numeric types must be converted to a compatible value.
          if (value instanceof UnsignedInteger ||
              value instanceof UnsignedByte ||
              value instanceof UnsignedLong ||
              value instanceof UnsignedShort) {
-            return ((Number) value).longValue();
+            return number.longValue();
          }
       } else if (value instanceof Binary) {
          // Binary wrappers must be unwrapped into a byte[] form.
@@ -1655,7 +1655,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public final Set<SimpleString> getPropertyNames() {
-      HashSet<SimpleString> values = new HashSet<>();
+      Set<SimpleString> values = new HashSet<>();
       for (Object k : getApplicationPropertiesMap(false).keySet()) {
          values.add(SimpleString.of(k.toString(), getPropertyKeysPool()));
       }
@@ -1676,8 +1676,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    public final byte[] getBytesProperty(String key) throws ActiveMQPropertyConversionException {
       final Object value = getApplicationPropertiesMap(false).get(key);
 
-      if (value instanceof Binary) {
-         final Binary binary = (Binary) value;
+      if (value instanceof Binary binary) {
 
          if (binary.getArray() == null) {
             return null;
@@ -1863,9 +1862,9 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
 
    @Override
    public final org.apache.activemq.artemis.api.core.Message putObjectProperty(String key, Object value) throws ActiveMQPropertyConversionException {
-      if (value instanceof byte[]) {
+      if (value instanceof byte[] bytes) {
          // Prevent error from proton encoding, byte array must be wrapped in a Binary type.
-         putBytesProperty(key, (byte[]) value);
+         putBytesProperty(key, bytes);
       } else {
          getApplicationPropertiesMap(true).put(key, value);
       }
@@ -1902,7 +1901,7 @@ public abstract class AMQPMessage extends RefCountMessage implements org.apache.
    public String toString() {
       MessageDataScanningStatus scanningStatus = getDataScanningStatus();
       Map<String, Object> applicationProperties = scanningStatus == MessageDataScanningStatus.SCANNED ?
-         getApplicationPropertiesMap(false) : Collections.EMPTY_MAP;
+         getApplicationPropertiesMap(false) : Collections.emptyMap();
 
       return this.getClass().getSimpleName() + "( [durable=" + isDurable() +
          ", messageID=" + getMessageID() +

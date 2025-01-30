@@ -166,8 +166,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    // We need to cache this value here since some listeners may be registered after connectionReadyForWrites was called.
    private boolean connectionReadyForWrites;
 
-   private final Object connectionReadyLock = new Object();
-
    private final TransportConfiguration[] connectorConfigs;
 
    public ClientSessionFactoryImpl(final ServerLocatorInternal serverLocator,
@@ -494,7 +492,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
     * @param close
     */
    private void closeCleanSessions(boolean close) {
-      HashSet<ClientSessionInternal> sessionsToClose;
+      Set<ClientSessionInternal> sessionsToClose;
       synchronized (sessions) {
          sessionsToClose = new HashSet<>(sessions);
       }
@@ -594,8 +592,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       for (ClientSessionInternal session : sessions) {
          SessionContext context = session.getSessionContext();
-         if (context instanceof ActiveMQSessionContext) {
-            ActiveMQSessionContext sessionContext = (ActiveMQSessionContext) context;
+         if (context instanceof ActiveMQSessionContext sessionContext) {
             if (sessionContext.isKilled()) {
                setReconnectAttempts(0);
             }
@@ -679,7 +676,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
                connector = null;
 
-               HashSet<ClientSessionInternal> sessionsToFailover;
+               Set<ClientSessionInternal> sessionsToFailover;
                synchronized (sessions) {
                   sessionsToFailover = new HashSet<>(sessions);
                }
@@ -963,9 +960,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
 
          if (getConnection() != null) {
-            if (oldConnection != null && oldConnection instanceof CoreRemotingConnection) {
+            if (oldConnection != null && oldConnection instanceof CoreRemotingConnection oldRemotingConnection) {
                // transferring old connection version into the new connection
-               ((CoreRemotingConnection)connection).setChannelVersion(((CoreRemotingConnection)oldConnection).getChannelVersion());
+               ((CoreRemotingConnection)connection).setChannelVersion(oldRemotingConnection.getChannelVersion());
             }
             logger.debug("Reconnection successful");
             return count;
@@ -1030,7 +1027,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       RemotingConnection connectionInUse = connection;
       Connector connectorInUse = connector;
 
-      if (connectionInUse != null && sessions.size() == 0) {
+      if (connectionInUse != null && sessions.isEmpty()) {
          cancelScheduledTasks();
 
          try {
@@ -1215,8 +1212,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    protected Connector createConnector(ConnectorFactory connectorFactory, TransportConfiguration configuration) {
       Connector connector = connectorFactory.createConnector(configuration.getCombinedParams(), new DelegatingBufferHandler(), this, closeExecutor, threadPool, scheduledThreadPool, clientProtocolManager);
-      if (connector instanceof NettyConnector) {
-         NettyConnector nettyConnector = (NettyConnector) connector;
+      if (connector instanceof NettyConnector nettyConnector) {
          if (nettyConnector.getConnectTimeoutMillis() < 0) {
             nettyConnector.setConnectTimeoutMillis((int)serverLocator.getConnectionTTL());
          }

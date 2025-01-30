@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.RoutingType;
@@ -557,7 +558,7 @@ public class Create extends InstallAbstract {
 
       context.out.println(String.format("Creating ActiveMQ Artemis instance at: %s", directory.getCanonicalPath()));
 
-      HashMap<String, String> filters = new LinkedHashMap<>();
+      Map<String, String> filters = new LinkedHashMap<>();
 
       if (journalDeviceBlockSize % 512 != 0) {
          // This will generate a CLI error
@@ -635,7 +636,7 @@ public class Create extends InstallAbstract {
 
       filters.put("${global-max-messages}", Long.toString(globalMaxMessages));
 
-      if (globalMaxSize == null || globalMaxSize.trim().equals("")) {
+      if (globalMaxSize == null || globalMaxSize.trim().isEmpty()) {
          filters.put("${global-max-section}", readTextFile(ETC_GLOBAL_MAX_DEFAULT_TXT, filters));
       } else {
          filters.put("${global-max-size}", globalMaxSize);
@@ -733,12 +734,19 @@ public class Create extends InstallAbstract {
             retentionTag = "<journal-retention-directory period=\"" + retentionDays + "\" unit=\"DAYS\">" + data + "/retention</journal-retention-directory>";
          }
       } else {
-         retentionTag =  "\n" +
-            "      <!-- if you want to retain your journal uncomment this following configuration.\n\n" +
-            "      This will allow your system to keep 7 days of your data, up to 10G. Tweak it accordingly to your use case and capacity.\n\n" +
-            "      it is recommended to use a separate storage unit from the journal for performance considerations.\n\n" +
-            "      <journal-retention-directory period=\"7\" unit=\"DAYS\" storage-limit=\"10G\">data/retention</journal-retention-directory>\n\n" +
-            "      You can also enable retention by using the argument journal-retention on the `artemis create` command -->\n\n";
+         retentionTag = """
+
+                  <!-- if you want to retain your journal uncomment this following configuration.
+
+                  This will allow your system to keep 7 days of your data, up to 10G. Tweak it accordingly to your use case and capacity.
+
+                  it is recommended to use a separate storage unit from the journal for performance considerations.
+
+                  <journal-retention-directory period="7" unit="DAYS" storage-limit="10G">data/retention</journal-retention-directory>
+
+                  You can also enable retention by using the argument journal-retention on the `artemis create` command -->
+
+            """;
       }
 
       filters.put("${journal-retention}", retentionTag);
@@ -880,16 +888,16 @@ public class Create extends InstallAbstract {
       return null;
    }
 
-   protected static void addScriptFilters(HashMap<String, String> filters,
-                          File home,
-                          File directory,
-                          File etcFolder,
-                          File dataFolder,
-                          File oomeDumpFile,
-                          String javaMemory,
-                          String javaOptions,
-                          String javaUtilityOptions,
-                          String role) throws IOException {
+   protected static void addScriptFilters(Map<String, String> filters,
+                                          File home,
+                                          File directory,
+                                          File etcFolder,
+                                          File dataFolder,
+                                          File oomeDumpFile,
+                                          String javaMemory,
+                                          String javaOptions,
+                                          String javaUtilityOptions,
+                                          String role) throws IOException {
       filters.put("${artemis.home}", path(home));
       // I am using a different replacing pattern here, for cases where want an actual ${artemis.instance} in the output
       // so that's just to make a distinction
@@ -910,7 +918,7 @@ public class Create extends InstallAbstract {
       filters.put("${role}", role);
    }
 
-   private String getConnectors(HashMap<String, String> filters) throws IOException {
+   private String getConnectors(Map<String, String> filters) throws IOException {
       if (staticNode != null) {
          StringWriter stringWriter = new StringWriter();
          PrintWriter printer = new PrintWriter(stringWriter);
@@ -987,7 +995,7 @@ public class Create extends InstallAbstract {
    /**
     * It will create the address and queue configurations
     */
-   private void applyAddressesAndQueues(HashMap<String, String> filters) {
+   private void applyAddressesAndQueues(Map<String, String> filters) {
       StringWriter writer = new StringWriter();
       PrintWriter printWriter = new PrintWriter(writer);
       printWriter.println();
@@ -1027,7 +1035,7 @@ public class Create extends InstallAbstract {
       filters.put("${address-queue.settings}", writer.toString());
    }
 
-   private void performAutoTune(HashMap<String, String> filters, JournalType journalType, File dataFolder) {
+   private void performAutoTune(Map<String, String> filters, JournalType journalType, File dataFolder) {
       if (noAutoTune) {
          filters.put("${journal-buffer.settings}", "");
          filters.put("${page-sync.settings}", "");
@@ -1038,7 +1046,7 @@ public class Create extends InstallAbstract {
             getActionContext().out.println("Auto tuning journal ...");
 
             if (mapped && noJournalSync) {
-               HashMap<String, String> syncFilter = new HashMap<>();
+               Map<String, String> syncFilter = new HashMap<>();
                syncFilter.put("${nanoseconds}", "0");
                syncFilter.put("${writesPerMillisecond}", "0");
                syncFilter.put("${maxaio}", journalType == JournalType.ASYNCIO ? "" + ActiveMQDefaultConfiguration.getDefaultJournalMaxIoAio() : "1");
@@ -1055,7 +1063,7 @@ public class Create extends InstallAbstract {
 
                String writesPerMillisecondStr = new DecimalFormat("###.##").format(writesPerMillisecond);
 
-               HashMap<String, String> syncFilter = new HashMap<>();
+               Map<String, String> syncFilter = new HashMap<>();
                syncFilter.put("${nanoseconds}", Long.toString(nanoseconds));
                syncFilter.put("${writesPerMillisecond}", writesPerMillisecondStr);
                syncFilter.put("${maxaio}", journalType == JournalType.ASYNCIO ? "" + ActiveMQDefaultConfiguration.getDefaultJournalMaxIoAio() : "1");
@@ -1140,11 +1148,11 @@ public class Create extends InstallAbstract {
       return value.getCanonicalPath();
    }
 
-   private void write(String source, HashMap<String, String> filters, boolean unixTarget) throws Exception {
+   private void write(String source, Map<String, String> filters, boolean unixTarget) throws Exception {
       write(source, new File(directory, source), filters, unixTarget, force);
    }
 
-   private void writeEtc(String source, File etcFolder, HashMap<String, String> filters, boolean unixTarget) throws Exception {
+   private void writeEtc(String source, File etcFolder, Map<String, String> filters, boolean unixTarget) throws Exception {
       write("etc/" + source, new File(etcFolder, source), filters, unixTarget, force);
    }
 

@@ -17,6 +17,7 @@
 package org.apache.activemq.artemis.protocol.amqp.converter.coreWrapper;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.activemq.artemis.api.core.ICoreMessage;
@@ -62,7 +63,7 @@ public final class CoreStreamMessageWrapper extends CoreMessageWrapper {
    @Override
    public Section createAMQPSection(Map<Symbol, Object> maMap, Properties properties) throws ConversionException {
       maMap.put(AMQPMessageSupport.JMS_MSG_TYPE, AMQPMessageSupport.JMS_STREAM_MESSAGE);
-      ArrayList<Object> list = new ArrayList<>();
+      List<Object> list = new ArrayList<>();
       try {
          while (true) {
             list.add(readObject());
@@ -274,26 +275,26 @@ public final class CoreStreamMessageWrapper extends CoreMessageWrapper {
    }
 
    public void writeObject(final Object value) throws ConversionException {
-      if (value instanceof String) {
-         writeString((String) value);
-      } else if (value instanceof Boolean) {
-         writeBoolean((Boolean) value);
-      } else if (value instanceof Byte) {
-         writeByte((Byte) value);
-      } else if (value instanceof Short) {
-         writeShort((Short) value);
-      } else if (value instanceof Integer) {
-         writeInt((Integer) value);
-      } else if (value instanceof Long) {
-         writeLong((Long) value);
-      } else if (value instanceof Float) {
-         writeFloat((Float) value);
-      } else if (value instanceof Double) {
-         writeDouble((Double) value);
-      } else if (value instanceof byte[]) {
-         writeBytes((byte[]) value);
-      } else if (value instanceof Character) {
-         writeChar((Character) value);
+      if (value instanceof String string) {
+         writeString(string);
+      } else if (value instanceof Boolean booleanValue) {
+         writeBoolean(booleanValue);
+      } else if (value instanceof Byte byteValue) {
+         writeByte(byteValue);
+      } else if (value instanceof Short shortValue) {
+         writeShort(shortValue);
+      } else if (value instanceof Integer integer) {
+         writeInt(integer);
+      } else if (value instanceof Long longValue) {
+         writeLong(longValue);
+      } else if (value instanceof Float floatValue) {
+         writeFloat(floatValue);
+      } else if (value instanceof Double doubleValue) {
+         writeDouble(doubleValue);
+      } else if (value instanceof byte[] bytes) {
+         writeBytes(bytes);
+      } else if (value instanceof Character character) {
+         writeChar(character);
       } else if (value == null) {
          writeString(null);
       } else {

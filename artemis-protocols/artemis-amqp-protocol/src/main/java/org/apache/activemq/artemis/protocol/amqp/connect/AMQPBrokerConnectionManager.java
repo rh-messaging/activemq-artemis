@@ -108,7 +108,7 @@ public class AMQPBrokerConnectionManager implements ActiveMQComponent, ClientCon
    @SuppressWarnings("unchecked")
    public void updateConfiguration(List<AMQPBrokerConnectConfiguration> configurations) throws Exception {
       final List<AMQPBrokerConnectConfiguration> updatedConfigurations =
-         configurations != null ? configurations : Collections.EMPTY_LIST;
+         configurations != null ? configurations : Collections.emptyList();
 
       // We want to shutdown all broker connections before starting any new ones just to ensure
       // we do not have any overlapping connections to the same broker from old to new configurations.
@@ -172,8 +172,7 @@ public class AMQPBrokerConnectionManager implements ActiveMQComponent, ClientCon
          // that code is not thread safe and would require more work which is likely still ripe
          // with issues.
          if (containsMirrorConfiguration(toRemove)) {
-            logger.info("Skipping remove of broker connection {} which contains a mirror " +
-                        "configuration which are not reloadable.", toRemove.getName());
+            logger.info("Skipping remove of broker connection {} which contains a mirror configuration which are not reloadable.", toRemove.getName());
             continue;
          }
 

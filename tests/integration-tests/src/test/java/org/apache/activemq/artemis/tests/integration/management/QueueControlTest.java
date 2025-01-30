@@ -1160,8 +1160,8 @@ public class QueueControlTest extends ManagementTestBase {
          System.err.println(key + " " + value);
          assertTrue(value.toString().length() <= 150);
 
-         if (value instanceof byte[]) {
-            assertTrue(((byte[])value).length <= 150);
+         if (value instanceof byte[] bytes) {
+            assertTrue(bytes.length <= 150);
          }
       }
 
@@ -1186,8 +1186,8 @@ public class QueueControlTest extends ManagementTestBase {
                   assertTrue(value.toString().length() <= 512, value.toString().length() + " truncated? " + key);
                }
 
-               if (value instanceof byte[]) {
-                  assertTrue(((byte[]) value).length <= 150, "truncated? " + key);
+               if (value instanceof byte[] bytes) {
+                  assertTrue(bytes.length <= 150, "truncated? " + key);
                }
             }
          }
@@ -1226,8 +1226,8 @@ public class QueueControlTest extends ManagementTestBase {
          for (String key : compositeData.getCompositeType().keySet()) {
             Object value = compositeData.get(key);
             if (value != null) {
-               if (value instanceof byte[]) {
-                  assertEqualsByteArrays(randomBytes, (byte[]) value);
+               if (value instanceof byte[] bytes) {
+                  assertEqualsByteArrays(randomBytes, bytes);
                   tested = true;
                }
             }
@@ -4608,7 +4608,7 @@ public class QueueControlTest extends ManagementTestBase {
 
       messageID = (String) browse[1].get("userID");
 
-      assertTrue(messageID.length() > 0);
+      assertFalse(messageID.isEmpty());
 
       assertNotNull(body);
 

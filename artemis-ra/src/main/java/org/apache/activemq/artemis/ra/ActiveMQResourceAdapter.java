@@ -1421,8 +1421,8 @@ public class ActiveMQResourceAdapter implements ResourceAdapter, Serializable {
          return false;
       }
 
-      if (obj instanceof ActiveMQResourceAdapter) {
-         return raProperties.equals(((ActiveMQResourceAdapter) obj).getProperties());
+      if (obj instanceof ActiveMQResourceAdapter adapter) {
+         return raProperties.equals(adapter.getProperties());
       }
       return false;
    }
@@ -1578,7 +1578,7 @@ public class ActiveMQResourceAdapter implements ResourceAdapter, Serializable {
       ActiveMQConnectionFactory cf;
       boolean known = false;
 
-      if (!knownConnectionFactories.keySet().contains(overrideProperties)) {
+      if (!knownConnectionFactories.containsKey(overrideProperties)) {
          cf = newConnectionFactory(overrideProperties);
          knownConnectionFactories.put(overrideProperties, new Pair<>(cf, new AtomicInteger(1)));
       } else {

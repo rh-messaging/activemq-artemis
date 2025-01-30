@@ -221,8 +221,8 @@ public class AMQPSessionContext extends ProtonInitializable {
          } catch (ActiveMQException e) {
             final ActiveMQAMQPException cause;
 
-            if (e instanceof ActiveMQAMQPException) {
-               cause = (ActiveMQAMQPException) e;
+            if (e instanceof ActiveMQAMQPException activeMQAMQPException) {
+               cause = activeMQAMQPException;
             } else {
                cause = new ActiveMQAMQPInternalErrorException(e.getMessage());
             }
@@ -420,8 +420,8 @@ public class AMQPSessionContext extends ProtonInitializable {
          } catch (ActiveMQException e) {
             final ActiveMQAMQPException cause;
 
-            if (e instanceof ActiveMQAMQPException) {
-               cause = (ActiveMQAMQPException) e;
+            if (e instanceof ActiveMQAMQPException activeMQAMQPException) {
+               cause = activeMQAMQPException;
             } else {
                cause = new ActiveMQAMQPInternalErrorException(e.getMessage());
             }
@@ -446,7 +446,7 @@ public class AMQPSessionContext extends ProtonInitializable {
             final Map<String, Object> federationConfigurationMap;
 
             if (receiver.getRemoteProperties() == null || !receiver.getRemoteProperties().containsKey(FEDERATION_CONFIGURATION)) {
-               federationConfigurationMap = Collections.EMPTY_MAP;
+               federationConfigurationMap = Collections.emptyMap();
             } else {
                federationConfigurationMap = (Map<String, Object>) receiver.getRemoteProperties().get(FEDERATION_CONFIGURATION);
             }
@@ -466,8 +466,8 @@ public class AMQPSessionContext extends ProtonInitializable {
          } catch (ActiveMQException e) {
             final ActiveMQAMQPException cause;
 
-            if (e instanceof ActiveMQAMQPException) {
-               cause = (ActiveMQAMQPException) e;
+            if (e instanceof ActiveMQAMQPException activeMQAMQPException) {
+               cause = activeMQAMQPException;
             } else {
                cause = new ActiveMQAMQPInternalErrorException(e.getMessage());
             }
