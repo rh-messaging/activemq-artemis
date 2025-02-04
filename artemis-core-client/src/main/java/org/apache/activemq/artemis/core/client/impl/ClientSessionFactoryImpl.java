@@ -914,14 +914,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                if (waitForRetry(interval))
                   return;
 
-               // Exponential back-off
-               long newInterval = (long) (interval * retryIntervalMultiplier);
-
-               if (newInterval > maxRetryInterval) {
-                  newInterval = maxRetryInterval;
-               }
-
-               interval = newInterval;
+               interval = serverLocator.getNextRetryInterval(interval, retryIntervalMultiplier, maxRetryInterval);
             } else {
                logger.debug("Could not connect to any server. Didn't have reconnection configured on the ClientSessionFactory");
                return;
