@@ -354,6 +354,62 @@ public final class ReplicationTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testSendMessageWithLargeHeader() throws Exception {
+      setupServer(true, TestInterceptor.class.getName());
+
+      manager = liveServer.getReplicationManager();
+      waitForComponent(manager);
+
+      ClientSessionFactory sf = createSessionFactory(locator);
+
+      try (ClientSession producerSession = sf.createSession();
+           ClientSession consumerSession = sf.createSession()) {
+
+         producerSession.start();
+         producerSession.createQueue(new QueueConfiguration(ADDRESS));
+         ClientProducer producer = producerSession.createProducer(ADDRESS);
+
+         consumerSession.start();
+         ClientConsumer consumer = consumerSession.createConsumer(ADDRESS);
+
+         ClientMessage messageBefore = producerSession.createMessage(true);
+         setBody(0, messageBefore);
+         messageBefore.putIntProperty("counter", 0);
+         producer.send(messageBefore);
+
+         ClientMessage messageReceivedBefore = consumer.receive(1000);
+         assertNotNull("Message should exist!", messageReceivedBefore);
+         assertMessageBody(0, messageReceivedBefore);
+         assertEquals(0, messageReceivedBefore.getIntProperty("counter").intValue());
+         messageReceivedBefore.acknowledge();
+
+         ClientMessage messageWithLargeHeader = producerSession.createMessage(true);
+         setBody(1, messageWithLargeHeader);
+         messageWithLargeHeader.putIntProperty("counter", 1);
+         messageWithLargeHeader.putStringProperty("large-property", "z".repeat(512 * 1024));
+         try {
+            producer.send(messageWithLargeHeader);
+            fail();
+         } catch (Exception e) {
+            assertTrue(e.getMessage().contains("AMQ149005"));
+         }
+
+         ClientMessage messageAfter = producerSession.createMessage(true);
+         setBody(2, messageAfter);
+         messageAfter.putIntProperty("counter", 2);
+         producer.send(messageAfter);
+
+         ClientMessage messageReceivedAfter = consumer.receive(1000);
+         assertNotNull("Message should exist!", messageReceivedAfter);
+         assertMessageBody(2, messageReceivedAfter);
+         assertEquals(2, messageReceivedAfter.getIntProperty("counter").intValue());
+         messageReceivedAfter.acknowledge();
+
+         assertNull(consumer.receiveImmediate());
+      }
+   }
+
+   @Test
    public void testExceptionSettingActionBefore() throws Exception {
       OperationContext ctx = OperationContextImpl.getContext(factory);
 
