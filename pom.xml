@@ -109,7 +109,7 @@
       <checkstyle.version>9.2.1</checkstyle.version>
       <mockito.version>5.4.0</mockito.version>
       <jctools.version>2.1.2</jctools.version>
-      <netty.version>4.1.100.Final</netty.version>
+      <netty.version>4.1.118.Final</netty.version>
       <hdrhistogram.version>2.1.12</hdrhistogram.version>
       <curator.version>5.5.0</curator.version>
       <zookeeper.version>3.8.3</zookeeper.version>
@@ -129,7 +129,7 @@
       <opentelemetry-alpha.version>1.10.0-alpha</opentelemetry-alpha.version>
       <protonj2.version>1.0.0-M17</protonj2.version>
       <!-- this is basically for tests -->
-      <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
+      <netty-tcnative-version>2.0.70.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
       <slf4j.version>1.7.36</slf4j.version>
       <log4j.version>2.19.0</log4j.version>
