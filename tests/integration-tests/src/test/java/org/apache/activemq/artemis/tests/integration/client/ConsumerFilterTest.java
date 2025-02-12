@@ -70,12 +70,10 @@ public class ConsumerFilterTest extends ActiveMQTestBase {
 
    @Test
    public void testLargeToken() throws Exception {
-      StringBuffer token = new StringBuffer();
+      StringBuilder token = new StringBuilder();
 
       token.append("'");
-      for (int i = 0; i < 5000; i++) {
-         token.append("a");
-      }
+      token.append("a".repeat(5000));
       token.append("'");
 
       // The server would fail to create this consumer if HORNETQ-545 wasn't solved

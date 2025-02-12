@@ -65,9 +65,9 @@ public class SessionXAAfterFailedMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", xid=" + xid);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", xid=" + xid);
+      return sb.toString();
    }
 
    @Override
@@ -76,9 +76,8 @@ public class SessionXAAfterFailedMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionXAAfterFailedMessage))
+      if (!(obj instanceof SessionXAAfterFailedMessage other))
          return false;
-      SessionXAAfterFailedMessage other = (SessionXAAfterFailedMessage) obj;
       if (xid == null) {
          if (other.xid != null)
             return false;

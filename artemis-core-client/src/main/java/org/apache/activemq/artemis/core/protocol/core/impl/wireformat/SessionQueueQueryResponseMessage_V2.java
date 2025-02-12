@@ -93,9 +93,9 @@ public class SessionQueueQueryResponseMessage_V2 extends SessionQueueQueryRespon
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", autoCreationEnabled=" + autoCreateQueues);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", autoCreationEnabled=" + autoCreateQueues);
+      return sb.toString();
    }
 
    @Override
@@ -109,9 +109,8 @@ public class SessionQueueQueryResponseMessage_V2 extends SessionQueueQueryRespon
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionQueueQueryResponseMessage_V2))
+      if (!(obj instanceof SessionQueueQueryResponseMessage_V2 other))
          return false;
-      SessionQueueQueryResponseMessage_V2 other = (SessionQueueQueryResponseMessage_V2) obj;
       if (autoCreateQueues != other.autoCreateQueues)
          return false;
       return true;

@@ -237,7 +237,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    protected static String randomProtocol(String...protocols) {
-      String protocol = protocols[org.apache.activemq.artemis.tests.util.RandomUtil.randomPositiveInt() % protocols.length];
+      String protocol = protocols[RandomUtil.randomPositiveInt() % protocols.length];
       logger.info("Selecting {} protocol", protocol);
       return protocol;
    }
@@ -647,41 +647,41 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
    }
 
    public static String dumpBytes(final byte[] bytes) {
-      StringBuffer buff = new StringBuffer();
+      StringBuilder builder = new StringBuilder();
 
-      buff.append(System.identityHashCode(bytes) + ", size: " + bytes.length + " [");
+      builder.append(System.identityHashCode(bytes) + ", size: " + bytes.length + " [");
 
       for (int i = 0; i < bytes.length; i++) {
-         buff.append(bytes[i]);
+         builder.append(bytes[i]);
 
          if (i != bytes.length - 1) {
-            buff.append(", ");
+            builder.append(", ");
          }
       }
 
-      buff.append("]");
+      builder.append("]");
 
-      return buff.toString();
+      return builder.toString();
    }
 
    public static String dumpBytesHex(final byte[] buffer, final int bytesPerLine) {
 
-      StringBuffer buff = new StringBuffer();
+      StringBuilder builder = new StringBuilder();
 
-      buff.append("[");
+      builder.append("[");
 
       for (int i = 0; i < buffer.length; i++) {
-         buff.append(String.format("%1$2X", buffer[i]));
+         builder.append(String.format("%1$2X", buffer[i]));
          if (i + 1 < buffer.length) {
-            buff.append(", ");
+            builder.append(", ");
          }
          if ((i + 1) % bytesPerLine == 0) {
-            buff.append("\n ");
+            builder.append("\n ");
          }
       }
-      buff.append("]");
+      builder.append("]");
 
-      return buff.toString();
+      return builder.toString();
    }
 
    public static void assertEqualsTransportConfigurations(final TransportConfiguration[] expected,
@@ -755,7 +755,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
       // So this will first register them at the config and then generate a list of objects
       List<String> connectors = new ArrayList<>();
       for (TransportConfiguration tnsp : connectorConfigs) {
-         String name1 = RandomUtil.randomString();
+         String name1 = RandomUtil.randomUUIDString();
 
          server.getConfiguration().getConnectorConfigurations().put(name1, tnsp);
 
@@ -1031,7 +1031,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
          Object value;
 
          if (prop.getPropertyType() == String.class) {
-            value = RandomUtil.randomString();
+            value = RandomUtil.randomUUIDString();
          } else if (prop.getPropertyType() == Integer.class || prop.getPropertyType() == Integer.TYPE) {
             value = RandomUtil.randomInt();
          } else if (prop.getPropertyType() == Long.class || prop.getPropertyType() == Long.TYPE) {
@@ -2214,11 +2214,7 @@ public abstract class ActiveMQTestBase extends ArtemisTestCase {
                 0,
                 System.currentTimeMillis(),
                 (byte)4);
-      StringBuilder builder = new StringBuilder();
-      for (int i = 0; i < numChars; i++) {
-         builder.append('a');
-      }
-      message.getBodyBuffer().writeString(builder.toString());
+      message.getBodyBuffer().writeString("a".repeat(numChars));
       return message;
    }
 

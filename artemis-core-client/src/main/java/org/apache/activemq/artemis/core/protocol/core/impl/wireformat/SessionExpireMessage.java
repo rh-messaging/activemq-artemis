@@ -72,10 +72,10 @@ public class SessionExpireMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", consumerID=" + consumerID);
-      buff.append(", messageID=" + messageID);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", consumerID=" + consumerID);
+      sb.append(", messageID=" + messageID);
+      return sb.toString();
    }
 
    @Override
@@ -84,9 +84,8 @@ public class SessionExpireMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionExpireMessage))
+      if (!(obj instanceof SessionExpireMessage other))
          return false;
-      SessionExpireMessage other = (SessionExpireMessage) obj;
       if (consumerID != other.consumerID)
          return false;
       if (messageID != other.messageID)

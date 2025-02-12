@@ -68,9 +68,9 @@ public class ClusterTopologyChangeMessage_V4 extends ClusterTopologyChangeMessag
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", clientVersion=" + serverVersion);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", clientVersion=" + serverVersion);
+      return sb.toString();
    }
 
    @Override
@@ -81,10 +81,9 @@ public class ClusterTopologyChangeMessage_V4 extends ClusterTopologyChangeMessag
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof ClusterTopologyChangeMessage_V4)) {
+      if (!(obj instanceof ClusterTopologyChangeMessage_V4 other)) {
          return false;
       }
-      ClusterTopologyChangeMessage_V4 other = (ClusterTopologyChangeMessage_V4) obj;
       return serverVersion == other.serverVersion;
    }
 }

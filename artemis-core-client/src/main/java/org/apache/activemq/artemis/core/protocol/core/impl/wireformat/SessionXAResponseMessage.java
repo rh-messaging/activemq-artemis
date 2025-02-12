@@ -84,12 +84,12 @@ public class SessionXAResponseMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", error=" + error);
-      buff.append(", message=" + message);
-      buff.append(", responseCode=" + responseCode);
-      buff.append("]");
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", error=" + error);
+      sb.append(", message=" + message);
+      sb.append(", responseCode=" + responseCode);
+      sb.append("]");
+      return sb.toString();
    }
 
    @Override
@@ -98,9 +98,8 @@ public class SessionXAResponseMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionXAResponseMessage))
+      if (!(obj instanceof SessionXAResponseMessage other))
          return false;
-      SessionXAResponseMessage other = (SessionXAResponseMessage) obj;
       if (error != other.error)
          return false;
       if (message == null) {

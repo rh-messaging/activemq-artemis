@@ -51,10 +51,10 @@ public class SessionBindingQueryMessage extends QueueAbstractPacket {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", address=" + address);
-      buff.append("]");
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", address=" + address);
+      sb.append("]");
+      return sb.toString();
    }
 
    @Override
@@ -63,9 +63,8 @@ public class SessionBindingQueryMessage extends QueueAbstractPacket {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionBindingQueryMessage))
+      if (!(obj instanceof SessionBindingQueryMessage other))
          return false;
-      SessionBindingQueryMessage other = (SessionBindingQueryMessage) obj;
       if (address == null) {
          if (other.address != null)
             return false;

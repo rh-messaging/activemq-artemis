@@ -75,10 +75,10 @@ public class SessionAddMetaDataMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", key=" + key);
-      buff.append(", data=" + data);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", key=" + key);
+      sb.append(", data=" + data);
+      return sb.toString();
    }
 
    @Override
@@ -87,9 +87,8 @@ public class SessionAddMetaDataMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionAddMetaDataMessage))
+      if (!(obj instanceof SessionAddMetaDataMessage other))
          return false;
-      SessionAddMetaDataMessage other = (SessionAddMetaDataMessage) obj;
       if (data == null) {
          if (other.data != null)
             return false;

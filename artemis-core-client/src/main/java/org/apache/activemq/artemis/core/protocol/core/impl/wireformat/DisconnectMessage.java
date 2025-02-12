@@ -56,9 +56,9 @@ public class DisconnectMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", nodeID=" + nodeID);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", nodeID=" + nodeID);
+      return sb.toString();
    }
 
    @Override
@@ -82,10 +82,9 @@ public class DisconnectMessage extends PacketImpl {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof DisconnectMessage)) {
+      if (!(obj instanceof DisconnectMessage other)) {
          return false;
       }
-      DisconnectMessage other = (DisconnectMessage) obj;
       if (nodeID == null) {
          if (other.nodeID != null) {
             return false;

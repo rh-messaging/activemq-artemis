@@ -74,9 +74,9 @@ public class SessionBindingQueryResponseMessage_V3 extends SessionBindingQueryRe
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", autoCreateAddresses=" + autoCreateAddresses);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", autoCreateAddresses=" + autoCreateAddresses);
+      return sb.toString();
    }
 
    @Override
@@ -85,9 +85,8 @@ public class SessionBindingQueryResponseMessage_V3 extends SessionBindingQueryRe
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionBindingQueryResponseMessage_V3))
+      if (!(obj instanceof SessionBindingQueryResponseMessage_V3 other))
          return false;
-      SessionBindingQueryResponseMessage_V3 other = (SessionBindingQueryResponseMessage_V3) obj;
       if (autoCreateAddresses != other.autoCreateAddresses)
          return false;
       return true;

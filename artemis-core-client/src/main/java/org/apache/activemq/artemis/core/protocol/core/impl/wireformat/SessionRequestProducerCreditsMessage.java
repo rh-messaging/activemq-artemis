@@ -74,10 +74,10 @@ public class SessionRequestProducerCreditsMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", credits=" + credits);
-      buff.append(", address=" + address);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", credits=" + credits);
+      sb.append(", address=" + address);
+      return sb.toString();
    }
 
    @Override
@@ -86,9 +86,8 @@ public class SessionRequestProducerCreditsMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionRequestProducerCreditsMessage))
+      if (!(obj instanceof SessionRequestProducerCreditsMessage other))
          return false;
-      SessionRequestProducerCreditsMessage other = (SessionRequestProducerCreditsMessage) obj;
       if (address == null) {
          if (other.address != null)
             return false;

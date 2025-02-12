@@ -56,13 +56,13 @@ public class CreateSharedQueueMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", address=" + address);
-      buff.append(", queueName=" + queueName);
-      buff.append(", filterString=" + filterString);
-      buff.append(", durable=" + durable);
-      buff.append(", requiresResponse=" + requiresResponse);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", address=" + address);
+      sb.append(", queueName=" + queueName);
+      sb.append(", filterString=" + filterString);
+      sb.append(", durable=" + durable);
+      sb.append(", requiresResponse=" + requiresResponse);
+      return sb.toString();
    }
 
    public SimpleString getAddress() {
@@ -134,9 +134,8 @@ public class CreateSharedQueueMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof CreateSharedQueueMessage))
+      if (!(obj instanceof CreateSharedQueueMessage other))
          return false;
-      CreateSharedQueueMessage other = (CreateSharedQueueMessage) obj;
       if (address == null) {
          if (other.address != null)
             return false;

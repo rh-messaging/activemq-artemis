@@ -129,19 +129,7 @@ public class RecoverTest extends JMSTestBase {
       Session session = connection.createSession(useTX, useTX ? Session.SESSION_TRANSACTED : Session.AUTO_ACKNOWLEDGE);
       Queue queue = session.createQueue("TestQueue");
       MessageProducer producer = session.createProducer(queue);
-      String messageBody;
-      {
-         StringBuffer stringBuffer = new StringBuffer();
-         if (large) {
-            while (stringBuffer.length() < 110 * 1024) {
-               //stringBuffer.append("this is " + (i++));
-               stringBuffer.append(" ");
-            }
-         } else {
-            stringBuffer.append("hello");
-         }
-         messageBody = stringBuffer.toString();
-      }
+      String messageBody = large ? " ".repeat(110 * 1024) : "hello";
       int maxMessage = large ? 10 : 1000;
       for (int i = 0; i < maxMessage; i++) {
          producer.send(session.createTextMessage(i + messageBody));

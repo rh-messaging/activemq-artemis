@@ -219,7 +219,7 @@ public class JMSSaslGssapiTest extends JMSClientTestSupport {
          MessageConsumer consumer = session.createConsumer(queue);
          MessageProducer producer = session.createProducer(queue);
 
-         final String text = RandomUtil.randomString();
+         final String text = RandomUtil.randomUUIDString();
          producer.send(session.createTextMessage(text));
 
          TextMessage m = (TextMessage) consumer.receive(1000);
@@ -321,7 +321,7 @@ public class JMSSaslGssapiTest extends JMSClientTestSupport {
 
    private static void rewriteKrbConfFile(MiniKdc server) throws Exception {
       final Path template = Paths.get(JMSSaslGssapiTest.class.getClassLoader().getResource(KRB5_CONFIG_TEMPLATE).toURI());
-      final String krb5confTemplate = new String(Files.readAllBytes(template), StandardCharsets.UTF_8);
+      final String krb5confTemplate = Files.readString(template);
       final String replacementPort = Integer.toString(server.getPort());
 
       // Replace the port template with the current actual port of the MiniKDC Server instance.

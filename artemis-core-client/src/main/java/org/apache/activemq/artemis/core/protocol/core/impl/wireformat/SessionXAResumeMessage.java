@@ -60,9 +60,9 @@ public class SessionXAResumeMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", xid=" + xid);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", xid=" + xid);
+      return sb.toString();
    }
 
    @Override
@@ -71,9 +71,8 @@ public class SessionXAResumeMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionXAResumeMessage))
+      if (!(obj instanceof SessionXAResumeMessage other))
          return false;
-      SessionXAResumeMessage other = (SessionXAResumeMessage) obj;
       if (xid == null) {
          if (other.xid != null)
             return false;

@@ -67,9 +67,9 @@ public class RollbackMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", considerLastMessageAsDelivered=" + considerLastMessageAsDelivered);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", considerLastMessageAsDelivered=" + considerLastMessageAsDelivered);
+      return sb.toString();
    }
 
    @Override
@@ -78,9 +78,8 @@ public class RollbackMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof RollbackMessage))
+      if (!(obj instanceof RollbackMessage other))
          return false;
-      RollbackMessage other = (RollbackMessage) obj;
       if (considerLastMessageAsDelivered != other.considerLastMessageAsDelivered)
          return false;
       return true;

@@ -117,9 +117,9 @@ public class SessionSendMessage extends MessagePacket {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", requiresResponse=" + requiresResponse);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", requiresResponse=" + requiresResponse);
+      return sb.toString();
    }
 
    @Override
@@ -128,9 +128,8 @@ public class SessionSendMessage extends MessagePacket {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionSendMessage))
+      if (!(obj instanceof SessionSendMessage other))
          return false;
-      SessionSendMessage other = (SessionSendMessage) obj;
       if (requiresResponse != other.requiresResponse)
          return false;
       return true;

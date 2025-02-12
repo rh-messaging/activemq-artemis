@@ -36,7 +36,7 @@ import org.apache.activemq.artemis.protocol.amqp.converter.AMQPMessageSupport;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
-import org.apache.activemq.artemis.tests.util.RandomUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
@@ -91,7 +91,7 @@ public class AmqpIngressTimestampTest extends AmqpClientTestSupport {
    }
 
    private void internalTestIngressTimestamp(Protocol protocol) throws Exception {
-      final String QUEUE_NAME = RandomUtil.randomString();
+      final String QUEUE_NAME = RandomUtil.randomUUIDString();
       server.createQueue(QueueConfiguration.of(QUEUE_NAME).setRoutingType(RoutingType.ANYCAST));
       server.getAddressSettingsRepository().addMatch(QUEUE_NAME, new AddressSettings().setEnableIngressTimestamp(true));
       long beforeSend = System.currentTimeMillis();
@@ -155,15 +155,6 @@ public class AmqpIngressTimestampTest extends AmqpClientTestSupport {
    }
 
    private byte[] getMessagePayload() {
-      StringBuilder result = new StringBuilder();
-      if (large) {
-         for (int i = 0; i < ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE * 20; i++) {
-            result.append("AB");
-         }
-      } else {
-         result.append("AB");
-      }
-
-      return result.toString().getBytes();
+      return large ? "AB".repeat(ActiveMQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE * 20).getBytes() : "AB".getBytes();
    }
 }

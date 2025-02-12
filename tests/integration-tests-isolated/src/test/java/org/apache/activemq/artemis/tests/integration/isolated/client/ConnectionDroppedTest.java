@@ -93,7 +93,7 @@ public class ConnectionDroppedTest extends ActiveMQTestBase {
                peer.expectOpen();
                peer.remoteBegin().queue();
                peer.expectBegin();
-               peer.remoteAttach().ofReceiver().withName(RandomUtil.randomString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress("test-queue").withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
+               peer.remoteAttach().ofReceiver().withName(RandomUtil.randomUUIDString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress("test-queue").withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
                peer.dropAfterLastHandler(1000); // This closes the netty connection after the attach is written
                peer.connect("localhost", 61616);
 
@@ -141,7 +141,7 @@ public class ConnectionDroppedTest extends ActiveMQTestBase {
                   peer.expectOpen();
                   peer.remoteBegin().queue();
                   peer.expectBegin();
-                  peer.remoteAttach().ofReceiver().withName(RandomUtil.randomString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress("test-queue").withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
+                  peer.remoteAttach().ofReceiver().withName(RandomUtil.randomUUIDString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress("test-queue").withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
                   peer.expectAttach();
                   peer.remoteClose().queue();
                   peer.expectClose();
@@ -341,7 +341,7 @@ public class ConnectionDroppedTest extends ActiveMQTestBase {
                peer.queueClientSaslAnonymousConnect();
                peer.remoteOpen().queue();
                peer.remoteBegin().queue();
-               peer.remoteAttach().ofReceiver().withName(RandomUtil.randomString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress(getName()).withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
+               peer.remoteAttach().ofReceiver().withName(RandomUtil.randomUUIDString()).withSenderSettleModeUnsettled().withReceivervSettlesFirst().withTarget().also().withSource().withAddress(getName()).withExpiryPolicyOnLinkDetach().withDurabilityOfNone().withCapabilities("queue").withOutcomes("amqp:accepted:list", "amqp:rejected:list").also().queue();
 
                peer.connect("localhost", 61616);
 
@@ -406,22 +406,18 @@ public class ConnectionDroppedTest extends ActiveMQTestBase {
       CountDownLatch received = new CountDownLatch(1);
 
       executorService.execute(() -> {
-         ConnectionFactory connectionFactory;
-
-         switch (protocol) {
-            case "AMQP":
-               connectionFactory = CFUtil.createConnectionFactory(protocol, "failover:(amqp://localhost:61616)?failover.maxReconnectAttempts=20");
-               break;
-            case "OPENWIRE":
-               connectionFactory = new org.apache.activemq.ActiveMQConnectionFactory("failover:(tcp://localhost:61616)?maxReconnectAttempts=20");
-               break;
-            case "CORE":
-               connectionFactory = new org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory("tcp://localhost:61616?ha=true;reconnectAttempts=20;callTimeout=1000");
-               break;
-            default:
+         ConnectionFactory connectionFactory = switch (protocol) {
+            case "AMQP" ->
+               CFUtil.createConnectionFactory(protocol, "failover:(amqp://localhost:61616)?failover.maxReconnectAttempts=20");
+            case "OPENWIRE" ->
+               new org.apache.activemq.ActiveMQConnectionFactory("failover:(tcp://localhost:61616)?maxReconnectAttempts=20");
+            case "CORE" ->
+               new org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory("tcp://localhost:61616?ha=true;reconnectAttempts=20;callTimeout=1000");
+            default -> {
                logger.warn("Invalid protocol {}", protocol);
-               connectionFactory = null;
-         }
+               yield null;
+            }
+         };
 
          try (Connection connection = connectionFactory.createConnection()) {
             logger.info("Connected on thread..");

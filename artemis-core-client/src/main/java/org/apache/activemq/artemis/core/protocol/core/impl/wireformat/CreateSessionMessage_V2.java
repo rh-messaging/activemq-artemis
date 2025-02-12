@@ -65,9 +65,9 @@ public class CreateSessionMessage_V2 extends CreateSessionMessage {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", metadata=" + clientID);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", metadata=" + clientID);
+      return sb.toString();
    }
 
    @Override
@@ -86,10 +86,9 @@ public class CreateSessionMessage_V2 extends CreateSessionMessage {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof CreateSessionMessage_V2)) {
+      if (!(obj instanceof CreateSessionMessage_V2 other)) {
          return false;
       }
-      CreateSessionMessage_V2 other = (CreateSessionMessage_V2) obj;
       if (clientID == null) {
          if (other.clientID != null)
             return false;

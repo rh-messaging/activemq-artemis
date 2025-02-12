@@ -67,7 +67,7 @@ import org.apache.activemq.artemis.jms.server.impl.JMSServerManagerImpl;
 import org.apache.activemq.artemis.tests.unit.util.InVMContext;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
-import org.apache.activemq.artemis.tests.util.RandomUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.UUIDGenerator;
 import org.junit.jupiter.api.Test;
@@ -282,10 +282,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
 
    @Test
    public void testTextMessage() throws Exception {
-      StringBuilder data = new StringBuilder();
-      for (int i = 0; i < 2608; i++) {
-         data.append("X");
-      }
+      String data = "X".repeat(2608);
 
       ClientSession session = basicSetUp();
 
@@ -293,7 +290,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
 
       ClientProducer producer = session.createProducer(QUEUE_NAME);
       ClientMessage msg = session.createMessage(Message.TEXT_TYPE, true);
-      msg.getBodyBuffer().writeString(data.toString());
+      msg.getBodyBuffer().writeString(data);
       producer.send(msg);
 
       session.close();
@@ -324,15 +321,12 @@ public class XmlImportExportTest extends ActiveMQTestBase {
 
       msg = consumer.receive(CONSUMER_TIMEOUT);
       assertEquals(Message.TEXT_TYPE, msg.getType());
-      assertEquals(data.toString(), msg.getBodyBuffer().readString());
+      assertEquals(data, msg.getBodyBuffer().readString());
    }
 
    @Test
    public void testBytesMessage() throws Exception {
-      StringBuilder data = new StringBuilder();
-      for (int i = 0; i < 2610; i++) {
-         data.append("X");
-      }
+      String data = "X".repeat(2610);
 
       ClientSession session = basicSetUp();
 
@@ -340,7 +334,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
 
       ClientProducer producer = session.createProducer(QUEUE_NAME);
       ClientMessage msg = session.createMessage(Message.BYTES_TYPE, true);
-      msg.getBodyBuffer().writeBytes(data.toString().getBytes());
+      msg.getBodyBuffer().writeBytes(data.getBytes());
       producer.send(msg);
 
       session.close();
@@ -373,7 +367,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       assertEquals(Message.BYTES_TYPE, msg.getType());
       byte[] result = new byte[msg.getBodySize()];
       msg.getBodyBuffer().readBytes(result);
-      assertEquals(data.toString().getBytes().length, result.length);
+      assertEquals(data.getBytes().length, result.length);
    }
 
    @Test
@@ -639,11 +633,7 @@ public class XmlImportExportTest extends ActiveMQTestBase {
       server.createQueue(QueueConfiguration.of("A").setRoutingType(RoutingType.ANYCAST));
       MessageProducer p = s.createProducer(ActiveMQJMSClient.createQueue("A"));
       p.setDeliveryMode(DeliveryMode.PERSISTENT);
-      StringBuilder stringBuilder = new StringBuilder();
-      for (int i = 0; i < 1024 * 200; i++) {
-         stringBuilder.append(RandomUtil.randomChar());
-      }
-      TextMessage textMessage = s.createTextMessage(stringBuilder.toString());
+      TextMessage textMessage = s.createTextMessage(RandomUtil.randomAlphaNumericString(200 * 1024));
       textMessage.setStringProperty("_AMQ_DUPL_ID", String.valueOf(UUID.randomUUID()));
       p.send(textMessage);
       c.close();
@@ -1281,15 +1271,15 @@ public class XmlImportExportTest extends ActiveMQTestBase {
    @Test
    public void testRemovedQueue() throws Exception {
 
-      String undefinedPrefix = "undef_" + RandomUtil.randomString() + "_";
+      String undefinedPrefix = "undef_" + RandomUtil.randomUUIDString() + "_";
       final int numberOfMessages = 100;
 
       server = createServer(true, true);
       server.start();
       forceLong();
 
-      String anycastQueueName = getTestClassName() + RandomUtil.randomString();
-      String multicastQueueName = getTestClassName() + RandomUtil.randomString();
+      String anycastQueueName = getTestClassName() + RandomUtil.randomUUIDString();
+      String multicastQueueName = getTestClassName() + RandomUtil.randomUUIDString();
       createAnycastPair(server, anycastQueueName);
       server.addAddressInfo(new AddressInfo(multicastQueueName).addRoutingType(RoutingType.MULTICAST).setAutoCreated(false));
       server.createQueue(QueueConfiguration.of(multicastQueueName).setRoutingType(RoutingType.MULTICAST).setAddress(multicastQueueName));

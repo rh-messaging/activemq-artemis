@@ -56,7 +56,7 @@ import org.apache.activemq.artemis.protocol.amqp.proton.ProtonAbstractReceiver;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.tests.util.CFUtil;
-import org.apache.activemq.artemis.tests.util.RandomUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,7 +95,7 @@ public class AckManagerTest extends ActiveMQTestBase {
 
       String protocol = "AMQP";
 
-      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomString());
+      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomUUIDString());
 
       server1.addAddressInfo(new AddressInfo(TOPIC_NAME).addRoutingType(RoutingType.MULTICAST));
 
@@ -248,17 +248,11 @@ public class AckManagerTest extends ActiveMQTestBase {
             Topic topic = session.createTopic(TOPIC_NAME.toString());
             TopicSubscriber subscriber = session.createDurableSubscriber(topic, "s" + i);
 
-            int start;
-            switch (i) {
-               case 1:
-                  start = numberOfAcksC1;
-                  break;
-               case 2:
-                  start = numberOfAcksC2;
-                  break;
-               default:
-                  start = 0;
-            }
+            int start = switch (i) {
+               case 1 -> numberOfAcksC1;
+               case 2 -> numberOfAcksC2;
+               default -> 0;
+            };
 
             logger.debug("receiving messages for {}", i);
 
@@ -301,7 +295,7 @@ public class AckManagerTest extends ActiveMQTestBase {
    public void testLogUnack() throws Throwable {
       String protocol = "AMQP";
 
-      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomString());
+      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomUUIDString());
 
       server1.addAddressInfo(new AddressInfo(TOPIC_NAME).addRoutingType(RoutingType.MULTICAST));
 
@@ -350,7 +344,7 @@ public class AckManagerTest extends ActiveMQTestBase {
 
       String protocol = "AMQP";
 
-      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomString());
+      SimpleString TOPIC_NAME = SimpleString.of("tp" + RandomUtil.randomUUIDString());
 
       server1.addAddressInfo(new AddressInfo(TOPIC_NAME).addRoutingType(RoutingType.MULTICAST));
 

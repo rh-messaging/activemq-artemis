@@ -99,9 +99,9 @@ public class SessionReceiveContinuationMessage extends SessionContinuationMessag
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", consumerID=" + consumerID);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", consumerID=" + consumerID);
+      return sb.toString();
    }
 
    @Override
@@ -110,9 +110,8 @@ public class SessionReceiveContinuationMessage extends SessionContinuationMessag
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionReceiveContinuationMessage))
+      if (!(obj instanceof SessionReceiveContinuationMessage other))
          return false;
-      SessionReceiveContinuationMessage other = (SessionReceiveContinuationMessage) obj;
       if (consumerID != other.consumerID)
          return false;
       return true;

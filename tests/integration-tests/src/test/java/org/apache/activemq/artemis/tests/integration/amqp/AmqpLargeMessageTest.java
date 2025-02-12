@@ -64,7 +64,7 @@ import org.apache.activemq.artemis.tests.extensions.parameterized.Parameter;
 import org.apache.activemq.artemis.tests.extensions.parameterized.ParameterizedTestExtension;
 import org.apache.activemq.artemis.tests.extensions.parameterized.Parameters;
 import org.apache.activemq.artemis.tests.util.CFUtil;
-import org.apache.activemq.artemis.tests.util.RandomUtil;
+import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.artemis.utils.ByteUtil;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
@@ -326,9 +326,8 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
             AmqpMessage message = receiver.receive(5, TimeUnit.SECONDS);
             assertNotNull(message, "failed at " + i);
             MessageImpl wrapped = (MessageImpl) message.getWrappedMessage();
-            if (wrapped.getBody() instanceof Data) {
+            if (wrapped.getBody() instanceof Data data) {
                // converters can change this to AmqValue
-               Data data = (Data) wrapped.getBody();
                logger.debug("received : message: {}", data.getValue().getLength());
                assertEquals(payload, data.getValue().getLength());
             }
@@ -382,8 +381,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          AmqpMessage message = receiver.receive(5, TimeUnit.SECONDS);
          assertNotNull(message, "Failed to read message with embedded map in annotations");
          MessageImpl wrapped = (MessageImpl) message.getWrappedMessage();
-         if (wrapped.getBody() instanceof Data) {
-            Data data = (Data) wrapped.getBody();
+         if (wrapped.getBody() instanceof Data data) {
             logger.debug("received : message: {}", data.getValue().getLength());
             assertEquals(payload, data.getValue().getLength());
          }
@@ -523,11 +521,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          AmqpSender sender = session.createSender(testQueueName);
 
          AmqpMessage message = createAmqpMessage((byte) 'A', expectedSize);
-         StringBuffer buffer = new StringBuffer();
-         for (int i = 0; i < strLength; i++) {
-            buffer.append(" ");
-         }
-         message.setApplicationProperty("str", buffer.toString());
+         message.setApplicationProperty("str", " ".repeat(strLength));
          message.setDurable(true);
 
          try {
@@ -557,19 +551,11 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
    }
 
    private void testLargeHeaderTX(boolean largeBody) throws Exception {
-      String testQueueName = RandomUtil.randomString();
+      String testQueueName = RandomUtil.randomUUIDString();
       server.createQueue(QueueConfiguration.of(testQueueName).setRoutingType(RoutingType.ANYCAST));
       ConnectionFactory cf = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:5672");
 
-      String largeString;
-      {
-         StringBuffer buffer = new StringBuffer();
-         while (buffer.length() < 1024 * 1024) {
-            buffer.append("This is a large string ");
-         }
-         largeString = buffer.toString();
-      }
-
+      String largeString = RandomUtil.randomAlphaNumericString(1024 * 1024);
       String smallString = "small string";
 
       String body = largeBody ? largeString : smallString;
@@ -1198,14 +1184,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          Queue queue = session.createQueue(testQueueName);
          MessageProducer producer = session.createProducer(queue);
          ObjectMessage msg = session.createObjectMessage();
-
-         StringBuilder builder = new StringBuilder();
-         for (int i = 0; i < payload; ++i) {
-            builder.append("A");
-         }
-
-         msg.setObject(builder.toString());
-
+         msg.setObject("A".repeat(payload));
          for (int i = 0; i < nMsgs; ++i) {
             msg.setIntProperty("i", (Integer) i);
             producer.send(msg);
@@ -1219,14 +1198,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          Queue queue = session.createQueue(testQueueName);
          MessageProducer producer = session.createProducer(queue);
          TextMessage msg = session.createTextMessage();
-
-         StringBuilder builder = new StringBuilder();
-         for (int i = 0; i < payload; ++i) {
-            builder.append("A");
-         }
-
-         msg.setText(builder.toString());
-
+         msg.setText("A".repeat(payload));
          for (int i = 0; i < nMsgs; ++i) {
             msg.setIntProperty("i", (Integer) i);
             producer.send(msg);
@@ -1240,14 +1212,7 @@ public class AmqpLargeMessageTest extends AmqpClientTestSupport {
          Queue queue = session.createQueue(testQueueName);
          MessageProducer producer = session.createProducer(queue);
          BytesMessage msg = session.createBytesMessage();
-
-         StringBuilder builder = new StringBuilder();
-         for (int i = 0; i < payload; ++i) {
-            builder.append("A");
-         }
-
-         msg.writeBytes(builder.toString().getBytes(StandardCharsets.UTF_8));
-
+         msg.writeBytes("A".repeat(payload).getBytes(StandardCharsets.UTF_8));
          for (int i = 0; i < nMsgs; ++i) {
             msg.setIntProperty("i", (Integer) i);
             producer.send(msg);

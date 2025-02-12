@@ -115,10 +115,9 @@ public class XidImpl implements Xid, Serializable {
       if (this == other) {
          return true;
       }
-      if (!(other instanceof Xid)) {
+      if (!(other instanceof Xid xother)) {
          return false;
       }
-      Xid xother = (Xid) other;
       if (xother.getFormatId() != formatId) {
          return false;
       }
@@ -157,18 +156,18 @@ public class XidImpl implements Xid, Serializable {
 
 
    private String stringRep(final byte[] bytes) {
-      StringBuffer buff = new StringBuffer();
+      StringBuilder builder = new StringBuilder();
       for (int i = 0; i < bytes.length; i++) {
          byte b = bytes[i];
 
-         buff.append(b);
+         builder.append(b);
 
          if (i != bytes.length - 1) {
-            buff.append('.');
+            builder.append('.');
          }
       }
 
-      return buff.toString();
+      return builder.toString();
    }
 
    private void calcHash() {

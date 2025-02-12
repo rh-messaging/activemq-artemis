@@ -64,9 +64,9 @@ public final class Ping extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buf = new StringBuffer(super.getPacketString());
-      buf.append(", connectionTTL=" + connectionTTL);
-      return buf.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", connectionTTL=" + connectionTTL);
+      return sb.toString();
    }
 
    @Override
@@ -85,10 +85,9 @@ public final class Ping extends PacketImpl {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof Ping)) {
+      if (!(obj instanceof Ping other)) {
          return false;
       }
-      Ping other = (Ping) obj;
       if (connectionTTL != other.connectionTTL) {
          return false;
       }

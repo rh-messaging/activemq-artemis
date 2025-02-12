@@ -87,12 +87,12 @@ public class DisconnectMessage_V3 extends DisconnectMessage {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buf = new StringBuffer(super.getPacketString());
-      buf.append(", nodeID=" + nodeID);
-      buf.append(", reason=" + reason);
-      buf.append(", targetNodeID=" + targetNodeID);
-      buf.append(", targetConnector=" + targetConnector);
-      return buf.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", nodeID=" + nodeID);
+      sb.append(", reason=" + reason);
+      sb.append(", targetNodeID=" + targetNodeID);
+      sb.append(", targetConnector=" + targetConnector);
+      return sb.toString();
    }
 
    @Override
@@ -113,10 +113,9 @@ public class DisconnectMessage_V3 extends DisconnectMessage {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof DisconnectMessage_V3)) {
+      if (!(obj instanceof DisconnectMessage_V3 other)) {
          return false;
       }
-      DisconnectMessage_V3 other = (DisconnectMessage_V3) obj;
       if (reason == null) {
          if (other.reason != null)
             return false;

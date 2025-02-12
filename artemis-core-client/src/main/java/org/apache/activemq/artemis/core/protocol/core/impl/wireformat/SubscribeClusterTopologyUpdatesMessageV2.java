@@ -61,9 +61,9 @@ public class SubscribeClusterTopologyUpdatesMessageV2 extends SubscribeClusterTo
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", clientVersion=" + clientVersion);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", clientVersion=" + clientVersion);
+      return sb.toString();
    }
 
    @Override
@@ -72,9 +72,8 @@ public class SubscribeClusterTopologyUpdatesMessageV2 extends SubscribeClusterTo
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SubscribeClusterTopologyUpdatesMessageV2))
+      if (!(obj instanceof SubscribeClusterTopologyUpdatesMessageV2 other))
          return false;
-      SubscribeClusterTopologyUpdatesMessageV2 other = (SubscribeClusterTopologyUpdatesMessageV2) obj;
       if (clientVersion != other.clientVersion)
          return false;
       return true;

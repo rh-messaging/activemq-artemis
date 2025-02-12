@@ -381,12 +381,12 @@ public class StompTest extends StompTestBase {
 
    @Test
    public void testSendMessageToNonExistentQueue() throws Exception {
-      sendMessageToNonExistentQueue(getQueuePrefix(), RandomUtil.randomString(), RoutingType.ANYCAST);
+      sendMessageToNonExistentQueue(getQueuePrefix(), RandomUtil.randomUUIDString(), RoutingType.ANYCAST);
    }
 
    @Test
    public void testSendMessageToNonExistentQueueUsingExplicitDefaultRouting() throws Exception {
-      String nonExistentQueue = RandomUtil.randomString();
+      String nonExistentQueue = RandomUtil.randomUUIDString();
       server.getAddressSettingsRepository().addMatch(nonExistentQueue, new AddressSettings().setDefaultAddressRoutingType(RoutingType.ANYCAST).setDefaultQueueRoutingType(RoutingType.ANYCAST));
       sendMessageToNonExistentQueue(getQueuePrefix(), nonExistentQueue, null);
    }
@@ -423,19 +423,19 @@ public class StompTest extends StompTestBase {
 
    @Test
    public void testSendMessageToNonExistentTopic() throws Exception {
-      sendMessageToNonExistentTopic(getTopicPrefix(), RandomUtil.randomString(), RoutingType.MULTICAST);
+      sendMessageToNonExistentTopic(getTopicPrefix(), RandomUtil.randomUUIDString(), RoutingType.MULTICAST);
    }
 
    @Test
    public void testSendMessageToNonExistentTopicUsingExplicitDefaultRouting() throws Exception {
-      String nonExistentTopic = RandomUtil.randomString();
+      String nonExistentTopic = RandomUtil.randomUUIDString();
       server.getAddressSettingsRepository().addMatch(nonExistentTopic, new AddressSettings().setDefaultAddressRoutingType(RoutingType.MULTICAST).setDefaultQueueRoutingType(RoutingType.MULTICAST));
       sendMessageToNonExistentTopic(getTopicPrefix(), nonExistentTopic, null);
    }
 
    @Test
    public void testSendMessageToNonExistentTopicUsingImplicitDefaultRouting() throws Exception {
-      sendMessageToNonExistentTopic(getTopicPrefix(), RandomUtil.randomString(), null);
+      sendMessageToNonExistentTopic(getTopicPrefix(), RandomUtil.randomUUIDString(), null);
    }
 
    /*
@@ -585,16 +585,24 @@ public class StompTest extends StompTestBase {
 
    @Test
    public void testSendMessageWithLongHeaders() throws Exception {
+      final int headerSize = 1024;
       MessageConsumer consumer = session.createConsumer(queue);
 
       conn.connect(defUser, defPass);
 
-      StringBuffer buffer = new StringBuffer();
-      for (int i = 0; i < 1024; i++) {
-         buffer.append("a");
-      }
+      String longHeader = "a".repeat(headerSize);
 
-      ClientStompFrame frame = conn.createFrame(Stomp.Commands.SEND).addHeader(Stomp.Headers.Send.DESTINATION, getQueuePrefix() + getQueueName()).addHeader("foo", "abc").addHeader("bar", "123").addHeader("correlation-id", "c123").addHeader("persistent", "true").addHeader("type", "t345").addHeader("JMSXGroupID", "abc").addHeader("priority", "3").addHeader("longHeader", buffer.toString()).setBody("Hello World");
+      ClientStompFrame frame = conn.createFrame(Stomp.Commands.SEND)
+         .addHeader(Stomp.Headers.Send.DESTINATION, getQueuePrefix() + getQueueName())
+         .addHeader("foo", "abc")
+         .addHeader("bar", "123")
+         .addHeader("correlation-id", "c123")
+         .addHeader("persistent", "true")
+         .addHeader("type", "t345")
+         .addHeader("JMSXGroupID", "abc")
+         .addHeader("priority", "3")
+         .addHeader("longHeader", longHeader)
+         .setBody("Hello World");
       conn.sendFrame(frame);
 
       TextMessage message = (TextMessage) consumer.receive(1000);
@@ -605,7 +613,7 @@ public class StompTest extends StompTestBase {
       assertEquals(3, message.getJMSPriority(), "getJMSPriority");
       assertEquals(javax.jms.DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
       assertEquals("abc", message.getStringProperty("foo"), "foo");
-      assertEquals(1024, message.getStringProperty("longHeader").length(), "longHeader");
+      assertEquals(headerSize, message.getStringProperty("longHeader").length(), "longHeader");
 
       assertEquals("abc", message.getStringProperty("JMSXGroupID"), "JMSXGroupID");
    }
@@ -1074,12 +1082,9 @@ public class StompTest extends StompTestBase {
 
       if (sendDisconnect) {
          conn.disconnect();
-         conn.destroy();
-         conn = StompClientConnectionFactory.createClientConnection(uri);
-      } else {
-         conn.destroy();
-         conn = StompClientConnectionFactory.createClientConnection(uri);
       }
+      conn.destroy();
+      conn = StompClientConnectionFactory.createClientConnection(uri);
 
       // message should be received since message was not acknowledged
       conn.connect(defUser, defPass);
@@ -1298,7 +1303,7 @@ public class StompTest extends StompTestBase {
 
    @Test
    public void testSubscribeToNonExistentQueue() throws Exception {
-      String nonExistentQueue = RandomUtil.randomString();
+      String nonExistentQueue = RandomUtil.randomUUIDString();
 
       conn.connect(defUser, defPass);
       subscribe(conn, null, null, null, null, getQueuePrefix() + nonExistentQueue, true);
@@ -1532,8 +1537,8 @@ public class StompTest extends StompTestBase {
    @Test
    public void testSubscribeToTopicWithNoLocalAndNormal() throws Exception {
       conn.connect(defUser, defPass);
-      String noLocalSubscriptionId = RandomUtil.randomString();
-      String normalSubscriptionId = RandomUtil.randomString();
+      String noLocalSubscriptionId = RandomUtil.randomUUIDString();
+      String normalSubscriptionId = RandomUtil.randomUUIDString();
       subscribeTopic(conn, noLocalSubscriptionId, null, null, true, true);
       subscribeTopic(conn, normalSubscriptionId, null, null, true, false);
 

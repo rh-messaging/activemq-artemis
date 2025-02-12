@@ -166,16 +166,16 @@ public class SessionBindingQueryResponseMessage_V4 extends SessionBindingQueryRe
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", defaultPurgeOnNoConsumers=" + defaultPurgeOnNoConsumers);
-      buff.append(", defaultMaxConsumers=" + defaultMaxConsumers);
-      buff.append(", defaultExclusive=" + defaultExclusive);
-      buff.append(", defaultLastValue=" + defaultLastValue);
-      buff.append(", defaultLastValueKey=" + defaultLastValueKey);
-      buff.append(", defaultNonDestructive=" + defaultNonDestructive);
-      buff.append(", defaultConsumersBeforeDispatch=" + defaultConsumersBeforeDispatch);
-      buff.append(", defaultDelayBeforeDispatch=" + defaultDelayBeforeDispatch);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", defaultPurgeOnNoConsumers=" + defaultPurgeOnNoConsumers);
+      sb.append(", defaultMaxConsumers=" + defaultMaxConsumers);
+      sb.append(", defaultExclusive=" + defaultExclusive);
+      sb.append(", defaultLastValue=" + defaultLastValue);
+      sb.append(", defaultLastValueKey=" + defaultLastValueKey);
+      sb.append(", defaultNonDestructive=" + defaultNonDestructive);
+      sb.append(", defaultConsumersBeforeDispatch=" + defaultConsumersBeforeDispatch);
+      sb.append(", defaultDelayBeforeDispatch=" + defaultDelayBeforeDispatch);
+      return sb.toString();
    }
 
    @Override
@@ -184,9 +184,8 @@ public class SessionBindingQueryResponseMessage_V4 extends SessionBindingQueryRe
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionBindingQueryResponseMessage_V4))
+      if (!(obj instanceof SessionBindingQueryResponseMessage_V4 other))
          return false;
-      SessionBindingQueryResponseMessage_V4 other = (SessionBindingQueryResponseMessage_V4) obj;
       if (defaultPurgeOnNoConsumers != other.defaultPurgeOnNoConsumers)
          return false;
       if (defaultMaxConsumers != other.defaultMaxConsumers)

@@ -51,9 +51,9 @@ public class SessionQueueQueryMessage extends QueueAbstractPacket {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", queueName=" + queueName);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", queueName=" + queueName);
+      return sb.toString();
    }
 
    @Override
@@ -62,9 +62,8 @@ public class SessionQueueQueryMessage extends QueueAbstractPacket {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionQueueQueryMessage))
+      if (!(obj instanceof SessionQueueQueryMessage other))
          return false;
-      SessionQueueQueryMessage other = (SessionQueueQueryMessage) obj;
       if (queueName == null) {
          if (other.queueName != null)
             return false;

@@ -60,9 +60,9 @@ public class SessionXAPrepareMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", xid=" + xid);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", xid=" + xid);
+      return sb.toString();
    }
 
    @Override
@@ -71,9 +71,8 @@ public class SessionXAPrepareMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionXAPrepareMessage))
+      if (!(obj instanceof SessionXAPrepareMessage other))
          return false;
-      SessionXAPrepareMessage other = (SessionXAPrepareMessage) obj;
       if (xid == null) {
          if (other.xid != null)
             return false;

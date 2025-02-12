@@ -78,10 +78,10 @@ public class ReattachSessionResponseMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", lastConfirmedCommandID=" + lastConfirmedCommandID);
-      buff.append(", reattached=" + reattached);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", lastConfirmedCommandID=" + lastConfirmedCommandID);
+      sb.append(", reattached=" + reattached);
+      return sb.toString();
    }
 
    @Override
@@ -90,9 +90,8 @@ public class ReattachSessionResponseMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof ReattachSessionResponseMessage))
+      if (!(obj instanceof ReattachSessionResponseMessage other))
          return false;
-      ReattachSessionResponseMessage other = (ReattachSessionResponseMessage) obj;
       if (lastConfirmedCommandID != other.lastConfirmedCommandID)
          return false;
       if (reattached != other.reattached)

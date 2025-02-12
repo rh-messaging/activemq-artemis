@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -358,22 +356,20 @@ public class ArtemisCreatePlugin extends ArtemisAbstractPlugin {
    }
 
    private void copyWithReplacements(Path original, Path target) throws IOException {
-      Charset charset = StandardCharsets.UTF_8;
-
-      String content = new String(Files.readAllBytes(original), charset);
+      String content = Files.readString(original);
       for (int i = 0; i + 1 < replacePairs.length; i += 2) {
          content = content.replaceAll(replacePairs[i], replacePairs[i + 1]);
       }
-      Files.write(target, content.getBytes(charset));
+      Files.writeString(target, content);
    }
 
    private String getCommandline(List<String> listCommands) {
-      StringBuffer buffer = new StringBuffer();
-      buffer.append(home.getAbsolutePath() + "/bin/artemis ");
+      StringBuilder sb = new StringBuilder();
+      sb.append(home.getAbsolutePath() + "/bin/artemis ");
       for (String string : listCommands) {
-         buffer.append(string + " ");
+         sb.append(string + " ");
       }
-      return buffer.toString();
+      return sb.toString();
    }
 
    private void copyToDir(String destination, File projectLib, PrintStream commandLineStream) throws IOException {

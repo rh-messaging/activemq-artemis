@@ -141,12 +141,12 @@ public class ClusterTopologyChangeMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", exit=" + exit);
-      buff.append(", last=" + last);
-      buff.append(", nodeID=" + nodeID);
-      buff.append(", pair=" + pair);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", exit=" + exit);
+      sb.append(", last=" + last);
+      sb.append(", nodeID=" + nodeID);
+      sb.append(", pair=" + pair);
+      return sb.toString();
    }
 
    @Override
@@ -157,10 +157,9 @@ public class ClusterTopologyChangeMessage extends PacketImpl {
       if (!super.equals(obj)) {
          return false;
       }
-      if (!(obj instanceof ClusterTopologyChangeMessage)) {
+      if (!(obj instanceof ClusterTopologyChangeMessage other)) {
          return false;
       }
-      ClusterTopologyChangeMessage other = (ClusterTopologyChangeMessage) obj;
       if (exit != other.exit) {
          return false;
       }

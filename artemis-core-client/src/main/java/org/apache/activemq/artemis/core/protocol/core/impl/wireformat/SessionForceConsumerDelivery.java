@@ -60,10 +60,10 @@ public class SessionForceConsumerDelivery extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buf = new StringBuffer(super.getPacketString());
-      buf.append(", consumerID=" + consumerID);
-      buf.append(", sequence=" + sequence);
-      return buf.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", consumerID=" + consumerID);
+      sb.append(", sequence=" + sequence);
+      return sb.toString();
    }
 
    @Override
@@ -81,9 +81,8 @@ public class SessionForceConsumerDelivery extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionForceConsumerDelivery))
+      if (!(obj instanceof SessionForceConsumerDelivery other))
          return false;
-      SessionForceConsumerDelivery other = (SessionForceConsumerDelivery) obj;
       if (consumerID != other.consumerID)
          return false;
       if (sequence != other.sequence)

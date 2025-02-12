@@ -36,9 +36,9 @@ public class SessionDeleteQueueMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", queueName=" + queueName);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", queueName=" + queueName);
+      return sb.toString();
    }
 
    public SimpleString getQueueName() {
@@ -69,9 +69,8 @@ public class SessionDeleteQueueMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof SessionDeleteQueueMessage))
+      if (!(obj instanceof SessionDeleteQueueMessage other))
          return false;
-      SessionDeleteQueueMessage other = (SessionDeleteQueueMessage) obj;
       if (queueName == null) {
          if (other.queueName != null)
             return false;

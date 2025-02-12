@@ -71,9 +71,8 @@ public class CreateSessionResponseMessage extends PacketImpl {
          return true;
       if (!super.equals(obj))
          return false;
-      if (!(obj instanceof CreateSessionResponseMessage))
+      if (!(obj instanceof CreateSessionResponseMessage other))
          return false;
-      CreateSessionResponseMessage other = (CreateSessionResponseMessage) obj;
       if (serverVersion != other.serverVersion)
          return false;
       return true;
@@ -81,8 +80,8 @@ public class CreateSessionResponseMessage extends PacketImpl {
 
    @Override
    protected String getPacketString() {
-      StringBuffer buff = new StringBuffer(super.getPacketString());
-      buff.append(", serverVersion=" + serverVersion);
-      return buff.toString();
+      StringBuilder sb = new StringBuilder(super.getPacketString());
+      sb.append(", serverVersion=" + serverVersion);
+      return sb.toString();
    }
 }
