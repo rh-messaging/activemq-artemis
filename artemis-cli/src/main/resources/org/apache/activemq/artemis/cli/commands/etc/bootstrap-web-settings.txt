@@ -1,9 +1,8 @@
    <!-- The web server is only bound to localhost by default -->
    <web path="web" rootRedirectLocation="console">
        <binding name="artemis" uri="${web.protocol}://${http.host}:${http.port}"${extra.web.attributes}>
-           <app name="branding" url="redhat-branding" war="redhat-branding.war"/>
+           <app name="branding" url="activemq-branding" war="activemq-branding.war"/>
            <app name="plugin" url="artemis-plugin" war="artemis-plugin.war"/>
-           <app name="console" url="console" war="hawtio.war"/>
-           <app name="metrics" url="metrics" war="metrics.war"/>
+           <app name="console" url="console" war="console.war"/>
        </binding>
    </web>
