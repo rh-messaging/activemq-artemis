@@ -83,7 +83,6 @@
       <maven.compiler.target>17</maven.compiler.target>
       <maven.compiler.release>17</maven.compiler.release>
 
-      <retryTests>false</retryTests>
       <logging.config>log4j2-tests-config.properties</logging.config>
       <modular.jdk.surefire.arg>--add-modules java.sql,jdk.unsupported </modular.jdk.surefire.arg>
 
@@ -117,7 +116,7 @@
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.21.2</checkstyle.version>
+      <checkstyle.version>10.21.3</checkstyle.version>
       <mockito.version>5.15.2</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.118.Final</netty.version>
@@ -166,12 +165,12 @@
       <version.micrometer>1.14.4</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
-      <junit5.version>5.11.4</junit5.version>
+      <junit5.version>5.12.0</junit5.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.5</postgresql.version>
-      <testcontainers.version>1.20.4</testcontainers.version>
-      <selenium.version>4.28.1</selenium.version>
+      <testcontainers.version>1.20.5</testcontainers.version>
+      <selenium.version>4.29.0</selenium.version>
       <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
@@ -254,7 +253,7 @@
       <!-- for tests that will need a new server created -->
       <artemis.distribution.output>${activemq.basedir}/artemis-distribution/target/apache-artemis-${project.version}-bin/apache-artemis-${project.version}</artemis.distribution.output>
 
-      <activemq-surefire-argline>-Dorg.apache.activemq.artemis.utils.RetryRule.retry=${retryTests} -Dbrokerconfig.maxDiskUsage=100 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
+      <activemq-surefire-argline>-Dbrokerconfig.maxDiskUsage=100 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_QUIET_PERIOD=0 -Dorg.apache.activemq.artemis.core.remoting.impl.netty.TransportConstants.DEFAULT_SHUTDOWN_TIMEOUT=0
          -Djava.library.path="${activemq.basedir}/target/bin/lib/linux-x86_64:${activemq.basedir}/target/bin/lib/linux-i686" -Djgroups.bind_addr=localhost
          -Djava.net.preferIPv4Stack=true -Dbasedir=${basedir}
          -Djdk.attach.allowAttachSelf=true
@@ -502,13 +501,6 @@
                </plugin>
             </plugins>
          </build>
-      </profile>
-      <profile>
-         <!-- this will activate the property required to play with tests retry -->
-         <id>tests-retry</id>
-         <properties>
-            <retryTests>true</retryTests>
-         </properties>
       </profile>
       <profile>
          <!-- tests is the profile we use to run the entire testsuite
