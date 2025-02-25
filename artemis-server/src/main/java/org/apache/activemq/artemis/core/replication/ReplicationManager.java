@@ -298,9 +298,9 @@ public final class ReplicationManager implements ActiveMQComponent {
       }
    }
 
-   public void pageWrite(final SimpleString address, final PagedMessage message, final long pageNumber) {
+   public void pageWrite(final SimpleString address, final PagedMessage message, final long pageNumber, boolean lineup) {
       if (started) {
-         sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber, remotingConnection.isVersionUsingLongOnPageReplication(), address));
+         sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber, remotingConnection.isVersionUsingLongOnPageReplication(), address), lineup);
       }
    }
 
@@ -800,7 +800,7 @@ public final class ReplicationManager implements ActiveMQComponent {
                                     String nodeID,
                                     boolean allowsAutoFailBack) throws ActiveMQException {
       if (started)
-         sendReplicatePacket(new ReplicationStartSyncMessage(remotingConnection.isBeforeTwoEighteen(), datafiles, contentType, nodeID, allowsAutoFailBack));
+         sendReplicatePacket(new ReplicationStartSyncMessage(datafiles, contentType, nodeID, allowsAutoFailBack));
    }
 
    /**
@@ -819,7 +819,7 @@ public final class ReplicationManager implements ActiveMQComponent {
          }
 
          synchronizationIsFinishedAcknowledgement.countUp();
-         sendReplicatePacket(new ReplicationStartSyncMessage(remotingConnection.isBeforeTwoEighteen(), nodeID, server.getNodeManager().getNodeActivationSequence()));
+         sendReplicatePacket(new ReplicationStartSyncMessage(nodeID, server.getNodeManager().getNodeActivationSequence()));
          try {
             if (!synchronizationIsFinishedAcknowledgement.await(initialReplicationSyncTimeout)) {
                ActiveMQReplicationTimeooutException exception = ActiveMQMessageBundle.BUNDLE.replicationSynchronizationTimeout(initialReplicationSyncTimeout);
@@ -864,7 +864,7 @@ public final class ReplicationManager implements ActiveMQComponent {
       idsToSend = new ArrayList<>(largeMessages.keySet());
 
       if (started)
-         sendReplicatePacket(new ReplicationStartSyncMessage(remotingConnection.isBeforeTwoEighteen(), idsToSend));
+         sendReplicatePacket(new ReplicationStartSyncMessage(idsToSend));
    }
 
    /**
