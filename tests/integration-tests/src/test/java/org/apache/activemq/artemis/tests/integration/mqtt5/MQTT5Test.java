@@ -63,7 +63,7 @@ import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
+/**
  * General tests for things not covered directly in the specification.
  */
 public class MQTT5Test extends MQTT5TestSupport {
@@ -95,6 +95,31 @@ public class MQTT5Test extends MQTT5TestSupport {
 
    @Test
    @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testSimpleRetroSendReceive() throws Exception {
+      final String topic = RandomUtil.randomUUIDString();
+      server.getAddressSettingsRepository().addMatch(topic, new AddressSettings().setRetroactiveMessageCount(1));
+
+      MqttClient producer = createPahoClient("producer");
+      producer.connect();
+      producer.publish(topic, "myMessage".getBytes(StandardCharsets.UTF_8), 1, false);
+
+      CountDownLatch latch = new CountDownLatch(1);
+      MqttClient subscriber = createPahoClient("subscriber");
+      subscriber.connect();
+      subscriber.setCallback(new DefaultMqttCallback() {
+         @Override
+         public void messageArrived(String t, MqttMessage message) {
+            logger.info("Message received from topic {}, message={}", t, message);
+            assertEquals(topic.toString(), t);
+            latch.countDown();
+         }
+      });
+      subscriber.subscribe(topic, AT_LEAST_ONCE);
+      assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
    public void testTopicNameEscape() throws Exception {
       final String topic = "foo1.0/bar/baz";
       AtomicReference<String> receivedTopic = new AtomicReference<>();
@@ -115,7 +140,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       Wait.assertEquals(topic, receivedTopic::get, 500, 50);
    }
 
-   /*
+   /**
     * Ensure that the broker adds a timestamp on the message when sending via MQTT
     */
    @Test
@@ -201,7 +226,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       Wait.assertEquals(0L, () -> server.locateQueue(MQTTUtil.MQTT_SESSION_STORE).getMessageCount(), 5000, 100);
    }
 
-   /*
+   /**
     * Trying to reproduce error from https://issues.apache.org/jira/browse/ARTEMIS-1184
     */
    @Test
@@ -234,7 +259,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       assertNull(server.getAddressInfo(SimpleString.of(DESTINATION)));
    }
 
-   /*
+   /**
     * There is no normative statement in the spec about supporting user properties on will messages, but it is implied
     * in various places.
     */
@@ -283,7 +308,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       assertTrue(latch.await(2, TimeUnit.SECONDS));
    }
 
-   /*
+   /**
     * It's possible for a client to change their session expiry interval via the DISCONNECT packet. Ensure we respect
     * a new session expiry interval when disconnecting.
     */
@@ -304,7 +329,7 @@ public class MQTT5Test extends MQTT5TestSupport {
       Wait.assertEquals(0, () -> getSessionStates().size(), 5000, 10);
    }
 
-   /*
+   /**
     * If the Will flag is false then don't send a will message even if the session expiry is > 0
     */
    @Test

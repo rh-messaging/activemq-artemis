@@ -134,7 +134,7 @@
       <netty-tcnative-version>2.0.70.Final</netty-tcnative-version>
       <proton.version>0.34.1</proton.version>
       <protonj2.version>1.0.0-M23</protonj2.version>
-      <slf4j.version>2.0.16</slf4j.version>
+      <slf4j.version>2.0.17</slf4j.version>
       <log4j.version>2.24.3</log4j.version>
       <qpid.jms.version>1.13.0</qpid.jms.version>
       <johnzon.version>1.2.21</johnzon.version>
@@ -328,7 +328,7 @@
                      <compilerArgs>
                         <arg>-Xdiags:verbose</arg>
                         <arg>-XDcompilePolicy=simple</arg>
-                        <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -XepExcludedPaths:.*/generated-sources/.*</arg>
+                        <arg>-Xplugin:ErrorProne -Xep:ThreadLocalUsage:ERROR -Xep:MissingOverride:ERROR -Xep:NonAtomicVolatileUpdate:ERROR -Xep:SynchronizeOnNonFinalField:ERROR -Xep:StaticQualifiedUsingExpression:ERROR -Xep:WaitNotInLoop:ERROR -Xep:BanJNDI:OFF -Xep:DepAnn -Xep:AnnotationPosition -Xep:UnescapedEntity -XepExcludedPaths:.*/generated-sources/.*</arg>
                         <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
                         <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
                         <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>

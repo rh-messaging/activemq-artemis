@@ -161,6 +161,62 @@ public class LinkedListTest extends ActiveMQTestBase {
    }
 
    @Test
+   public void testDuplicateSorted() {
+      list.addSorted(1);
+      list.addSorted(2);
+      list.addSorted(1);
+
+      try (LinkedListIterator<Integer> listIterator = list.iterator()) {
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(2, listIterator.next().intValue());
+      }
+
+      list.clear();
+
+      list.addSorted(10);
+      list.addSorted(2);
+      list.addSorted(1);
+      list.addSorted(2);
+
+      try (LinkedListIterator<Integer> listIterator = list.iterator()) {
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(2, listIterator.next().intValue());
+         assertEquals(2, listIterator.next().intValue());
+         assertEquals(10, listIterator.next().intValue());
+      }
+
+   }
+
+   @Test
+   public void testDuplicateScan() {
+      list.addSorted(0);
+      list.addSorted(1);
+      list.addSorted(2);
+      list.addSorted(3);
+
+      try (LinkedListIterator<Integer> listIterator = list.iterator()) {
+         assertEquals(0, listIterator.next().intValue());
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(2, listIterator.next().intValue());
+         assertEquals(3, listIterator.next().intValue());
+         // removing an element to clear the lastAdded element from the List
+         assertEquals(3, listIterator.removeLastElement().intValue());
+      }
+
+      scans = 0;
+      list.addSorted(1);
+      assertEquals(1, scans, "The test expects a scan to be made");
+
+      try (LinkedListIterator<Integer> listIterator = list.iterator()) {
+         assertEquals(0, listIterator.next().intValue());
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(1, listIterator.next().intValue());
+         assertEquals(2, listIterator.next().intValue());
+      }
+   }
+
+   @Test
    public void randomSorted() {
 
       int elements = 10_000;
@@ -380,7 +436,7 @@ public class LinkedListTest extends ActiveMQTestBase {
 
          assertEquals(1000, nodeStore.size());
 
-         /** remove all even items */
+         // remove all even items
          for (int i = 1; i <= 1000; i += 2) {
             objs.removeWithID(serverID, i);
          }
@@ -769,9 +825,6 @@ public class LinkedListTest extends ActiveMQTestBase {
       assertNoSuchElementIsThrown(iter);
    }
 
-   /**
-    * @param iter
-    */
    private void assertNoSuchElementIsThrown(LinkedListIterator<Integer> iter) {
       try {
          iter.next();
