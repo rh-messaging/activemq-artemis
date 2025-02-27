@@ -87,10 +87,9 @@ public class Artemis implements Runnable {
 
    @Override
    public void run() {
-      // We are running the help by default.
-      boolean isInstance = System.getProperty("artemis.instance") != null;
-      CommandLine commandLine = buildCommand(isInstance, !isInstance, false);
-      HelpAction.help(commandLine, null);
+      // We are running the shell by default.
+      // if you type ./artemis we will go straight to the shell
+      Shell.runShell(true);
    }
 
    public static void main(String... args) throws Exception {
@@ -264,6 +263,11 @@ public class Artemis implements Runnable {
 
       commandLine.addSubcommand(new AutoCompletion());
 
+      // we don't include the shell in the shell
+      if (shellEnabled) {
+         commandLine.addSubcommand(new Shell(commandLine));
+      }
+
       commandLine.addSubcommand(new Producer()).addSubcommand(new Transfer()).addSubcommand(new Consumer()).addSubcommand(new Browse()).addSubcommand(new Mask()).addSubcommand(new PrintVersion());
 
       commandLine.addSubcommand(new PerfGroup(commandLine));
@@ -271,12 +275,19 @@ public class Artemis implements Runnable {
       commandLine.addSubcommand(new QueueGroup(commandLine));
       commandLine.addSubcommand(new AddressGroup(commandLine));
 
+      if (Shell.inShell()) {
+         commandLine.addSubcommand(new Connect());
+         commandLine.addSubcommand(new Disconnect());
+      }
+
       if (includeInstanceCommands) {
          commandLine.addSubcommand(new ActivationGroup(commandLine));
          commandLine.addSubcommand(new DataGroup(commandLine));
          commandLine.addSubcommand(new UserGroup(commandLine));
 
-         commandLine.addSubcommand(new Run());
+         if (!Shell.inShell()) {
+            commandLine.addSubcommand(new Run());
+         }
 
          commandLine.addSubcommand(new Stop());
          commandLine.addSubcommand(new Kill());
