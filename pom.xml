@@ -25,7 +25,7 @@
    <parent>
       <groupId>org.apache</groupId>
       <artifactId>apache</artifactId>
-      <version>33</version>
+      <version>34</version>
    </parent>
 
    <modules>
@@ -112,16 +112,16 @@
       <jgroups.version>5.3.13.Final</jgroups.version>
       <errorprone.version>2.36.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
-      <jib.maven.plugin.version>3.4.4</jib.maven.plugin.version>
+      <jib.maven.plugin.version>3.4.5</jib.maven.plugin.version>
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
       <checkstyle.version>10.21.4</checkstyle.version>
-      <mockito.version>5.16.0</mockito.version>
+      <mockito.version>5.16.1</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.119.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
-      <curator.version>5.7.1</curator.version>
+      <curator.version>5.8.0</curator.version>
       <zookeeper.version>3.9.3</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>3.0.0</pem-keystore.version>
@@ -162,10 +162,10 @@
       <servicemix.json-1.1.spec.version>2.9.0</servicemix.json-1.1.spec.version>
       <version.org.jacoco>0.8.12</version.org.jacoco>
       <version.org.jacoco.plugin>0.8.12</version.org.jacoco.plugin>
-      <version.micrometer>1.14.4</version.micrometer>
+      <version.micrometer>1.14.5</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
-      <junit5.version>5.12.0</junit5.version>
+      <junit5.version>5.12.1</junit5.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.5</postgresql.version>
