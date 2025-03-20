@@ -31,6 +31,21 @@ public class RandomUtil {
       return random;
    }
 
+   private static final String letters = "abcdefghijklmnopqrstuvwxyz";
+
+   private static final String digits = "0123456789";
+
+   private static final String randomBase = letters + letters.toUpperCase() + digits;
+
+   private static final int randomBaseLength = randomBase.length();
+
+   public static String randomAlphaNumericString(int length) {
+      StringBuilder result = new StringBuilder(length);
+      for (int i = 0; i < length; i++) {
+         result.append(randomBase.charAt(random.nextInt(randomBaseLength)));
+      }
+      return result.toString();
+   }
 
    public static String randomString() {
       return java.util.UUID.randomUUID().toString();
