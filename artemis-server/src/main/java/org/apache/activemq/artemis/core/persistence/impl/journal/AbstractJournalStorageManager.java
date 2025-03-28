@@ -1747,18 +1747,18 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
 
          byte recordType = record.getUserRecordType();
 
-            switch (recordType) {
-               case JournalRecordIds.ADD_LARGE_MESSAGE: {
-                  messages.put(record.id, parseLargeMessage(messages, buff));
+         switch (recordType) {
+            case JournalRecordIds.ADD_LARGE_MESSAGE: {
+               messages.put(record.id, parseLargeMessage(messages, buff));
 
                break;
             }
             case JournalRecordIds.ADD_MESSAGE: {
 
-                  break;
-               }
-               case JournalRecordIds.ADD_MESSAGE_PROTOCOL: {
-                  Message message = MessagePersister.getInstance().decode(buff, null);
+               break;
+            }
+            case JournalRecordIds.ADD_MESSAGE_PROTOCOL: {
+               Message message = MessagePersister.getInstance().decode(buff, null);
 
                messages.put(record.id, message);
 
