@@ -127,7 +127,7 @@
       <pem-keystore.version>3.0.0</pem-keystore.version>
 
       <!-- docs -->
-      <asciidoctor.maven.plugin.version>3.1.1</asciidoctor.maven.plugin.version>
+      <asciidoctor.maven.plugin.version>3.2.0</asciidoctor.maven.plugin.version>
       <asciidoctorj.pdf.version>2.3.19</asciidoctorj.pdf.version>
 
       <!-- this is basically for tests -->
@@ -170,7 +170,7 @@
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.5</postgresql.version>
       <testcontainers.version>1.20.6</testcontainers.version>
-      <selenium.version>4.29.0</selenium.version>
+      <selenium.version>4.30.0</selenium.version>
       <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
