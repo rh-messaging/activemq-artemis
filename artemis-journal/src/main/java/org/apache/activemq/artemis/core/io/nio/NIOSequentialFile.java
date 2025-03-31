@@ -63,11 +63,11 @@ public class NIOSequentialFile extends AbstractSequentialFile {
     */
    private static final int CHUNK_SIZE = 2 * 1024 * 1024;
 
-   protected volatile  FileChannel channel;
+   private FileChannel channel;
 
-   protected volatile RandomAccessFile rfile;
+   private RandomAccessFile rfile;
 
-   protected final int maxIO;
+   private final int maxIO;
 
    public NIOSequentialFile(final SequentialFileFactory factory,
                             final File directory,
@@ -317,25 +317,16 @@ public class NIOSequentialFile extends AbstractSequentialFile {
 
    @Override
    public void sync() throws IOException {
-      FileChannel channel1 = channel;
-      if (factory.isDatasync() && channel1 != null && channel1.isOpen()) {
+      if (factory.isDatasync() && channel != null) {
          try {
-            syncChannel(channel1);
+            channel.force(false);
+         } catch (ClosedChannelException e) {
+            throw e;
          } catch (IOException e) {
-            if (e instanceof ClosedChannelException) {
-               // ClosedChannelException here means the file was closed after TimedBuffer issued a sync
-               // we are performing the sync away from locks to ensure scalability and this is an expected cost
-               logger.debug("ClosedChannelException for file {}", file, e);
-            } else {
-               factory.onIOError(new ActiveMQIOErrorException(e.getMessage(), e), e.getMessage(), this);
-               throw e;
-            }
+            factory.onIOError(new ActiveMQIOErrorException(e.getMessage(), e), e.getMessage(), this);
+            throw e;
          }
       }
-   }
-
-   protected void syncChannel(FileChannel syncChannel) throws IOException {
-      syncChannel.force(false);
    }
 
    @Override
