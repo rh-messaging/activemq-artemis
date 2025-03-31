@@ -40,7 +40,7 @@ public class ActiveMQChannelHandler extends ChannelDuplexHandler {
 
    private final BaseConnectionLifeCycleListener<?> listener;
 
-   protected volatile boolean active;
+   volatile boolean active;
 
    private final Executor listenerExecutor;
 
