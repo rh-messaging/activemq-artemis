@@ -84,7 +84,8 @@ public class ClusterConnectionImplMockTest extends ServerTestBase {
                 null, //final String clusterPassword,
                 true, //final boolean allowDirectConnectionsOnly,
                 0, //final long clusterNotificationInterval,
-                0 //final int clusterNotificationAttempts)
+                0, //final int clusterNotificationAttempts)
+                0
       );
 
       Assert.assertEquals(1, cci.allowableConnections.size());
@@ -103,7 +104,7 @@ public class ClusterConnectionImplMockTest extends ServerTestBase {
       ArtemisExecutor executor = ArtemisExecutor.delegate(Executors.newSingleThreadExecutor(ActiveMQThreadFactory.defaultThreadFactory(getClass().getName())));
 
       try {
-         ClusterConnectionImpl cci = new ClusterConnectionImpl(null, new TransportConfiguration[]{tc}, null, null, null, 0, 0L, 0L, 0L, 0, 0L, 0, 0, 0L, 0L, false, null, 0, 0, () -> executor, new MockServer(), null, null, null, 0, new FakeNodeManager(UUIDGenerator.getInstance().generateStringUUID()), null, null, true, 0, 0);
+         ClusterConnectionImpl cci = new ClusterConnectionImpl(null, new TransportConfiguration[]{tc}, null, null, null, 0, 0L, 0L, 0L, 0, 0L, 0, 0, 0L, 0L, false, null, 0, 0, () -> executor, new MockServer(), null, null, null, 0, new FakeNodeManager(UUIDGenerator.getInstance().generateStringUUID()), null, null, true, 0, 0, 0);
 
          TopologyMember topologyMember = new TopologyMemberImpl(RandomUtil.randomString(), null, null, null, null);
          cci.nodeUP(topologyMember, false);

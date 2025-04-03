@@ -387,6 +387,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals(MessageLoadBalancingType.OFF_WITH_REDISTRIBUTION, ccc.getMessageLoadBalancingType());
             Assert.assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterCallTimeout(), ccc.getCallTimeout());
             Assert.assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterCallFailoverTimeout(), ccc.getCallFailoverTimeout());
+            Assert.assertEquals(ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts(), ccc.getTopologyScannerAttempts());
          } else if (ccc.getName().equals("cluster-connection1")) {
             Assert.assertEquals("cluster-connection1", ccc.getName());
             Assert.assertEquals("clusterConnectionConf minLargeMessageSize", 321, ccc.getMinLargeMessageSize());
@@ -407,6 +408,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals(null, ccc.getDiscoveryGroupName());
             Assert.assertEquals(222, ccc.getProducerWindowSize());
             Assert.assertEquals(true, ccc.isAllowDirectConnectionsOnly());
+            Assert.assertEquals(-1, ccc.getTopologyScannerAttempts());
          } else {
             Assert.assertEquals("cluster-connection2", ccc.getName());
             Assert.assertEquals("queues2", ccc.getAddress());
@@ -420,6 +422,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals("dg1", ccc.getDiscoveryGroupName());
             Assert.assertEquals(333, ccc.getProducerWindowSize());
             Assert.assertEquals(false, ccc.isAllowDirectConnectionsOnly());
+            Assert.assertEquals(30, ccc.getTopologyScannerAttempts());
          }
       }
 
