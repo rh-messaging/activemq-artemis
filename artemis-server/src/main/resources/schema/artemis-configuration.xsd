@@ -2359,6 +2359,14 @@
                </xsd:complexType>
             </xsd:element>
          </xsd:choice>
+
+         <xsd:element name="topology-scanner-attempts" type="xsd:int" default="-1" maxOccurs="1" minOccurs="0">
+            <xsd:annotation>
+               <xsd:documentation>
+                  maximum number of topology scanner attempts, -1 means 'no limits'
+               </xsd:documentation>
+            </xsd:annotation>
+         </xsd:element>
       </xsd:sequence>
       <xsd:attribute name="name" type="xsd:ID" use="required">
          <xsd:annotation>

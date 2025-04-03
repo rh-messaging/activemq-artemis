@@ -31,6 +31,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQExceptionType;
 import org.apache.activemq.artemis.api.core.Pair;
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.client.impl.ServerLocatorInternal;
+import org.apache.activemq.artemis.core.client.impl.Topology;
 import org.apache.activemq.artemis.core.config.Configuration;
 import org.apache.activemq.artemis.core.io.IOCallback;
 import org.apache.activemq.artemis.core.io.SequentialFile;
@@ -2182,4 +2183,8 @@ public interface ActiveMQServerLogger extends BasicLogger {
    @Message(id = 224116, value = "The component {0} is not responsive during start up. The Server may be taking too long to start", format = Message.Format.MESSAGE_FORMAT)
    void tooLongToStart(Object component);
 
+   @LogMessage(level = Logger.Level.WARN)
+   @Message(id = 224144, value = "The topology of the cluster connection {0} doesn't include all th expected members. "
+       + "Check the discovery group or the static connectors of the cluster connection if the topology is correct: {1} / {2}", format = Message.Format.MESSAGE_FORMAT)
+   void incompleteClusterTopology(String clusterConnection, Topology topology, String topologyMembers);
 }

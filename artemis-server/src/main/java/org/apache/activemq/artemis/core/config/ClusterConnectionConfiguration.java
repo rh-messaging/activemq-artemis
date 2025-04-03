@@ -83,6 +83,8 @@ public final class ClusterConnectionConfiguration implements Serializable {
 
    private int clusterNotificationAttempts = ActiveMQDefaultConfiguration.getDefaultClusterNotificationAttempts();
 
+   private int topologyScannerAttempts = ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts();
+
    public ClusterConnectionConfiguration() {
    }
 
@@ -368,6 +370,15 @@ public final class ClusterConnectionConfiguration implements Serializable {
       return this;
    }
 
+   public int getTopologyScannerAttempts() {
+      return topologyScannerAttempts;
+   }
+
+   public ClusterConnectionConfiguration setTopologyScannerAttempts(int topologyScannerAttempts) {
+      this.topologyScannerAttempts = topologyScannerAttempts;
+      return this;
+   }
+
    /**
     * This method will match the configuration and return the proper TransportConfiguration for the Configuration
     */
@@ -451,6 +462,7 @@ public final class ClusterConnectionConfiguration implements Serializable {
       temp = Double.doubleToLongBits(retryIntervalMultiplier);
       result = prime * result + (int) (temp ^ (temp >>> 32));
       result = prime * result + ((staticConnectors == null) ? 0 : staticConnectors.hashCode());
+      result = prime * result + topologyScannerAttempts;
       return result;
    }
 
@@ -552,6 +564,9 @@ public final class ClusterConnectionConfiguration implements Serializable {
       } else if (!staticConnectors.equals(other.staticConnectors)) {
          return false;
       }
+      if (topologyScannerAttempts != other.topologyScannerAttempts) {
+         return false;
+      }
       return true;
    }
 
@@ -581,6 +596,7 @@ public final class ClusterConnectionConfiguration implements Serializable {
          ", minLargeMessageSize=" + minLargeMessageSize +
          ", clusterNotificationInterval=" + clusterNotificationInterval +
          ", clusterNotificationAttempts=" + clusterNotificationAttempts +
+         ", topologyScannerInterval=" + topologyScannerAttempts +
          '}';
    }
 }

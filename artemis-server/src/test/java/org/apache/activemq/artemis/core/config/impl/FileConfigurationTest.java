@@ -295,7 +295,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
          }
       }
 
-      Assert.assertEquals(2, conf.getClusterConfigurations().size());
+      Assert.assertEquals(3, conf.getClusterConfigurations().size());
 
       HAPolicyConfiguration pc = conf.getHAPolicyConfiguration();
       assertNotNull(pc);
@@ -306,7 +306,11 @@ public class FileConfigurationTest extends ConfigurationImplTest {
       assertEquals(lopc.getScaleDownConfiguration().getDiscoveryGroup(), "dg1");
 
       for (ClusterConnectionConfiguration ccc : conf.getClusterConfigurations()) {
-         if (ccc.getName().equals("cluster-connection1")) {
+         if (ccc.getName().equals("cluster-connection3")) {
+            assertEquals(MessageLoadBalancingType.OFF, ccc.getMessageLoadBalancingType());
+            assertEquals(ActiveMQDefaultConfiguration.getDefaultClusterCallTimeout(), ccc.getCallTimeout());
+            assertEquals(ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts(), ccc.getTopologyScannerAttempts());
+         } else if (ccc.getName().equals("cluster-connection1")) {
             Assert.assertEquals("cluster-connection1", ccc.getName());
             Assert.assertEquals("clusterConnectionConf minLargeMessageSize", 321, ccc.getMinLargeMessageSize());
             assertEquals("check-period", 331, ccc.getClientFailureCheckPeriod());
@@ -325,6 +329,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals("connector2", ccc.getStaticConnectors().get(1));
             Assert.assertEquals(null, ccc.getDiscoveryGroupName());
             Assert.assertEquals(222, ccc.getProducerWindowSize());
+            assertEquals(-1, ccc.getTopologyScannerAttempts());
          } else {
             Assert.assertEquals("cluster-connection2", ccc.getName());
             Assert.assertEquals("queues2", ccc.getAddress());
@@ -337,6 +342,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals(Collections.emptyList(), ccc.getStaticConnectors());
             Assert.assertEquals("dg1", ccc.getDiscoveryGroupName());
             Assert.assertEquals(333, ccc.getProducerWindowSize());
+            assertEquals(30, ccc.getTopologyScannerAttempts());
          }
       }
 

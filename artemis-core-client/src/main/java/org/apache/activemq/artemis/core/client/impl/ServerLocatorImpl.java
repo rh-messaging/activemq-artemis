@@ -174,6 +174,8 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    private ServerLocatorConfig config = new ServerLocatorConfig();
 
+   private DiscoveryListener discoveryListener;
+
    public static synchronized void clearThreadPools() {
       ActiveMQClient.clearThreadPools();
    }
@@ -418,6 +420,7 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       groupID = locator.groupID;
       nodeID = locator.nodeID;
       clusterTransportConfiguration = locator.clusterTransportConfiguration;
+      discoveryListener = locator.discoveryListener;
    }
 
    private synchronized Pair<TransportConfiguration, TransportConfiguration> selectConnector(boolean useInitConnector) {
@@ -564,6 +567,12 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
    @Override
    public AfterConnectInternalListener getAfterConnectInternalListener() {
       return afterConnectListener;
+   }
+
+   @Override
+   public ServerLocatorImpl setDiscoveryListener(DiscoveryListener discoveryListener) {
+      this.discoveryListener = discoveryListener;
+      return this;
    }
 
    @Override
@@ -1564,7 +1573,12 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
 
    @Override
    public synchronized void connectorsChanged(List<DiscoveryEntry> newConnectors) {
+      DiscoveryListener discoveryListener = this.discoveryListener;
+
       if (receivedTopology) {
+         if (discoveryListener != null) {
+            discoveryListener.connectorsChanged(newConnectors);
+         }
          return;
       }
       TransportConfiguration[] newInitialconnectors = (TransportConfiguration[]) Array.newInstance(TransportConfiguration.class, newConnectors.size());
@@ -1572,12 +1586,6 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
       int count = 0;
       for (DiscoveryEntry entry : newConnectors) {
          newInitialconnectors[count++] = entry.getConnector();
-
-         if (ha && topology.getMember(entry.getNodeID()) == null) {
-            TopologyMemberImpl member = new TopologyMemberImpl(entry.getNodeID(), null, null, entry.getConnector(), null);
-            // on this case we set it as zero as any update coming from server should be accepted
-            topology.updateMember(0, entry.getNodeID(), member);
-         }
       }
 
       this.initialConnectors = newInitialconnectors.length == 0 ? null : newInitialconnectors;
@@ -1601,6 +1609,10 @@ public final class ServerLocatorImpl implements ServerLocatorInternal, Discovery
          } else {
             connectRunnable.run();
          }
+      }
+
+      if (discoveryListener != null) {
+         discoveryListener.connectorsChanged(newConnectors);
       }
    }
 
