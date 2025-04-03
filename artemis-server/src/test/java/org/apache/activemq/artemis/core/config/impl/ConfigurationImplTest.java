@@ -2029,18 +2029,49 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       ConfigurationImpl.InsertionOrderedProperties properties =
          new ConfigurationImpl.InsertionOrderedProperties();
 
+      ConfigurationImpl configuration = new ConfigurationImpl();
       JsonObject configJsonObject = buildSimpleConfigJsonObject();
       try (StringReader stringReader = new StringReader(configJsonObject.toString())) {
-         properties.loadJson(stringReader);
+         properties.loadJson(configuration, stringReader);
       }
 
       List<String> keys = new ArrayList<>();
       properties.entrySet().forEach(entry -> keys.add((String) entry.getKey()));
 
-      List<String> sortedKeys = keys.stream().sorted().collect(Collectors.toList());
-      for (int i = 0; i < sortedKeys.size(); i++) {
-         assertEquals(i, keys.indexOf(sortedKeys.get(i)));
+      List<String> keysFromJson = configJsonObject.keySet().stream().collect(Collectors.toList());
+      // first 4 are root attributes which we can compare by key
+      for (int i = 0; i < 4; i++) {
+         assertEquals(keysFromJson.get(i), keys.get(i), "index " + i);
       }
+   }
+
+   @Test
+   public void testJsonNeedsInsertionOrder() throws Exception {
+
+      File tmpFile = File.createTempFile("insertion-order-props-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+
+         printWriter.write("{\n");
+         printWriter.write("  \"AMQPConnections\" : {\n");
+         printWriter.write("    \"target\" : {\n");
+         printWriter.write("      \"uri\" : \"tcp://host:6449?trustStorePath=/client.ts\",\n");
+         printWriter.write("      \"transportConfigurations\" : {\n");
+         printWriter.write("        \"target\" : {\n");
+         printWriter.write("          \"params\" : { \"trustStorePassword\" : \"pass\"\n }\n");
+         printWriter.write("        }\n");
+         printWriter.write("      }\n");
+         printWriter.write("    }\n");
+         printWriter.write("  }\n");
+         printWriter.write("}\n");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      String matchNoErrors = "\"errors\":\\[]";
+      assertEquals(3, configuration.getStatus().split(matchNoErrors, 10).length, configuration.getStatus());
+      assertEquals(4, configuration.getAMQPConnections().get(0).getTransportConfigurations().get(0).getParams().size());
    }
 
    @Test
@@ -2058,6 +2089,7 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parseProperties(tmpFile.getAbsolutePath());
 
       testSimpleConfig(configuration);
+      assertTrue(configuration.getStatus().contains("\"fileAlder32\":\"2885074053\""));
    }
 
    @Test
@@ -2074,6 +2106,66 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       configuration.parseProperties(tmpFile.getAbsolutePath());
 
       testSimpleConfig(configuration);
+      assertTrue(configuration.getStatus().contains("\"fileAlder32\":\"3147794929\""));
+   }
+
+   @Test
+   public void testJsonPropertiesKeySurround() throws Exception {
+
+      File tmpFile = File.createTempFile("json-surround-props-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n" +
+                              "\"key.surround\": \"$$\",\n" +
+                              "\"addressSettings\": {\n" +
+                              "\"$$a.\\\"with_quote\\\".b$$\": {\n" +
+                                 "\"maxDeliveryAttempts\": 0\n" +
+                              "}\n}\n}");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertEquals(0, configuration.getAddressSettings().get("a.\"with_quote\".b").getMaxDeliveryAttempts());
+   }
+
+   @Test
+   public void testJsonPropertiesGlobalKeySurround() throws Exception {
+
+      File tmpFile = File.createTempFile("json-global-surround-props-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n" +
+                              "\"addressSettings\": {\n" +
+                              "\"$$a.\\\"with_quote\\\".b$$\": {\n" +
+                              "\"maxDeliveryAttempts\": 0\n" +
+                              "}\n}\n}");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.setBrokerPropertiesKeySurround("$$");
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertEquals(0, configuration.getAddressSettings().get("a.\"with_quote\".b").getMaxDeliveryAttempts());
+   }
+
+   @Test
+   public void testJsonPropertiesUserQuoted() throws Exception {
+
+      File tmpFile = File.createTempFile("json-user-quote-props-test", ".json", temporaryFolder);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(tmpFile);
+           PrintWriter printWriter = new PrintWriter(fileOutputStream)) {
+         printWriter.write("{\n" +
+                              "\"addressSettings\": {\n" +
+                              "\"a.b.c\": {\n" +
+                              "\"maxDeliveryAttempts\": 2\n" +
+                              "}\n}\n}");
+      }
+
+      ConfigurationImpl configuration = new ConfigurationImpl();
+      configuration.parseProperties(tmpFile.getAbsolutePath());
+
+      assertEquals(2, configuration.getAddressSettings().get("a.b.c").getMaxDeliveryAttempts());
    }
 
    @Test
@@ -2217,6 +2309,9 @@ public class ConfigurationImplTest extends AbstractConfigurationTestBase {
       assertEquals("cc", configuration.getClusterConfigurations().get(0).getName());
       assertEquals(MessageLoadBalancingType.OFF_WITH_REDISTRIBUTION, configuration.getClusterConfigurations().get(0).getMessageLoadBalancingType());
       assertEquals(CriticalAnalyzerPolicy.SHUTDOWN, configuration.getCriticalAnalyzerPolicy());
+
+      assertTrue(configuration.getStatus().contains("\"alder32"));
+      assertTrue(configuration.getStatus().contains("\"fileAlder32"));
    }
 
    @Test
