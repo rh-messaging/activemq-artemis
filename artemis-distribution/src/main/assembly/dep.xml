@@ -82,6 +82,8 @@
                <exclude>**/commons-io*.jar</exclude>
                <exclude>**/commons-logging*.jar</exclude>
                <exclude>**/failureaccess*.jar</exclude>
+               <exclude>**/http-core*.jar</exclude>
+               <exclude>**/http-client*.jar</exclude>
             </excludes>
          </unpackOptions>
          <useProjectArtifact>false</useProjectArtifact>
