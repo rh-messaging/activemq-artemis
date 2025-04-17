@@ -678,6 +678,12 @@ specified. The following shows all the available configuration options
   group is used to obtain the list of other servers in the cluster
   that this cluster connection will make connections to.
 
+- `topology-scanner-attempts`. The number of times the system tries to scan the cluster connection topology for missing cluster nodes. Those are nodes
+  discovered by a discovery group or defined by a static connector that are not present in the cluster connection topology.
+  A value of `0` means the system doesn't scan the cluster connection topology for missing cluster nodes.
+  A value of `-1` means the system scans the cluster connection topology until there are no more missing cluster nodes.
+  Default is 30.
+
 Alternatively if you would like your cluster connections to use a static
 list of servers for discovery then you can do it like this.
 
