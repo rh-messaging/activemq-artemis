@@ -2398,7 +2398,7 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       String scaleDownConnector = e.getAttribute("scale-down-connector");
 
-      int topologyScannerAttempts = getInteger(e, "topology-scanner-attempts", ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts(), MINUS_ONE_OR_POSITIVE_INT);
+      int topologyScannerAttempts = getInteger(e, "topology-scanner-attempts", ActiveMQDefaultConfiguration.getClusterTopologyScannerAttempts(), MINUS_ONE_OR_GE_ZERO);
 
       String discoveryGroupName = null;
 

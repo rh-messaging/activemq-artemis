@@ -584,6 +584,13 @@ Here we have defined 2 servers that we know for sure will that at least one will
 There may be many more servers in the cluster but these will;
 be discovered via one of these connectors once an initial connection has been made.
 
+topology-scanner-attempts::
+The number of times the system tries to scan the cluster connection topology for missing cluster nodes. Those are nodes
+discovered by a discovery group or defined by a static connector that are not present in the cluster connection topology.
+A value of `0` means the system doesn't scan the cluster connection topology for missing cluster nodes.
+A value of `-1` means the system scans the cluster connection topology until there are no more missing cluster nodes.
+Default is 30.
+
 === Cluster User Credentials
 
 When creating connections between nodes of a cluster to form a cluster connection, Apache ActiveMQ Artemis uses a cluster user and cluster password which is defined in `broker.xml`:

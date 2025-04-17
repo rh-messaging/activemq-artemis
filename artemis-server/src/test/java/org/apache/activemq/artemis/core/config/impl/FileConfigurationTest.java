@@ -422,7 +422,7 @@ public class FileConfigurationTest extends ConfigurationImplTest {
             Assert.assertEquals("dg1", ccc.getDiscoveryGroupName());
             Assert.assertEquals(333, ccc.getProducerWindowSize());
             Assert.assertEquals(false, ccc.isAllowDirectConnectionsOnly());
-            Assert.assertEquals(30, ccc.getTopologyScannerAttempts());
+            Assert.assertEquals(0, ccc.getTopologyScannerAttempts());
          }
       }
 
