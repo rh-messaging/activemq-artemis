@@ -34,6 +34,7 @@ import java.util.concurrent.Executor;
 
 import org.apache.activemq.artemis.Closeable;
 import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
+import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressExistsException;
 import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.api.core.ActiveMQIOErrorException;
@@ -84,7 +85,7 @@ import org.apache.activemq.artemis.core.server.RoutingContext;
 import org.apache.activemq.artemis.core.server.ServerConsumer;
 import org.apache.activemq.artemis.core.server.ServerProducer;
 import org.apache.activemq.artemis.core.server.ServerSession;
-import org.apache.activemq.artemis.core.server.TempQueueObserver;
+import org.apache.activemq.artemis.core.server.TempResourceObserver;
 import org.apache.activemq.artemis.core.server.files.FileStoreMonitor;
 import org.apache.activemq.artemis.core.server.management.ManagementService;
 import org.apache.activemq.artemis.core.server.management.Notification;
@@ -173,7 +174,9 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
    protected volatile boolean started = false;
 
-   protected final Map<SimpleString, TempQueueCleanerUpper> tempQueueCleannerUppers = new HashMap<>();
+   protected final Map<SimpleString, TempResourceCleanerUpper> tempQueueCleanerUppers = new HashMap<>();
+
+   protected final Map<SimpleString, TempResourceCleanerUpper> tempAddressCleanerUppers = new HashMap<>();
 
    protected final String name;
 
@@ -320,8 +323,8 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       return closeables;
    }
 
-   public Map<SimpleString, TempQueueCleanerUpper> getTempQueueCleanUppers() {
-      return tempQueueCleannerUppers;
+   public Map<SimpleString, TempResourceCleanerUpper> getTempQueueCleanUppers() {
+      return tempQueueCleanerUppers;
    }
 
    @Override
@@ -768,21 +771,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       Queue queue = server.createQueue(queueConfiguration.setUser(getValidatedUser()));
 
       if (queueConfiguration.isTemporary()) {
-         // Temporary queue in core simply means the queue will be deleted if
-         // the remoting connection
-         // dies. It does not mean it will get deleted automatically when the
-         // session is closed.
-         // It is up to the user to delete the queue when finished with it
-
-         TempQueueCleanerUpper cleaner = new TempQueueCleanerUpper(server, queueConfiguration.getName());
-         if (remotingConnection instanceof TempQueueObserver observer) {
-            cleaner.setObserver(observer);
-         }
-
-         remotingConnection.addCloseListener(cleaner);
-         remotingConnection.addFailureListener(cleaner);
-
-         tempQueueCleannerUppers.put(queueConfiguration.getName(), cleaner);
+         handleTempResource(queueConfiguration.getName(), true);
       }
 
       if (logger.isDebugEnabled()) {
@@ -792,6 +781,26 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       }
 
       return queue;
+   }
+
+   private void handleTempResource(SimpleString name, boolean queue) {
+      // Temporary resource in core simply means the resource will be deleted if the remoting connection dies. It does
+      // not mean it will get deleted automatically when the session is closed. It is up to the user to delete the
+      // resource when finished with it
+
+      TempResourceCleanerUpper cleaner = new TempResourceCleanerUpper(server, name);
+      if (remotingConnection instanceof TempResourceObserver observer) {
+         cleaner.setObserver(observer);
+      }
+
+      remotingConnection.addCloseListener(cleaner);
+      remotingConnection.addFailureListener(cleaner);
+
+      if (queue) {
+         tempQueueCleanerUppers.put(name, cleaner);
+      } else {
+         tempAddressCleanerUppers.put(name, cleaner);
+      }
    }
 
    @Deprecated
@@ -955,15 +964,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
    public AddressInfo createAddress(final SimpleString address,
                                     EnumSet<RoutingType> routingTypes,
                                     final boolean autoCreated) throws Exception {
-      if (AuditLogger.isBaseLoggingEnabled()) {
-         AuditLogger.serverSessionCreateAddress(this.getName(), remotingConnection.getSubject(), remotingConnection.getRemoteAddress(), address, routingTypes, autoCreated);
-      }
-
-      SimpleString realAddress = CompositeAddress.extractAddressName(address);
-      Pair<SimpleString, EnumSet<RoutingType>> art = getAddressAndRoutingTypes(realAddress, routingTypes);
-      securityCheck(art.getA(), CheckType.CREATE_ADDRESS, this);
-      server.addOrUpdateAddressInfo(new AddressInfo(art.getA(), art.getB()).setAutoCreated(autoCreated));
-      return server.getAddressInfo(art.getA());
+      return createAddress(new AddressInfo(address, routingTypes), autoCreated);
    }
 
    @Override
@@ -982,6 +983,9 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       AddressInfo art = getAddressAndRoutingType(addressInfo);
       securityCheck(art.getName(), CheckType.CREATE_ADDRESS, this);
       server.addOrUpdateAddressInfo(art.setAutoCreated(autoCreated));
+      if (art.isTemporary()) {
+         handleTempResource(addressInfo.getName(), false);
+      }
       return server.getAddressInfo(art.getName());
    }
 
@@ -1107,7 +1111,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       synchronized (this) {
          // Remove failure listeners from old connection
          remotingConnection.removeFailureListener(this);
-         tempQueueCleannerUppers.values()
+         tempQueueCleanerUppers.values()
                  .forEach(cleanerUpper -> {
                     remotingConnection.removeCloseListener(cleanerUpper);
                     remotingConnection.removeFailureListener(cleanerUpper);
@@ -1118,7 +1122,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
          // Add failure listeners to new connection
          newConnection.addFailureListener(this);
-         tempQueueCleannerUppers.values()
+         tempQueueCleanerUppers.values()
                  .forEach(cleanerUpper -> {
                     newConnection.addCloseListener(cleanerUpper);
                     newConnection.addFailureListener(cleanerUpper);
@@ -1131,43 +1135,53 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
       return securityDomain;
    }
 
-   public static class TempQueueCleanerUpper implements CloseListener, FailureListener {
+   public static class TempResourceCleanerUpper implements CloseListener, FailureListener {
 
-      private final SimpleString bindingName;
+      private final SimpleString resourceName;
 
       private final ActiveMQServer server;
 
-      private TempQueueObserver observer;
+      private TempResourceObserver observer;
 
-      public TempQueueCleanerUpper(final ActiveMQServer server, final SimpleString bindingName) {
+      public TempResourceCleanerUpper(final ActiveMQServer server, final SimpleString resourceName) {
          this.server = server;
-
-         this.bindingName = bindingName;
+         this.resourceName = resourceName;
       }
 
-      public void setObserver(TempQueueObserver observer) {
+      public void setObserver(TempResourceObserver observer) {
          this.observer = observer;
       }
 
       private void run() {
          try {
-            Binding binding = server.getPostOffice().getBinding(bindingName);
-            if (binding == null) {
-               // the queue may have already been deleted
-               return;
-            }
-            logger.debug("deleting temporary queue {}", bindingName);
-            AddressInfo addressInfo = server.getAddressInfo(binding.getAddress());
+            logger.debug("deleting temporary resource {}", resourceName);
             try {
-               server.destroyQueue(bindingName, null, false, false, addressInfo == null || addressInfo.isTemporary());
-            } catch (Exception e) {
-               logger.warn(e.getMessage(), e);
+               Queue q = server.locateQueue(resourceName);
+               if (q != null && q.isTemporary()) {
+                  AddressInfo a = server.getAddressInfo(q.getAddress());
+                  server.destroyQueue(resourceName, null, false, false, a == null || a.isTemporary());
+                  if (observer != null) {
+                     observer.tempQueueDeleted(resourceName);
+                  }
+               }
+            } catch (ActiveMQException e) {
+               // that's fine.. it can happen due to resource already been deleted
+               logger.debug(e.getMessage(), e);
             }
-            if (observer != null) {
-               observer.tempQueueDeleted(bindingName);
+            try {
+               AddressInfo a = server.getAddressInfo(resourceName);
+               if (a != null && a.isTemporary()) {
+                  server.removeAddressInfo(resourceName, null);
+                  if (observer != null) {
+                     observer.tempAddressDeleted(resourceName);
+                  }
+               }
+            } catch (ActiveMQException e) {
+               // that's fine.. it can happen due to resource already been deleted
+               logger.debug(e.getMessage(), e);
             }
          } catch (Exception e) {
-            ActiveMQServerLogger.LOGGER.errorRemovingTempQueue(bindingName, e);
+            ActiveMQServerLogger.LOGGER.errorRemovingTempResource(resourceName, e);
          }
       }
 
@@ -1188,7 +1202,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
       @Override
       public String toString() {
-         return "Temporary Cleaner for queue " + bindingName;
+         return "Temporary Cleaner for resource " + resourceName;
       }
 
    }
@@ -1213,7 +1227,31 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
 
       server.destroyQueue(unPrefixedQueueName, enforceSecurity ? this : null, true, false, true);
 
-      TempQueueCleanerUpper cleaner = this.tempQueueCleannerUppers.remove(unPrefixedQueueName);
+      TempResourceCleanerUpper cleaner = this.tempQueueCleanerUppers.remove(unPrefixedQueueName);
+
+      if (cleaner != null) {
+         remotingConnection.removeCloseListener(cleaner);
+
+         remotingConnection.removeFailureListener(cleaner);
+      }
+   }
+
+   @Override
+   public void deleteAddress(final SimpleString addressToDelete) throws Exception {
+      if (AuditLogger.isBaseLoggingEnabled()) {
+         AuditLogger.destroyAddress(this, remotingConnection.getSubject(), remotingConnection.getRemoteAddress(), addressToDelete);
+      }
+      final SimpleString unPrefixedAddressName = removePrefix(addressToDelete);
+
+      AddressInfo addressInfo = server.getAddressInfo(unPrefixedAddressName);
+
+      if (addressInfo == null) {
+         throw new ActiveMQAddressDoesNotExistException();
+      }
+
+      server.removeAddressInfo(unPrefixedAddressName, this);
+
+      TempResourceCleanerUpper cleaner = this.tempAddressCleanerUppers.remove(unPrefixedAddressName);
 
       if (cleaner != null) {
          remotingConnection.removeCloseListener(cleaner);
@@ -1814,7 +1852,7 @@ public class ServerSessionImpl extends CriticalComponentImpl implements ServerSe
          if (addressSettings.isAutoCreateAddresses() || queueConfig.isTemporary()) {
             // Try to create the address if possible.
             try {
-               createAddress(queueConfig.getAddress(), queueConfig.getRoutingType(), true).setTemporary(queueConfig.isTemporary());
+               createAddress(new AddressInfo(queueConfig.getAddress()).addRoutingType(queueConfig.getRoutingType()).setTemporary(queueConfig.isTemporary()), true);
             } catch (ActiveMQAddressExistsException e) {
                // The address may have been created by another thread in the mean time. Catch and do nothing.
             }

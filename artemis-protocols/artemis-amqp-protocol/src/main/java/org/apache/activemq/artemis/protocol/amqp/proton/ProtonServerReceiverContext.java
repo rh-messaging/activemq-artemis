@@ -16,6 +16,7 @@
  */
 package org.apache.activemq.artemis.protocol.amqp.proton;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +56,6 @@ import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.lang.invoke.MethodHandles;
 
 /**
  * This is the equivalent for the ServerProducer
@@ -100,7 +100,11 @@ public class ProtonServerReceiverContext extends ProtonAbstractReceiver {
             implicitRoutingType = getImplicitRoutingType(address);
 
             try {
-               sessionSPI.createTemporaryQueue(address, getPreferredRoutingType());
+               if (getPreferredRoutingType() == RoutingType.ANYCAST) {
+                  sessionSPI.createTemporaryQueue(address, RoutingType.ANYCAST);
+               } else {
+                  sessionSPI.createTemporaryAddress(address);
+               }
             } catch (ActiveMQAMQPSecurityException e) {
                throw e;
             } catch (ActiveMQSecurityException e) {
@@ -305,6 +309,11 @@ public class ProtonServerReceiverContext extends ProtonAbstractReceiver {
       if (target != null && target.getDynamic() && (target.getExpiryPolicy() == TerminusExpiryPolicy.LINK_DETACH || target.getExpiryPolicy() == TerminusExpiryPolicy.SESSION_END)) {
          try {
             sessionSPI.removeTemporaryQueue(SimpleString.of(target.getAddress()));
+         } catch (Exception e) {
+            // Ignored as the temporary resource will be auto removed later.
+         }
+         try {
+            sessionSPI.removeTemporaryAddress(SimpleString.of(target.getAddress()));
          } catch (Exception e) {
             // Ignored as the temporary resource will be auto removed later.
          }

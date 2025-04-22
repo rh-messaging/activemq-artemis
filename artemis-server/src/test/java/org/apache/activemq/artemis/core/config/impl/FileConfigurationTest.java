@@ -249,7 +249,8 @@ public class FileConfigurationTest extends AbstractConfigurationTestBase {
       assertFalse(configInstance.isMqttSubscriptionPersistenceEnabled());
       assertEquals(98765, configInstance.getConnectionTtlCheckInterval());
       assertEquals(1234567, configInstance.getConfigurationFileRefreshPeriod());
-      assertEquals("TEMP", configInstance.getTemporaryQueueNamespace());
+      assertEquals("UUID", configInstance.getTemporaryQueueNamespace());
+      assertEquals("UUID", configInstance.getUuidNamespace());
 
       assertEquals("127.0.0.1", configInstance.getNetworkCheckList());
       assertEquals("some-nick", configInstance.getNetworkCheckNIC());
