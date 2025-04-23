@@ -12,6 +12,19 @@ NOTE: If the upgrade spans multiple versions then the steps from *each* version 
 
 NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#upgrading-the-broker[Upgrading the Broker]  chapter in addition to any version-specific upgrade instructions outlined here.
 
+== 2.41.0
+
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355793[Full release notes]
+
+=== Highlights
+
+* xref:amqp-broker-connections.adoc#bridges[AMQP Broker Connections Advanced Bridges]
+* HTTP/2 support for the embedded web server
+* New data available via management for queues, addresses, and core bridges
+* Performance improvements when removing queues, especially in queue-heavy use-cases
+* A handful of paging improvements including additional tests
+* Several dependency upgrades
+
 == 2.40.0
 
 https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12355489[Full release notes]
