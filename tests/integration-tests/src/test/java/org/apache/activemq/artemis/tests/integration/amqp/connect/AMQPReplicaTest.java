@@ -24,6 +24,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 import java.lang.invoke.MethodHandles;
@@ -42,6 +43,7 @@ import org.apache.activemq.artemis.api.core.management.SimpleManagement;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectConfiguration;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPBrokerConnectionAddressType;
 import org.apache.activemq.artemis.core.config.amqpBrokerConnectivity.AMQPMirrorBrokerConnectionElement;
+import org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
 import org.apache.activemq.artemis.core.server.MessageReference;
 import org.apache.activemq.artemis.core.server.Queue;
@@ -1456,4 +1458,77 @@ public class AMQPReplicaTest extends AmqpClientTestSupport {
       assertSame(snfreplica, server_2.locateQueue(replica.getMirrorSNF()));
    }
 
+   @Test
+   public void topicHierarchy() throws Exception {
+
+      String brokerConnectionName = "brokerConnectionName:" + UUIDGenerator.getInstance().generateStringUUID();
+
+      server.setIdentity("sourceServer");
+
+      server_2 = createServer(AMQP_PORT_2, false);
+      server_2.setIdentity("targetServer");
+      server_2.getConfiguration().setName("server2");
+
+      AMQPBrokerConnectConfiguration amqpConnection = new AMQPBrokerConnectConfiguration(brokerConnectionName, "tcp://localhost:" + AMQP_PORT_2).setReconnectAttempts(-1).setRetryInterval(100);
+      AMQPMirrorBrokerConnectionElement replica = new AMQPMirrorBrokerConnectionElement().setMessageAcknowledgements(true).setDurable(true);
+      replica.setName("theReplica");
+      amqpConnection.addElement(replica);
+      server.getConfiguration().addAMQPConnection(amqpConnection);
+
+      server_2.start();
+
+      server.start();
+      Connection connection = null;
+      try {
+         ConnectionFactory cf = CFUtil.createConnectionFactory("AMQP", "tcp://localhost:" + AMQP_PORT);
+         connection = cf.createConnection();
+         connection.setClientID("myID");
+
+         SimpleString rootName = SimpleString.toSimpleString("root.#");
+         SimpleString topicAName = SimpleString.toSimpleString("root.A");
+
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         Topic rootTopic = session.createTopic(rootName.toString());
+
+         MessageConsumer messageConsumer = session.createDurableConsumer(rootTopic, "iAmDurable");
+
+         MessageProducer producer = session.createProducer(null);
+         TextMessage messageToA = session.createTextMessage("messageToA");
+
+         Topic topicA = session.createTopic(topicAName.toString());
+
+         producer.send(topicA, messageToA);
+         validSizeStore(1, topicAName);
+         validSizeStore(0, rootName);
+
+         connection.start();
+         TextMessage messageReceived1 = (TextMessage) messageConsumer.receive(5000);
+         assertNotNull(messageReceived1);
+         assertNull(messageConsumer.receiveNoWait());
+
+         validSizeStore(0, topicAName);
+         validSizeStore(0, rootName);
+
+      } finally {
+         // Step 12. Be sure to close our resources!
+         if (connection != null) {
+            connection.close();
+         }
+      }
+   }
+
+   void validSizeStore(int expectedMessages, SimpleString name) throws Exception {
+      {
+         PagingStoreImpl store = (PagingStoreImpl) server_2.getPagingManager().getPageStore(name);
+         assertNotNull(store);
+         Wait.assertEquals((long)expectedMessages, () -> store.getAddressElements(), 5000, 100);
+      }
+
+      {
+         PagingStoreImpl store = (PagingStoreImpl) server.getPagingManager().getPageStore(name);
+         assertNotNull(store);
+         Wait.assertEquals((long)expectedMessages, () -> store.getAddressElements(), 5000, 100);
+      }
+   }
 }
