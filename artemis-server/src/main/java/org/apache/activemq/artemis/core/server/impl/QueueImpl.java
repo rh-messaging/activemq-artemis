@@ -142,6 +142,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    protected static final int CRITICAL_CONSUMER = 3;
    protected static final int CRITICAL_CHECK_DEPAGE = 4;
 
+   // The prefix for Mirror SNF Queues
+   public static final String MIRROR_ADDRESS = QueueConfiguration.MIRROR_ADDRESS;
+
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
    private static final AtomicIntegerFieldUpdater<QueueImpl> dispatchingUpdater = AtomicIntegerFieldUpdater.newUpdater(QueueImpl.class, "dispatching");
    private static final AtomicLongFieldUpdater<QueueImpl> dispatchStartTimeUpdater = AtomicLongFieldUpdater.newUpdater(QueueImpl.class, "dispatchStartTime");
@@ -672,6 +675,8 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          throw new RuntimeException(e);
       }
 
+      this.mirrorController = queueConfiguration.isMirrorQueue();
+
       this.pagingStore = pagingStore;
 
       this.pageSubscription = pageSubscription;
@@ -1047,10 +1052,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          }
       }
       if (pagingStore != null) {
-         if (owner != null && pagingStore != owner) {
-            // If an AMQP message parses its properties, its size might be updated and the address will receive more bytes.
-            // However, in this case, we should always use the original estimate.
-            // Otherwise, we might get incorrect sizes after the update.
+         if (isMirrorController() && owner != null && pagingStore != owner) {
+            // When using mirror in this situation, it means the address belong to another queue
+            // it's acting as if the message is being copied
             pagingStore.addSize(messageReference.getMessage().getOriginalEstimate(), false, false);
          }
 
@@ -1066,10 +1070,9 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          owner.addSize(-messageReference.getMessageMemoryEstimate(), false);
       }
       if (pagingStore != null) {
-         if (owner != null && pagingStore != owner) {
-            // If an AMQP message parses its properties, its size might be updated and the address will receive more bytes.
-            // However, in this case, we should always use the original estimate.
-            // Otherwise, we might get incorrect sizes after the update.
+         if (isMirrorController() && owner != null && pagingStore != owner) {
+            // When using mirror in this situation, it means the address belong to another queue
+            // it's acting as if the message is being copied
             pagingStore.addSize(-messageReference.getMessage().getOriginalEstimate(), false, false);
          }
          pagingStore.refDown(messageReference.getMessage(), count);
