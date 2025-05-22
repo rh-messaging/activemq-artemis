@@ -137,6 +137,8 @@
       <version.maven-plugin-tools>3.11.0</version.maven-plugin-tools>
       <!-- Isolated bump until parent update, for compatibility with JDK21 multi-release jars -->
       <version.maven-shade-plugin>3.6.0</version.maven-shade-plugin>
+      <!-- Isolated definition until parent update, workaround for parent productisation bug / to fix example -->
+      <version.maven-checkstyle-plugin>3.6.0</version.maven-checkstyle-plugin>
 
       <!-- docs -->
       <asciidoctor.maven.plugin.version>2.2.4</asciidoctor.maven.plugin.version>
@@ -936,6 +938,7 @@
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-checkstyle-plugin</artifactId>
+               <version>${version.maven-checkstyle-plugin}</version>
                <dependencies>
                   <dependency>
                      <groupId>com.github.sevntu-checkstyle</groupId>
