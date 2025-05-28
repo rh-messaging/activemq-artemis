@@ -756,7 +756,9 @@ public class ServerSessionImpl implements ServerSession, FailureListener {
 
       AddressSettings as = server.getAddressSettingsRepository().getMatch(queueConfiguration.getAddress().toString());
 
-      if (as.isAutoCreateAddresses() && server.getAddressInfo(queueConfiguration.getAddress()) == null) {
+      AddressInfo addressInfo = server.getAddressInfo(queueConfiguration.getAddress());
+
+      if (as.isAutoCreateAddresses() && addressInfo == null || !addressInfo.getRoutingTypes().contains(queueConfiguration.getRoutingType())) {
          securityCheck(queueConfiguration.getAddress(), queueConfiguration.getName(), CheckType.CREATE_ADDRESS, this);
       }
 
