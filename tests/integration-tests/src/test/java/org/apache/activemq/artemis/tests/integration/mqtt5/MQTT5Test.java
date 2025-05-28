@@ -16,13 +16,6 @@
  */
 package org.apache.activemq.artemis.tests.integration.mqtt5;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
 import javax.jms.Message;
@@ -31,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,6 +55,7 @@ import org.eclipse.paho.mqttv5.client.MqttCallback;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptionsBuilder;
+import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
@@ -68,6 +64,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * General tests for things not covered directly in the specification.
@@ -790,5 +793,45 @@ public class MQTT5Test extends MQTT5TestSupport {
          }
       }
       client.close();
+   }
+
+   @Test
+   @Timeout(DEFAULT_TIMEOUT_SEC)
+   public void testLoadOnSubscriptionPersistence() throws Exception {
+      String topic = RandomUtil.randomUUIDString();
+      int numberOfThreads = 250;
+      AtomicBoolean failed = new AtomicBoolean(false);
+      ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+      runAfter(executorService::shutdownNow);
+
+      CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+      for (int i = 0; i < numberOfThreads; i++) {
+         executorService.submit(() -> {
+            MqttClient subscriber = null;
+            try {
+               subscriber = createPahoClient(RandomUtil.randomUUIDString());
+               subscriber.connect();
+               subscriber.subscribe(topic, AT_LEAST_ONCE);
+               subscriber.unsubscribe(topic);
+            } catch (MqttException e) {
+               logger.error(e.getMessage(), e);
+               failed.set(true);
+            } finally {
+               if (subscriber != null) {
+                  try {
+                     subscriber.disconnect();
+                     subscriber.close();
+                  } catch (MqttException e) {
+                     // ignore
+                  }
+               }
+               latch.countDown();
+            }
+         });
+      }
+
+      assertTrue(latch.await(1, TimeUnit.MINUTES), "not all tasks finished");
+      assertFalse(failed.get());
    }
 }
