@@ -389,6 +389,8 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
    private static final String MIRROR_PAGE_TRANSACTION = "mirror-page-transaction";
 
+   private static final String MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED = "mqtt-subscription-persistence-enabled";
+
    private boolean validateAIO = false;
 
    private boolean printPageMaxSizeUsed = false;
@@ -504,7 +506,9 @@ public final class FileConfigurationParser extends XMLConfigurationUtil {
 
       config.setMqttSessionScanInterval(getLong(e, "mqtt-session-scan-interval", config.getMqttSessionScanInterval(), GT_ZERO));
 
-      config.setMqttSessionStatePersistenceTimeout(getLong(e, "mqtt-session-state-persistence-timeout", config.getMqttSessionStatePersistenceTimeout(), GT_ZERO));
+      config.setMqttSessionStatePersistenceTimeout(getLong(e, "mqtt-session-state-persistence-timeout", config.getMqttSessionStatePersistenceTimeout(), GT_ZERO, MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED));
+
+      config.setMqttSubscriptionPersistenceEnabled(getBoolean(e, MQTT_SUBSCRIPTION_PERSISTENCE_ENABLED, config.isMqttSubscriptionPersistenceEnabled()));
 
       long globalMaxSize = getTextBytesAsLongBytes(e, GLOBAL_MAX_SIZE, -1, MINUS_ONE_OR_GT_ZERO);
 

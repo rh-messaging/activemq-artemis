@@ -1458,21 +1458,32 @@ public interface Configuration {
    long getMqttSessionScanInterval();
 
    /**
-    * This is necessary because MQTT sessions and handled on a broker-wide basis so this can't be set on a per-connector
-    * basis like most of the other MQTT-specific settings.
+    * @deprecated This is no longer used by the broker. See
+    * {@link Configuration#setMqttSubscriptionPersistenceEnabled(boolean)}.
     */
+   @Deprecated(forRemoval = true)
    Configuration setMqttSessionStatePersistenceTimeout(long mqttSessionStatePersistenceTimeout);
 
    /**
-    * @see Configuration#setMqttSessionStatePersistenceTimeout(long)
-    *
-    * @return
+    * @deprecated This is no longer used by the broker. See {@link Configuration#isMqttSubscriptionPersistenceEnabled}.
     */
+   @Deprecated(forRemoval = true)
    long getMqttSessionStatePersistenceTimeout();
 
    /**
-    * Returns whether suppression of session-notifications is enabled for this server. <br>
-    * Default value is {@link org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration#DEFAULT_SUPPRESS_SESSION_NOTIFICATIONS}.
+    * This is necessary because MQTT subsriptions are handled on a broker-wide basis so this can't be set on a
+    * per-connector basis like most of the other MQTT-specific settings.
+    */
+   Configuration setMqttSubscriptionPersistenceEnabled(boolean mqttSubscriptionPersistenceEnabled);
+
+   /**
+    * @see Configuration#setMqttSubscriptionPersistenceEnabled
+    */
+   boolean isMqttSubscriptionPersistenceEnabled();
+
+   /**
+    * @return whether suppression of session-notifications is enabled for this server; default is {@link
+    * ActiveMQDefaultConfiguration#DEFAULT_SUPPRESS_SESSION_NOTIFICATIONS}
     */
    boolean isSuppressSessionNotifications();
 
