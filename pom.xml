@@ -116,7 +116,7 @@
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
       <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.24.0</checkstyle.version>
+      <checkstyle.version>10.25.0</checkstyle.version>
       <mockito.version>5.18.0</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.121.Final</netty.version>
@@ -165,11 +165,11 @@
       <version.micrometer>1.15.0</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
       <junit.version>4.13.2</junit.version>
-      <junit5.version>5.12.2</junit5.version>
+      <junit5.version>5.13.0</junit5.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.6</postgresql.version>
-      <testcontainers.version>1.21.0</testcontainers.version>
+      <testcontainers.version>1.21.1</testcontainers.version>
       <selenium.version>4.33.0</selenium.version>
       <exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
