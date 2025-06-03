@@ -100,9 +100,9 @@ public class MQTTSubscriptionManager {
    }
 
    private void addSubscription(MqttTopicSubscription subscription, Integer subscriptionIdentifier, boolean initialStart) throws Exception {
-      String rawTopicName = CompositeAddress.extractAddressName(subscription.topicName());
+      String rawTopicName = CompositeAddress.extractAddressName(subscription.topicFilter());
       String parsedTopicName = MQTTUtil.decomposeSharedSubscriptionTopicFilter(rawTopicName).getB();
-      boolean isFullyQualified = CompositeAddress.isFullyQualified(subscription.topicName());
+      boolean isFullyQualified = CompositeAddress.isFullyQualified(subscription.topicFilter());
 
       Queue q = createQueueForSubscription(rawTopicName, parsedTopicName, isFullyQualified);
 
@@ -239,6 +239,10 @@ public class MQTTSubscriptionManager {
    }
 
    short[] removeSubscriptions(List<String> topics, boolean enforceSecurity) throws Exception {
+      if (topics == null || topics.size() == 0) {
+         return new short[0];
+      }
+
       short[] reasonCodes;
       MQTTSessionState state = session.getState();
 
@@ -277,8 +281,14 @@ public class MQTTSubscriptionManager {
             reasonCodes[i] =  reasonCode;
          }
 
-         // store state after *all* requested subscriptions have been removed in memory
-         stateManager.storeSessionState(state);
+         // deal with durable state after *all* requested subscriptions have been removed in memory
+         if (state.getSubscriptions().size() > 0) {
+            // if there are some subscriptions left then update the state
+            stateManager.storeDurableSubscriptionState(state);
+         } else {
+            // if there are no subscriptions left then remove the state entirely
+            stateManager.removeDurableSubscriptionState(state.getClientId());
+         }
       }
 
       return reasonCodes;
@@ -299,7 +309,7 @@ public class MQTTSubscriptionManager {
                addSubscription(subscriptions.get(i), subscriptionIdentifier, false);
                qos[i] = subscriptions.get(i).qualityOfService().value();
             } catch (ActiveMQSecurityException e) {
-               // user is not authorized to create subsription
+               // user is not authorized to create subscription
                if (session.getVersion() == MQTTVersion.MQTT_5) {
                   qos[i] = MQTTReasonCodes.NOT_AUTHORIZED;
                } else if (session.getVersion() == MQTTVersion.MQTT_3_1_1) {
@@ -327,7 +337,7 @@ public class MQTTSubscriptionManager {
          }
 
          // store state after *all* requested subscriptions have been created in memory
-         stateManager.storeSessionState(state);
+         stateManager.storeDurableSubscriptionState(state);
 
          return qos;
       }
@@ -340,7 +350,7 @@ public class MQTTSubscriptionManager {
    void clean(boolean enforceSecurity) throws Exception {
       List<String> topics = new ArrayList<>();
       for (MqttTopicSubscription mqttTopicSubscription : session.getState().getSubscriptions()) {
-         topics.add(mqttTopicSubscription.topicName());
+         topics.add(mqttTopicSubscription.topicFilter());
       }
       removeSubscriptions(topics, enforceSecurity);
    }
