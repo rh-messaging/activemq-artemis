@@ -753,6 +753,9 @@ public interface Message {
 
    int durableDown();
 
+   default void routed() {
+   }
+
    /**
     * @return Returns the message in Map form, useful when encoding to JSON
     */

@@ -1049,6 +1049,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (count == 1) {
          if (owner != null) {
             owner.addSize(messageReference.getMessageMemoryEstimate(), false);
+            messageReference.getMessage().routed();
          }
       }
       if (pagingStore != null) {
