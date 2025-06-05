@@ -186,7 +186,7 @@ public class AMQPStandardMessage extends AMQPMessage {
    }
 
    @Override
-   public int getMemoryEstimate() {
+   public synchronized int getMemoryEstimate() {
       if (memoryEstimate == -1) {
          if (isPaged) {
             // When the message is paged, we don't take the unmarshalled application properties
