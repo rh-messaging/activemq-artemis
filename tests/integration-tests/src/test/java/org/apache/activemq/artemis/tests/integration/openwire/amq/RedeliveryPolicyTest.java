@@ -474,7 +474,7 @@ public class RedeliveryPolicyTest extends BasicOpenWireTest {
          assertNotNull(m, "null@:" + i);
          session.commit();
 
-         assertTrue(queueControl.getDeliveringCount() <= prefetchSize + 1, "deliveryCount: " + queueControl.getDeliveringCount() + " @:" + i);
+         assertTrue(queueControl.getDeliveringCount() <= prefetchSize, "deliveringCount: " + queueControl.getDeliveringCount() + " @:" + i);
       }
    }
 
@@ -506,8 +506,7 @@ public class RedeliveryPolicyTest extends BasicOpenWireTest {
       Wait.assertEquals(0, () -> queueControl.getMessageCount());
       session.close();
 
-      assertEquals(0L, queueControl.getPersistentSize());
-
+      Wait.assertEquals(0L, queueControl::getPersistentSize, 5000, 100);
    }
 
    @Test
