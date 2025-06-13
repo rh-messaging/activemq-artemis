@@ -18,7 +18,6 @@ package org.apache.activemq.artemis.cli.commands.messages;
 
 import static org.apache.activemq.artemis.cli.commands.ActionAbstract.DEFAULT_BROKER_URL;
 
-import org.apache.activemq.artemis.cli.Shell;
 import org.apache.activemq.artemis.cli.commands.ActionContext;
 import org.apache.activemq.artemis.cli.commands.InputAbstract;
 import picocli.CommandLine;
@@ -131,20 +130,6 @@ public class ConnectionConfigurationAbtract extends InputAbstract {
    }
 
    protected void saveConnectionInfo(String brokerURL, String user, String password) {
-      if (Shell.inShell() && CONNECTION_INFORMATION.get() == null) {
-         CONNECTION_INFORMATION.set(new ConnectionInformation(brokerURL, user, password));
-         getActionContext().out.println("CLI connected to broker " + brokerURL + ", user:" + user);
-         this.brokerURL = brokerURL;
-         this.user = user;
-         this.password = password;
-
-         if (user != null) {
-            Shell.setPrompt(user + "@" + brokerURL);
-         } else {
-            Shell.setPrompt(brokerURL);
-         }
-
-      }
    }
 
 
