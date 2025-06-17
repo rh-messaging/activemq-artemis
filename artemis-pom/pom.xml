@@ -340,6 +340,18 @@
             <version>${picocli.version}</version>
             <!-- License: Apache 2.0 -->
          </dependency>
+         <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli-shell-jline3</artifactId>
+            <version>${picocli.version}</version>
+            <!-- License: Apache 2.0 -->
+         </dependency>
+         <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>${jline.version}</version>
+            <!-- License: BSD 3-Clause -->
+         </dependency>
          <!--needed to compile transport jar-->
          <dependency>
             <groupId>org.jctools</groupId>
