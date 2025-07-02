@@ -110,13 +110,13 @@
       <jetty.version>12.0.19</jetty.version>
       <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
       <jgroups.version>5.3.13.Final</jgroups.version>
-      <errorprone.version>2.38.0</errorprone.version>
+      <errorprone.version>2.39.0</errorprone.version>
       <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
       <jib.maven.plugin.version>3.4.6</jib.maven.plugin.version>
       <versions.maven.plugin.version>2.16.1</versions.maven.plugin.version>
-      <maven.pmd.plugin.version>3.26.0</maven.pmd.plugin.version>
+      <maven.pmd.plugin.version>3.27.0</maven.pmd.plugin.version>
       <sevntu.checks.version>1.44.1</sevntu.checks.version>
-      <checkstyle.version>10.25.1</checkstyle.version>
+      <checkstyle.version>10.26.1</checkstyle.version>
       <mockito.version>5.18.0</mockito.version>
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.121.Final</netty.version>
@@ -169,8 +169,8 @@
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
       <paho.client.mqtt.version>1.2.5</paho.client.mqtt.version>
       <postgresql.version>42.7.7</postgresql.version>
-      <testcontainers.version>1.21.2</testcontainers.version>
-      <selenium.version>4.33.0</selenium.version>
+      <testcontainers.version>1.21.3</testcontainers.version>
+      <selenium.version>4.34.0</selenium.version>
       <exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
       <apache.httpcore.version>4.4.16</apache.httpcore.version>
       <apache.httpclient.version>4.5.14</apache.httpclient.version>
