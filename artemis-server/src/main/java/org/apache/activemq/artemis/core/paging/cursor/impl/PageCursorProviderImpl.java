@@ -344,7 +344,7 @@ public class PageCursorProviderImpl implements PageCursorProvider {
     * This cleanup process will calculate the min page for every cursor and then we remove the pages based on that. if
     * we knew ahead all the queues belonging to every page we could remove this process.
     */
-   private void cleanupRegularStream(List<Page> depagedPages,
+   protected void cleanupRegularStream(List<Page> depagedPages,
                           LongHashSet depagedPagesSet,
                           List<PageSubscription> cursorList,
                           long minPage,
