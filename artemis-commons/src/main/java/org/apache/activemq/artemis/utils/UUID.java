@@ -16,6 +16,8 @@
  */
 package org.apache.activemq.artemis.utils;
 
+import org.apache.activemq.artemis.api.core.SimpleString;
+
 /**
  * UUID represents Universally Unique Identifiers (aka Global UID in Windows
  * world). UUIDs are usually generated via UUIDGenerator (or in case of 'Null
@@ -66,6 +68,10 @@ public final class UUID {
    public static final byte TYPE_NAME_BASED = 3;
 
    public static final byte TYPE_RANDOM_BASED = 4;
+
+   public static final char HYPHEN = '-';
+
+   public static final int UUID_STRING_LENGTH = 36;
 
    /*
     * 'Standard' namespaces defined (suggested) by UUID specs:
@@ -181,7 +187,7 @@ public final class UUID {
        */
 
       if (mDesc == null) {
-         StringBuffer b = new StringBuffer(36);
+         StringBuffer b = new StringBuffer(UUID_STRING_LENGTH);
 
          for (int i = 0; i < 16; ++i) {
             // Need to bypass hyphens:
@@ -251,5 +257,63 @@ public final class UUID {
          }
       }
       return true;
+   }
+
+   /**
+    * Validates whether the input is a 36-character string that follows the pattern
+    * {@code X-X-X-X-X} where:
+    * <ul>
+    * <li>The first group consists of 8 hex characters.
+    * <li>The second, third, and fourth groups consist of 4 hex characters each.
+    * <li>The fifth group consists of 12 hex characters.
+    * <li>A hyphen separates each group of hex characters.
+    * <li>A "hex character" is one of the following: {@code abcdef0123456789}.
+    * </ul>
+    * e.g.: {@code c7ef2580-210f-11f0-bef5-3ce1a1d12939}
+    *
+    * @param str the {@code CharSequence} to be validated as a UUID; {@code CharSequence} is used here so that
+    *            both {@code String} and {@code SimpleString} are supported
+    * @return {@code true} if the string is a valid UUID format; {@code false} otherwise
+    */
+   public static boolean isUUID(CharSequence str) {
+      if (str == null || str.length() != UUID_STRING_LENGTH) {
+         return false;
+      }
+
+      if (str.charAt(8) != HYPHEN || str.charAt(13) != HYPHEN || str.charAt(18) != HYPHEN || str.charAt(23) != HYPHEN) {
+         return false;
+      }
+
+      for (int i = 0; i < str.length(); i++) {
+         if (i == 8 || i == 13 || i == 18 || i == 23) {
+            continue;
+         }
+         if (!isHex(str.charAt(i))) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   private static boolean isHex(char c) {
+      return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+   }
+
+   /**
+    * Removes a trailing UUID from the given input, if present. The method checks whether the last characters of the
+    * input adhere to a valid UUID format and removes them if true.
+    *
+    * @param input the input {@code SimpleString} which may contain a trailing UUID to be stripped
+    * @return a {@code SimpleString} with the trailing UUID removed if present; otherwise, returns the original input
+    *         unchanged
+    */
+   public static SimpleString stripTrailingUUID(SimpleString input) {
+      int length = input.length();
+      if (length >= UUID_STRING_LENGTH && UUID.isUUID(input.subSeq(length - UUID_STRING_LENGTH, length))) {
+         return input.subSeq(0, length - UUID_STRING_LENGTH);
+      } else {
+         return input;
+      }
    }
 }

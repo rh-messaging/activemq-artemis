@@ -27,8 +27,8 @@ import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
-import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.api.core.management.QueueControl;
+import org.apache.activemq.artemis.core.config.DivertConfiguration;
 import org.apache.activemq.artemis.core.postoffice.Binding;
 import org.apache.activemq.artemis.core.server.ComponentConfigurationRoutingType;
 import org.apache.activemq.artemis.core.server.cluster.ClusterConnection;
@@ -42,6 +42,7 @@ import org.apache.activemq.artemis.tests.util.Wait;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
@@ -364,6 +365,64 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase {
 
       closeAllConsumers();
 
+   }
+
+   @Test
+   public void testInitialDistributionSendToFQQNConsumeFromFQQN() throws Exception {
+      testInitialDistribution(true, true);
+   }
+
+   @Test
+   public void testInitialDistributionSendToFQQNConsumeFromQueue() throws Exception {
+      testInitialDistribution(true, false);
+   }
+
+   @Test
+   public void testInitialDistributionSendToAddressConsumeFromFQQN() throws Exception {
+      testInitialDistribution(false, true);
+   }
+
+   @Test
+   public void testInitialDistributionSendToAddressConsumeFromQueue() throws Exception {
+      testInitialDistribution(false, false);
+   }
+
+   private void testInitialDistribution(boolean sendToFQQN, boolean consumeFromFQQN) throws Exception {
+      CountDownLatch countDownLatch = new CountDownLatch(1);
+      final String address = "myAddress";
+      final String queue = "myQueue";
+      final String fqqn = CompositeAddress.toFullyQualified(address, queue);
+
+      setupServer(0, false, isNetty());
+      setupServer(1, false, isNetty());
+
+      setupClusterConnection("cluster0", address, MessageLoadBalancingType.ON_DEMAND, 1, isNetty(), 0, 1);
+      setupClusterConnection("cluster1", address, MessageLoadBalancingType.ON_DEMAND, 1, isNetty(), 1, 0);
+
+      startServers(0, 1);
+
+      setupSessionFactory(0, isNetty());
+      setupSessionFactory(1, isNetty());
+
+      createQueue(0, address, queue, null, false);
+      createQueue(1, address, queue, null, false);
+
+      waitForBindings(0, address, 1, 0, true);
+      waitForBindings(0, address, 1, 0, false);
+      waitForBindings(1, address, 1, 0, true);
+      waitForBindings(1, address, 1, 0, false);
+
+      addConsumer(0, 0, consumeFromFQQN ? fqqn : queue, null);
+      consumers[0].consumer.setMessageHandler((m) -> countDownLatch.countDown());
+
+      waitForBindings(0, address, 1, 1, true);
+      waitForBindings(1, address, 1, 1, false);
+
+      send(1, sendToFQQN ? fqqn : address, 1, true, null);
+
+      assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+
+      closeAllConsumers();
    }
 
    @Test
