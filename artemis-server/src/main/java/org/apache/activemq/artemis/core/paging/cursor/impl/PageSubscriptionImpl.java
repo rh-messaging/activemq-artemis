@@ -142,6 +142,11 @@ public final class PageSubscriptionImpl implements PageSubscription {
    }
 
    @Override
+   public boolean isStorePaging() {
+      return pageStore.isStorePaging();
+   }
+
+   @Override
    public void setQueue(Queue queue) {
       this.queue = queue;
    }
@@ -727,6 +732,37 @@ public final class PageSubscriptionImpl implements PageSubscription {
    }
 
    @Override
+   public void deleteCursorInfo() {
+      logger.debug("Delete consumed Paged on {} with consumedPages size = {}", pageStore.getAddress(), consumedPages.size());
+      consumedPages.forEach(this::deleteCursorInfo);
+      consumedPages.clear();
+   }
+
+   private void deleteCursorInfo(Long page, PageCursorInfo info) {
+      logger.debug("Deleting cursorInfo for page {} info={}, address={}", page, info, pageStore.getAddress());
+      PagePosition completeInfo = info.getCompleteInfo();
+      if (completeInfo != null) {
+         try {
+            store.deletePageComplete(completeInfo.getRecordID());
+         } catch (Exception e) {
+            ActiveMQServerLogger.LOGGER.errorDeletingPageCompleteRecord(e);
+         }
+         info.setCompleteInfo(null);
+      }
+      if (info.acks != null) {
+         for (PagePosition deleteInfo : info.acks.values()) {
+            if (deleteInfo.getRecordID() >= 0) {
+               try {
+                  store.deleteCursorAcknowledge(deleteInfo.getRecordID());
+               } catch (Exception e) {
+                  ActiveMQServerLogger.LOGGER.errorDeletingPageCompleteRecord(e);
+               }
+            }
+         }
+      }
+   }
+
+   @Override
    public void onDeletePage(Page deletedPage) throws Exception {
       logger.debug("removing page {}", deletedPage);
       PageCursorInfo info;
@@ -734,26 +770,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
          info = consumedPages.remove(deletedPage.getPageId());
       }
       if (info != null) {
-         PagePosition completeInfo = info.getCompleteInfo();
-         if (completeInfo != null) {
-            try {
-               store.deletePageComplete(completeInfo.getRecordID());
-            } catch (Exception e) {
-               ActiveMQServerLogger.LOGGER.errorDeletingPageCompleteRecord(e);
-            }
-            info.setCompleteInfo(null);
-         }
-         if (info.acks != null) {
-            for (PagePosition deleteInfo : info.acks.values()) {
-               if (deleteInfo.getRecordID() >= 0) {
-                  try {
-                     store.deleteCursorAcknowledge(deleteInfo.getRecordID());
-                  } catch (Exception e) {
-                     ActiveMQServerLogger.LOGGER.errorDeletingPageCompleteRecord(e);
-                  }
-               }
-            }
-         }
+         deleteCursorInfo(deletedPage.getPageId(), info);
       }
       deletedPage.usageExhaust();
    }
@@ -941,17 +958,13 @@ public final class PageSubscriptionImpl implements PageSubscription {
                " numberOfMessage = " +
                numberOfMessages +
                ", confirmed = " +
-               confirmed +
-               ", isDone=" +
-               this.isDone();
+               confirmed;
          } catch (Exception e) {
             return "PageCursorInfo::pageNr=" + pageId +
                " numberOfMessage = " +
                numberOfMessages +
                ", confirmed = " +
-               confirmed +
-               ", isDone=" +
-               e.toString();
+               confirmed + ", exception = " + e;
          }
       }
 
@@ -994,6 +1007,10 @@ public final class PageSubscriptionImpl implements PageSubscription {
          if (logger.isTraceEnabled()) {
             logger.trace("{}::PageCursorInfo({})::isDone checking with completePage!=null->{} getNumberOfMessages={}, confirmed={} and pendingTX={}",
                PageSubscriptionImpl.this, pageId, completePage != null, getNumberOfMessages(), confirmed.get(), pendingTX.get());
+         }
+
+         if (!pageStore.isStorePaging()) {
+            return true;
          }
 
          // in cases where the file was damaged it is possible to get more confirmed records than we actually had messages
@@ -1087,6 +1104,9 @@ public final class PageSubscriptionImpl implements PageSubscription {
       }
 
       private int getNumberOfMessages() {
+         if (!pageStore.isStorePaging()) {
+            return 0;
+         }
          if (numberOfMessages < 0) {
             try {
                Page page = pageStore.usePage(pageId, true, false);
@@ -1414,7 +1434,7 @@ public final class PageSubscriptionImpl implements PageSubscription {
             return NextResult.hasElements;
          }
 
-         if (!pageStore.isPaging()) {
+         if (!pageStore.isStorePaging()) {
             return NextResult.noElements;
          }
 

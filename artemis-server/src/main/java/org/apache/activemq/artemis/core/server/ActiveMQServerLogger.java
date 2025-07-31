@@ -1500,4 +1500,11 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224144, value = "The topology of the cluster connection {} doesn't include all the expected members. "
        + "Check the discovery group or the static connectors of the cluster connection if the topology is correct: {} / {}", level = LogMessage.Level.WARN)
    void incompleteClusterTopology(String clusterConnection, Topology topology, String topologyMembers);
+
+   @LogMessage(id = 224146, value = "Purging Page Folder {} on address {}", level = LogMessage.Level.INFO)
+   void purgingPageFolder(String folder, SimpleString address);
+
+   @LogMessage(id = 224147, value = "Failed purging folder {}", level = LogMessage.Level.WARN)
+   void failedPurgingFolder(String folder);
+
 }
