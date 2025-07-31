@@ -102,7 +102,7 @@
       <commons.text.version>1.14.0</commons.text.version>
       <commons.io.version>2.20.0</commons.io.version>
       <commons.codec.version>1.19.0</commons.codec.version>
-      <commons.compress.version>1.27.1</commons.compress.version>
+      <commons.compress.version>1.28.0</commons.compress.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.2.2</caffeine.version>
       <guava.version>33.4.8-jre</guava.version>
@@ -121,7 +121,7 @@
       <jctools.version>4.0.5</jctools.version>
       <netty.version>4.1.123.Final</netty.version>
       <hdrhistogram.version>2.2.2</hdrhistogram.version>
-      <curator.version>5.8.0</curator.version>
+      <curator.version>5.9.0</curator.version>
       <zookeeper.version>3.9.3</zookeeper.version>
       <woodstox.version>4.4.1</woodstox.version>
       <pem-keystore.version>3.0.0</pem-keystore.version>
