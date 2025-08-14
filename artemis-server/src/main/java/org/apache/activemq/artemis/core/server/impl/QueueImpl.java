@@ -455,9 +455,16 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          ? ActiveMQDefaultConfiguration.INITIAL_QUEUE_BUFFER_SIZE
          : this.cachedAddressSettings.getInitialQueueBufferSize();
       this.intermediateMessageReferences = new MpscUnboundedArrayQueue<>(initialQueueBufferSize);
+
+      verifyDisabledConfiguration();
    }
 
-   // Bindable implementation -------------------------------------------------------------------------------------
+   private void verifyDisabledConfiguration() {
+      if (noRouteLogging && !this.queueConfiguration.isEnabled()) {
+         ActiveMQServerLogger.LOGGER.noRouteMessagesWillBeDropped(this.getAddress(), this.getName());
+      }
+   }
+
 
    @Override
    public boolean allowsReferenceCallback() {
@@ -574,7 +581,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
       if (!queueConfiguration.isEnabled()) {
          if (noRouteLogging) {
             noRouteLogging = false;
-            ActiveMQServerLogger.LOGGER.noRouteDisabledQueue(this.getName());
+            ActiveMQServerLogger.LOGGER.noRouteDisabledQueue(this.getAddress(), this.getName());
          }
          context.setReusable(false);
          return;
@@ -584,7 +591,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
          if (getConsumerCount() == 0) {
             if (noRouteLogging) {
                noRouteLogging = false;
-               ActiveMQServerLogger.LOGGER.noRouteNoConsumers(this.getName());
+               ActiveMQServerLogger.LOGGER.noRouteNoConsumers(this.getAddress(), this.getName());
             }
             return;
          }
@@ -659,6 +666,7 @@ public class QueueImpl extends CriticalComponentImpl implements Queue {
    @Override
    public synchronized void setEnabled(boolean value) {
       queueConfiguration.setEnabled(value);
+      verifyDisabledConfiguration();
    }
 
    @Override
