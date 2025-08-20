@@ -290,10 +290,10 @@ public class PageCursorProviderImpl implements PageCursorProvider {
                   return;
                }
 
-            if (!pagingStore.isStorePaging()) {
-               logger.trace("Paging Store was not paging, so no reason to retry the cleanup");
-               return;
-            }
+               if (!pagingStore.isStorePaging()) {
+                  logger.trace("Paging Store was not paging, so no reason to retry the cleanup");
+                  return;
+               }
 
                List<PageSubscription> cursorList = cloneSubscriptions();
 
