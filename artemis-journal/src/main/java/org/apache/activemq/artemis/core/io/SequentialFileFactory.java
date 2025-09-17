@@ -131,10 +131,6 @@ public interface SequentialFileFactory {
 
    void stop();
 
-   default boolean deleteFolder() {
-      return false;
-   }
-
    /**
     * Creates the directory if it does not exist yet.
     */

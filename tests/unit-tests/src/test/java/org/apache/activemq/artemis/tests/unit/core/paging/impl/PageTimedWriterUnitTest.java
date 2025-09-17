@@ -241,7 +241,7 @@ public class PageTimedWriterUnitTest extends ArtemisTestCase {
 
       AddressSettings settings = new AddressSettings().setPageSizeBytes(MAX_SIZE).setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE);
 
-      pageStore = new PagingStoreImpl(ADDRESS, scheduledExecutorService, 100, mockPagingManager, realJournalStorageManager, inMemoryFileFactory, mockPageStoreFactory, ADDRESS, settings, executorFactory.getExecutor(), false, () -> true) {
+      pageStore = new PagingStoreImpl(ADDRESS, scheduledExecutorService, 100, mockPagingManager, realJournalStorageManager, inMemoryFileFactory, mockPageStoreFactory, ADDRESS, settings, executorFactory.getExecutor(), false) {
          @Override
          protected PageTimedWriter createPageTimedWriter(ScheduledExecutorService scheduledExecutor, long syncTimeout) {
 

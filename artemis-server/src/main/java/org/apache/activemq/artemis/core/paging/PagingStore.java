@@ -18,7 +18,6 @@ package org.apache.activemq.artemis.core.paging;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -117,11 +116,6 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
    boolean isPaging();
 
    /**
-    *  isPaging might return true for example if it's DROPPING.
-    *  This will only return true if there are files on the page system */
-   boolean isStorePaging();
-
-   /**
     * Performs a real sync on the current IO file.
     */
    void ioSync() throws Exception;
@@ -185,14 +179,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
     */
    boolean startPaging() throws Exception;
 
-   default boolean startPaging(long timeout, TimeUnit unit) throws Exception {
-      return startPaging();
-   }
-
    void stopPaging() throws Exception;
-
-   default void purgeFolder() {
-   }
 
    /**
     * Add size to this {@code PageStore}.

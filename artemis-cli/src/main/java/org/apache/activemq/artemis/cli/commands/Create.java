@@ -156,8 +156,6 @@ public class Create extends InstallAbstract {
    @Option(names = "--force", description = "Overwrite configuration at destination directory.")
    private boolean force;
 
-   @Option(names = "--purge-page-folders", description = "Paged folders should be removed upon leaving page state.")
-   private boolean purgePageFolders;
 
    @Option(names = "--clustered", description = "Enable clustering.")
    private boolean clustered = false;
@@ -360,14 +358,6 @@ public class Create extends InstallAbstract {
       }
 
       return host;
-   }
-
-   public boolean isPurgePageFolders() {
-      return purgePageFolders;
-   }
-
-   public void setPurgePageFolders(boolean purgePageFolders) {
-      this.purgePageFolders = purgePageFolders;
    }
 
    public void setHost(String host) {
@@ -610,8 +600,6 @@ public class Create extends InstallAbstract {
       filters.put("${failover-on-shutdown}", isFailoverOnShutodwn() ? "true" : "false");
 
       filters.put("${persistence-enabled}", isDisablePersistence() ? "false" : "true");
-
-      filters.put("${purge-page-folders}", isPurgePageFolders() ? "true" : "false");
 
       if (ping != null && !ping.isEmpty()) {
          filters.put("${ping}", ping);

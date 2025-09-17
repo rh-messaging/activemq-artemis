@@ -74,8 +74,6 @@ public class HelperCreate extends HelperBase {
 
    private String staticCluster;
 
-   private boolean purgePageFolders;
-
    String dataFolder = "./data";
 
    private boolean failoverOnShutdown = false;
@@ -136,14 +134,6 @@ public class HelperCreate extends HelperBase {
    public HelperCreate setJavaOptions(String javaOptions) {
       this.javaOptions = javaOptions;
       return this;
-   }
-
-   public boolean isPurgePageFolders() {
-      return purgePageFolders;
-   }
-
-   public void setPurgePageFolders(boolean purgePageFolders) {
-      this.purgePageFolders = purgePageFolders;
    }
 
    public int getPortOffset() {
@@ -294,10 +284,6 @@ public class HelperCreate extends HelperBase {
          add(listCommands, "--allow-anonymous");
       } else {
          add(listCommands, "--require-login");
-      }
-
-      if (purgePageFolders) {
-         add(listCommands, "--purge-page-folders");
       }
 
       if (staticCluster != null) {

@@ -244,13 +244,7 @@ public abstract class AbstractSequentialFileFactory implements SequentialFileFac
 
    @Override
    public List<String> listFiles(final String extension) throws Exception {
-      FilenameFilter fnf;
-
-      if (extension != null) {
-         fnf = (file, name) -> name.endsWith("." + extension);
-      } else {
-         fnf = null;
-      }
+      FilenameFilter fnf = (file, name) -> name.endsWith("." + extension);
 
       String[] fileNames = journalDir.list(fnf);
 
@@ -261,8 +255,4 @@ public abstract class AbstractSequentialFileFactory implements SequentialFileFac
       return Arrays.asList(fileNames);
    }
 
-   @Override
-   public boolean deleteFolder() {
-      return this.journalDir.delete();
-   }
 }

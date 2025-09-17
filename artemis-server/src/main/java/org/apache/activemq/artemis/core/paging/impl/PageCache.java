@@ -68,9 +68,5 @@ public class PageCache {
       }
    }
 
-   public synchronized void clear() {
-      usedPages.clear();
-   }
-
 
 }

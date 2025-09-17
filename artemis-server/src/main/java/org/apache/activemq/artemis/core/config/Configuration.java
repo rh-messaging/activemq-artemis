@@ -1520,12 +1520,5 @@ public interface Configuration {
 
    boolean isMirrorAckManagerWarnUnacked();
 
-   /**
-    *  Should the system remove page folders once destinations stop paging.
-    *  Default is false, however future major versions will have this as true */
-   Configuration setPurgePageFolders(boolean purgePageFolders);
-
-   boolean isPurgePageFolders();
-
    void exportAsProperties(File to) throws Exception;
 }
