@@ -95,6 +95,7 @@
 		<bundle>mvn:org.apache.activemq/artemis-jms-client-osgi/${pom.version}</bundle>
 	</feature>
 
+	<!-- Disable Artemis AMQP Client OSGi Feature
 	<feature name="artemis-amqp-client" version="${pom.version}" description="ActiveMQ Artemis AMQP Client libraries">
 		<feature>transaction</feature>
 		<feature>netty-core</feature>
@@ -102,11 +103,14 @@
 		<bundle>mvn:org.apache.qpid/proton-j/${proton.version}</bundle>
 		<bundle>mvn:org.apache.qpid/qpid-jms-client/${qpid.jms.version}</bundle>
 	</feature>
+	-->
 
 	<feature name="artemis-amqp" version="${pom.version}" description="ActiveMQ Artemis AMQP protocol libraries">
 		<feature>artemis-core</feature>
 		<bundle>mvn:org.apache.qpid/proton-j/${proton.version}</bundle>
+		<!-- Remove QpidJMS Client from AMQP Client OSGi Feature
 		<bundle>mvn:org.apache.qpid/qpid-jms-client/${qpid.jms.version}</bundle>
+		-->
 		<bundle>mvn:org.apache.activemq/artemis-amqp-protocol/${pom.version}</bundle>
 	</feature>
 
