@@ -1,25 +1,25 @@
 {
   "branding": {
-    "appName": "AMQ Broker Console",
-    "showAppName": true,
-    "appLogoUrl": "img/Logo-RedHat-A-Reverse-RGB.png",
-    "companyLogoUrl": "img/Logo-RedHat-A-Reverse-RGB.png",
-    "css": "css/redhat-branding.css",
-    "favicon": "img/favicon.ico"
+    "appName": "Artemis Console",
+    "showAppName": false,
+    "appLogoUrl": "img/activemq.png",
+    "companyLogoUrl": "img/activemq.png",
+    "css": "css/activemq.css",
+    "favicon": "img/favicon.png"
   },
   "login": {
-    "description": "Login page for AMQ Broker Console",
+    "description": "Login page for ActiveMQ Artemis Console.",
     "links": [
-      { "url": "https://docs.redhat.com/en/documentation/red_hat_amq_broker/", "text": "Documentation" }
+      { "url": "https://activemq.apache.org/components/artemis/documentation/", "text": "Documentation" },
+      { "url": "https://activemq.apache.org/", "text": "Website" }
     ]
   },
   "about": {
-    "title": "AMQ Broker Management Console",
-    "productInfo": [{"name": "AMQ Broker", "value": "${amq.broker.version}"},
-                    {"name": "Artemis", "value": "${project.version}"}],
+    "title": "ActiveMQ Artemis Management Console",
+    "productInfo": [{"name": "ActiveMQ Artemis", "value": "${project.version}"}],
     "additionalInfo": "",
     "copyright": " ",
-    "imgSrc": "img/Logo-RedHat-A-Reverse-RGB.png"
+    "imgSrc": "img/activemq.png"
   },
   "disabledRoutes": []
 }
