@@ -91,7 +91,7 @@
       <karaf.version>4.4.8</karaf.version>
       <pax.exam.version>4.14.0</pax.exam.version>
       <commons.config.version>2.11.0</commons.config.version>
-      <commons.lang.version>3.18.0</commons.lang.version>
+      <commons.lang.version>3.19.0</commons.lang.version>
       <activemq5-version>5.19.0</activemq5-version>
       <apache.derby.version>10.15.2.0</apache.derby.version>
       <commons.beanutils.version>1.11.0</commons.beanutils.version>
@@ -195,7 +195,7 @@
       <hadoop.minikdc.version>3.4.2</hadoop.minikdc.version>
       <mockserver.version>5.15.0</mockserver.version>
 
-      <owasp.version>12.1.5</owasp.version>
+      <owasp.version>12.1.6</owasp.version>
       <spring.version>5.3.39</spring.version>
 
       <jackson.version>2.20.0</jackson.version>
