@@ -1762,16 +1762,6 @@ public abstract class AbstractJournalStorageManager extends CriticalComponentImp
       persistedKeyValuePairs.put(keyValuePair.getKey(), keyValuePair);
    }
 
-   @Override
-   public void lineUpContext() {
-      try (ArtemisCloseable lock = closeableReadLock()) {
-         messageJournal.lineUpContext(getContext());
-      }
-   }
-
-   // ActiveMQComponent implementation
-   // ------------------------------------------------------
-
    protected abstract void beforeStart() throws Exception;
 
    @Override
