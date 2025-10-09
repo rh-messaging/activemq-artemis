@@ -20,6 +20,7 @@ import java.lang.invoke.MethodHandles;
 
 import org.apache.activemq.artemis.core.server.ServerSession;
 import org.apache.activemq.artemis.core.server.impl.ServerSessionImpl;
+import org.apache.activemq.artemis.tests.util.Wait;
 import org.apache.activemq.transport.amqp.client.AmqpClient;
 import org.apache.activemq.transport.amqp.client.AmqpConnection;
 import org.apache.activemq.transport.amqp.client.AmqpReceiver;
@@ -34,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AmqpSessionTest extends AmqpClientTestSupport {
+
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
    @Test(timeout = 60000)
@@ -81,7 +83,6 @@ public class AmqpSessionTest extends AmqpClientTestSupport {
       connection.close();
    }
 
-
    @Test(timeout = 60000)
    public void testCreateSessionProducerConsumerDoesNotLeakClosable() throws Exception {
       AmqpClient client = createAmqpClient();
@@ -104,4 +105,49 @@ public class AmqpSessionTest extends AmqpClientTestSupport {
       connection.close();
    }
 
+   @Test
+   public void testSessionClosedOnServerEndsClientSession() throws Exception {
+      doTestSessionClosedOnServerEndsClientSession(false, false);
+   }
+
+   @Test
+   public void testSessionClosedOnServerEndsClientSessionWithFailed() throws Exception {
+      doTestSessionClosedOnServerEndsClientSession(true, false);
+   }
+
+   @Test
+   public void testSessionClosedOnServerEndsClientSessionWithFailedAndForced() throws Exception {
+      doTestSessionClosedOnServerEndsClientSession(true, true);
+   }
+
+   @Test
+   public void testSessionClosedOnServerEndsClientSessionForced() throws Exception {
+      doTestSessionClosedOnServerEndsClientSession(false, true);
+   }
+
+   public void doTestSessionClosedOnServerEndsClientSession(boolean failed, boolean forced) throws Exception {
+      final AmqpClient client = createAmqpClient();
+      final AmqpConnection connection = addConnection(client.connect());
+      final AmqpSession session = connection.createSession();
+
+      assertNotNull(session);
+      assertEquals(1, server.getSessions().size());
+
+      final ServerSession serverSession = server.getSessions().iterator().next();
+
+      assertNotNull(serverSession);
+
+      serverSession.close(failed, forced); // Should trigger End frame.
+
+      Wait.assertEquals(0, () -> server.getSessions().size(), 5000, 100);
+
+      try {
+         session.createReceiver(getQueueName());
+         fail("Should not be able to use this session now.");
+      } catch (Exception e) {
+         // Expected.
+      }
+
+      connection.close();
+   }
 }
