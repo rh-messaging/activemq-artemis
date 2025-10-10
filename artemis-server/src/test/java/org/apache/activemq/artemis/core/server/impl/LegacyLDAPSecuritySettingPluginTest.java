@@ -22,8 +22,7 @@ import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.Test;
 
 import static java.util.Map.entry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.Assert;
 
 public class LegacyLDAPSecuritySettingPluginTest {
 
