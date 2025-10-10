@@ -59,8 +59,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
-import static org.apache.activemq.artemis.core.config.WildcardConfiguration.DEFAULT_WILDCARD_CONFIGURATION;
-
 @RunWith(FrameworkRunner.class)
 @CreateLdapServer(transports = {@CreateTransport(protocol = "LDAP", port = 1024)})
 @ApplyLdifFiles("AMQauthWildcard.ldif")
@@ -76,6 +74,8 @@ public class LegacyLDAPSecuritySettingPluginWildcardTest extends AbstractLdapTes
          }
       }
    }
+
+   private static final WildcardConfiguration DEFAULT_WILDCARD_CONFIGURATION = new WildcardConfiguration();
 
    ActiveMQServer server;
    ActiveMQJAASSecurityManager securityManager;
@@ -254,7 +254,7 @@ public class LegacyLDAPSecuritySettingPluginWildcardTest extends AbstractLdapTes
 
       try {
          ClientSession session = cf.createSession(username, "secret", false, true, true, false, 0);
-         session.createQueue(QueueConfiguration.of(name));
+         session.createQueue(new QueueConfiguration(name));
          if (!username.equals(AUTHORIZED_USER)) {
             Assert.fail("should throw exception here");
          }
@@ -280,7 +280,7 @@ public class LegacyLDAPSecuritySettingPluginWildcardTest extends AbstractLdapTes
 
       try {
          ClientSession session = cf.createSession(AUTHORIZED_USER, "secret", false, true, true, false, 0);
-         session.createQueue(QueueConfiguration.of(name));
+         session.createQueue(new QueueConfiguration(name));
          Assert.fail("should throw exception here");
       } catch (ActiveMQException e) {
          // ignore

@@ -22,7 +22,8 @@ import org.apache.activemq.artemis.utils.RandomUtil;
 import org.junit.Test;
 
 import static java.util.Map.entry;
-import static org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public class LegacyLDAPSecuritySettingPluginTest {
 
@@ -33,18 +34,18 @@ public class LegacyLDAPSecuritySettingPluginTest {
 
    @Test
    public void testFullParameterMap() throws Exception {
-      final String initialContextFactoryValue = RandomUtil.randomUUIDString();
-      final String connectionURLValue = RandomUtil.randomUUIDString();
-      final String connectionUsernameValue = RandomUtil.randomUUIDString();
-      final String connectionPasswordValue = RandomUtil.randomUUIDString();
-      final String connectionProtocolValue = RandomUtil.randomUUIDString();
-      final String authenticationValue = RandomUtil.randomUUIDString();
-      final String roleAttributeValue = RandomUtil.randomUUIDString();
-      final String filterValue = RandomUtil.randomUUIDString();
-      final String destinationBaseValue = RandomUtil.randomUUIDString();
-      final String adminPermissionValueValue = RandomUtil.randomUUIDString();
-      final String readPermissionValueValue = RandomUtil.randomUUIDString();
-      final String writePermissionValueValue = RandomUtil.randomUUIDString();
+      final String initialContextFactoryValue = RandomUtil.randomString();
+      final String connectionURLValue = RandomUtil.randomString();
+      final String connectionUsernameValue = RandomUtil.randomString();
+      final String connectionPasswordValue = RandomUtil.randomString();
+      final String connectionProtocolValue = RandomUtil.randomString();
+      final String authenticationValue = RandomUtil.randomString();
+      final String roleAttributeValue = RandomUtil.randomString();
+      final String filterValue = RandomUtil.randomString();
+      final String destinationBaseValue = RandomUtil.randomString();
+      final String adminPermissionValueValue = RandomUtil.randomString();
+      final String readPermissionValueValue = RandomUtil.randomString();
+      final String writePermissionValueValue = RandomUtil.randomString();
       final String enableListenerValue = String.valueOf(RandomUtil.randomBoolean());
       final String refreshIntervalValue = String.valueOf(RandomUtil.randomInt());
       final String mapAdminToManageValue = String.valueOf(RandomUtil.randomBoolean());
