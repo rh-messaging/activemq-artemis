@@ -39,13 +39,9 @@ import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.RandomUtil;
 import org.apache.activemq.artemis.utils.Wait;
 import org.apache.activemq.artemis.utils.actors.OrderedExecutorFactory;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TimedBufferMovementTest extends ActiveMQTestBase {
 
@@ -54,7 +50,6 @@ public class TimedBufferMovementTest extends ActiveMQTestBase {
    final ConcurrentHashMap<String, String> pendingCallbacks = new ConcurrentHashMap<>();
 
    @Test
-   @Timeout(value = 2, unit = TimeUnit.MINUTES, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
    public void testForceMoveNextFile() throws Exception {
       int REGULAR_THREADS = 5;
       int TX_THREADS = 5;
@@ -111,7 +106,7 @@ public class TimedBufferMovementTest extends ActiveMQTestBase {
             try {
                OperationContext context = new OperationContextImpl(orderedExecutorFactory.getExecutor());
                for (int r = 0; r < RECORDS; r++) {
-                  String uuid = "noTX_ " + RandomUtil.randomUUIDString();
+                  String uuid = "noTX_ " + RandomUtil.randomString();
                   pendingCallbacks.put(uuid, uuid);
                   try {
                      int add = sequence.incrementAndGet();
@@ -147,7 +142,7 @@ public class TimedBufferMovementTest extends ActiveMQTestBase {
             try {
                OperationContext context = new OperationContextImpl(orderedExecutorFactory.getExecutor());
                for (int r = 0; r < RECORDS; r++) {
-                  String uuid = "tx_" + RandomUtil.randomUUIDString();
+                  String uuid = "tx_" + RandomUtil.randomString();
                   try {
                      long tx = sequence.incrementAndGet();
                      pendingCallbacks.put(uuid, String.valueOf(tx));

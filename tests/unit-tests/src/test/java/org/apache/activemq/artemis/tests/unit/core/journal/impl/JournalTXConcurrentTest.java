@@ -31,11 +31,10 @@ import org.apache.activemq.artemis.core.journal.impl.JournalRecordProvider;
 import org.apache.activemq.artemis.core.journal.impl.JournalTransaction;
 import org.apache.activemq.artemis.tests.util.ActiveMQTestBase;
 import org.apache.activemq.artemis.utils.collections.ConcurrentLongHashMap;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JournalTXConcurrentTest extends ActiveMQTestBase {
 
