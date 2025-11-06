@@ -116,10 +116,16 @@ any accessible attribute of the internal `org.apache.activemq.artemis.core.confi
 
 With great power one must take great care!
 
-The `artemis run` command script supports `--properties <properties file url>`, where a properties file can be configured.
+The `artemis run` command script supports `--properties <path to properties files comma list>` where properties file paths can be configured.
+If a properties path string ends in a '/' it represents a directory. Any file name matching the regex `.*\.(json|properties)` in that directory is treated as broker configuration.
+
+It is possible to override the default regex filter pattern with a `filter` query parameter on the directory path, e.g: `--properties '/home/x/broker_props/?filter=.*\.custom_props'`.
 
 NOTE: one shortcoming of this method of configuration is that any property that does not match is ignored with no fanfare.
 Enable debug logging for `org.apache.activemq.artemis.core.config.impl.ConfigurationImpl` to get more insight.
+
+==== Broker configuration in properties format
+The xref:management.adoc#server-management[server management operation] `exportConfigAsProperties` will export the current configuration of a broker as broker properties. Use this to get a better understanding of how properties apply to the broker configuration and how they map from xml.
 
 There are a growing number of examples of what can be explicitly configured in this way in the https://github.com/apache/activemq-artemis/blob/065bfe14f532858f2c2a20b0afb1a226b08ce013/artemis-server/src/test/java/org/apache/activemq/artemis/core/config/impl/ConfigurationImplTest.java#L675[unit test].
 
