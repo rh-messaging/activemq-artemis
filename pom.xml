@@ -101,7 +101,7 @@
       <commons.collections.version>3.2.2</commons.collections.version>
       <commons.text.version>1.14.0</commons.text.version>
       <commons.io.version>2.20.0</commons.io.version>
-      <commons.codec.version>1.19.0</commons.codec.version>
+      <commons.codec.version>1.20.0</commons.codec.version>
       <commons.compress.version>1.28.0</commons.compress.version>
       <fuse.mqtt.client.version>1.16</fuse.mqtt.client.version>
       <caffeine.version>3.2.3</caffeine.version>
@@ -164,7 +164,7 @@
       <version.org.jacoco.plugin>0.8.14</version.org.jacoco.plugin>
       <version.micrometer>1.15.5</version.micrometer>
       <hamcrest.version>3.0</hamcrest.version>
-      <junit.version>6.0.0</junit.version>
+      <junit.version>6.0.1</junit.version>
       <junit5.version>5.14.0</junit5.version>
       <junit4.version>4.13.2</junit4.version>
       <version.jaxb.runtime>2.3.9</version.jaxb.runtime>
@@ -201,7 +201,7 @@
       <owasp.version>12.1.8</owasp.version>
       <spring.version>5.3.39</spring.version>
 
-      <jackson.version>2.20.0</jackson.version>
+      <jackson.version>2.20.1</jackson.version>
 
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
