@@ -224,6 +224,7 @@ import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerImpl;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.utils.critical.CriticalComponent;
 import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
+import org.apache.activemq.artemis.utils.uri.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -3386,6 +3387,9 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          String propsLocations = configuration.resolvePropertiesSources(propertiesFileUrl);
          if (propsLocations != null) {
             for (String fileUrl : propsLocations.split(",")) {
+               if (URISupport.containsQuery(fileUrl)) {
+                  fileUrl = URISupport.stripQuery(fileUrl);
+               }
                reloadManager.addCallback(new File(fileUrl).toURI().toURL(), fullConfigReloadCallback);
             }
          }
