@@ -140,8 +140,8 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 221024, value = "Backup server {} is synchronized with primary server, nodeID={}.", level = LogMessage.Level.INFO)
    void backupServerSynchronized(ActiveMQServerImpl server, String nodeID);
 
-   @LogMessage(id = 221025, value = "Replication: sending {} (size={}) to replica.", level = LogMessage.Level.INFO)
-   void replicaSyncFile(SequentialFile jf, Long size);
+   @LogMessage(id = 221025, value = "Replication: sending {} (size={}) to replica, origin={}", level = LogMessage.Level.INFO)
+   void replicaSyncFile(SequentialFile jf, Long size, Object identification);
 
    @LogMessage(id = 221027, value = "Bridge {} is connected", level = LogMessage.Level.INFO)
    void bridgeConnected(BridgeImpl name);
@@ -1500,4 +1500,7 @@ public interface ActiveMQServerLogger {
    @LogMessage(id = 224144, value = "The topology of the cluster connection {} doesn't include all the expected members. "
        + "Check the discovery group or the static connectors of the cluster connection if the topology is correct: {} / {}", level = LogMessage.Level.WARN)
    void incompleteClusterTopology(String clusterConnection, Topology topology, String topologyMembers);
+
+   @LogMessage(id = 224153, value = "Unable to find page {} on Address {} while reloading ACKNOWLEDGE_CURSOR, deleting record {}.", level = LogMessage.Level.INFO)
+   void cannotFindPageFileDuringPageAckReload(long pageNr, Object address, long id);
 }
