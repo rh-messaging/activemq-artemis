@@ -4719,6 +4719,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       // Setting to null might have side effects
       setDefaultIfUnset(c::getUser, c::setUser, null);
       setDefaultIfUnset(c::getRingSize, c::setRingSize, ActiveMQDefaultConfiguration.getDefaultRingSize());
+      setDefaultIfUnset(c::isGroupRebalancePauseDispatch, c::setGroupRebalancePauseDispatch, ActiveMQDefaultConfiguration.getDefaultGroupRebalancePauseDispatch());
    }
 
    private void deployReloadableConfigFromConfiguration() throws Exception {

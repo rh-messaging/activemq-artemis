@@ -151,6 +151,7 @@ public class PostOfficeJournalLoader implements JournalLoader {
                                                              .setMaxConsumers(queueBindingInfo.getMaxConsumers())
                                                              .setExclusive(queueBindingInfo.isExclusive())
                                                              .setGroupRebalance(queueBindingInfo.isGroupRebalance())
+                                                             .setGroupRebalancePauseDispatch(queueBindingInfo.isGroupRebalancePauseDispatch())
                                                              .setGroupBuckets(queueBindingInfo.getGroupBuckets())
                                                              .setGroupFirstKey(queueBindingInfo.getGroupFirstKey())
                                                              .setLastValue(queueBindingInfo.isLastValue())

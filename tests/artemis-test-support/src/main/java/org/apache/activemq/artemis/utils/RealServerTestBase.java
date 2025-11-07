@@ -78,6 +78,20 @@ public class RealServerTestBase extends ActiveMQTestBase {
       processes.clear();
    }
 
+
+   protected void jstack(long pid, String serverName) throws Exception {
+      try {
+         System.out.println("*******************************************************************************************************************************");
+         System.out.println("jstack on " + serverName);
+         ExecuteUtil.runCommand(true, 1, TimeUnit.MINUTES, "jstack", "" + pid);
+         System.out.println("*******************************************************************************************************************************");
+      } catch (Throwable e) {
+         logger.warn("Error executing jstack on {}", serverName, e);
+      }
+   }
+
+
+
    public void killServer(Process process) {
       processes.remove(process);
       try {
