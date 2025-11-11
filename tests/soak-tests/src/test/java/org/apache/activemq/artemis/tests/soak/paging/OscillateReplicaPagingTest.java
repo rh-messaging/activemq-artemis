@@ -159,6 +159,7 @@ public class OscillateReplicaPagingTest extends SoakTestBase {
          HelperCreate cliCreateServer = helperCreate();
          cliCreateServer.setAllowAnonymous(true).setNoWeb(true).setArtemisInstance(serverLocation);
          cliCreateServer.setConfiguration("./src/main/resources/servers/page-oscillation/live");
+         cliCreateServer.createServer();
       }
       {
          File serverLocation = getFileServerLocation(SERVER_NAME_1);
