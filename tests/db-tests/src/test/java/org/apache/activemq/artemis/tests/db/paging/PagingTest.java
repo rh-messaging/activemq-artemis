@@ -99,7 +99,6 @@ import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderImp
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageCursorProviderTestAccessor;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PagePositionImpl;
 import org.apache.activemq.artemis.core.paging.cursor.impl.PageSubscriptionImpl;
-import org.apache.activemq.artemis.core.paging.impl.Page;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryDatabase;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreFactoryNIO;
 import org.apache.activemq.artemis.core.paging.impl.PagingStoreImpl;
