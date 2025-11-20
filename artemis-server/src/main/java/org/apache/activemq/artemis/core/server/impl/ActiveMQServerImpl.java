@@ -224,6 +224,7 @@ import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerImpl;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzerPolicy;
 import org.apache.activemq.artemis.utils.critical.CriticalComponent;
 import org.apache.activemq.artemis.utils.critical.EmptyCriticalAnalyzer;
+import org.apache.activemq.artemis.utils.uri.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -3371,21 +3372,25 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       if (configurationFileRefreshPeriod > 0) {
          this.reloadManager = new ReloadManagerImpl(getScheduledPool(), executorFactory.getExecutor(), configurationFileRefreshPeriod);
 
-         if (configuration.getConfigurationUrl() != null && getScheduledPool() != null) {
-            final URL configUrl = configuration.getConfigurationUrl();
-            ReloadCallback xmlConfigReload = uri -> {
-               // ignore the argument from the callback such that we can respond
-               // to property file locations with a full reload
-               reloadConfigurationFile(configUrl);
-            };
-            reloadManager.addCallback(configUrl, xmlConfigReload);
+         final URL configUrl = configuration.getConfigurationUrl();
+         ReloadCallback fullConfigReloadCallback = uri -> {
+            // ignore the argument from the callback such that we can respond
+            // to property file locations with a full reload
+            reloadConfigurationFile(configUrl);
+         };
 
-            // watch properties and reload xml config
-            String propsLocations = configuration.resolvePropertiesSources(propertiesFileUrl);
-            if (propsLocations != null) {
-               for (String fileUrl : propsLocations.split(",")) {
-                  reloadManager.addCallback(new File(fileUrl).toURI().toURL(), xmlConfigReload);
+         if (configUrl != null) {
+            reloadManager.addCallback(configUrl, fullConfigReloadCallback);
+         }
+
+         // watch properties and reload config
+         String propsLocations = configuration.resolvePropertiesSources(propertiesFileUrl);
+         if (propsLocations != null) {
+            for (String fileUrl : propsLocations.split(",")) {
+               if (URISupport.containsQuery(fileUrl)) {
+                  fileUrl = URISupport.stripQuery(fileUrl);
                }
+               reloadManager.addCallback(new File(fileUrl).toURI().toURL(), fullConfigReloadCallback);
             }
          }
 
@@ -4667,22 +4672,25 @@ public class ActiveMQServerImpl implements ActiveMQServer {
       reloadConfigurationFile(configuration.getConfigurationUrl());
    }
 
-   private void reloadConfigurationFile(URL uri) throws Exception {
-      Configuration config = new FileConfigurationParser().parseMainConfig(uri.openStream());
-      LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
-      legacyJMSConfiguration.parseConfiguration(uri.openStream());
-      configuration.setSecurityRoles(config.getSecurityRoles());
-      configuration.setAddressSettings(config.getAddressSettings());
-      configuration.setDivertConfigurations(config.getDivertConfigurations());
-      configuration.setAddressConfigurations(config.getAddressConfigurations());
-      configuration.setQueueConfigs(config.getQueueConfigs());
-      configuration.setBridgeConfigurations(config.getBridgeConfigurations());
-      configuration.setConnectorConfigurations(config.getConnectorConfigurations());
-      configuration.setAMQPConnectionConfigurations(config.getAMQPConnection());
+   private void reloadConfigurationFile(URL xmlConfigUri) throws Exception {
+      if (xmlConfigUri != null) {
+         Configuration config = new FileConfigurationParser().parseMainConfig(xmlConfigUri.openStream());
+         LegacyJMSConfiguration legacyJMSConfiguration = new LegacyJMSConfiguration(config);
+         legacyJMSConfiguration.parseConfiguration(xmlConfigUri.openStream());
+         configuration.setSecurityRoles(config.getSecurityRoles());
+         configuration.setAddressSettings(config.getAddressSettings());
+         configuration.setDivertConfigurations(config.getDivertConfigurations());
+         configuration.setAddressConfigurations(config.getAddressConfigurations());
+         configuration.setQueueConfigs(config.getQueueConfigs());
+         configuration.setBridgeConfigurations(config.getBridgeConfigurations());
+         configuration.setConnectorConfigurations(config.getConnectorConfigurations());
+         configuration.setAcceptorConfigurations(config.getAcceptorConfigurations());
+         configuration.setAMQPConnectionConfigurations(config.getAMQPConnection());
+      }
+      configuration.parseProperties(propertiesFileUrl);
+      updateStatus(ServerStatus.CONFIGURATION_COMPONENT, configuration.getStatus());
       configurationReloadDeployed.set(false);
       if (isActive()) {
-         configuration.parseProperties(propertiesFileUrl);
-         updateStatus(ServerStatus.CONFIGURATION_COMPONENT, configuration.getStatus());
          deployReloadableConfigFromConfiguration();
       }
    }
@@ -4724,90 +4732,94 @@ public class ActiveMQServerImpl implements ActiveMQServer {
          addressSettingsRepository.swap(configuration.getAddressSettings().entrySet());
          recoverStoredAddressSettings();
 
-         ActiveMQServerLogger.LOGGER.reloadingConfiguration("diverts");
-         // Filter out all active diverts
-         final Set<SimpleString> divertsToRemove = postOffice.getAllBindings()
-                 .filter(binding -> binding instanceof DivertBinding)
-                 .map(Binding::getUniqueName)
-                 .collect(Collectors.toSet());
-         // Go through the currently configured diverts
-         for (DivertConfiguration divertConfig : configuration.getDivertConfigurations()) {
-            // Retain diverts still configured to exist
-            divertsToRemove.remove(SimpleString.of(divertConfig.getName()));
-            // Deploy newly added diverts, reconfigure existing
-            final SimpleString divertName = SimpleString.of(divertConfig.getName());
-            final DivertBinding divertBinding = (DivertBinding) postOffice.getBinding(divertName);
-            if (divertBinding == null) {
-               deployDivert(divertConfig);
-            } else {
-               if ((divertBinding.isExclusive() != divertConfig.isExclusive()) ||
-                       !divertBinding.getAddress().toString().equals(divertConfig.getAddress())) {
-                  // Diverts whose exclusivity or address has changed have to be redeployed.
-                  // See the Divert interface and look for setters. Absent setter is a hint that maybe that property is immutable.
-                  destroyDivert(divertName);
+         if (postOffice.isStarted()) {
+            ActiveMQServerLogger.LOGGER.reloadingConfiguration("diverts");
+
+            // Filter out all active diverts
+            final Set<SimpleString> divertsToRemove = postOffice.getAllBindings()
+                  .filter(binding -> binding instanceof DivertBinding)
+                  .map(Binding::getUniqueName)
+                  .collect(Collectors.toSet());
+            // Go through the currently configured diverts
+            for (DivertConfiguration divertConfig : configuration.getDivertConfigurations()) {
+               // Retain diverts still configured to exist
+               divertsToRemove.remove(SimpleString.of(divertConfig.getName()));
+               // Deploy newly added diverts, reconfigure existing
+               final SimpleString divertName = SimpleString.of(divertConfig.getName());
+               final DivertBinding divertBinding = (DivertBinding) postOffice.getBinding(divertName);
+               if (divertBinding == null) {
                   deployDivert(divertConfig);
                } else {
-                  // Diverts with their exclusivity and address unchanged can be updated directly.
-                  updateDivert(divertConfig);
+                  if ((divertBinding.isExclusive() != divertConfig.isExclusive()) ||
+                        !divertBinding.getAddress().toString().equals(divertConfig.getAddress())) {
+                     // Diverts whose exclusivity or address has changed have to be redeployed.
+                     // See the Divert interface and look for setters. Absent setter is a hint that maybe that property is immutable.
+                     destroyDivert(divertName);
+                     deployDivert(divertConfig);
+                  } else {
+                     // Diverts with their exclusivity and address unchanged can be updated directly.
+                     updateDivert(divertConfig);
+                  }
                }
             }
-         }
-         // Remove all remaining diverts
-         for (final SimpleString divertName : divertsToRemove) {
-            try {
-               destroyDivert(divertName);
-            } catch (Throwable e) {
-               logger.warn("Divert {} could not be removed", divertName, e);
+            // Remove all remaining diverts
+            for (final SimpleString divertName : divertsToRemove) {
+               try {
+                  destroyDivert(divertName);
+               } catch (Throwable e) {
+                  logger.warn("Divert {} could not be removed", divertName, e);
+               }
             }
+            recoverStoredDiverts();
          }
-         recoverStoredDiverts();
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("addresses");
          undeployAddressesAndQueueNotInConfiguration(configuration);
          deployAddressesFromConfiguration(configuration);
          deployQueuesFromListQueueConfiguration(configuration.getQueueConfigs());
 
-         ActiveMQServerLogger.LOGGER.reloadingConfiguration("bridges");
+         if (clusterManager.isStarted()) {
+            ActiveMQServerLogger.LOGGER.reloadingConfiguration("bridges");
 
-         for (BridgeConfiguration newBridgeConfig : configuration.getBridgeConfigurations()) {
+            for (BridgeConfiguration newBridgeConfig : configuration.getBridgeConfigurations()) {
 
-            String bridgeName = newBridgeConfig.getName();
-            newBridgeConfig.setParentName(bridgeName);
+               String bridgeName = newBridgeConfig.getName();
+               newBridgeConfig.setParentName(bridgeName);
 
-            //Look for bridges with matching parentName. Only need first match in case of concurrent bridges
-            Bridge existingBridge = clusterManager.getBridges().values().stream()
-               .filter(bridge -> bridge.getConfiguration().getParentName().equals(bridgeName))
-               .findFirst()
-               .orElse(null);
+               //Look for bridges with matching parentName. Only need first match in case of concurrent bridges
+               Bridge existingBridge = clusterManager.getBridges().values().stream()
+                     .filter(bridge -> bridge.getConfiguration().getParentName().equals(bridgeName))
+                     .findFirst()
+                     .orElse(null);
 
-            if (existingBridge != null && existingBridge.getConfiguration().isConfigurationManaged() && !existingBridge.getConfiguration().equals(newBridgeConfig)) {
-               // this is an existing bridge but the config changed so stop the current bridge and deploy the new one
-               destroyBridge(bridgeName);
-               deployBridge(newBridgeConfig);
-            } else if (existingBridge == null) {
-               // this is a new bridge
-               deployBridge(newBridgeConfig);
-            }
-
-         }
-
-         //Look for already running bridges no longer in configuration, stop if found
-         for (final Bridge existingBridge : clusterManager.getBridges().values()) {
-            BridgeConfiguration existingBridgeConfig = existingBridge.getConfiguration();
-
-            if (existingBridgeConfig.isConfigurationManaged()) {
-               String existingBridgeName = existingBridgeConfig.getParentName();
-
-               boolean noLongerConfigured = configuration.getBridgeConfigurations().stream()
-                  .noneMatch(bridge -> bridge.getParentName().equals(existingBridgeName));
-
-               if (noLongerConfigured) {
-                  destroyBridge(existingBridgeName);
+               if (existingBridge != null && existingBridge.getConfiguration().isConfigurationManaged() && !existingBridge.getConfiguration().equals(newBridgeConfig)) {
+                  // this is an existing bridge but the config changed so stop the current bridge and deploy the new one
+                  destroyBridge(bridgeName);
+                  deployBridge(newBridgeConfig);
+               } else if (existingBridge == null) {
+                  // this is a new bridge
+                  deployBridge(newBridgeConfig);
                }
             }
+
+            //Look for already running bridges no longer in configuration, stop if found
+            for (final Bridge existingBridge : clusterManager.getBridges().values()) {
+               BridgeConfiguration existingBridgeConfig = existingBridge.getConfiguration();
+
+               if (existingBridgeConfig.isConfigurationManaged()) {
+                  String existingBridgeName = existingBridgeConfig.getParentName();
+
+                  boolean noLongerConfigured = configuration.getBridgeConfigurations().stream()
+                        .noneMatch(bridge -> bridge.getParentName().equals(existingBridgeName));
+
+                  if (noLongerConfigured) {
+                     destroyBridge(existingBridgeName);
+                  }
+               }
+            }
+            recoverStoredBridges();
          }
 
-         recoverStoredBridges();
          recoverStoredConnectors();
 
          ActiveMQServerLogger.LOGGER.reloadingConfiguration("protocol services");

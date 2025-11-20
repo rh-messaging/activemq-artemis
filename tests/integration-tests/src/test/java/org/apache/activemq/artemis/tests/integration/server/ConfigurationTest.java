@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.config.CoreQueueConfiguration;
@@ -82,7 +85,7 @@ public class ConfigurationTest extends ActiveMQTestBase {
       propsFile.createNewFile();
 
       ConfigurationImpl.InsertionOrderedProperties config = new ConfigurationImpl.InsertionOrderedProperties();
-      config.put("configurationFileRefreshPeriod", "500");
+      config.put("configurationFileRefreshPeriod", "100");
 
       config.put("addressConfigurations.mytopic_3.routingTypes", "MULTICAST");
 
@@ -132,6 +135,184 @@ public class ConfigurationTest extends ActiveMQTestBase {
          // verify some server attributes
          assertTrue(server.getActiveMQServerControl().getStatus().contains("version"));
          assertTrue(server.getActiveMQServerControl().getStatus().contains("uptime"));
+
+      } finally {
+         try {
+            server.stop();
+         } catch (Exception e) {
+         }
+      }
+   }
+
+   @Test
+   public void testPropertiesOnlyConfigReload() throws Exception {
+
+      File propsFile = new File(getTestDirfile(), "somemore.props");
+      propsFile.createNewFile();
+
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+      properties.put("configurationFileRefreshPeriod", "100");
+      properties.put("persistenceEnabled", "false");
+      properties.put("connectionRouters.joe.localTargetFilter", "LF");
+
+      try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+         properties.store(outStream, null);
+      }
+      assertTrue(propsFile.exists());
+
+      FileConfiguration fc = new FileConfiguration();
+      ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
+      ActiveMQServer server = addServer(new ActiveMQServerImpl(fc, sm));
+      server.setProperties(propsFile.getAbsolutePath());    // no xml config
+      try {
+
+         server.start();
+
+         assertEquals(1, server.getConfiguration().getConnectionRouters().size());
+         assertEquals("LF", server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
+
+         properties.put("persistenceEnabled", "false");
+         properties.put("configurationFileRefreshPeriod", "100");
+
+         // verify update
+         properties.put("connectionRouters.joe.localTargetFilter", "UPDATED");
+         try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+            properties.store(outStream, null);
+         }
+
+         Wait.assertTrue(() -> {
+            return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
+         });
+
+      } finally {
+         try {
+            server.stop();
+         } catch (Exception e) {
+         }
+      }
+   }
+
+   @Test
+   public void testPropertiesDirWithFilterConfigReloadOnNewFileAfterGettingJournalLock() throws Exception {
+
+      File propsFile = new File(getTestDirfile(), "some.custom_props");
+      propsFile.createNewFile();
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+      properties.put("configurationFileRefreshPeriod", "100");
+      properties.put("persistenceEnabled", "true");
+      properties.put("connectionRouters.joe.localTargetFilter", "LF");
+
+      try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+         properties.store(outStream, null);
+      }
+      assertTrue(propsFile.exists());
+
+      FileConfiguration fc = new FileConfiguration();
+      ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
+      ActiveMQServer server = addServer(new ActiveMQServerImpl(fc, sm));
+      server.getConfiguration().setBrokerInstance(getTestDirfile());
+
+      server.setProperties(getTestDirfile().getAbsolutePath() + "/?filter=.*\\.custom_props");    // no xml config
+      server.getConfiguration().setConfigurationFileRefreshPeriod(100);
+      CountDownLatch blockActivation = new CountDownLatch(1);
+      CountDownLatch inActivation = new CountDownLatch(1);
+      try {
+         ((ActiveMQServerImpl) server).setAfterActivationCreated(() -> {
+            try {
+               inActivation.countDown();
+               blockActivation.await(4, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+               throw new RuntimeException(e);
+            }
+         });
+
+         Thread t = new Thread(() -> {
+            try {
+               server.start();
+            } catch (Exception e) {
+               throw new RuntimeException(e);
+            }
+         });
+         t.start();
+
+         inActivation.await();
+
+         TimeUnit.MILLISECONDS.sleep(server.getConfiguration().getConfigurationFileRefreshPeriod() + 100);
+
+         // new file while blocked on activation, like waiting for a file lock release
+         propsFile = new File(getTestDirfile(), "somemore.custom_props");
+         propsFile.createNewFile();
+         properties = new Properties();
+         properties.put("connectionRouters.joe.localTargetFilter", "UPDATED");
+         try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+            properties.store(outStream, null);
+         }
+
+         // release activation to see if it will reload the new config
+         blockActivation.countDown();
+
+         Wait.assertTrue(() -> {
+            return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
+         });
+      } finally {
+         try {
+            server.stop();
+         } catch (Exception e) {
+         }
+      }
+   }
+
+   @Test
+   public void testPropertiesDirWithFilterConfigReloadOnNewFile() throws Exception {
+
+      File propsFile = new File(getTestDirfile(), "some.custom_props");
+      propsFile.createNewFile();
+
+
+      Properties properties = new ConfigurationImpl.InsertionOrderedProperties();
+      properties.put("configurationFileRefreshPeriod", "100");
+      properties.put("persistenceEnabled", "false");
+      properties.put("connectionRouters.joe.localTargetFilter", "LF");
+
+      try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+         properties.store(outStream, null);
+      }
+      assertTrue(propsFile.exists());
+
+      FileConfiguration fc = new FileConfiguration();
+      ActiveMQJAASSecurityManager sm = new ActiveMQJAASSecurityManager(InVMLoginModule.class.getName(), new SecurityConfiguration());
+      ActiveMQServer server = addServer(new ActiveMQServerImpl(fc, sm));
+      server.setProperties(getTestDirfile().getAbsolutePath() + "/?filter=.*\\.custom_props");    // no xml config
+      try {
+
+         server.start();
+
+         assertEquals(1, server.getConfiguration().getConnectionRouters().size());
+         assertEquals("LF", server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
+
+         // verify ignored file, alphabetically after that will get ignored due to the filter non match
+         properties = new Properties();
+         properties.put("connectionRouters.joe.localTargetFilter", "LF");
+         propsFile = new File(getTestDirfile(), "v_somemore.properties");
+         propsFile.createNewFile();
+         try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+            properties.store(outStream, null);
+         }
+
+         // verify update via new file
+         propsFile = new File(getTestDirfile(), "u_somemore.custom_props");
+         propsFile.createNewFile();
+         properties = new Properties();
+         properties.put("connectionRouters.joe.localTargetFilter", "UPDATED");
+         try (FileOutputStream outStream = new FileOutputStream(propsFile)) {
+            properties.store(outStream, null);
+         }
+
+         Wait.assertTrue(() -> {
+            return "UPDATED".equals(server.getConfiguration().getConnectionRouters().get(0).getLocalTargetFilter());
+         });
 
       } finally {
          try {
