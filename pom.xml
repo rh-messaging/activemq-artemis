@@ -80,6 +80,7 @@
    <url>https://activemq.apache.org/components/artemis/</url>
 
    <properties>
+      <amq.broker.version>8.0.0</amq.broker.version>
       <maven.compiler.source>17</maven.compiler.source>
       <maven.compiler.target>17</maven.compiler.target>
       <maven.compiler.release>17</maven.compiler.release>
