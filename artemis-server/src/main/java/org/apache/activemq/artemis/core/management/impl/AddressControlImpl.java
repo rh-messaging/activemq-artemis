@@ -482,6 +482,26 @@ public class AddressControlImpl extends AbstractControl implements AddressContro
    }
 
    @Override
+   public boolean isBlockedViaManagement() throws Exception {
+      if (AuditLogger.isBaseLoggingEnabled()) {
+         AuditLogger.isBlockedViaManagement(this.addressInfo);
+      }
+      clearIO();
+      try {
+         final PagingStore pagingStore = getPagingStore();
+         if (pagingStore != null) {
+            return pagingStore.isBlockedViaManagement();
+         } else {
+            return false;
+         }
+      } catch (Exception e) {
+         return false;
+      } finally {
+         blockOnIO();
+      }
+   }
+
+   @Override
    public long getNumberOfPages() {
       if (AuditLogger.isBaseLoggingEnabled()) {
          AuditLogger.getNumberOfPages(this.addressInfo);

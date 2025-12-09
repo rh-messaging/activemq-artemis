@@ -156,6 +156,12 @@ public interface AddressControl {
    void unblock() throws Exception;
 
    /**
+    * {@return whether message production to this address is blocked via management (via the {@code block} operation)}
+    */
+   @Attribute(desc = "whether message production to this address is blocked via management (via the block operation)")
+   boolean isBlockedViaManagement() throws Exception;
+
+   /**
     * {@return the number of bytes used by each page for this address}
     */
    @Attribute(desc = "number of bytes used by each page for this address")

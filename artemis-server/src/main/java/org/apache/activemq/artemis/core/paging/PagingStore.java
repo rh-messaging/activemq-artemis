@@ -284,6 +284,8 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
 
    void unblock();
 
+   boolean isBlockedViaManagement();
+
    default boolean hasPendingIO() {
       return false;
    }
