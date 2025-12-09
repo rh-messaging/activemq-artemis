@@ -17,8 +17,9 @@
 package org.apache.activemq.cli.test;
 
 import javax.jms.Connection;
-
+import javax.jms.Session;
 import org.apache.activemq.artemis.api.core.Pair;
+import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.cli.commands.messages.Consumer;
 import org.apache.activemq.artemis.cli.commands.messages.Producer;
 import org.apache.activemq.artemis.core.server.ActiveMQServer;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CliConsumerTest extends CliTestBase {
@@ -112,5 +114,51 @@ public class CliConsumerTest extends CliTestBase {
       }
 
       Wait.assertEquals(0L, () -> server.locateQueue(address).getMessageCount(), 2000, 50);
+   }
+
+   @Test
+   public void testConsumeFromExistingDurableSubscription() throws Exception {
+      final String address = "test-topic";
+      final String addressPrefix = "topic://";
+      final String clientID = "test-client";
+      final String subscriptionName = "test-sub";
+      final String credentials = "admin";
+      final TestActionContext context = new TestActionContext();
+
+      // Creates the durable subscription to consumer from using the CLI tool.
+      try (Connection connection = cf.createConnection(credentials, credentials)) {
+
+         connection.setClientID(clientID);
+         connection.start();
+
+         final Session session = createSession(connection);
+
+         session.createDurableConsumer(session.createTopic(address), subscriptionName);
+      }
+
+      produceMessages(addressPrefix + address, TEST_MESSAGE_COUNT);
+
+      server.addressQuery(SimpleString.of(address));
+
+      final String subscriptionQueueName = server.bindingQuery(SimpleString.of(address)).getQueueNames().get(0).toString();
+      assertNotNull(subscriptionQueueName);
+      final org.apache.activemq.artemis.core.server.Queue subscriptionQueue = server.locateQueue(subscriptionQueueName);
+      Wait.assertEquals((long) TEST_MESSAGE_COUNT, () -> subscriptionQueue.getMessageCount(), 2000, 50);
+
+      // Consume from the durable subscription with messages added.
+      new Consumer()
+         .setSubscriptionName(subscriptionName)
+         .setReceiveTimeout(100)
+         .setBreakOnNull(true)
+         .setDurable(true)
+         .setMessageCount(TEST_MESSAGE_COUNT)
+         .setDestination(addressPrefix + address)
+         .setClientID(clientID)
+         .setUser(credentials)
+         .setPassword(credentials)
+         .execute(context);
+
+      Wait.assertTrue(() -> context.getStdout().contains("subscription name"), 2000, 100);
+      Wait.assertEquals(0L, () -> subscriptionQueue.getMessageCount(), 2000, 50);
    }
 }
