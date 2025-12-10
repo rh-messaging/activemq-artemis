@@ -3,7 +3,10 @@
 :idseparator: -
 :docinfo: shared
 
-Federation configuration occurs in a broker connection element where a set of policies defines the desired address or queue federation and the locality of that federation (local or remote). A single federation instance is supported per broker connection element however each federation instance can contain multiple address and queue policy elements. Address and queue policy configuration exist for both the local and the remote side of the federation over the broker connection. An example of such a federation configuration element follows which contains both local and remote policy elements.
+Federation configuration occurs in a broker connection element where a set of policies defines the desired address or queue federation and the locality of that federation (local or remote).
+A single federation instance is supported per broker connection element however each federation instance can contain multiple address and queue policy elements.
+Address and queue policy configuration exist for both the local and the remote side of the federation over the broker connection.
+An example of such a federation configuration element follows which contains both local and remote policy elements.
 
 [,xml]
 ----
@@ -29,9 +32,14 @@ Federation configuration occurs in a broker connection element where a set of po
 </broker-connections>
 ----
 
-Local or Remote federation policies configure the local or remote broker to perform the federation operation over the defined connection but otherwise use the same configuration attributes and properties. The only difference is whether the federation occurs locally meaning local demand triggers consumers to be created towards the remote broker, or if remote demand triggers consumers to be created towards the local broker (local meaning the one that carries the configuration). For this reason the remainder of this documentation will use local federation policies when showing configuration examples for simplicity.
+Local or Remote federation policies configure the local or remote broker to perform the federation operation over the defined connection but otherwise use the same configuration attributes and properties.
+The only difference is whether the federation occurs locally meaning local demand triggers consumers to be created towards the remote broker, or if remote demand triggers consumers to be created towards the local broker (local meaning the one that carries the configuration).
+For this reason the remainder of this documentation will use local federation policies when showing configuration examples for simplicity.
 
-Federation configuration can contain multiple policies of the same type (address or queue) along with a mix of types as seen in the configuration example above. This allows for policies with differing configurations for federating different addresses and queues within the same broker connection. It is important to note that the policy names must be unique within the federation configuration. The following configuration example demonstrates the mix of policy configurations within a single federation configuration.
+Federation configuration can contain multiple policies of the same type (address or queue) along with a mix of types as seen in the configuration example above.
+This allows for policies with differing configurations for federating different addresses and queues within the same broker connection.
+It is important to note that the policy names must be unique within the federation configuration.
+The following configuration example demonstrates the mix of policy configurations within a single federation configuration.
 
 [,xml]
 ----
@@ -55,7 +63,8 @@ Federation configuration can contain multiple policies of the same type (address
 </broker-connections>
 ----
 
-It is also supported to have only remote federation policies within a broker connection federation element. In this case the policy is sent across the connection to the remote broker and federation occurs on the remote for the life of that broker connection.
+It is also supported to have only remote federation policies within a broker connection federation element.
+In this case the policy is sent across the connection to the remote broker and federation occurs on the remote for the life of that broker connection.
 
 [,xml]
 ----
@@ -100,7 +109,8 @@ The address policy element can be configured with the following set of attribute
 name::
 The name of the policy, these names should be unique within a broker connection's federation policy elements.
 max-hops::
-The maximum number of hops that a message can perform to be federated. Default value is `0` and will work for most federation deployments.
+The maximum number of hops that a message can perform to be federated.
+Default value is `0` and will work for most federation deployments.
 However, in certain topologies where a loop is configured a higher value may be required to prevent infinite looping of messages.
 auto-delete::
 For address federation, a durable queue is created on the broker from which messages are being federated.
@@ -111,12 +121,15 @@ auto-delete-delay::
 The amount of time in milliseconds after the initiating broker has disconnected before the created queue can be eligible for `auto-delete`.
 The default value is `0` when option is omitted.
 auto-delete-message-count::
-After the initiating broker has disconnected, the maximum number of messages allowed in the remote queue for the queue to be eligible for automatic deletion. The default value is `0`.
+After the initiating broker has disconnected, the maximum number of messages allowed in the remote queue for the queue to be eligible for automatic deletion.
+The default value is `0`.
 enable-divert-bindings::
 Setting to `true` enables divert bindings to be listened-to for demand.
-If a divert binding with an address matches the included addresses for the address policy, any queue bindings that match the forwarding address of the divert creates demand. The default value is `false`.
+If a divert binding with an address matches the included addresses for the address policy, any queue bindings that match the forwarding address of the divert creates demand.
+The default value is `false`.
 
-The following set of elements can be configured within the address policy to control the behavior of the deployed policy. For the policy to actually match any addresses on the target broker an include must be provided at a minimum.
+The following set of elements can be configured within the address policy to control the behavior of the deployed policy.
+For the policy to actually match any addresses on the target broker an include must be provided at a minimum.
 
 include::
 The address-match pattern to use to match included addresses, multiple of these can be set per policy.
@@ -149,22 +162,27 @@ name::
 The name of the policy.
 These names should be unique within a broker connection's federation policy elements.
 priority-adjustment::
-When federation consumers are created this value can be used to ensure that those federation consumers have a lower priority value than other local consumers on the same queue. The default is `-1`.
+When federation consumers are created this value can be used to ensure that those federation consumers have a lower priority value than other local consumers on the same queue.
+The default is `-1`.
 include-federated::
 Controls if consumers on a queue which come from federation instances should be counted when observing a queue for demand, by default this value is `false` and federation consumers are not counted as local demand.
 
 The following set of elements can be configured within the queue policy to control the behavior of the deployed policy.
 
 include::
-The queue-match pattern to use to match included queues and enforce that a matched queue is also bound to a specific address. Multiple of the include elements can be set per policy, but if none are set all queues would be matched unless there is an exclude configured.
+The queue-match pattern to use to match included queues and enforce that a matched queue is also bound to a specific address.
+Multiple of the include elements can be set per policy, but if none are set all queues would be matched unless there is an exclude configured.
 exclude::
-The queue-match pattern to use to match excluded queues that the policy should ignore. Multiple of these can be set, or it can be omitted if no excludes are needed.
+The queue-match pattern to use to match excluded queues that the policy should ignore.
+Multiple of these can be set, or it can be omitted if no excludes are needed.
 property::
 A key / value property setting that allows for configuration options to be set either at the root federation level or within each federation policy that affects some defined behavior of the policy implementation.
 
 === Federation policy property configuration index
 
-The following properties can be set either at the federation element level or set per-policy in order to apply different behaviors to different policies within the same federation configuration. When remote address or queue policies are configured the value of these properties are sent to the remote along with the policies to ensure both sides are operating with the same configurations. Certain value can also be set in the broker connection URI when noted if not set in any of the available locations the configuration default value is used.
+The following properties can be set either at the federation element level or set per-policy in order to apply different behaviors to different policies within the same federation configuration.
+When remote address or queue policies are configured the value of these properties are sent to the remote along with the policies to ensure both sides are operating with the same configurations.
+Certain value can also be set in the broker connection URI when noted if not set in any of the available locations the configuration default value is used.
 
 |===
 | Name | Type | Description | Default

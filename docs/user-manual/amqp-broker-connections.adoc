@@ -45,7 +45,8 @@ The default value is `5000`.
 reconnect-attempts::
 default is -1 meaning infinite
 auto-start::
-Should the broker connection start automatically with the broker. Default is `true`.
+Should the broker connection start automatically with the broker.
+Default is `true`.
 If `false` it is necessary to call a management operation to start it.
 
 NOTE: The connection URI options for transport settings, such as enabling and configuring TLS, are common with other broker connector URIs.
@@ -111,6 +112,7 @@ To specify more than 2 elements use a comma separated list after the first pair,
   </amqp-connection>
 </broker-connections>
 ----
+
 .Broker Connection - Reconnecting and Failover
 image::images/broker-connection-failover.jpg[]
 
@@ -118,8 +120,7 @@ The previous example portrays a case of connection failure towards ServerA.
 The system would try to connect to ServerA, BackupA, and BackupB until it successfully connects to one of these nodes.
 
 WARNING: For failover on mirrored brokers, all nodes in the list must be high-available (HA) failover nodes.
-Specifying independents nodes in the mirror list can cause consistency issues between the message
-sent to the mirror and the acknowledgements received on the mirror.
+Specifying independents nodes in the mirror list can cause consistency issues between the message sent to the mirror and the acknowledgements received on the mirror.
 
 == Mirroring
 
@@ -174,6 +175,7 @@ Examples:
 ====
 * Address exclusion will always take precedence over address inclusion.
 * Address matching on mirror elements is prefix-based and does not support wild-card matching.
+
 ====
 sync::
 If set to `true` any client blocking operation will be held until the mirror has confirmed receiving the operation.
@@ -257,6 +259,7 @@ If messages are sent on DC1 (_DataCenter1_) these will be automatically transfer
 Message acknowledgements received on DC2 will be automatically related back to DC1.
 
 The only exception to that rule would be if there were already consumers with pending messages on any server, where a mirrored acknowledgement will not prevent the message being consumed by both consumers.
+
 [NOTE]
 ====
 It is recommended to not have active consumers on both servers.
@@ -463,7 +466,8 @@ The broker connection federation configuration consists of one or more policies 
 
 === Address federation
 
-Address federation can be thought of as full multicast over a set of loosely coupled brokers. Every message sent to address on `Broker-1` will be delivered to every queue bound to that address on that broker, but also will be delivered to the matching address on `Broker-2`, `Broker-3` ... `Broker-N` and all the queues bound to that address.
+Address federation can be thought of as full multicast over a set of loosely coupled brokers.
+Every message sent to address on `Broker-1` will be delivered to every queue bound to that address on that broker, but also will be delivered to the matching address on `Broker-2`, `Broker-3` ... `Broker-N` and all the queues bound to that address.
 
 .Address Federation
 image::images/amqp-federation-address-concept.png[]
@@ -472,7 +476,8 @@ For further details please see the xref:amqp-address-federation.adoc#address-fed
 
 === Queue federation
 
-Queue federation offers a means of load balancing message queues across multiple broker instances. Messages sent to a queue on `Broker-1` will be consumed and sent to the matching queue on `Broker-2` if there is no local consumer available to consume the message.
+Queue federation offers a means of load balancing message queues across multiple broker instances.
+Messages sent to a queue on `Broker-1` will be consumed and sent to the matching queue on `Broker-2` if there is no local consumer available to consume the message.
 
 .Queue Federation
 image::images/amqp-federation-queue-concept.png[]
@@ -481,7 +486,8 @@ For further details please see the xref:amqp-queue-federation.adoc#queue-federat
 
 == Bridges
 
-AMQP Bridges allows the local broker to create remote receivers for addresses or queues that have local demand and match configured policy constraints. Conversely the broker can create remote senders for addresses or queues that exist on the local broker and match configured policy constraints.
+AMQP Bridges allows the local broker to create remote receivers for addresses or queues that have local demand and match configured policy constraints.
+Conversely the broker can create remote senders for addresses or queues that exist on the local broker and match configured policy constraints.
 
 Add a `<bridge>` element within the `<amqp-connection>` element to configure AMQP bridge to the broker instance.
 The `<amqp-connection>` contains all the configuration for authentication and reconnection handling.
@@ -515,7 +521,9 @@ The broker connection bridge configuration consists of one or more policies that
 
 === Bridging from remote addresses and queues
 
-Bridging from a remote address or queue involves monitoring a local address or queue for demand and reacting when demand is added or removed. When demand exists the bridge will create a receiver on the matching address or queue on the opposing AMQP peer. Because the receivers are created on addresses and queues on the opposing peer, the authentication credentials supplied to the broker connection must have sufficient access to the bridged address or queue on the remote peer in order to consume messages from them.
+Bridging from a remote address or queue involves monitoring a local address or queue for demand and reacting when demand is added or removed.
+When demand exists the bridge will create a receiver on the matching address or queue on the opposing AMQP peer.
+Because the receivers are created on addresses and queues on the opposing peer, the authentication credentials supplied to the broker connection must have sufficient access to the bridged address or queue on the remote peer in order to consume messages from them.
 
 An example of AMQP address and queue bridge from configurations are shown below.
 
@@ -539,41 +547,54 @@ An example of AMQP address and queue bridge from configurations are shown below.
 The set of common policy attributes for bridge from address and queue policies:
 
 name::
-The name of the policy. These names should be unique within a broker connection's bridge policy elements.
+The name of the policy.
+These names should be unique within a broker connection's bridge policy elements.
 priority::
 A configured priority value which if set is applied remote receiver created by this bridge policy, this value is added to the receiver link properties and if supported will influence the priority assigned on the remote.
 priority-adjustment::
-When bridge receivers are created this value can be used to ensure that those bridge receivers have a lower priority value than other receivers on the same address or queue. The default is `-1`.
+When bridge receivers are created this value can be used to ensure that those bridge receivers have a lower priority value than other receivers on the same address or queue.
+The default is `-1`.
 includeDivertBindings::
 Should the bridge from address policy include divert bindings in the checks that control if a remote receiver is created to bridge from an address.
 filter::
 Optional filter string that is validated as a JMS selector string and is applied to the receiver that is bridging messages from and address or queue on the remote peer.
 remoteAddress::
-An optional override of address that is set as the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer. The default action is to assign either the address or queue name depending on whether the policy is bridging an address or queue.
+An optional override of address that is set as the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer.
+The default action is to assign either the address or queue name depending on whether the policy is bridging an address or queue.
 remoteAddressPrefix::
-An optional address prefix that is set on the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer. The default value is `null` and no prefix is applied to the source address.
+An optional address prefix that is set on the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer.
+The default value is `null` and no prefix is applied to the source address.
 remoteAddressSuffix::
-An optional address suffix that is set on the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer. The default value is `null` and no suffix is applied to the source address.
+An optional address suffix that is set on the address in the Source configuration of the AMQP receiver that is bridging messages from the remote peer.
+The default value is `null` and no suffix is applied to the source address.
 remoteTerminusCapabilities::
-Optional set of remote source capabilities that are set on the receiver when bridging an address or queue from the remote peer. The capabilities are configured as a comma delimited list whose default value is `null`.
+Optional set of remote source capabilities that are set on the receiver when bridging an address or queue from the remote peer.
+The capabilities are configured as a comma delimited list whose default value is `null`.
 
 Policy attributes that apply to AMQP bridge from address policies only:
 
 enable-divert-bindings::
-Instructs the receive from address policy to look at diverts that matching address would forward to and check for demand on those diverts when processing demand on the matched address. By default this option is `false` and diverts are not checked.
+Instructs the receive from address policy to look at diverts that matching address would forward to and check for demand on those diverts when processing demand on the matched address.
+By default this option is `false` and diverts are not checked.
 use-durable-subscriptions::
-Instructs the receive from address policy that it should use an JMS over AMQP mapped durable subscription to create the remote receiver which is meant to result in a durable address subscription being created for receivers on addresses that have local demand. By adding a durable subscription the remote will accumulate messages when the broker connection if down and will recover stored messages if the remote server is shutdown and restarted. By default this option is set to `false` to avoid unwanted accumulation of remote messages and if enabled intervention may be needed from remote management to remove old subscriptions or clear space as needed.
+Instructs the receive from address policy that it should use an JMS over AMQP mapped durable subscription to create the remote receiver which is meant to result in a durable address subscription being created for receivers on addresses that have local demand.
+By adding a durable subscription the remote will accumulate messages when the broker connection if down and will recover stored messages if the remote server is shutdown and restarted.
+By default this option is set to `false` to avoid unwanted accumulation of remote messages and if enabled intervention may be needed from remote management to remove old subscriptions or clear space as needed.
 
 Configuration policy elements of which more than one entry per policy is allowed:
 
 include::
-The address-match or queue-match pattern to use to match included addresses and queues. Multiple of these can be set but if none is set then no matches would be made.
+The address-match or queue-match pattern to use to match included addresses and queues.
+Multiple of these can be set but if none is set then no matches would be made.
 exclude::
-The address-match or queue-match pattern to use to match excluded addresses and queues. Multiple of these can be set, or it can be omitted if no excludes are needed.
+The address-match or queue-match pattern to use to match excluded addresses and queues.
+Multiple of these can be set, or it can be omitted if no excludes are needed.
 
 === Bridging to remote addresses and queues
 
-Bridging to a remote address or queue involves monitoring for the existence of a local address or queue amd reacting when one is added or removed. When the target address or queue exists the bridge will create a sender on the matching address or queue on the opposing AMQP peer. Because the senders are created on addresses and queues on the opposing peer, the authentication credentials supplied to the broker connection must have sufficient access to the bridged address or queue on the remote peer in order to produce messages to them.
+Bridging to a remote address or queue involves monitoring for the existence of a local address or queue amd reacting when one is added or removed.
+When the target address or queue exists the bridge will create a sender on the matching address or queue on the opposing AMQP peer.
+Because the senders are created on addresses and queues on the opposing peer, the authentication credentials supplied to the broker connection must have sufficient access to the bridged address or queue on the remote peer in order to produce messages to them.
 
 An example of AMQP address and queue bridge to configurations are shown below.
 
@@ -597,33 +618,42 @@ An example of AMQP address and queue bridge to configurations are shown below.
 The set of common policy attributes for bridge to address and queue policies:
 
 name::
-The name of the policy. These names should be unique within a broker connection's bridge policy elements.
+The name of the policy.
+These names should be unique within a broker connection's bridge policy elements.
 priority::
 A configured priority value which if set is applied local receiver created by this bridge policy, this value is added to the receiver link properties and if supported will influence the priority assigned on the local server.
 priority-adjustment::
-When bridge senders are created this value can be used to ensure that those bridge senders have a lower priority value than other senders on the same address or queue. The default is `-1`.
+When bridge senders are created this value can be used to ensure that those bridge senders have a lower priority value than other senders on the same address or queue.
+The default is `-1`.
 filter::
 Optional filter string that is validated as a JMS selector string and is applied to the sender that is bridging messages to an address or queue on the remote peer.
 remoteAddress::
-An optional override of address that is set as the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer. The default action is to assign either the address or queue name depending on whether the policy is bridging an address or queue.
+An optional override of address that is set as the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer.
+The default action is to assign either the address or queue name depending on whether the policy is bridging an address or queue.
 remoteAddressPrefix::
-An optional address prefix that is set on the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer. The default value is `null` and no prefix is applied to the target address.
+An optional address prefix that is set on the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer.
+The default value is `null` and no prefix is applied to the target address.
 remoteAddressSuffix::
-An optional address suffix that is set on the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer. The default value is `null` and no suffix is applied to the target address.
+An optional address suffix that is set on the address in the Target configuration of the AMQP sender that is bridging messages to the remote peer.
+The default value is `null` and no suffix is applied to the target address.
 remoteTerminusCapabilities::
-Optional set of remote target capabilities that are set on the sender when bridging an address or queue to the remote peer. The capabilities are configured as a comma delimited list whose default value is `null`.
+Optional set of remote target capabilities that are set on the sender when bridging an address or queue to the remote peer.
+The capabilities are configured as a comma delimited list whose default value is `null`.
 
 Policy attributes that apply to AMQP bridge to address policies only:
 
 use-durable-subscriptions::
-Instructs the send to address policy that bindings created on local addresses that match the configured policy includes should create a durable address binding which will be reloaded on server restart and will store messages that were sent to the address while the broker connection is down. The option is `false` by default and a volatile binding is created on the local address that is deleted whenever the broker connection is down so that messages are not retained.
+Instructs the send to address policy that bindings created on local addresses that match the configured policy includes should create a durable address binding which will be reloaded on server restart and will store messages that were sent to the address while the broker connection is down.
+The option is `false` by default and a volatile binding is created on the local address that is deleted whenever the broker connection is down so that messages are not retained.
 
 Configuration policy elements of which more than one entry per policy is allowed:
 
 include::
-The address-match or queue-match pattern to use to match included addresses and queues. Multiple of these can be set but if none is set then no matches would be made.
+The address-match or queue-match pattern to use to match included addresses and queues.
+Multiple of these can be set but if none is set then no matches would be made.
 exclude::
-The address-match or queue-match pattern to use to match excluded addresses and queues. Multiple of these can be set, or it can be omitted if no excludes are needed.
+The address-match or queue-match pattern to use to match excluded addresses and queues.
+Multiple of these can be set, or it can be omitted if no excludes are needed.
 
 === Examples
 
