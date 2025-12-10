@@ -8,7 +8,7 @@
 A {project-name-short} client can be configured in the `context.xml` of the Tomcat container.
 
 This is very similar to the way this is done in ActiveMQ so anyone migrating should find this familiar.
-Please note, the connection url and properties are different please see https://activemq.apache.org/artemis/migration/[Migration Documentation]
+Please note, the connection url and properties are different please see https://artemis.apache.org/components/artemis/migration-documentation/[Migration Documentation]
 
 === Example of Connection Factory
 

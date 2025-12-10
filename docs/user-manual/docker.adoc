@@ -40,7 +40,7 @@ Stop the container using:
 $ docker stop mycontainer
 ----
 
-The official Docker images are built using https://github.com/apache/activemq-artemis/tree/main/artemis-docker[these scripts] which you can also use to build your own images.
+The official Docker images are built using https://github.com/apache/artemis/tree/main/artemis-docker[these scripts] which you can also use to build your own images.
 Read on for more details.
 
 == Build your own Image

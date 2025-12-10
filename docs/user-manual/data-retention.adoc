@@ -41,7 +41,7 @@ Non persistent messages are never stored anywhere in the broker. If you intend t
 
 == Recovering data from retention
 
-To recover data from the retention folder, you can use the method link:https://activemq.apache.org/components/artemis/documentation/javadocs/javadoc-latest/org/apache/activemq/artemis/api/core/management/ActiveMQServerControl.html#replay(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[replay] on the management console:
+To recover data from the retention folder, you can use the method link:https://artemis.apache.org/components/artemis/documentation/javadocs/javadoc-latest/org/apache/activemq/artemis/api/core/management/ActiveMQServerControl.html#replay(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)[replay] on the management console:
 
 image::images/replay-method.png[align="center"]
 

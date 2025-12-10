@@ -11,7 +11,7 @@ This document will refer to the full path of the directory where the ActiveMQ di
 
 == Installation
 
-You can get the latest release from the https://activemq.apache.org/components/artemis/download/[Download] page.
+You can get the latest release from the https://artemis.apache.org/components/artemis/download/[Download] page.
 
 The following highlights some important folders on the distribution:
 
