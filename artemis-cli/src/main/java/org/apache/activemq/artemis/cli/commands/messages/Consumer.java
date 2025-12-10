@@ -50,6 +50,9 @@ public class Consumer extends DestAbstract {
    @Option(names = "--data", description = "Serialize the messages to the specified file as they are consumed.")
    String file;
 
+   @Option(names = "--subscriptionName", description = "The subscription name to use for a durable consumer.")
+   String subscriptionName;
+
    @Override
    public Object execute(ActionContext context) throws Exception {
       super.execute(context);
@@ -78,6 +81,15 @@ public class Consumer extends DestAbstract {
          serializer.start();
       }
 
+      if (subscriptionName != null) {
+         if (threads != 1) {
+            context.err.println("Error: Cannot assign a subscription name when multiple threads are also configured.");
+            return null;
+         } else {
+            context.out.println("Consumer:: subscription name = " + subscriptionName);
+         }
+      }
+
       ConnectionFactory factory = createConnectionFactory();
 
       try (Connection connection = factory.createConnection()) {
@@ -92,7 +104,11 @@ public class Consumer extends DestAbstract {
             }
 
             Destination dest = getDestination(session);
-            threadsArray[i] = new ConsumerThread(session, dest, i, context);
+            if (subscriptionName == null) {
+               threadsArray[i] = new ConsumerThread(session, dest, i, context);
+            } else {
+               threadsArray[i] = new ConsumerThread(session, dest, subscriptionName, context);
+            }
 
             threadsArray[i]
                .setVerbose(verbose)
@@ -189,6 +205,15 @@ public class Consumer extends DestAbstract {
 
    public Consumer setFile(String file) {
       this.file = file;
+      return this;
+   }
+
+   public String getSubscriptionName() {
+      return subscriptionName;
+   }
+
+   public Consumer setSubscriptionName(String subscriptionName) {
+      this.subscriptionName = subscriptionName;
       return this;
    }
 }

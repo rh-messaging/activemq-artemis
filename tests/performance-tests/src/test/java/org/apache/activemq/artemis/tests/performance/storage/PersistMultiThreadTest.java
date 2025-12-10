@@ -614,5 +614,10 @@ public class PersistMultiThreadTest extends ActiveMQTestBase {
       @Override
       public void unblock() {
       }
+
+      @Override
+      public boolean isBlockedViaManagement() {
+         return false;
+      }
    }
 }

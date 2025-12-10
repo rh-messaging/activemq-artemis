@@ -14,28 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.activemq.artemis.utils;
 
-package org.apache.activemq.artemis.tests.compatibility.base;
+import org.junit.jupiter.api.Test;
 
-import org.apache.activemq.artemis.utils.FileUtil;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ServerBase extends VersionedBase {
+public class TimestampUtilTest {
 
-   public ServerBase(String server, String sender, String receiver) throws Exception {
-      super(server, sender, receiver);
-   }
-
-   @BeforeEach
-   public void setUp() throws Throwable {
-      FileUtil.deleteDirectory(serverFolder);
-      setVariable(serverClassloader, "persistent", Boolean.FALSE);
-      startServer(serverFolder, server, serverClassloader, "live");
-   }
-
-   @AfterEach
-   public void tearDown() throws Throwable {
-      stopServer(serverClassloader);
+   @Test
+   public void testFormatEpochMillis() {
+      assertEquals("Thu, 1 Jan 1970 00:00:00 GMT", TimestampUtil.formatEpochMillis(0));
+      assertEquals("Mon, 17 Nov 2025 17:03:05 GMT", TimestampUtil.formatEpochMillis(1763398985514L));
    }
 }

@@ -57,7 +57,12 @@ public class ConsumerThread extends Thread {
    MessageListener listener;
 
    public ConsumerThread(Session session, Destination destination, int threadNr, ActionContext context) {
-      super("Consumer " + destination.toString() + ", thread=" + threadNr);
+      this(session, destination, "Consumer " + destination.toString() + ", thread=" + threadNr, context);
+   }
+
+   public ConsumerThread(Session session, Destination destination, String subscriptionName, ActionContext context) {
+      super(subscriptionName);
+
       this.destination = destination;
       this.session = session;
       this.context = context;

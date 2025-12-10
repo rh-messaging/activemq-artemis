@@ -170,7 +170,7 @@ public class PagingStoreImpl implements PagingStore {
 
    private volatile boolean blocking = false;
 
-   private volatile boolean blockedViaAddressControl = false;
+   private volatile boolean blockedViaManagement = false;
 
    private long rejectThreshold;
 
@@ -1290,7 +1290,7 @@ public class PagingStoreImpl implements PagingStore {
    public boolean checkMemory(boolean runOnFailure, Runnable runWhenAvailableParameter, Runnable runWhenBlocking, Consumer<AtomicRunnable> blockedCallback) {
       AtomicRunnable runWhenAvailable = AtomicRunnable.checkAtomic(runWhenAvailableParameter);
 
-      if (blockedViaAddressControl) {
+      if (blockedViaManagement) {
          if (runWhenAvailable != null) {
             addToBlockList(runWhenAvailable, blockedCallback);
          }
@@ -1404,7 +1404,7 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public boolean checkReleasedMemory() {
-      if (!blockedViaAddressControl && !pagingManager.isGlobalFull() && !full) {
+      if (!blockedViaManagement && !pagingManager.isGlobalFull() && !full) {
          executor.execute(this::memoryReleased);
          if (blocking) {
             ActiveMQServerLogger.LOGGER.unblockingMessageProduction(address, getPageInfo());
@@ -1876,19 +1876,24 @@ public class PagingStoreImpl implements PagingStore {
 
    @Override
    public void block() {
-      if (!blockedViaAddressControl) {
+      if (!blockedViaManagement) {
          ActiveMQServerLogger.LOGGER.blockingViaControl(address);
       }
-      blockedViaAddressControl = true;
+      blockedViaManagement = true;
    }
 
    @Override
    public void unblock() {
-      if (blockedViaAddressControl) {
+      if (blockedViaManagement) {
          ActiveMQServerLogger.LOGGER.unblockingViaControl(address);
       }
-      blockedViaAddressControl = false;
+      blockedViaManagement = false;
       checkReleasedMemory();
+   }
+
+   @Override
+   public boolean isBlockedViaManagement() {
+      return blockedViaManagement;
    }
 
    @Override

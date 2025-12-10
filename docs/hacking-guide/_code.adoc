@@ -1,9 +1,9 @@
 = Working with the Code
 
-While the canonical git repository is hosted on Apache hardware at https://gitbox.apache.org/repos/asf/activemq-artemis.git contributors are encouraged (but not required) to use a mirror on GitHub for collaboration and pull-request review functionality.
+While the canonical git repository is hosted on Apache hardware at https://gitbox.apache.org/repos/asf/artemis.git contributors are encouraged (but not required) to use a mirror on GitHub for collaboration and pull-request review functionality.
 Follow the steps below to get set up with GitHub, etc.
 
-If you do not wish to use GitHub for whatever reason you can follow the overall process outlined in the "Typical development cycle" section below but instead attach https://git-scm.com/docs/git-format-patch[a patch file] to the related JIRA or an email to the http://activemq.apache.org/mailing-lists.html[dev list].
+If you do not wish to use GitHub for whatever reason you can follow the overall process outlined in the "Typical development cycle" section below but instead attach https://git-scm.com/docs/git-format-patch[a patch file] to the related JIRA or an email to the https://artemis.apache.org/contact[dev list].
 
 == Initial Steps
 
@@ -11,16 +11,16 @@ If you do not wish to use GitHub for whatever reason you can follow the overall 
 +
 https://github.com
 
-. Fork the apache-artemis repository into your account
+. Fork the artemis repository into your account
 +
-https://github.com/apache/activemq-artemis
+https://github.com/apache/artemis
 
 . Clone your newly forked copy onto your local workspace:
 +
 [,sh]
 ----
-$ git clone git@github.com:<your-user-name>/activemq-artemis.git
-Cloning into 'activemq-artemis'...
+$ git clone git@github.com:<your-user-name>/artemis.git
+Cloning into 'artemis'...
 remote: Counting objects: 63800, done.
 remote: Compressing objects: 100% (722/722), done.
 remote: Total 63800 (delta 149), reused 0 (delta 0), pack-reused 62748
@@ -28,13 +28,13 @@ Receiving objects: 100% (63800/63800), 18.28 MiB | 3.16 MiB/s, done.
 Resolving deltas: 100% (28800/28800), done.
 Checking connectivity... done.
 
-$ cd activemq-artemis
+$ cd artemis
 ----
 . Add a remote reference to `upstream` for pulling future updates
 +
 [,sh]
 ----
-$ git remote add upstream https://github.com/apache/activemq-artemis
+$ git remote add upstream https://github.com/apache/artemis
 ----
 . Build with Maven
 +
@@ -115,7 +115,7 @@ $ git push origin my_cool_feature
 +
 Note that git push references the branch you are pushing and defaults to `main`, not your working branch.
 
-. https://activemq.apache.org/contact[Discuss your planned changes] (if you want feedback)
+. https://artemis.apache.org/contact[Discuss your planned changes] (if you want feedback)
 . Once you're finished coding your feature/fix then rebase your branch against the latest main (applies your patches  on top of main)
 +
 [,console]
@@ -173,7 +173,7 @@ Delta compression using up to 4 threads.
 Compressing objects: 100% (44/44), done.
 Writing objects: 100% (100/100), 10.67 KiB, done.
 Total 100 (delta 47), reused 100 (delta 47)
-To git@github.com:<your-user-name>/apache-artemis.git
+To git@github.com:<your-user-name>/artemis.git
 3382570..1fa25df  main -> main
 ----
 +

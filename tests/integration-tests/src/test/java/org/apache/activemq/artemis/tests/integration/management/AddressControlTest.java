@@ -880,6 +880,24 @@ public class AddressControlTest extends ManagementTestBase {
       assertEquals(exactPercentBeforeRestart, addressControl.getAddressLimitPercent());
    }
 
+   @Test
+   public void testIsBlockedViaManagement() throws Exception {
+      SimpleString address = RandomUtil.randomUUIDSimpleString();
+      SimpleString queue = RandomUtil.randomUUIDSimpleString();
+
+      session.createQueue(QueueConfiguration.of(queue).setAddress(address).setDurable(false));
+
+      AddressControl addressControl = createManagementControl(address);
+
+      assertFalse(addressControl.isBlockedViaManagement());
+      addressControl.block();
+      assertTrue(addressControl.isBlockedViaManagement());
+      addressControl.unblock();
+      assertFalse(addressControl.isBlockedViaManagement());
+
+      session.deleteQueue(queue);
+   }
+
 
    @Override
    @BeforeEach

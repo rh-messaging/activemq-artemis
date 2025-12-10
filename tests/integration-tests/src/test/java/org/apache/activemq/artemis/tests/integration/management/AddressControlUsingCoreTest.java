@@ -128,7 +128,12 @@ public class AddressControlUsingCoreTest extends AddressControlTest {
 
          @Override
          public void unblock() throws Exception {
-            proxy.invokeOperation("unBlock");
+            proxy.invokeOperation("unblock");
+         }
+
+         @Override
+         public boolean isBlockedViaManagement() throws Exception {
+            return (boolean) proxy.retrieveAttributeValue("blockedViaManagement");
          }
 
          @Override

@@ -3,7 +3,7 @@
 :idseparator: -
 :docinfo: shared
 
-https://github.com/apache/activemq-artemis-examples[The Examples repository^] contains over 90 examples demonstrating many of the client and broker features.
+https://github.com/apache/artemis-examples[The Examples repository^] contains over 90 examples demonstrating many of the client and broker features.
 
 The individual examples are available under the `examples` directory, and are grouped within the following sub tree:
 
@@ -165,7 +165,7 @@ server-out:Server stopped!
 [INFO] ------------------------------------------------------------------------
 ----
 
-This list includes a preview of some examples in the https://github.com/apache/activemq-artemis-examples[Examples Repository^].
+This list includes a preview of some examples in the https://github.com/apache/artemis-examples[Examples Repository^].
 See the repository for more.
 
 == Application-Layer Failover

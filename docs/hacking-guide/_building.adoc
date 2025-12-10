@@ -72,7 +72,7 @@ It needs to be built prior to running `mvn install` to ensure that the ASYNCIO j
 Don't worry if you don't want to use ASYNCIO or your system does not support libaio.
 The broker will check at runtime to see if the required libraries and system dependencies are available and, if not, it will default to using NIO.
 
-To build the ASYNCIO native libraries, please follow link:https://github.com/apache/activemq-artemis-native[these instructions].
+To build the ASYNCIO native libraries, please follow link:https://github.com/apache/artemis-native[these instructions].
 
 == Open Web Application Security Project (OWASP) Report
 

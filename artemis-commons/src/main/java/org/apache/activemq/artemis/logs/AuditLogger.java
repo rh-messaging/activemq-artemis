@@ -2896,4 +2896,11 @@ public interface AuditLogger {
    @LogMessage(id = 601802, value = "User {} is retry sending messages on target resource: {} {}", level = LogMessage.Level.INFO)
    void retryMessages(String user, Object source, String args);
 
+   static void isBlockedViaManagement(Object source) {
+      BASE_LOGGER.isBlockedViaManagement(getCaller(), source);
+   }
+
+   @LogMessage(id = 601803, value = "User {} is getting BlockedViaManagement on target resource: {}", level = LogMessage.Level.INFO)
+   void isBlockedViaManagement(String user, Object source);
+
 }
