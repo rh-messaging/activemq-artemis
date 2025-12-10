@@ -120,6 +120,7 @@ Note the `max-hops=4` in this case since there are five brokers in the diagram, 
 
 Another configuration that allows consumers on brokers to read messages produced on any other broker peer is a hub and spoke configuration.
 In this configuration spoke brokers connect to a central hub and message traffic between the spokes passes through that hub broker which centralizes communication and allows the spokes to only need to know about one other broker, the hub broker.
+When demand exists on any of the spokes they create a federation consumer link to the hub, this in turn causes the hub to create federation consumer links to each of the spokes where the address exists regardless of the presence of a producer on those spokes in order to ensure that when a producer arrives the messages that it sends reach the other spokes with attached consumers (this is shown on diagram at `spoke 3`).
 
 image::images/amqp-federation-address-hub-spoke.png[]
 
