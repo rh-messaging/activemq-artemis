@@ -103,8 +103,6 @@ public class HornetQSoakTest extends ClasspathBase {
       checkErrors(hornetqClassLoader, "errorsConsumer");
       checkErrors(artemis1XClassLoader, "errorsConsumer");
 
-      // execute(artemisClassLoader, )
-
    }
 
    protected void checkErrors(ClassLoader loader, String variable) throws Throwable {
