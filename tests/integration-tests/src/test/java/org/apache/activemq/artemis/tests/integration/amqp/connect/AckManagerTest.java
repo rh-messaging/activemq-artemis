@@ -183,7 +183,6 @@ public class AckManagerTest extends ActiveMQTestBase {
       for (int repeat = 0; repeat < 2; repeat++) {
          logger.info("Repeating {}", repeat);
          AckManager ackManager = AckManagerProvider.getManager(server1);
-         ackManager.start();
 
          Map<SimpleString, LongObjectHashMap<JournalHashMap<AckRetry, AckRetry, Queue>>> sortedRetries = ackManager.sortRetries();
 
@@ -198,6 +197,7 @@ public class AckManagerTest extends ActiveMQTestBase {
          assertEquals(numberOfAcksC1, acksOnc1s1.size());
          assertEquals(numberOfAcksC2, acksOnc2s2.size());
 
+         ackManager.start();
          Wait.assertEquals(numberOfMessages, c1s1::getMessageCount);
          Wait.assertEquals(numberOfMessages, c2s2::getMessageCount);
 
