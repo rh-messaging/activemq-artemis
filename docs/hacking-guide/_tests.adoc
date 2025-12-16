@@ -36,7 +36,7 @@ A simple test like this takes less than a second to run on modern hardware.
 
 Although `org.apache.activemq.artemis.tests.integration.SimpleTest` is simple it could be simpler still by extending https://github.com/apache/artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/tests/util/SingleServerTestBase.java[`org.apache.activemq.artemis.tests.util.SingleServerTestBase`].
 This class does all the setup of a simple server automatically and provides the test-case with a `ServerLocator`,  `ClientSessionFactory`, and `ClientSession` instance.
-https://github.com/apache/artemis/blob/main//tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/SingleServerSimpleTest.java[`org.apache.activemq.artemis.tests.integration.SingleServerSimpleTest`] is an example based on `org.apache.activemq.artemis.tests.integration.SimpleTest` but extends `org.apache.activemq.artemis.tests.util.SingleServerTestBase` which eliminates all the setup and class variables which are provided by `SingleServerTestBase` itself.
+https://github.com/apache/artemis/blob/main/tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/SingleServerSimpleTest.java[`org.apache.activemq.artemis.tests.integration.SingleServerSimpleTest`] is an example based on `org.apache.activemq.artemis.tests.integration.SimpleTest` but extends `org.apache.activemq.artemis.tests.util.SingleServerTestBase` which eliminates all the setup and class variables which are provided by `SingleServerTestBase` itself.
 
 == Writing Web Tests
 
