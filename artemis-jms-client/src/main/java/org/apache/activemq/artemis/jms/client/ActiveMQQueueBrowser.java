@@ -32,7 +32,7 @@ import org.apache.activemq.artemis.jms.client.compatible1X.ActiveMQCompatibleMes
 import org.apache.activemq.artemis.utils.SelectorTranslator;
 
 /**
- * ActiveMQ Artemis implementation of a JMS QueueBrowser.
+ * Apache Artemis implementation of a JMS QueueBrowser.
  */
 public final class ActiveMQQueueBrowser implements QueueBrowser {
 

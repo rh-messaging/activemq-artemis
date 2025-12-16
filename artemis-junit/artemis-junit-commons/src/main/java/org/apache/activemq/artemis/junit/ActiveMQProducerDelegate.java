@@ -26,7 +26,7 @@ import org.apache.activemq.artemis.api.core.client.ClientProducer;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 
 /**
- * Base class to embed an ActiveMQ Artemis ClientProducer bound to a specific address into a test.
+ * Base class to embed an Apache Artemis ClientProducer bound to a specific address into a test.
  */
 public class ActiveMQProducerDelegate extends AbstractActiveMQClientDelegate implements ActiveMQProducerOperations {
 

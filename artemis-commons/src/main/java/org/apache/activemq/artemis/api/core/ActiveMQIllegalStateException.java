@@ -17,7 +17,7 @@
 package org.apache.activemq.artemis.api.core;
 
 /**
- * An ActiveMQ Artemis resource is not in a legal state (e.g. calling ClientConsumer.receive() if a MessageHandler is
+ * An Apache Artemis resource is not in a legal state (e.g. calling ClientConsumer.receive() if a MessageHandler is
  * set).
  */
 public final class ActiveMQIllegalStateException extends ActiveMQException {

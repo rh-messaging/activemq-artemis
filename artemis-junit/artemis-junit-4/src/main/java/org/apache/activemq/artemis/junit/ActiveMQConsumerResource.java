@@ -24,9 +24,9 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.junit.rules.ExternalResource;
 
 /**
- * A JUnit Rule that embeds an ActiveMQ Artemis ClientConsumer into a test. This JUnit Rule is designed to simplify
- * using ActiveMQ Artemis clients in unit tests. Adding the rule to a test will startup a ClientConsumer, which can then
- * be used to consume messages from an ActiveMQ Artemis server.
+ * A JUnit Rule that embeds an Apache Artemis ClientConsumer into a test. This JUnit Rule is designed to simplify
+ * using Apache Artemis clients in unit tests. Adding the rule to a test will startup a ClientConsumer, which can then
+ * be used to consume messages from an Apache Artemis server.
  *
  * <pre>{@code
  * public class SimpleTest {

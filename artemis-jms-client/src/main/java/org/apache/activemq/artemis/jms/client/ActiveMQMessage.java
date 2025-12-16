@@ -58,7 +58,7 @@ import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.TEMP_TO
 import static org.apache.activemq.artemis.jms.client.ActiveMQDestination.TOPIC_QUALIFIED_PREFIX;
 
 /**
- * ActiveMQ Artemis implementation of a JMS Message.
+ * Apache Artemis implementation of a JMS Message.
  * <p>
  * JMS Messages only live on the client side - the server only deals with MessageImpl instances
  */
@@ -260,7 +260,7 @@ public class ActiveMQMessage implements javax.jms.Message {
          }
       } else {
          // Some providers like WSMQ do automatic conversions between native byte[] correlation id and String
-         // correlation id. This makes it impossible for ActiveMQ Artemis to guarantee to return the correct type as set
+         // correlation id. This makes it impossible for Apache Artemis to guarantee to return the correct type as set
          // by the user. Therefore, we allow the behaviour to be overridden by a system property.
          String corrIDString = foreign.getJMSCorrelationID();
          if (corrIDString != null) {

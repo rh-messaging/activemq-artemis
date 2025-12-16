@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
  * Mainly from org.jboss.server.XAResourceWrapper from the JBoss AS server module
  * <p>
  * The reason why we don't use that class directly is that it assumes on failure of connection the RM_FAIL or RM_ERR is
- * thrown, but in ActiveMQ Artemis we throw XA_RETRY since we want the recovery manager to be able to retry on failure
+ * thrown, but in Apache Artemis we throw XA_RETRY since we want the recovery manager to be able to retry on failure
  * without having to manually retry
  */
 public class ActiveMQXAResourceWrapper implements XAResource, SessionFailureListener {

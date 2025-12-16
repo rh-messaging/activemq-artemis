@@ -87,7 +87,7 @@ import org.apache.activemq.artemis.utils.ExecutorFactory;
 import org.apache.activemq.artemis.utils.critical.CriticalAnalyzer;
 
 /**
- * This interface defines the internal interface of the ActiveMQ Artemis Server exposed to other components of the
+ * This interface defines the internal interface of the Apache Artemis Server exposed to other components of the
  * server.
  * <p>
  * This is not part of our public API.
@@ -196,7 +196,7 @@ public interface ActiveMQServer extends ServiceComponent {
    IOCriticalErrorListener getIoCriticalErrorListener();
 
    /**
-    * {@return the resource to manage this ActiveMQ Artemis server}
+    * {@return the resource to manage this Apache Artemis server}
     *
     * @throws IllegalStateException if the server is not properly started.
     */

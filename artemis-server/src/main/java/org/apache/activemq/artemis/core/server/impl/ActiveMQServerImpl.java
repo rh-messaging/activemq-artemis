@@ -230,7 +230,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.activemq.artemis.utils.collections.IterableStream.iterableOf;
 
 /**
- * The ActiveMQ Artemis server implementation
+ * The Apache Artemis server implementation
  */
 public class ActiveMQServerImpl implements ActiveMQServer {
 
@@ -3194,7 +3194,7 @@ public class ActiveMQServerImpl implements ActiveMQServer {
    }
 
    /**
-    * Sets up ActiveMQ Artemis Executor Services.
+    * Sets up Apache Artemis Executor Services.
     */
    private void initializeExecutorServices() {
       int maxIoThreads = configuration.getPageMaxConcurrentIO() <= 0 ? Integer.MAX_VALUE : configuration.getPageMaxConcurrentIO();

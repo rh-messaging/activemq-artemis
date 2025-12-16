@@ -31,7 +31,7 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.utils.ObjectInputStreamWithClassLoader;
 
 /**
- * ActiveMQ Artemis implementation of a JMS ObjectMessage.
+ * Apache Artemis implementation of a JMS ObjectMessage.
  * <p>
  * Don't used ObjectMessage if you want good performance!
  * <p>

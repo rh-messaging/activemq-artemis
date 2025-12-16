@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
- * Base class to embed an ActiveMQ Artemis server into a test.
+ * Base class to embed an Apache Artemis server into a test.
  */
 public class EmbeddedActiveMQDelegate implements EmbeddedActiveMQOperations {
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

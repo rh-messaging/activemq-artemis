@@ -26,9 +26,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * A JUnit Extension that embeds an ActiveMQ Artemis ClientProducer bound to a specific address into a test.
+ * A JUnit Extension that embeds an Apache Artemis ClientProducer bound to a specific address into a test.
  * <p>
- * This JUnit Extension is designed to simplify using ActiveMQ Artemis clients in unit tests. Adding the extension to a
+ * This JUnit Extension is designed to simplify using Apache Artemis clients in unit tests. Adding the extension to a
  * test will startup a ClientProducer, which can then be used to feed messages to the bound address on an ActiveMQ
  * Artemis server.
  *

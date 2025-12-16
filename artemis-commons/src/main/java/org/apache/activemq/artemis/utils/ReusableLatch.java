@@ -27,7 +27,7 @@ package org.apache.activemq.artemis.utils;
  * It could be used for sync points when one process is feeding the latch while another will wait when everything is
  * done. (e.g. waiting IO completions to finish)
  * <p>
- * On ActiveMQ Artemis we have the requirement of increment and decrement a counter until the user fires a ready event
+ * On Apache Artemis we have the requirement of increment and decrement a counter until the user fires a ready event
  * (commit). At that point we just act as a regular countDown.
  * <p>
  * Note: This latch is reusable. Once it reaches zero, you can call up again, and reuse it on further waits.

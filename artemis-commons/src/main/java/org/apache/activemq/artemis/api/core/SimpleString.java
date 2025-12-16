@@ -31,7 +31,7 @@ import org.apache.activemq.artemis.utils.DataConstants;
  * A simple String class that can store all characters, and stores as simple {@code byte[]}, this minimises expensive
  * copying between String objects.
  * <p>
- * This object is used heavily throughout ActiveMQ Artemis for performance reasons.
+ * This object is used heavily throughout Apache Artemis for performance reasons.
  */
 public final class SimpleString implements CharSequence, Serializable, Comparable<SimpleString> {
 

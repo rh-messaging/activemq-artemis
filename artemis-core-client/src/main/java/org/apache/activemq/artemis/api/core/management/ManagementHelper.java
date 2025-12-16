@@ -32,7 +32,7 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.core.message.impl.CoreMessage;
 
 /**
- * Helper class to use ActiveMQ Artemis Core messages to manage server resources.
+ * Helper class to use Apache Artemis Core messages to manage server resources.
  */
 public final class ManagementHelper {
 
@@ -198,7 +198,7 @@ public final class ManagementHelper {
    }
 
    /**
-    * Used by ActiveMQ Artemis management service.
+    * Used by Apache Artemis management service.
     */
    public static Object[] retrieveOperationParameters(final Message message) throws Exception {
       SimpleString sstring = message.toCore().getReadOnlyBodyBuffer().readNullableSimpleString();
@@ -228,7 +228,7 @@ public final class ManagementHelper {
    }
 
    /**
-    * Used by ActiveMQ Artemis management service.
+    * Used by Apache Artemis management service.
     */
    public static void storeResult(final CoreMessage message, final Object result) throws Exception {
       String resultString;

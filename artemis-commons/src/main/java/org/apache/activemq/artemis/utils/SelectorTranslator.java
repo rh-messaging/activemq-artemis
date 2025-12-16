@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class converts a JMS selector expression into an ActiveMQ Artemis core filter expression.
+ * This class converts a JMS selector expression into an Apache Artemis core filter expression.
  * <p>
- * JMS selector and ActiveMQ Artemis filters use the same syntax but have different identifiers.
+ * JMS selector and Apache Artemis filters use the same syntax but have different identifiers.
  * <p>
- * We basically just need to replace the JMS header and property Identifier names with the corresponding ActiveMQ
+ * We basically just need to replace the JMS header and property Identifier names with the corresponding Apache
  * Artemis field and header Identifier names.
  * <p>
  * We must be careful not to substitute any literals, or identifiers whose name contains the name of one we want to

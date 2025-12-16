@@ -28,7 +28,7 @@ import java.util.Vector;
 import org.apache.activemq.artemis.core.version.Version;
 
 /**
- * ActiveMQ Artemis implementation of a JMS ConnectionMetaData.
+ * Apache Artemis implementation of a JMS ConnectionMetaData.
  */
 public class ActiveMQConnectionMetaData implements ConnectionMetaData {
    public static final String DEFAULT_PROP_FILE_NAME = "jms-version.properties";

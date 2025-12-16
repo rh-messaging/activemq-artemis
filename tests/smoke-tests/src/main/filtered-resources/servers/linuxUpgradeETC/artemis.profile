@@ -27,7 +27,7 @@ ARTEMIS_OOME_DUMP='${project.basedir}/target/classes/servers/linuxUpgrade/log/oo
 ARTEMIS_INSTANCE_URI='file:${project.basedir}/target/classes/servers/linuxUpgrade/'
 ARTEMIS_INSTANCE_ETC_URI='file:${project.basedir}/target/classes/servers/linuxUpgradeETC/'
 
-# Cluster Properties: Used to pass arguments to ActiveMQ Artemis which can be referenced in broker.xml
+# Cluster Properties: Used to pass arguments to Apache Artemis which can be referenced in broker.xml
 #ARTEMIS_CLUSTER_PROPS="-Dactivemq.remoting.default.port=61617 -Dactivemq.remoting.amqp.port=5673 -Dactivemq.remoting.stomp.port=61614 -Dactivemq.remoting.hornetq.port=5446"
 
 # Hawtio Properties

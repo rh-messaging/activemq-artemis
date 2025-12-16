@@ -25,7 +25,7 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.api.core.RoutingType;
 
 /**
- * Base class to embed an ActiveMQ Artemis ClientConsumer into a test.
+ * Base class to embed an Apache Artemis ClientConsumer into a test.
  */
 public class ActiveMQConsumerDelegate extends AbstractActiveMQClientDelegate implements ActiveMQConsumerOperations {
 

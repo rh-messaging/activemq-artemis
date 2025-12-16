@@ -40,7 +40,7 @@ import org.apache.activemq.artemis.core.client.impl.ClientSessionInternal;
 import org.apache.activemq.artemis.jms.client.compatible1X.ActiveMQCompatibleMessage;
 
 /**
- * ActiveMQ Artemis implementation of a JMS MessageConsumer.
+ * Apache Artemis implementation of a JMS MessageConsumer.
  */
 public final class ActiveMQMessageConsumer implements QueueReceiver, TopicSubscriber {
 

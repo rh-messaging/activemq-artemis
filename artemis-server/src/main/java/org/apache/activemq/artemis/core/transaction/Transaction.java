@@ -25,7 +25,7 @@ import org.apache.activemq.artemis.core.server.impl.AckReason;
 import org.apache.activemq.artemis.core.server.impl.RefsOperation;
 
 /**
- * An ActiveMQ Artemis internal transaction
+ * An Apache Artemis internal transaction
  */
 public interface Transaction {
 

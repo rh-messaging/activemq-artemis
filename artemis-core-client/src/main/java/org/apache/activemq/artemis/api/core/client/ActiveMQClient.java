@@ -39,7 +39,7 @@ import org.apache.activemq.artemis.utils.ActiveMQThreadPoolExecutor;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 
 /**
- * Utility class for creating ActiveMQ Artemis {@link ClientSessionFactory} objects.
+ * Utility class for creating Apache Artemis {@link ClientSessionFactory} objects.
  * <p>
  * Once a {@link ClientSessionFactory} has been created, it can be further configured using its setter methods before
  * creating the sessions. Once a session is created, the factory can no longer be modified (its setter methods will

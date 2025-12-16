@@ -26,9 +26,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * A JUnit Extension that embeds an dynamic (i.e. unbound) ActiveMQ Artemis ClientProducer into a test.
+ * A JUnit Extension that embeds an dynamic (i.e. unbound) Apache Artemis ClientProducer into a test.
  * <p>
- * This JUnit Extension is designed to simplify using ActiveMQ Artemis clients in unit tests.  Adding the extension to a
+ * This JUnit Extension is designed to simplify using Apache Artemis clients in unit tests.  Adding the extension to a
  * test will startup an unbound ClientProducer, which can then be used to feed messages to any address on the ActiveMQ
  * Artemis server.
  *

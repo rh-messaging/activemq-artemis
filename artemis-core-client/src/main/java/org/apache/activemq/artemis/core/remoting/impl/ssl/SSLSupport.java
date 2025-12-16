@@ -68,7 +68,7 @@ import org.apache.activemq.artemis.utils.ClassloadingUtil;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 
 /**
- * Please note, this class supports PKCS#11 keystores, but there are no specific tests in the ActiveMQ Artemis
+ * Please note, this class supports PKCS#11 keystores, but there are no specific tests in the Apache Artemis
  * test-suite to validate/verify this works because this requires a functioning PKCS#11 provider which is not available
  * by default (see java.security.Security#getProviders()).  The main thing to keep in mind is that PKCS#11 keystores
  * will either use null, and empty string, or NONE for their keystore path.

@@ -216,7 +216,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
    }
 
    /**
-    * Create the actual underlying ActiveMQ Artemis Server Consumer
+    * Create the actual underlying Apache Artemis Server Consumer
     */
    @Override
    public void initialize() throws Exception {
@@ -457,7 +457,7 @@ public class ProtonServerSenderContext extends ProtonInitializable implements Pr
    }
 
    /**
-    * handle an out going message from ActiveMQ Artemis, send via the Proton Sender
+    * handle an out going message from Apache Artemis, send via the Proton Sender
     */
    public int deliverMessage(final MessageReference messageReference, final ServerConsumer consumer) throws Exception {
       if (closed) {

@@ -21,7 +21,7 @@ import org.apache.activemq.artemis.core.security.ActiveMQPrincipal;
 import org.apache.activemq.artemis.spi.core.protocol.RemotingConnection;
 
 /**
- * Extension of RemotingConnection for the ActiveMQ Artemis core protocol
+ * Extension of RemotingConnection for the Apache Artemis core protocol
  */
 public interface CoreRemotingConnection extends RemotingConnection {
 

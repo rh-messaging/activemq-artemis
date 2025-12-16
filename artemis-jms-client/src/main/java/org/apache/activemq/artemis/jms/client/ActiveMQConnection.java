@@ -59,7 +59,7 @@ import org.apache.activemq.artemis.utils.collections.ConcurrentHashSet;
 import org.apache.activemq.artemis.utils.sm.SecurityManagerShim;
 
 /**
- * ActiveMQ Artemis implementation of a JMS Connection.
+ * Apache Artemis implementation of a JMS Connection.
  * <p>
  * The flat implementation of {@link TopicConnection} and {@link QueueConnection} is per design, following the common
  * usage of these as one flat API in JMS 1.1.

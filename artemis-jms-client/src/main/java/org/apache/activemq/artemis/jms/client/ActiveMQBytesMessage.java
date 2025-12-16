@@ -54,7 +54,7 @@ import static org.apache.activemq.artemis.reader.BytesMessageUtil.bytesWriteShor
 import static org.apache.activemq.artemis.reader.BytesMessageUtil.bytesWriteUTF;
 
 /**
- * ActiveMQ Artemis implementation of a JMS {@link BytesMessage}.
+ * Apache Artemis implementation of a JMS {@link BytesMessage}.
  */
 public class ActiveMQBytesMessage extends ActiveMQMessage implements BytesMessage {
 

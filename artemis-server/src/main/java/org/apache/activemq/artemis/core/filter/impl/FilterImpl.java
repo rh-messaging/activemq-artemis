@@ -39,9 +39,9 @@ import java.util.Objects;
 import static org.apache.activemq.artemis.api.core.FilterConstants.NATIVE_MESSAGE_ID;
 
 /**
- * This class implements an ActiveMQ Artemis filter
+ * This class implements an Apache Artemis filter
  * <p>
- * ActiveMQ Artemis filters have the same syntax as JMS 1.1 selectors, but the identifiers are different.
+ * Apache Artemis filters have the same syntax as JMS 1.1 selectors, but the identifiers are different.
  * <p>
  * Valid identifiers that can be used are:
  * <ul>

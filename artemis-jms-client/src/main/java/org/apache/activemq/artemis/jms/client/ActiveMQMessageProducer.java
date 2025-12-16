@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
- * ActiveMQ Artemis implementation of a JMS MessageProducer.
+ * Apache Artemis implementation of a JMS MessageProducer.
  */
 public class ActiveMQMessageProducer implements MessageProducer, QueueSender, TopicPublisher {
 

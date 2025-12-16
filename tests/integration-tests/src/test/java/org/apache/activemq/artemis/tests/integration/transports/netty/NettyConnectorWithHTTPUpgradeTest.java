@@ -141,7 +141,7 @@ public class NettyConnectorWithHTTPUpgradeTest extends ActiveMQTestBase {
       locator = ActiveMQClient.createServerLocatorWithoutHA(new TransportConfiguration(NETTY_CONNECTOR_FACTORY, httpConnectorParams));
       addServerLocator(locator);
 
-      // THe web server owns the HTTP port, not ActiveMQ Artemis.
+      // THe web server owns the HTTP port, not Apache Artemis.
       startWebServer(HTTP_PORT);
    }
 
@@ -240,7 +240,7 @@ public class NettyConnectorWithHTTPUpgradeTest extends ActiveMQTestBase {
             p.addLast("decoder", new HttpRequestDecoder());
             p.addLast("encoder", new HttpResponseEncoder());
             p.addLast("http-upgrade-handler", new SimpleChannelInboundHandler<>() {
-               // handle HTTP GET + Upgrade with a handshake specific to ActiveMQ Artemis remoting.
+               // handle HTTP GET + Upgrade with a handshake specific to Apache Artemis remoting.
                @Override
                protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
                   if (msg instanceof HttpRequest request) {
