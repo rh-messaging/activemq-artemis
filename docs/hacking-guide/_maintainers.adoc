@@ -7,10 +7,10 @@ However, the expectation here is that the developer has made a good effort to te
 
 What does it mean to be reasonably confident?
 If the developer has run the same maven commands that the pull-request builds are running they can be reasonably confident.
-Currently the https://builds.apache.org/job/ActiveMQ-Artemis-PR-Build/[PR build] runs this command:
+Currently the https://github.com/apache/artemis/blob/main/.github/workflows/build.yml[PR build] runs this command:
 [,console]
 ----
-$ mvn -Pfast-tests install
+$ mvn -Pfast-tests -Pcompatibility-tests install
 ----
 However, if the changes are significant, touches a wide area of code, or even if the developer just wants a second opinion they are encouraged to engage other members of the community to obtain an additional review prior to pushing.
 This can easily be done via a pull request on GitHub, a patch file attached to an email or JIRA, commit to a branch in the Apache git repo, etc.
@@ -36,7 +36,7 @@ This format follows the recommendation from the https://git-scm.com/book/en/v2/D
 Aside from the traditional `origin` and `upstream` repositories committers will need an additional reference for the canonical Apache git repository where they will be merging and pushing pull-requests.
 For the purposes of this document, let's assume these ref/repo associations already exist as described in the xref:code.adoc[Working with the Code] section:
 
-* `origin` : https://github.com/(your-user-name)/activemq-artemis.git
+* `origin` : https://github.com/(your-user-name)/artemis.git
 * `upstream` : https://github.com/apache/artemis
 
 . Add the canonical Apache repository as a remote.
@@ -54,7 +54,7 @@ Just be sure to edit all references to the remote repo name so it's consistent.
 [,console]
 ----
  [remote "upstream"]
-     url = git@github.com:apache/activemq-artemis.git
+     url = git@github.com:apache/artemis.git
      fetch = +refs/heads/*:refs/remotes/upstream/*
      fetch = +refs/pull/*/head:refs/remotes/upstream/pr/*
 ----
@@ -75,7 +75,7 @@ remote: Compressing objects: 100% (188/188), done.
 remote: Total 566 (delta 64), reused 17 (delta 17), pack-reused 351
 Receiving objects: 100% (566/566), 300.67 KiB | 0 bytes/s, done.
 Resolving deltas: 100% (78/78), done.
-From github.com:apache/activemq-artemis
+From github.com:apache/artemis
 * [new ref]         refs/pull/105/head -> upstream/pr/105
 ----
 . Checkout the pull request you wish to review
@@ -141,7 +141,7 @@ Example:
 [,console]
 ----
 $ pwd
-/checkouts/apache-activemq-artemis
+/checkouts/artemis
 
 $ ./scripts/merge-PR.sh 175 ARTEMIS-229 address on Security Interface
 ----

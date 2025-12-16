@@ -90,7 +90,8 @@
                            <goal>jar</goal>
                         </goals>
                         <configuration>
-                           <doctitle>ActiveMQ Artemis ${project.version} API</doctitle>
+                           <windowtitle>Apache Artemis ${project.version} API</windowtitle>
+                           <doctitle>Apache Artemis ${project.version} API</doctitle>
                            <minmemory>128m</minmemory>
                            <maxmemory>512m</maxmemory>
                            <noindex>true</noindex>
@@ -381,9 +382,9 @@
 
                         <!-- Version substitution attributes -->
                         <project-version>${project.version}</project-version>
-                        <project-name-full>Apache ActiveMQ Artemis</project-name-full>
-                        <project-name-full-url>apache-activemq-artemis</project-name-full-url>
-                        <project-name-short>ActiveMQ Artemis</project-name-short>
+                        <project-name-full>Apache Artemis</project-name-full>
+                        <project-name-full-url>apache-artemis</project-name-full-url>
+                        <project-name-short>Artemis</project-name-short>
                         <log4j-version>${log4j.version}</log4j-version>
                      </attributes>
                      <logHandler>
