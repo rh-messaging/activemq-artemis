@@ -1226,7 +1226,7 @@ public class PagingStoreImpl implements PagingStore {
                returnPage.delete(null);
 
                // This will trigger this address to exit the page mode,
-               // and this will make ActiveMQ Artemis start using the journal again
+               // and this will make Apache Artemis start using the journal again
                return null;
             } else {
                // We need to create a new page, as we can't lock the address until we finish depaging.

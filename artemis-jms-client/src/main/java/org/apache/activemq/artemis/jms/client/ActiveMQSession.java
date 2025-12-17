@@ -79,7 +79,7 @@ import org.apache.activemq.artemis.utils.CompositeAddress;
 import org.apache.activemq.artemis.utils.SelectorTranslator;
 
 /**
- * ActiveMQ Artemis implementation of a JMS {@link Session}.
+ * Apache Artemis implementation of a JMS {@link Session}.
  * <p>
  * Note that we *do not* support JMS ASF (Application Server Facilities) optional constructs such as
  * {@code ConnectionConsumer}

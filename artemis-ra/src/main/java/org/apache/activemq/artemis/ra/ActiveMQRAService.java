@@ -22,7 +22,7 @@ import javax.management.ObjectName;
 import java.util.Set;
 
 /**
- * An ActiveMQRAService ensures that ActiveMQ Artemis Resource Adapter will be stopped *before* the ActiveMQ Artemis
+ * An ActiveMQRAService ensures that Apache Artemis Resource Adapter will be stopped *before* the ActiveMQ Artemis
  * server.
  */
 public class ActiveMQRAService {

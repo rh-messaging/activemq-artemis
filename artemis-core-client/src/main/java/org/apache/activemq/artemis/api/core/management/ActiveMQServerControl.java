@@ -23,7 +23,7 @@ import org.apache.activemq.artemis.api.config.ActiveMQDefaultConfiguration;
 import org.apache.activemq.artemis.api.core.ActiveMQAddressDoesNotExistException;
 
 /**
- * An ActiveMQServerControl is used to manage ActiveMQ Artemis servers.
+ * An ActiveMQServerControl is used to manage Apache Artemis servers.
  */
 public interface ActiveMQServerControl {
    String CONNECTION_COUNT_DESCRIPTION = "Number of clients connected to this server";

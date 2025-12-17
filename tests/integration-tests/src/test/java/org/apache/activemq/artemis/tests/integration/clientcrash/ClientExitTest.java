@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A test that makes sure that an ActiveMQ Artemis client gracefully exists after the last session is closed.
+ * A test that makes sure that an Apache Artemis client gracefully exists after the last session is closed.
  * <p>
  * This is not technically a crash test, but it uses the same type of topology as the crash tests (local server, remote
  * VM client).

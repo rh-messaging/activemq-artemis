@@ -330,7 +330,7 @@ public class TransportConfiguration implements Serializable {
    /**
     * Encodes this TransportConfiguration into a buffer.
     * <p>
-    * Note that this is only used internally ActiveMQ Artemis.
+    * Note that this is only used internally Apache Artemis.
     *
     * @param buffer the buffer to encode into
     */
@@ -351,7 +351,7 @@ public class TransportConfiguration implements Serializable {
    /**
     * Decodes this TransportConfiguration from a buffer.
     * <p>
-    * Note this is only used internally by ActiveMQ
+    * Note this is only used internally by Apache Artemis
     *
     * @param buffer the buffer to decode from
     */

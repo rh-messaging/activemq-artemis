@@ -56,7 +56,7 @@ import org.apache.activemq.artemis.core.settings.impl.AddressSettings;
 import org.apache.activemq.artemis.core.settings.impl.ResourceLimitSettings;
 
 /**
- * A Configuration is used to configure ActiveMQ Artemis servers.
+ * A Configuration is used to configure Apache Artemis servers.
  */
 public interface Configuration {
 
@@ -292,7 +292,7 @@ public interface Configuration {
    /**
     * Sets the domain used by JMX MBeans (provided JMX management is enabled).
     * <p>
-    * Changing this JMX domain is required if multiple ActiveMQ Artemis servers are run inside the same JVM and all
+    * Changing this JMX domain is required if multiple Apache Artemis servers are run inside the same JVM and all
     * servers are using the same MBeanServer.
     */
    Configuration setJMXDomain(String domain);

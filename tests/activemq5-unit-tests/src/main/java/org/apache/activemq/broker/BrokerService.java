@@ -174,7 +174,7 @@ public class BrokerService implements Service {
       broker = getBroker();
       brokerId = broker.getBrokerId();
 
-      LOG.info("Apache ActiveMQ Artemis Wrapper {} ({}, {}) is starting", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
+      LOG.info("Apache Apache Artemis Wrapper {} ({}, {}) is starting", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
 
       try {
          broker.start();
@@ -184,7 +184,7 @@ public class BrokerService implements Service {
          throw new Exception(t);
       }
 
-      LOG.info("Apache ActiveMQ Artemis Wrapper {} ({}, {}) started", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
+      LOG.info("Apache Apache Artemis Wrapper {} ({}, {}) started", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
       LOG.info("For help or more information please see: http://activemq.apache.org");
 
    }
@@ -193,14 +193,14 @@ public class BrokerService implements Service {
    public void stop() throws Exception {
       System.out.println("broker is: " + broker);
 
-      LOG.info("Apache ActiveMQ Artemis{} ({}, {}) is shutting down", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
+      LOG.info("Apache Apache Artemis{} ({}, {}) is shutting down", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
 
       if (broker != null) {
          broker.stop();
          broker = null;
       }
       tmpfolder.delete();
-      LOG.info("Apache ActiveMQ Artemis {} ({}, {}) is shutdown", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
+      LOG.info("Apache Apache Artemis {} ({}, {}) is shutdown", new Object[]{getBrokerVersion(), getBrokerName(), brokerId});
    }
 
    // Properties

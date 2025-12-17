@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A JUnit Rule that embeds an ActiveMQ Artemis server into a test. This JUnit Rule is designed to simplify using
+ * A JUnit Rule that embeds an Apache Artemis server into a test. This JUnit Rule is designed to simplify using
  * embedded servers in unit tests. Adding the rule to a test will startup an embedded server, which can then be used by
  * client applications.
  *
@@ -106,7 +106,7 @@ public class EmbeddedActiveMQResource extends ExternalResource implements Embedd
    }
 
    /**
-    * Invoked by JUnit to setup the resource - start the embedded ActiveMQ Artemis server
+    * Invoked by JUnit to setup the resource - start the embedded Apache Artemis server
     */
    @Override
    protected void before() throws Throwable {
@@ -118,7 +118,7 @@ public class EmbeddedActiveMQResource extends ExternalResource implements Embedd
    }
 
    /**
-    * Invoked by JUnit to tear down the resource - stops the embedded ActiveMQ Artemis server
+    * Invoked by JUnit to tear down the resource - stops the embedded Apache Artemis server
     */
    @Override
    protected void after() {

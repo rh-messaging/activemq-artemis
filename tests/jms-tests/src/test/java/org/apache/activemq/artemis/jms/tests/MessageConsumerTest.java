@@ -406,7 +406,7 @@ public class MessageConsumerTest extends JMSTestCase {
          // It will be available some indeterminate time later.
          // This is fine and as per spec.
          // To implement receiveNoWait otherwise would be very costly
-         // Also other messaging systems e.g. Sun, ActiveMQ Artemis implement it this way
+         // Also other messaging systems e.g. Sun, Apache Artemis implement it this way
 
          Thread.sleep(500);
 

@@ -552,7 +552,7 @@ public class ActiveMQSessionContext extends SessionContext {
    }
 
    /**
-    * ActiveMQ Artemis does support large messages
+    * Apache Artemis does support large messages
     */
    @Override
    public boolean supportsLargeMessage() {
@@ -1015,7 +1015,7 @@ public class ActiveMQSessionContext extends SessionContext {
    }
 
    /**
-    * This doesn't apply to other protocols probably, so it will be an ActiveMQ Artemis exclusive feature
+    * This doesn't apply to other protocols probably, so it will be an Apache Artemis exclusive feature
     */
    private void handleConsumerDisconnected(DisconnectConsumerMessage packet) throws ActiveMQException {
       DisconnectConsumerMessage message = packet;

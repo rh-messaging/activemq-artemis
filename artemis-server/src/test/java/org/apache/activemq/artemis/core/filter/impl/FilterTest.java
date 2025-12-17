@@ -35,7 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests the compliance with the ActiveMQ Artemis Filter syntax.
+ * Tests the compliance with the Apache Artemis Filter syntax.
  */
 public class FilterTest extends SilentTestCase {
 

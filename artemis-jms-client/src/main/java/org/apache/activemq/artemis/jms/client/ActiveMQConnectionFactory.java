@@ -64,7 +64,7 @@ import org.apache.activemq.artemis.utils.uri.BeanSupport;
 import org.apache.activemq.artemis.utils.uri.URISupport;
 
 /**
- * ActiveMQ Artemis implementation of a JMS ConnectionFactory.
+ * Apache Artemis implementation of a JMS ConnectionFactory.
  * <p>
  * This connection factory will use defaults defined by {@link DefaultConnectionProperties}.
  */

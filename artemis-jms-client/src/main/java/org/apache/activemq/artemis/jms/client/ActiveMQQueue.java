@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.apache.activemq.artemis.api.core.SimpleString;
 
 /**
- * ActiveMQ Artemis implementation of a JMS Queue.
+ * Apache Artemis implementation of a JMS Queue.
  * <p>
  * This class can be instantiated directly.
  */

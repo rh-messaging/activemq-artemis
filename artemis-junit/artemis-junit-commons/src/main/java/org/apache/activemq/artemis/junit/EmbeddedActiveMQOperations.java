@@ -27,13 +27,13 @@ import org.apache.activemq.artemis.core.server.embedded.EmbeddedActiveMQ;
 public interface EmbeddedActiveMQOperations {
 
    /**
-    * Start the embedded ActiveMQ Artemis server. The server will normally be started by JUnit using the before()
+    * Start the embedded Apache Artemis server. The server will normally be started by JUnit using the before()
     * method. This method allows the server to be started manually to support advanced testing scenarios.
     */
    void start();
 
    /**
-    * Stop the embedded ActiveMQ Artemis server The server will normally be stopped by JUnit using the after() method.
+    * Stop the embedded Apache Artemis server The server will normally be stopped by JUnit using the after() method.
     * This method allows the server to be stopped manually to support advanced testing scenarios.
     */
    void stop();

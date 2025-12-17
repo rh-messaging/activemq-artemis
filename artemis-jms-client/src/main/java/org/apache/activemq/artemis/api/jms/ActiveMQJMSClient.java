@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
- * A utility class for creating ActiveMQ Artemis client-side JMS managed resources.
+ * A utility class for creating Apache Artemis client-side JMS managed resources.
  */
 public class ActiveMQJMSClient {
    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

@@ -24,9 +24,9 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.junit.rules.ExternalResource;
 
 /**
- * A JUnit Rule that embeds an dynamic (i.e. unbound) ActiveMQ Artemis ClientProducer into a test. This JUnit Rule is
- * designed to simplify using ActiveMQ Artemis clients in unit tests. Adding the rule to a test will startup an unbound
- * ClientProducer, which can then be used to feed messages to any address on the ActiveMQ Artemis server.
+ * A JUnit Rule that embeds an dynamic (i.e. unbound) Apache Artemis ClientProducer into a test. This JUnit Rule is
+ * designed to simplify using Apache Artemis clients in unit tests. Adding the rule to a test will startup an unbound
+ * ClientProducer, which can then be used to feed messages to any address on the Apache Artemis server.
  *
  * <pre>{@code
  * public class SimpleTest {

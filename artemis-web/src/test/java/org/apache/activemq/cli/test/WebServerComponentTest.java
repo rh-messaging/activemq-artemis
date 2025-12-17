@@ -538,11 +538,11 @@ public class WebServerComponentTest extends ArtemisTestCase {
             return true;
          };
 
-         // check server certificate contains ActiveMQ Artemis Server
+         // check server certificate contains Apache Artemis Server
          assertTrue(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("CN=ActiveMQ Artemis Server,"));
 
-         // check server certificate doesn't contain ActiveMQ Artemis Server
+         // check server certificate doesn't contain Apache Artemis Server
          assertFalse(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("CN=ActiveMQ Artemis Other Server,"));
 
@@ -550,11 +550,11 @@ public class WebServerComponentTest extends ArtemisTestCase {
          Files.copy(WebServerComponentTest.class.getClassLoader().getResourceAsStream("other-server-keystore.p12"),
             keyStoreFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-         // check server certificate contains ActiveMQ Artemis Other Server
+         // check server certificate contains Apache Artemis Other Server
          Wait.assertTrue(() -> testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("CN=ActiveMQ Artemis Other Server,"));
 
-         // check server certificate doesn't contain ActiveMQ Artemis Server
+         // check server certificate doesn't contain Apache Artemis Server
          assertFalse(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("CN=ActiveMQ Artemis Server,"));
       } finally {
@@ -629,11 +629,11 @@ public class WebServerComponentTest extends ArtemisTestCase {
             return true;
          };
 
-         // check server certificate contains ActiveMQ Artemis Server
+         // check server certificate contains Apache Artemis Server
          assertTrue(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("DNSName: server.artemis.activemq"));
 
-         // check server certificate doesn't contain ActiveMQ Artemis Server
+         // check server certificate doesn't contain Apache Artemis Server
          assertFalse(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("DNSName: other-server.artemis.activemq"));
 
@@ -644,11 +644,11 @@ public class WebServerComponentTest extends ArtemisTestCase {
          Files.copy(WebServerComponentTest.class.getClassLoader().getResourceAsStream("other-server-cert.pem"),
             serverCertFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-         // check server certificate contains ActiveMQ Artemis Other Server
+         // check server certificate contains Apache Artemis Other Server
          Wait.assertTrue(() -> testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("DNSName: other-server.artemis.activemq"));
 
-         // check server certificate doesn't contain ActiveMQ Artemis Server
+         // check server certificate doesn't contain Apache Artemis Server
          assertFalse(testSimpleSecureServer("localhost", port, "localhost", null, hostnameVerifier) == 200 &&
             sslSessionReference.get().getPeerCertificates()[0].toString().contains("DNSName: server.artemis.activemq"));
       } finally {

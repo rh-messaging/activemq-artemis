@@ -29,7 +29,7 @@ import static org.apache.activemq.artemis.reader.TextMessageUtil.readBodyText;
 import static org.apache.activemq.artemis.reader.TextMessageUtil.writeBodyText;
 
 /**
- * ActiveMQ Artemis implementation of a JMS TextMessage.
+ * Apache Artemis implementation of a JMS TextMessage.
  */
 public class ActiveMQTextMessage extends ActiveMQMessage implements TextMessage {
 
@@ -50,7 +50,7 @@ public class ActiveMQTextMessage extends ActiveMQMessage implements TextMessage 
    }
 
    /**
-    * A copy constructor for non-ActiveMQ Artemis JMS TextMessages.
+    * A copy constructor for non-Apache Artemis JMS TextMessages.
     */
    public ActiveMQTextMessage(final TextMessage foreign, final ClientSession session) throws JMSException {
       super(foreign, ActiveMQTextMessage.TYPE, session);

@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is a Server's Connection representation used by ActiveMQ Artemis.
+ * This is a Server's Connection representation used by Apache Artemis.
  */
 public class ActiveMQProtonRemotingConnection extends AbstractRemotingConnection {
 

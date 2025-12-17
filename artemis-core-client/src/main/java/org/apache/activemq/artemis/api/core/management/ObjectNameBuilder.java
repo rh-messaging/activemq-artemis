@@ -23,13 +23,13 @@ import org.apache.activemq.artemis.api.core.SimpleString;
 import org.apache.activemq.artemis.api.core.RoutingType;
 
 /**
- * Helper class to build ObjectNames for ActiveMQ Artemis resources.
+ * Helper class to build ObjectNames for Apache Artemis resources.
  */
 public final class ObjectNameBuilder {
 
 
    /**
-    * Default JMX domain for ActiveMQ Artemis resources.
+    * Default JMX domain for Apache Artemis resources.
     */
    public static final ObjectNameBuilder DEFAULT = new ObjectNameBuilder(ActiveMQDefaultConfiguration.getDefaultJmxDomain(), "localhost", true);
 

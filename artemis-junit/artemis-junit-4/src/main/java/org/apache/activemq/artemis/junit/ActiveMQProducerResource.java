@@ -24,12 +24,12 @@ import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.junit.rules.ExternalResource;
 
 /**
- * A JUnit Rule that embeds an ActiveMQ Artemis ClientProducer bound to a specific address into a
+ * A JUnit Rule that embeds an Apache Artemis ClientProducer bound to a specific address into a
  * test.
  * <p>
- * This JUnit Rule is designed to simplify using ActiveMQ Artemis clients in unit tests. Adding the
+ * This JUnit Rule is designed to simplify using Apache Artemis clients in unit tests. Adding the
  * rule to a test will startup a ClientProducer, which can then be used to feed messages to the
- * bound address on an ActiveMQ Artemis server.
+ * bound address on an Apache Artemis server.
  *
  * <pre>{@code
  * public class SimpleTest {

@@ -20,7 +20,7 @@ import org.apache.activemq.artemis.api.core.ActiveMQException;
 import org.apache.activemq.artemis.spi.core.remoting.ConsumerContext;
 
 /**
- * A ClientConsumer receives messages from ActiveMQ Artemis queues.
+ * A ClientConsumer receives messages from Apache Artemis queues.
  * <p>
  * Messages can be consumed synchronously by using the {@code receive()} methods which will block until a message is
  * received (or a timeout expires) or asynchronously by setting a {@link MessageHandler}.
@@ -33,7 +33,7 @@ import org.apache.activemq.artemis.spi.core.remoting.ConsumerContext;
 public interface ClientConsumer extends AutoCloseable {
 
    /**
-    * The server's ID associated with this consumer. ActiveMQ Artemis implements this as a long but this could be
+    * The server's ID associated with this consumer. Apache Artemis implements this as a long but this could be
     * protocol dependent.
     */
    ConsumerContext getConsumerContext();
@@ -64,7 +64,7 @@ public interface ClientConsumer extends AutoCloseable {
    ClientMessage receive(long timeout) throws ActiveMQException;
 
    /**
-    * Receives a message from a queue. This call will force a network trip to ActiveMQ Artemis server to ensure that
+    * Receives a message from a queue. This call will force a network trip to Apache Artemis server to ensure that
     * there are no messages in the queue which can be delivered to this consumer.
     * <p>
     * This call will never wait indefinitely for a message, it will return {@code null} if no messages are available for

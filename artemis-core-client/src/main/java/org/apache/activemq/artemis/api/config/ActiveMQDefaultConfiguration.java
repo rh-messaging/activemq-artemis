@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
- * Default values of ActiveMQ Artemis configuration parameters.
+ * Default values of Apache Artemis configuration parameters.
  */
 public final class ActiveMQDefaultConfiguration {
 
@@ -128,7 +128,7 @@ public final class ActiveMQDefaultConfiguration {
    // Following fields are generated from the activemq-schema.xsd annotations
    // -------------------------------------------------------------------
 
-   // If true then the ActiveMQ Artemis Server will make use of any Protocol Managers that are in available on the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can inject their own Protocol Managers.
+   // If true then the Apache Artemis Server will make use of any Protocol Managers that are in available on the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can inject their own Protocol Managers.
    private static boolean DEFAULT_RESOLVE_PROTOCOLS = true;
 
    // true means that the server will load configuration from the configuration files
@@ -192,10 +192,10 @@ public final class ActiveMQDefaultConfiguration {
    // true means that the management API is available via JMX
    private static boolean DEFAULT_JMX_MANAGEMENT_ENABLED = true;
 
-   // the JMX domain used to registered ActiveMQ Artemis MBeans in the MBeanServer
+   // the JMX domain used to registered Apache Artemis MBeans in the MBeanServer
    private static String DEFAULT_JMX_DOMAIN = "org.apache.activemq.artemis";
 
-   // the JMX domain used to registered ActiveMQ Artemis MBeans in the MBeanServer
+   // the JMX domain used to registered Apache Artemis MBeans in the MBeanServer
    private static boolean DEFAULT_JMX_IS_USE_BROKER_NAME = true;
 
    // true means that message counters are enabled
@@ -731,7 +731,7 @@ public final class ActiveMQDefaultConfiguration {
    private static final int DEFAULT_CLUSTER_TOPOLOGY_SCANNER_ATTEMPTS = 30;
 
    /**
-    * If {@code true} then the ActiveMQ Artemis Server will make use of any Protocol Managers that are in available on
+    * If {@code true} then the Apache Artemis Server will make use of any Protocol Managers that are in available on
     * the classpath. If false then only the core protocol will be available, unless in Embedded mode where users can
     * inject their own Protocol Managers.
     */
@@ -901,7 +901,7 @@ public final class ActiveMQDefaultConfiguration {
    }
 
    /**
-    * the JMX domain used to registered ActiveMQ Artemis MBeans in the MBeanServer
+    * the JMX domain used to registered Apache Artemis MBeans in the MBeanServer
     */
    public static String getDefaultJmxDomain() {
       return DEFAULT_JMX_DOMAIN;

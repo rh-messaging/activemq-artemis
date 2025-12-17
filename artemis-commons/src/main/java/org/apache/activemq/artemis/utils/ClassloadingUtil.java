@@ -26,7 +26,7 @@ import java.lang.invoke.MethodHandles;
 
 /**
  * This class will be used to perform generic class-loader operations, such as load a class first using TCCL, and then
- * the classLoader used by ActiveMQ Artemis (ClassloadingUtil.getClass().getClassLoader()).
+ * the classLoader used by Apache Artemis (ClassloadingUtil.getClass().getClassLoader()).
  * <p>
  * Is't required to use a Security Block on any calls to this class.
  */

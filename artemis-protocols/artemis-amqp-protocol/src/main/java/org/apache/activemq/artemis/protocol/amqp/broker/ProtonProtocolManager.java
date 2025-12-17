@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 
 /**
- * A proton protocol manager, basically reads the Proton Input and maps proton resources to ActiveMQ Artemis resources
+ * A proton protocol manager, basically reads the Proton Input and maps proton resources to Apache Artemis resources
  */
 public class ProtonProtocolManager extends AbstractProtocolManager<AMQPMessage, AmqpInterceptor, ActiveMQProtonRemotingConnection, AMQPRoutingHandler> implements NotificationListener {
 

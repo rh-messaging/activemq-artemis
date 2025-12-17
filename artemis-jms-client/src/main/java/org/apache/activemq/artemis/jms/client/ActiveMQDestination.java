@@ -35,7 +35,7 @@ import org.apache.activemq.artemis.jndi.JNDIStorable;
 import org.apache.activemq.artemis.utils.DestinationUtil;
 
 /**
- * ActiveMQ Artemis implementation of a JMS Destination.
+ * Apache Artemis implementation of a JMS Destination.
  */
 public class ActiveMQDestination extends JNDIStorable implements Destination, Serializable {
 

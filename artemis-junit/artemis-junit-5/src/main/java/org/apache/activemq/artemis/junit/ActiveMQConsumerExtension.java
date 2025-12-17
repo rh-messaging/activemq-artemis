@@ -26,10 +26,10 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * A JUnit Extension that embeds an ActiveMQ Artemis ClientConsumer into a test.
+ * A JUnit Extension that embeds an Apache Artemis ClientConsumer into a test.
  * <p>
- * This JUnit Extension is designed to simplify using ActiveMQ Artemis clients in unit tests.  Adding the extension to a
- * test will startup a ClientConsumer, which can then be used to consume messages from an ActiveMQ Artemis server.
+ * This JUnit Extension is designed to simplify using Apache Artemis clients in unit tests.  Adding the extension to a
+ * test will startup a ClientConsumer, which can then be used to consume messages from an Apache Artemis server.
  *
  * <pre>{@code
  * public class SimpleTest {

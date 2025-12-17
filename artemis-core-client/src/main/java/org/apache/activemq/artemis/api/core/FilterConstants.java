@@ -17,23 +17,23 @@
 package org.apache.activemq.artemis.api.core;
 
 /**
- * Constants representing pre-defined message attributes that can be referenced in ActiveMQ Artemis core filter
+ * Constants representing pre-defined message attributes that can be referenced in Apache Artemis core filter
  * expressions.
  */
 public final class FilterConstants {
 
    /**
-    * Name of the ActiveMQ Artemis UserID header.
+    * Name of the Apache Artemis UserID header.
     */
    public static final SimpleString ACTIVEMQ_USERID = SimpleString.of("AMQUserID");
 
    /**
-    * Name of the ActiveMQ Artemis Message expiration header.
+    * Name of the Apache Artemis Message expiration header.
     */
    public static final SimpleString ACTIVEMQ_EXPIRATION = SimpleString.of("AMQExpiration");
 
    /**
-    * Name of the ActiveMQ Artemis Message durable header.
+    * Name of the Apache Artemis Message durable header.
     */
    public static final SimpleString ACTIVEMQ_DURABLE = SimpleString.of("AMQDurable");
 
@@ -48,32 +48,32 @@ public final class FilterConstants {
    public static final SimpleString DURABLE = SimpleString.of("DURABLE");
 
    /**
-    * Name of the ActiveMQ Artemis Message timestamp header.
+    * Name of the Apache Artemis Message timestamp header.
     */
    public static final SimpleString ACTIVEMQ_TIMESTAMP = SimpleString.of("AMQTimestamp");
 
    /**
-    * Name of the ActiveMQ Artemis Message priority header.
+    * Name of the Apache Artemis Message priority header.
     */
    public static final SimpleString ACTIVEMQ_PRIORITY = SimpleString.of("AMQPriority");
 
    /**
-    * Name of the ActiveMQ Artemis Message size header.
+    * Name of the Apache Artemis Message size header.
     */
    public static final SimpleString ACTIVEMQ_SIZE = SimpleString.of("AMQSize");
 
    /**
-    * Name of the ActiveMQ Artemis Address header
+    * Name of the Apache Artemis Address header
     */
    public static final SimpleString ACTIVEMQ_ADDRESS = SimpleString.of("AMQAddress");
 
    /**
-    * Name of the ActiveMQ Artemis Message group id header.
+    * Name of the Apache Artemis Message group id header.
     */
    public static final SimpleString ACTIVEMQ_GROUP_ID = SimpleString.of("AMQGroupID");
 
    /**
-    * All ActiveMQ Artemis headers are prepended by this prefix.
+    * All Apache Artemis headers are prepended by this prefix.
     */
    public static final SimpleString ACTIVEMQ_PREFIX = SimpleString.of("AMQ");
 

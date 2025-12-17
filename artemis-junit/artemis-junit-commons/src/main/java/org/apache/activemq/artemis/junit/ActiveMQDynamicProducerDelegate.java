@@ -25,7 +25,7 @@ import org.apache.activemq.artemis.api.core.client.ClientMessage;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 
 /**
- * Base class to embed an dynamic (i.e. unbound) ActiveMQ Artemis ClientProducer into a test.
+ * Base class to embed an dynamic (i.e. unbound) Apache Artemis ClientProducer into a test.
  */
 public class ActiveMQDynamicProducerDelegate extends ActiveMQProducerDelegate
          implements ActiveMQDynamicProducerOperations {

@@ -20,7 +20,7 @@ import javax.jms.TemporaryQueue;
 import java.util.Objects;
 
 /**
- * ActiveMQ Artemis implementation of a JMS TemporaryQueue.
+ * Apache Artemis implementation of a JMS TemporaryQueue.
  * <p>
  * This class can be instantiated directly.
  */

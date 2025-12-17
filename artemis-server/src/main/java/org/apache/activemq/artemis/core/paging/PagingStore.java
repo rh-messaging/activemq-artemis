@@ -160,7 +160,7 @@ public interface PagingStore extends ActiveMQComponent, RefCountMessageListener 
     * Remove the first page from the Writing Queue. The file will still exist until Page.delete is called, So, case the
     * system is reloaded the same Page will be loaded back if delete is not called.
     *
-    * @throws Exception Note: This should still be part of the interface, even though ActiveMQ Artemis only uses through
+    * @throws Exception Note: This should still be part of the interface, even though Apache Artemis only uses through
     *                   the
     */
    Page depage() throws Exception;

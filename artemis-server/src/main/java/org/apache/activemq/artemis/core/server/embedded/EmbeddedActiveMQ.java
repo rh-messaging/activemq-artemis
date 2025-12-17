@@ -33,7 +33,7 @@ import org.apache.activemq.artemis.spi.core.security.ActiveMQJAASSecurityManager
 import org.apache.activemq.artemis.spi.core.security.ActiveMQSecurityManager;
 
 /**
- * Helper class to simplify bootstrap of ActiveMQ Artemis server.  Bootstraps from classpath-based config files.
+ * Helper class to simplify bootstrap of Apache Artemis server.  Bootstraps from classpath-based config files.
  */
 public class EmbeddedActiveMQ {
 
