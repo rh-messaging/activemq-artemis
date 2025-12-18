@@ -157,15 +157,14 @@ public class PagingTest extends ParameterDBTestBase {
 
    @Parameters(name = "db={0}")
    public static Collection<Object[]> parameters() {
-      List<Database> databases = new ArrayList<>();
-      databases.add(Database.JOURNAL);
-
-      // PagingTest is quite expensive. And it's not really needed to run every single database every time
-      // we will just pick one!
-      databases.addAll(Database.randomList());
-
-      // we will run PagingTest in one database and the journal to validate the codebase in both implementations
-      return convertParameters(databases);
+      List<Object[]> databases = new ArrayList<>();
+      databases.add(new Object[] {Database.JOURNAL, true});
+      databases.add(new Object[] {Database.JOURNAL, false});
+      List<Database> selectedList = Database.selectedList();
+      if (selectedList != null && !selectedList.isEmpty()) {
+         selectedList.forEach(d -> databases.add(new Object[]{d, false}));
+      }
+      return databases;
    }
 
    @Override
