@@ -315,6 +315,11 @@
          </dependency>
          <dependency>
             <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-jakarta-openwire-protocol</artifactId>
+            <version>${project.version}</version>
+         </dependency>
+         <dependency>
+            <groupId>org.apache.activemq</groupId>
             <artifactId>artemis-jakarta-ra</artifactId>
             <version>${project.version}</version>
          </dependency>
