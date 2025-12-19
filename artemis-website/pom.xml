@@ -26,7 +26,7 @@
 
    <artifactId>artemis-website</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Website</name>
+   <name>Apache Artemis Website</name>
 
    <properties>
       <!-- we need a "scratch" directory because we dynamically generate a few docs -->

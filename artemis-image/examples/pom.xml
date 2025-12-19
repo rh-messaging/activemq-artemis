@@ -26,7 +26,7 @@
    </parent>
 
    <artifactId>artemis-image-examples</artifactId>
-   <name>Apache ActiveMQ Artemis Image Examples</name>
+   <name>Apache Artemis Image Examples</name>
    <packaging>pom</packaging>
 
    <properties>

@@ -25,7 +25,7 @@
 
    <artifactId>artemis-bom</artifactId>
    <packaging>pom</packaging>
-   <name>ActiveMQ Artemis Bill of Materials</name>
+   <name>Apache Artemis Bill of Materials</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/..</activemq.basedir>

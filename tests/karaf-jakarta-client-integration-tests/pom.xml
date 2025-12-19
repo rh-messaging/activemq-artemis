@@ -25,7 +25,7 @@
 
    <artifactId>karaf-jakarta-client-integration-tests</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Karaf Jakarta Client Int Tests</name>
+   <name>Apache Artemis Karaf Jakarta Client Int Tests</name>
 
    <description>
       Integration tests for the artemis client features using Apache Karaf

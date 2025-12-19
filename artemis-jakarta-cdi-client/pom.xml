@@ -28,7 +28,7 @@
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>artemis-jakarta-cdi-client</artifactId>
-   <name>ActiveMQ Artemis Jakarta CDI Integration</name>
+   <name>Apache Artemis Jakarta CDI Integration</name>
 
    <properties>
       <jakarta.inject-api.version>${jakarta.inject-api.version.alt}</jakarta.inject-api.version>

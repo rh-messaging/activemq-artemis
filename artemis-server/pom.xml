@@ -26,7 +26,7 @@
 
    <artifactId>artemis-server</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Server</name>
+   <name>Apache Artemis Server</name>
 
    <dependencies>
       <!-- logging -->

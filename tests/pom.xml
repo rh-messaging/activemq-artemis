@@ -22,7 +22,7 @@
       <relativePath>../artemis-pom/pom.xml</relativePath>
    </parent>
 
-   <name>ActiveMQ Artemis Tests POM</name>
+   <name>Apache Artemis Tests POM</name>
    <modelVersion>4.0.0</modelVersion>
    <groupId>org.apache.artemis.tests</groupId>
    <artifactId>artemis-tests-pom</artifactId>

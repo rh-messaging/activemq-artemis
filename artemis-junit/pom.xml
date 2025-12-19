@@ -27,7 +27,7 @@
 
    <artifactId>artemis-junit-parent</artifactId>
    <packaging>pom</packaging>
-   <name>ActiveMQ Artemis JUnit</name>
+   <name>Apache Artemis JUnit</name>
 
    <modules>
       <module>artemis-junit-commons</module>

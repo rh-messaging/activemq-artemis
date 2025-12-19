@@ -28,7 +28,7 @@
    <modelVersion>4.0.0</modelVersion>
 
    <artifactId>artemis-cdi-client</artifactId>
-   <name>ActiveMQ Artemis CDI Integration</name>
+   <name>Apache Artemis CDI Integration</name>
 
    <dependencies>
       <!-- logging -->

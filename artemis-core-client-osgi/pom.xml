@@ -20,7 +20,7 @@
 
    <artifactId>artemis-core-client-osgi</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis Client OSGi</name>
+   <name>Apache Artemis Client OSGi</name>
 
    <description>
       Combines the commons and core-client as they contain too many duplicate packages

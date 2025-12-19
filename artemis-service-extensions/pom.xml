@@ -26,7 +26,7 @@
 
    <artifactId>artemis-service-extensions</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Service Extensions</name>
+   <name>Apache Artemis Service Extensions</name>
 
    <dependencies>
       <!-- logging -->

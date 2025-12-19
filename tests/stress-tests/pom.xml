@@ -26,7 +26,7 @@
 
    <artifactId>stress-tests</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis stress Tests</name>
+   <name>Apache Artemis stress Tests</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

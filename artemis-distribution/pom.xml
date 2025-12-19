@@ -27,7 +27,7 @@
 
    <artifactId>apache-artemis</artifactId>
    <packaging>pom</packaging>
-   <name>Apache ActiveMQ Artemis Distribution</name>
+   <name>Apache Artemis Distribution</name>
 
    <properties>
       <schemaLocation>${project.build.directory}/${project.artifactId}-${project.version}-bin/${project.artifactId}-${project.version}/schema</schemaLocation>
@@ -35,7 +35,7 @@
    </properties>
 
    <dependencies>
-      <!-- ActiveMQ Artemis artifacts -->
+      <!-- Apache Artemis artifacts -->
       <dependency>
          <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-boot</artifactId>

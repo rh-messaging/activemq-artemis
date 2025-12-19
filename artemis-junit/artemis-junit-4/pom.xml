@@ -26,7 +26,7 @@
 
    <artifactId>artemis-junit</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis JUnit 4 Rules</name>
+   <name>Apache Artemis JUnit 4 Rules</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

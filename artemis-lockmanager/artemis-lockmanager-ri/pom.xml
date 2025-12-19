@@ -25,7 +25,7 @@
 
    <artifactId>artemis-lockmanager-ri</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Lock Manager RI</name>
+   <name>Apache Artemis Lock Manager RI</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

@@ -24,7 +24,7 @@
 
    <artifactId>artemis-test-support</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis System Test Support</name>
+   <name>Apache Artemis System Test Support</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

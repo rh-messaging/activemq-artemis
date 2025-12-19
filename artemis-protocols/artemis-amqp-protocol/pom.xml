@@ -25,7 +25,7 @@
 
    <artifactId>artemis-amqp-protocol</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis AMQP Protocol</name>
+   <name>Apache Artemis AMQP Protocol</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

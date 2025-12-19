@@ -25,7 +25,7 @@
 
    <artifactId>integration-tests-isolated</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Isolated Integration Tests</name>
+   <name>Apache Artemis Isolated Integration Tests</name>
    <description>This project is pretty much a copy of integration-tests however the tests here will run with fork=always, isolating each test on its own VM. </description>
 
    <properties>

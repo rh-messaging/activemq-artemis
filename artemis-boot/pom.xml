@@ -28,6 +28,6 @@
 
    <artifactId>artemis-boot</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Boot</name>
+   <name>Apache Artemis Boot</name>
 
 </project>

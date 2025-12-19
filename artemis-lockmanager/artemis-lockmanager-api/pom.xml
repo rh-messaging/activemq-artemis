@@ -25,7 +25,7 @@
 
    <artifactId>artemis-lockmanager-api</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis Lock Manager API</name>
+   <name>Apache Artemis Lock Manager API</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

@@ -24,7 +24,7 @@
 
    <artifactId>smoke-tests</artifactId>
    <packaging>jar</packaging>
-   <name>Smoke Tests</name>
+   <name>Apache Artemis Smoke Tests</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../../</activemq.basedir>

@@ -351,7 +351,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
 
    @Test
    @Timeout(60)
-   public void testSendMessageThatIsExiredUsingAbsoluteTimeWithLongTTL() throws Exception {
+   public void testSendMessageThatIsExpiredUsingAbsoluteTimeWithLongTTL() throws Exception {
       AmqpClient client = createAmqpClient();
       AmqpConnection connection = addConnection(client.connect());
       AmqpSession session = connection.createSession();
@@ -419,7 +419,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
 
    @Test
    @Timeout(60)
-   public void testSendMessageThatIsNotExpiredUsingAbsoluteTimeWithElspsedTTL() throws Exception {
+   public void testSendMessageThatIsNotExpiredUsingAbsoluteTimeWithElapsedTTL() throws Exception {
       AmqpClient client = createAmqpClient();
       AmqpConnection connection = addConnection(client.connect());
       AmqpSession session = connection.createSession();
@@ -596,7 +596,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
          sender.send(message);
 
          Queue dlq = getProxyToQueue(getDeadLetterAddress());
-         assertTrue(Wait.waitFor(() -> dlq.getMessageCount() > 0, 7000, 500), "Message not movied to DLQ");
+         assertTrue(Wait.waitFor(() -> dlq.getMessageCount() > 0, 7000, 500), "Message not moved to DLQ");
 
          connection.close();
 
@@ -654,7 +654,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
          logger.debug("*******************************************************************************************************************************");
 
          Queue forward = getProxyToQueue(FORWARDING_ADDRESS);
-         assertTrue(Wait.waitFor(() -> forward.getMessageCount() > 0, 7000, 500), "Message not diverted");
+         assertTrue(Wait.waitFor(() -> forward.getMessagesAdded() > 0, 7000, 500), "Message not diverted");
 
          Queue dlq = getProxyToQueue(getDeadLetterAddress());
          assertTrue(Wait.waitFor(() -> dlq.getMessageCount() > 0, 7000, 500), "Message not moved to DLQ");
@@ -708,7 +708,7 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
          sender.send(message);
 
          Queue dlqView = getProxyToQueue(getDeadLetterAddress());
-         assertTrue(Wait.waitFor(() -> dlqView.getMessageCount() > 0, 7000, 200), "Message not movied to DLQ");
+         assertTrue(Wait.waitFor(() -> dlqView.getMessageCount() > 0, 7000, 200), "Message not moved to DLQ");
 
          // Read and Modify the message for redelivery repeatedly
          AmqpReceiver receiver = session.createReceiver(getDeadLetterAddress());
@@ -742,17 +742,17 @@ public class AmqpExpiredMessageTest extends AmqpClientTestSupport {
 
    @Test
    @Timeout(60)
-   public void testExpireThorughAddressSettings() throws Exception {
-      testExpireThorughAddressSettings(false);
+   public void testExpireThroughAddressSettings() throws Exception {
+      testExpireThroughAddressSettings(false);
    }
 
    @Test
    @Timeout(60)
-   public void testExpireThorughAddressSettingsRebootServer() throws Exception {
-      testExpireThorughAddressSettings(true);
+   public void testExpireThroughAddressSettingsRebootServer() throws Exception {
+      testExpireThroughAddressSettings(true);
    }
 
-   private void testExpireThorughAddressSettings(boolean reboot) throws Exception {
+   private void testExpireThroughAddressSettings(boolean reboot) throws Exception {
 
       // Address configuration
       AddressSettings addressSettings = new AddressSettings();

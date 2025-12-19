@@ -25,7 +25,7 @@
 
    <artifactId>leak-tests</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Leak Tests</name>
+   <name>Apache Artemis Leak Tests</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>
@@ -50,7 +50,7 @@
          <scope>test</scope>
       </dependency>
 
-      <!-- Dependencies for the ActiveMQ Artemis Server and its protocols -->
+      <!-- Dependencies for the Apache Artemis Server and its protocols -->
       <dependency>
          <groupId>org.apache.artemis</groupId>
          <artifactId>artemis-server</artifactId>

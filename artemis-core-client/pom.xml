@@ -26,7 +26,7 @@
 
    <artifactId>artemis-core-client</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Core Client</name>
+   <name>Apache Artemis Core Client</name>
 
    <dependencies>
       <!-- logging -->
