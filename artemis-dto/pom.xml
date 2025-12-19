@@ -26,7 +26,7 @@
 
    <artifactId>artemis-dto</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis DTO</name>
+   <name>Apache Artemis DTO</name>
 
    <dependencies>
       <dependency>

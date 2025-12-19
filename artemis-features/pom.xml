@@ -24,7 +24,7 @@
    </parent>
    <artifactId>artemis-features</artifactId>
    <packaging>pom</packaging>
-   <name>ActiveMQ Artemis Features</name>
+   <name>Apache Artemis Features</name>
 
    <dependencies>
       <dependency>

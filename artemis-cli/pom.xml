@@ -26,7 +26,7 @@
 
    <artifactId>artemis-cli</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis CLI</name>
+   <name>Apache Artemis CLI</name>
 
    <properties>
       <winsw.version>2.9.0</winsw.version>

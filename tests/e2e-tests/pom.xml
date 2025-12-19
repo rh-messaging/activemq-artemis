@@ -25,7 +25,7 @@
 
    <artifactId>e2e-tests</artifactId>
    <packaging>jar</packaging>
-   <name>End-to-End Tests</name>
+   <name>Apache Artemis End-to-End Tests</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

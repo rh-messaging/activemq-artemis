@@ -652,14 +652,14 @@
                               <taskdef name="report" classname="org.jacoco.ant.ReportTask">
                                  <classpath path="${project.build.directory}/jacoco-jars/org.jacoco.ant.jar" />
                               </taskdef>
-                              <echo>Creating JaCoCo ActiveMQ Artemis test coverage reports...</echo>
+                              <echo>Creating JaCoCo Apache Artemis test coverage reports...</echo>
                               <report>
                                  <executiondata>
                                     <fileset dir="${basedir}">
                                        <include name="**/target/jacoco.exec" />
                                     </fileset>
                                  </executiondata>
-                                 <structure name="JaCoCo ActiveMQ Artemis">
+                                 <structure name="JaCoCo Apache Artemis">
                                     <classfiles>
                                        <fileset dir="${activemq.basedir}/artemis-boot/target/classes" />
                                        <fileset dir="${activemq.basedir}/artemis-cdi-client/target/classes" />

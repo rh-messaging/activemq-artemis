@@ -20,7 +20,7 @@
 
    <artifactId>artemis-server-osgi</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis Server OSGi</name>
+   <name>Apache Artemis Server OSGi</name>
 
    <description>
       Combines the commons, core-client and server jars as they contain too many duplicate packages

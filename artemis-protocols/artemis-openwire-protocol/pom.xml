@@ -25,7 +25,7 @@
 
    <artifactId>artemis-openwire-protocol</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis OpenWire Protocol</name>
+   <name>Apache Artemis OpenWire Protocol</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../..</activemq.basedir>

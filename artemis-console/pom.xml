@@ -27,7 +27,7 @@
   </parent>
 
   <artifactId>artemis-console</artifactId>
-  <name>ActiveMQ Artemis Console</name>
+  <name>Apache Artemis Console</name>
 
   <packaging>war</packaging>
 

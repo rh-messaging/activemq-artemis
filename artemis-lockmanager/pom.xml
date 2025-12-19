@@ -27,7 +27,7 @@
 
    <artifactId>artemis-lockmanager</artifactId>
    <packaging>pom</packaging>
-   <name>ActiveMQ Artemis Lock Manager</name>
+   <name>Apache Artemis Lock Manager</name>
 
    <modules>
       <module>artemis-lockmanager-api</module>

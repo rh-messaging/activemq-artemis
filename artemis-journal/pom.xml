@@ -26,7 +26,7 @@
 
    <artifactId>artemis-journal</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Journal</name>
+   <name>Apache Artemis Journal</name>
 
    <dependencies>
 

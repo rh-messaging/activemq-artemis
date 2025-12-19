@@ -25,7 +25,7 @@
 
    <artifactId>karaf-server-integration-tests</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Karaf Server Integration Tests</name>
+   <name>Apache Artemis Karaf Server Integration Tests</name>
 
    <description>
       Integration tests for the artemis server feature using Apache Karaf

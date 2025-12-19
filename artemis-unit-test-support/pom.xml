@@ -25,7 +25,7 @@
 
    <artifactId>artemis-unit-test-support</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Unit Test Support</name>
+   <name>Apache Artemis Unit Test Support</name>
 
    <dependencies>
       <dependency>

@@ -20,7 +20,7 @@
 
    <artifactId>artemis-jms-client-osgi</artifactId>
    <packaging>bundle</packaging>
-   <name>ActiveMQ Artemis JMS Client OSGi</name>
+   <name>Apache Artemis JMS Client OSGi</name>
 
    <description>
       Combines the commons, jms-client and core-client as they contain too many duplicate packages

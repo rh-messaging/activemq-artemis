@@ -26,7 +26,7 @@
 
    <artifactId>artemis-jakarta-client</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Jakarta Messaging Client</name>
+   <name>Apache Artemis Jakarta Messaging Client</name>
 
    <properties>
       <jakarta.jms-api.version>${jakarta.jms-api.version.alt}</jakarta.jms-api.version>

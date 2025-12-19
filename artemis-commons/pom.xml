@@ -26,7 +26,7 @@
 
    <artifactId>artemis-commons</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis Commons</name>
+   <name>Apache Artemis Commons</name>
 
    <properties>
       <skipCommonsJavadocGeneration>true</skipCommonsJavadocGeneration>

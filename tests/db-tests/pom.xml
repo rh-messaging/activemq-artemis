@@ -24,7 +24,7 @@
 
    <artifactId>db-tests</artifactId>
    <packaging>jar</packaging>
-   <name>Database Tests</name>
+   <name>Apache Artemis Database Tests</name>
 
    <properties>
       <activemq.basedir>${project.basedir}/../../</activemq.basedir>

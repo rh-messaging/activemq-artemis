@@ -26,7 +26,7 @@
 
    <artifactId>artemis-jms-client-all</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis JMS Client All</name>
+   <name>Apache Artemis JMS Client All</name>
 
    <dependencies>
       <dependency>

@@ -26,7 +26,7 @@
 
    <artifactId>artemis-jdbc-store</artifactId>
    <packaging>jar</packaging>
-   <name>ActiveMQ Artemis JDBC Store</name>
+   <name>Apache Artemis JDBC Store</name>
 
    <dependencies>
 
