@@ -53,7 +53,7 @@ For more information on server configuration files see xref:configuration-index.
 
 The broker is designed as a set of simple POJOs so if you have an application that requires messaging functionality internally, but you don't want to expose that as an independent, standalone broker, you can directly instantiate and embed a broker in your own application.
 
-Read more about xref:embedding-artemis.adoc#embedding-{project-name-full-url}[embedding a broker].
+Read more about xref:embedding-artemis.adoc[embedding a broker].
 
 == Integrated with a Java/Jakarta EE application server
 
