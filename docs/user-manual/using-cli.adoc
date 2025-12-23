@@ -26,7 +26,7 @@ You can get a complete list of available commands by typing:
 ----
 $ ./artemis help
 Usage: artemis [COMMAND]
-ActiveMQ Artemis Command Line
+Apache Artemis Command Line
 Commands:
   help        use 'help <command>' for more information
   pwd         Information on current folder and instance.
@@ -149,7 +149,7 @@ Create a new broker instance.
       --cluster-user=<clusterUser>
                              The user to use for clustering. Default: input.
       --clustered            Enable clustering.
-      --data=<data>          Directory where ActiveMQ data are stored. Paths
+      --data=<data>          Directory where Apache Artemis data is stored. Paths
                                can be absolute or relative to artemis.instance
                                directory. Default: data.
       --default-port=<defaultPort>
@@ -158,7 +158,7 @@ Create a new broker instance.
       --disable-persistence  Disable message persistence to the journal
       --encoding=<encoding>  The encoding that text files should use. Default:
                                UTF-8.
-      --etc=<etc>            Directory where ActiveMQ configuration is located.
+      --etc=<etc>            Directory where Apache Artemis configuration is located.
                                Paths can be absolute or relative to artemis.
                                instance directory. Default: etc.
       --failover-on-shutdown Whether broker shutdown will trigger failover for
@@ -172,7 +172,7 @@ Create a new broker instance.
       --global-max-size=<globalMaxSize>
                              Maximum amount of memory which message data may
                                consume. Default: half of the JVM's max memory.
-      --home=<home>          Directory where ActiveMQ Artemis is installed.
+      --home=<home>          Directory where Apache Artemis is installed.
       --host=<host>          Broker's host name. Default: 0.0.0.0 or input if
                                clustered).
       --http-host=<httpHost> Embedded web server's host name. Default:
@@ -357,12 +357,12 @@ The shell provides an interface that can be used to execute commands directly wi
    / _ \|  _ \ __|/ _ \  \/  | |/  __/
   / ___ \ | \/ |_/  __/ |\/| | |\___ \
  /_/   \_\|   \__\____|_|  |_|_|/___ /
- Apache ActiveMQ Artemis
+ Apache Artemis
 
 
 For a list of commands, type help or press <TAB>:
 Type exit or press <CTRL-D> to leave the session:
-Apache ActiveMQ Artemis >
+Apache Artemis >
 ----
 
 === Connecting Interactively
@@ -371,7 +371,7 @@ It is possible to authenticate your CLI client once to the server and reuse the 
 
 [,console]
 ----
-Apache ActiveMQ Artemis > connect --user=myUser --password=myPass --url tcp://localhost:61616
+Apache Artemis > connect --user=myUser --password=myPass --url tcp://localhost:61616
 Connection brokerURL = tcp://localhost:61616
 Connection Successful!
 ----
@@ -381,7 +381,7 @@ For example the sub-command `queue stat` will reuse previous information to perf
 
 [%nowrap,console]
 ----
-Apache ActiveMQ Artemis > queue stat
+Apache Artemis > queue stat
 Connection brokerURL = tcp://localhost:61616
 |NAME                     |ADDRESS                  |CONSUMER_COUNT|MESSAGE_COUNT|MESSAGES_ADDED|DELIVERING_COUNT|MESSAGES_ACKED|SCHEDULED_COUNT|ROUTING_TYPE|
 |DLQ                      |DLQ                      |0             |0            |0             |0               |0             |0              |ANYCAST     |
@@ -407,7 +407,7 @@ $ ./artemis shell --user myUser --password myPass
 ...
 
 
-Apache ActiveMQ Artemis > queue stat
+Apache Artemis > queue stat
 Connection brokerURL = tcp://localhost:61616
 |NAME                     |ADDRESS                  |CONSUMER_COUNT|MESSAGE_COUNT|MESSAGES_ADDED|DELIVERING_COUNT|MESSAGES_ACKED|SCHEDULED_COUNT|ROUTING_TYPE|
 |DLQ                      |DLQ                      |0             |0            |0             |0               |0             |0              |ANYCAST     |

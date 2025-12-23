@@ -15,11 +15,11 @@ NOTE: Follow the general upgrade procedure outlined in the xref:upgrading.adoc#u
 
 == 2.50.0
 
-https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=xxx[Full release notes]
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&version=12356368[Full release notes]
 
 === Highlights
 
-* ...
+* First release as Apache Artemis!
 
 === Upgrading from 2.44.0
 
@@ -53,7 +53,7 @@ More details available xref:proxy-protocol.adoc[here].
 
 === Upgrading from 2.42.0
 
-* As part of the work for https://issues.apache.org/jira/browse/ARTEMIS-5557[ARTEMIS-5557] to report executor service metrics the names of many ActiveMQ-related threads were changed to be more clear and consistent.
+* As part of the work for https://issues.apache.org/jira/browse/ARTEMIS-5557[ARTEMIS-5557] to report executor service metrics the names of many Artemis-related threads were changed to be more clear and consistent.
 This will be visible, for example, when inspecting thread dumps or if you happen to include the thread name in your logging output.
 Here's examples of old names vs. the new ones.
 +

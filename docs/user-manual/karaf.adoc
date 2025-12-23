@@ -19,13 +19,13 @@ This will add broker-related features
 
 ----
 karaf@root()> feature:list | grep artemis
-artemis                       | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Full ActiveMQ Artemis broker with default configuration
+artemis                       | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Full Apache Artemis broker with default configuration
 netty-core                    | 4.0.32.Final     |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Netty libraries
-artemis-core                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | ActiveMQ Artemis broker libraries
-artemis-amqp                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | ActiveMQ Artemis AMQP protocol libraries
-artemis-stomp                 | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | ActiveMQ Artemis Stomp protocol libraries
-artemis-mqtt                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | ActiveMQ Artemis MQTT protocol libraries
-artemis-hornetq               | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | ActiveMQ Artemis HornetQ protocol libraries
+artemis-core                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Apache Artemis broker libraries
+artemis-amqp                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Apache Artemis AMQP protocol libraries
+artemis-stomp                 | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Apache Artemis Stomp protocol libraries
+artemis-mqtt                  | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Apache Artemis MQTT protocol libraries
+artemis-hornetq               | 1.3.0.SNAPSHOT   |          | Uninstalled | artemis-1.3.0-SNAPSHOT   | Apache Artemis HornetQ protocol libraries
 ----
 
 Feature named `artemis` contains full broker installation, so running

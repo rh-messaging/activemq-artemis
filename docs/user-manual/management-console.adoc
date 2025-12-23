@@ -14,7 +14,7 @@ To access the management console, use a browser and go to the URL link:[http://l
 
 A login screen will be presented, if your broker is secure, you will need to use a user with admin role, if it is unsecure simply enter any user/password.
 
-image::images/console-login.png[ActiveMQ Artemis Console Login]
+image::images/console-login.png[Apache Artemis Console Login]
 
 == Security
 
@@ -47,7 +47,7 @@ Problems with Jolokia security are often observed as the ability to login to the
 
 Once logged in you should be presented with a screen similar to.
 
-image::images/console-artemis-plugin.png[ActiveMQ Artemis Console Artemis Plugin]
+image::images/console-artemis-plugin.png[Apache Artemis Console Artemis Plugin]
 
 === Navigation Menu
 

@@ -3,8 +3,7 @@
 :idseparator: -
 :docinfo: shared
 
-Apache ActiveMQ is runnable out of the box by executing the command: `./bin/activemq run`.
-The {project-name-short} broker follows a different paradigm where the project distribution serves as the broker "home" and one or more broker "instances" are created which reference the "home" for resources (e.g. jar files) which can be safely shared between broker instances.
+The {project-name-short} broker follows a paradigm where the project distribution serves as the broker "home" and then one or more broker "instances" are created which reference the "home" for resources (e.g. jar files) which can be safely shared between broker instances.
 Therefore, an instance of the broker must be created before it can be run.
 This may seem like an overhead at first glance, but it becomes very practical when updating to a new version, for example.
 

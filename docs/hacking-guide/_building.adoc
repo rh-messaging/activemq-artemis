@@ -86,6 +86,6 @@ The output for every module will be aggregated in `./target/dependency-check-rep
 
 == Snapshot Builds
 
-Snapshot builds are available at https://repository.apache.org/content/repositories/snapshots/org/apache/activemq/apache-artemis/.
+Snapshot builds are available at https://repository.apache.org/content/repositories/snapshots/org/apache/artemis/apache-artemis/.
 
-These are built by https://ci-builds.apache.org/job/ActiveMQ/job/ActiveMQ-Artemis-SNAPSHOT-Deploy/[this Apache CI job].
+These are built by https://ci-builds.apache.org/job/Artemis/job/Artemis-SNAPSHOT-Deploy/[this Apache CI job].

@@ -11,7 +11,7 @@ There are numerous ways to access the management API:
 * Using JMX -- _JMX_ is the standard way to manage Java applications
 * Using Jolokia -- Jolokia exposes the JMX API of an application through an _HTTP interface_
 * Using the Core Client -- management operations are sent to the broker using _Core Client messages_
-* Using any JMS Client -- management operations are sent to Apache ActiveMQ  Artemis server using _JMS Client messages_
+* Using any JMS Client -- management operations are sent to Apache Artemis server using _JMS Client messages_
 * Web Console -- a web application which provides a graphical interface to the management API.
 
 Although there are four different ways to manage the broker, each API supports the same functionality.
@@ -525,7 +525,7 @@ To manage several brokers from the _same_ MBeanServer, the JMX domain can be con
 
 [,xml]
 ----
-<!-- use a specific JMX domain for ActiveMQ Artemis MBeans -->
+<!-- use a specific JMX domain for Apache Artemis MBeans -->
 <jmx-domain>my.org.apache.activemq</jmx-domain>
 ----
 

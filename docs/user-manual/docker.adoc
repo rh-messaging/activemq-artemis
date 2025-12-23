@@ -49,7 +49,7 @@ In order to build an image you need a binary distribution.
 This can be sourced *locally* (in which case you need to build the project first) or *remotely* based on an official Apache release.
 
 === Using a Local Release
-If you want to use a local binary distribution then build it from the root of the ActiveMQ source tree, e.g.:
+If you want to use a local binary distribution then build it from the root of the Artemis source tree, e.g.:
 [,console]
 ----
 $ mvn -Prelease package -DskipTests

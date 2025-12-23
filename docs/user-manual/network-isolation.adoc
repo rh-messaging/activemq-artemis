@@ -122,7 +122,7 @@ Once you lose connectivity towards `10.0.0.1` on the given example the broker wi
 ----
 09:49:24,562 WARN  [org.apache.activemq.artemis.core.server.NetworkHealthCheck] Ping Address /10.0.0.1 wasn't reacheable
 09:49:36,577 INFO  [org.apache.activemq.artemis.core.server.NetworkHealthCheck] Network is unhealthy, stopping service ActiveMQServerImpl::serverUUID=04fd5dd8-b18c-11e6-9efe-6a0001921ad0
-09:49:36,625 INFO  [org.apache.activemq.artemis.core.server] AMQ221002: Apache ActiveMQ Artemis Message Broker version 1.6.0 [04fd5dd8-b18c-11e6-9efe-6a0001921ad0] stopped, uptime 14.787 seconds
+09:49:36,625 INFO  [org.apache.activemq.artemis.core.server] AMQ221002: Apache Artemis Message Broker version 1.6.0 [04fd5dd8-b18c-11e6-9efe-6a0001921ad0] stopped, uptime 14.787 seconds
 09:50:00,653 WARN  [org.apache.activemq.artemis.core.server.NetworkHealthCheck] ping: sendto: No route to host
 09:50:10,656 WARN  [org.apache.activemq.artemis.core.server.NetworkHealthCheck] Host is down: java.net.ConnectException: Host is down
 	at java.net.Inet6AddressImpl.isReachable0(Native Method) [rt.jar:1.8.0_73]
@@ -162,7 +162,7 @@ Once you reestablish your network connections towards the configured check-list:
 09:53:23,555 INFO  [org.apache.activemq.artemis.core.server] AMQ221020: Started Acceptor at 0.0.0.0:1883 for protocols [MQTT]
 09:53:23,556 INFO  [org.apache.activemq.artemis.core.server] AMQ221020: Started Acceptor at 0.0.0.0:61613 for protocols [STOMP]
 09:53:23,556 INFO  [org.apache.activemq.artemis.core.server] AMQ221007: Server is now active
-09:53:23,556 INFO  [org.apache.activemq.artemis.core.server] AMQ221001: Apache ActiveMQ Artemis Message Broker version 1.6.0 [0.0.0.0, nodeID=04fd5dd8-b18c-11e6-9efe-6a0001921ad0]
+09:53:23,556 INFO  [org.apache.activemq.artemis.core.server] AMQ221001: Apache Artemis Message Broker version 1.6.0 [0.0.0.0, nodeID=04fd5dd8-b18c-11e6-9efe-6a0001921ad0]
 ----
 
 [IMPORTANT]
