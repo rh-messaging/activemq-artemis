@@ -43,22 +43,18 @@ For example:
 +
 [,sh]
 ----
-$ mvn -Pdev install
+$ mvn -Pdev install -DskipTests
 ...
 [INFO] ------------------------------------------------------------------------
-[INFO] Reactor Summary:
+[INFO] Reactor Summary for Apache Artemis <VERSION>-SNAPSHOT:
 [INFO]
-[INFO] ActiveMQ Artemis Parent ........................... SUCCESS [2.298s]
-[INFO] ActiveMQ Artemis Commons .......................... SUCCESS [1.821s]
-[INFO] ActiveMQ Artemis Selector Implementation .......... SUCCESS [0.767s]
-[INFO] ActiveMQ Artemis Native POM ....................... SUCCESS [0.189s]
-[INFO] ActiveMQ Artemis Journal .......................... SUCCESS [0.646s]
-[INFO] ActiveMQ Artemis Core Client ...................... SUCCESS [5.969s]
-[INFO] ActiveMQ Artemis JMS Client ....................... SUCCESS [2.110s]
-[INFO] ActiveMQ Artemis Server ........................... SUCCESS [11.540s]
-...
-[INFO] ActiveMQ Artemis stress Tests ..................... SUCCESS [0.332s]
-[INFO] ActiveMQ Artemis performance Tests ................ SUCCESS [0.174s]
+[INFO] Apache Artemis ..................................... SUCCESS [  2.435 s]
+[INFO] Apache Artemis Bill of Materials ................... SUCCESS [  0.094 s]
+...etc...
+[INFO] Apache Artemis Server .............................. SUCCESS [ 11.866 s]
+...etc...
+[INFO] Apache Artemis JMS Client .......................... SUCCESS [  1.036 s]
+...etc...
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
@@ -139,7 +135,7 @@ Therefore you'll want to make sure that you  either work in a branch that you do
 
 . Get your changes merged into upstream
 .. Send a GitHub pull request, by clicking the pull request link while in your repo's fork.
-.. An email will automatically be sent to the ActiveMQ developer list.
+.. An email will automatically be sent to the Artemis issues mailing list.
 .. As part of the review you may see an automated test run comment on your request.
 .. After review a maintainer will merge your PR into the canonical git repository at which point those changes will  be synced with the GitHub mirror repository (i.e. your `main`) and your PR will be closed by the `asfgit` bot.
 

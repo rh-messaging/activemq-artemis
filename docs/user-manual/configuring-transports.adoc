@@ -303,8 +303,8 @@ When used on an `acceptor` this is the path to the SSL key store on the server w
 When used on a `connector` this is the path to the client-side SSL key store which holds the client certificates.
 This is only relevant for a `connector` if you are using 2-way SSL (i.e. mutual authentication).
 Although this value is configured on the server, it is downloaded and used by the client.
-If the client needs to use a different path from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.keyStore" system property or the ActiveMQ-specific "org.apache.activemq.ssl.keyStore" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+If the client needs to use a different path from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.keyStore" system property or the Artemis-specific "org.apache.activemq.ssl.keyStore" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 
 keyStorePassword::
 When used on an `acceptor` this is the password for the server-side keystore.
@@ -312,21 +312,21 @@ When used on an `acceptor` this is the password for the server-side keystore.
 When used on a `connector` this is the password for the client-side keystore.
 This is only relevant for a `connector` if you are using 2-way SSL (i.e. mutual authentication).
 Although this value can be configured on the server, it is downloaded and used by the client.
-If the client needs to use a different password from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.keyStorePassword" system property or the ActiveMQ-specific "org.apache.activemq.ssl.keyStorePassword" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+If the client needs to use a different password from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.keyStorePassword" system property or the Artemis-specific "org.apache.activemq.ssl.keyStorePassword" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 
 keyStoreType::
 The type of keystore being used.
 For example, `JKS`, `JCEKS`, `PKCS12`, `PEM` etc.
-This value can also be set via the "javax.net.ssl.keyStoreType" system property or the ActiveMQ-specific "org.apache.activemq.ssl.keyStoreType" system property.
-The ActiveMQ-specific system property is useful if another component on the  client is already making use of the standard Java system property.
+This value can also be set via the "javax.net.ssl.keyStoreType" system property or the Artemis-specific "org.apache.activemq.ssl.keyStoreType" system property.
+The Artemis-specific system property is useful if another component on the  client is already making use of the standard Java system property.
 Default is `JKS`.
 
 keyStoreProvider::
 The provider used for the keystore.
 For example, `SUN`, `SunJCE`, etc.
-This  value can also be set via the "javax.net.ssl.keyStoreProvider" system property or the ActiveMQ-specific "org.apache.activemq.ssl.keyStoreProvider" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+This  value can also be set via the "javax.net.ssl.keyStoreProvider" system property or the Artemis-specific "org.apache.activemq.ssl.keyStoreProvider" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 Default is `null`.
 
 keyStoreAlias::
@@ -343,8 +343,8 @@ This is only relevant for an `acceptor` if you are using 2-way SSL (i.e. mutual 
 +
 When used on a `connector` this is the path to the client-side SSL key store which holds the public keys of all the servers that the client trusts.
 Although this value can be configured on the server, it is downloaded and used by the client.
-If the client needs to use a different path from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.trustStore" system property or the ActiveMQ-specific "org.apache.activemq.ssl.trustStore" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+If the client needs to use a different path from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.trustStore" system property or the Artemis-specific "org.apache.activemq.ssl.trustStore" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 
 trustStorePassword::
 When used on an `acceptor` this is the password for the server-side trust store.
@@ -352,21 +352,21 @@ This is only relevant for an `acceptor` if you are using 2-way SSL (i.e. mutual 
 +
 When used on a `connector` this is the password for the client-side truststore.
 Although this value can be configured on the server, it is downloaded and used by the client.
-If the client needs to use a different password from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.trustStorePassword" system property or the ActiveMQ-specific "org.apache.activemq.ssl.trustStorePassword" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+If the client needs to use a different password from that set on the server then it can override the server-side setting by either using the customary "javax.net.ssl.trustStorePassword" system property or the Artemis-specific "org.apache.activemq.ssl.trustStorePassword" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 
 trustStoreType::
 The type of truststore being used.
 For example, `JKS`, `JCEKS`, `PKCS12`, `PEM` etc.
-This value can also be set via the "javax.net.ssl.trustStoreType" system property or the ActiveMQ-specific "org.apache.activemq.ssl.trustStoreType" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+This value can also be set via the "javax.net.ssl.trustStoreType" system property or the Artemis-specific "org.apache.activemq.ssl.trustStoreType" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 Default is `JKS`.
 
 trustStoreProvider::
 The provider used for the truststore.
 For example, `SUN`, `SunJCE`, etc.
-This value can also be set via the "javax.net.ssl.trustStoreProvider" system property or the ActiveMQ-specific "org.apache.activemq.ssl.trustStoreProvider" system property.
-The ActiveMQ-specific system property is useful if another component on the client is already making use of the standard Java system property.
+This value can also be set via the "javax.net.ssl.trustStoreProvider" system property or the Artemis-specific "org.apache.activemq.ssl.trustStoreProvider" system property.
+The Artemis-specific system property is useful if another component on the client is already making use of the standard Java system property.
 Default is `null`.
 
 enabledCipherSuites::
@@ -412,7 +412,7 @@ Valid values are `true` or `false`.
 Default is `false`.
 
 forceSSLParameters::
-When used on a `connector` any SSL settings that are set as parameters on the connector will be used instead of JVM system properties including both javax.net.ssl and ActiveMQ system properties to configure the SSL context for this connector.
+When used on a `connector` any SSL settings that are set as parameters on the connector will be used instead of JVM system properties including both javax.net.ssl and Artemis system properties to configure the SSL context for this connector.
 +
 Valid values are `true` or `false`.
 Default is `false`.

@@ -89,7 +89,7 @@ This closes the message group so if another message is sent in the future with t
 
 == Notifying Consumer of Group Ownership change
 
-ActiveMQ supports putting a boolean header on the first message sent to a consumer for a particular message group.
+Artemis supports putting a boolean header on the first message sent to a consumer for a particular message group.
 
 To enable this you must set a header key that the broker will use to set the flag.
 
