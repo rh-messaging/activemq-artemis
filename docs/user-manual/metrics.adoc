@@ -126,7 +126,8 @@ Disabled by default.
 Collects metrics from Netty's https://netty.io/4.1/api/io/netty/buffer/PooledByteBufAllocatorMetric.html[PooledByteBufAllocatorMetric].
 
 Disabled by default.
-File descriptors::
+
+==== File descriptors
 Gauges current and max-allowed open files.
 
 Disabled by default.
