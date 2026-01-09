@@ -213,9 +213,13 @@ This may cause performance issues if this is an undesirable state.
 
 == Monitoring Disk
 
-The broker can be configured to perform scans on the disk to determine if disk is beyond a configured limit.
+The broker can be configured to perform scans on the disk to determine if it is beyond a configured limit.
 Since the disk is a critical piece of infrastructure for data integrity the broker will automatically shut itself down if it runs out of disk space.
-Configuring a limit allows the broker to enforce flow control on clients sending messages to the broker so that the disk never fills up completely.
+
+Configuring a limit allows the broker to enforce flow control on clients sending messages to the broker so that the disk never fills up.
+The `disk-full-policy` controls what the broker will do when the configured limit is exceeded.
+Similar to `address-full-policy`, valid values are `DROP`, `FAIL`, and `BLOCK`.
+The default is `BLOCK`.
 
 WARNING: If the protocol used to send the messages doesn't support flow control (e.g. STOMP) then an exception will be thrown and the connection for the client will be dropped so that it can no longer send messages and consume disk space.
 
