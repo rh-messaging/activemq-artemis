@@ -19,11 +19,31 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 
 === Highlights
 
-* First release as Apache Artemis!
+* This is our first release as *Apache Artemis*!
+* Compression for HTTP is now possible.
+This will benefit any use-case involving large payloads for HTTP-based management responses.
+For example, if you're using the web console and you have a large number of addresses and/or queues, if you're browsing a large number of messages, etc.
+This will also benefit any use-case where a large number of metrics are reported via HTTP (e.g. using the Prometheus metrics plugin).
+Configuration details are xref:web-server.adoc#configuration[here].
+* Broker properties can now be used to configure JAAS.
+This was previously only possible via `login.config`.
+See more details xref:configuration-index.adoc#jaas[here].
+* Improvements to the management API:
+** Support for adding security-settings via JSON.
+** The `AddressControl` now reports whether an address is blocked via management using the `BlockedViaManagement` attribute.
+Previously it was unclear if message production to the address had been blocked via the `block` management operation.
+** The `QueueControl` now has ability to "retry" messages in a DLQ using a xref:filter-expressions.adoc#filter-expressions[filter].
+* The `consumer` CLI command now supports `subscriptionName` for JMS durable subscriber use-cases.
+Run `./artemis help consumer` from your broker instance's `bin` directory for more details.
+* There are two new TLS transport options - `crcOptions` & `ocspResponderURL`.
+These will help with certificate management.
+See details xref:configuring-transports.adoc#configuring-netty-ssl[here].
+* The new xref:paging.adoc#monitoring-disk[`disk-full-policy`] `address-setting` allows new behaviors when the broker's disk fills up instead of always blocking.
 
 === Upgrading from 2.44.0
 
-* The components Maven groupId has changed to "org.apache.artemis" to reflect the new Apache Artemis project. You should update your dependency declarations.
+* The components Maven groupId has changed to `org.apache.artemis` to reflect the new Apache Artemis project.
+You should update your dependency declarations.
 https://artemis.apache.org/artemis-tlp-groupid-migration[Click here] for more details.
 * Due to https://issues.apache.org/jira/browse/ARTEMIS-5770[ARTEMIS-5770] the formatting of the "Local Address" field has changed.
 This field is available on the "Connections," "Sessions," "Consumers," and "Producers" tabs.
@@ -38,6 +58,7 @@ This may impact users filtering results based on this field.
 
 The functionality previously provided via these parameters was non-functional and ultimately unnecessary.
 Idle connection management should be done through xref:connection-ttl.adoc#detecting-dead-connections[existing parameters].
+* Due to https://issues.apache.org/jira/browse/ARTEMIS-5092[ARTEMIS-5092] all the existing `addSecuritySettings` management methods have been deprecated in favor of the new JSON-based implementation.
 
 == 2.44.0
 
