@@ -2,7 +2,10 @@ name: "Build"
 
 on:
   push:
+    paths-ignore: &ignored_paths
+      - '**.adoc'
   pull_request:
+    paths-ignore: *ignored_paths
   workflow_dispatch:
     inputs:
       examplesRepo:
