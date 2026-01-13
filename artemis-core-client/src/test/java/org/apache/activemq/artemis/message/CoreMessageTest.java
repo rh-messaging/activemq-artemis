@@ -111,9 +111,6 @@ public class CoreMessageTest {
 
       ActiveMQBuffer buffer = sendMessage.encode(null);
 
-      byte[] byteArray = buffer.byteBuf().array();
-      //System.out.println("Sending " + ByteUtil.bytesToHex(buffer.toByteBuffer().array(), 1) + ", bytes = " + byteArray.length);
-
       buffer.readerIndex(5);
 
       SessionSendMessage sendMessageReceivedSent = new SessionSendMessage(new CoreMessage());
