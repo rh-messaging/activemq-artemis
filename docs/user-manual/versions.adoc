@@ -20,6 +20,7 @@ https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12315920&versio
 === Highlights
 
 * This is our first release as *Apache Artemis*!
+To be clear, we are maintaining package & code compatibility and publishing relocations to Maven so that *users don't need to make any changes in the short term*.
 * Compression for HTTP is now possible.
 This will benefit any use-case involving large payloads for HTTP-based management responses.
 For example, if you're using the web console and you have a large number of addresses and/or queues, if you're browsing a large number of messages, etc.
@@ -39,6 +40,7 @@ Run `./artemis help consumer` from your broker instance's `bin` directory for mo
 These will help with certificate management.
 See details xref:configuring-transports.adoc#configuring-netty-ssl[here].
 * The new xref:paging.adoc#monitoring-disk[`disk-full-policy`] `address-setting` allows new behaviors when the broker's disk fills up instead of always blocking.
+* There's a new `artemis-jakarta-client` feature for Karaf use-cases needing Jakarta compatibility.
 
 === Upgrading from 2.44.0
 
