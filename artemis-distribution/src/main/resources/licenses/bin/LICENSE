@@ -277,17 +277,17 @@ This product bundles JLine, which is available under the
 "3-clause BSD" license. For details, see licences/LICENSE-jline.txt.
 
 ==============================================================================
-Apache ActiveMQ Artemis Subcomponents:
+Apache Artemis Subcomponents:
 
-The Apache ActiveMQ Artemis project contains subcomponents with separate copyright
+The Apache Artemis project contains subcomponents with separate copyright
 notices and license terms. Your use of the source code for the these
 subcomponents is subject to the terms and conditions of the following
 licenses.
 
 ==============================================================================
-Subcomponent: Apache ActiveMQ Artemis Management Console
+Subcomponent: Apache Artemis Management Console
 
-The next section covers the Apache ActiveMQ Artemis Management Console war.
+The next section covers the Apache Artemis Management Console war.
 The management console is based on HAWTIO, which itself is ASL V2.
 This subcomponent is bundled by default but is optional.
 It bundles the below declared packages not covered by ASL V2.
