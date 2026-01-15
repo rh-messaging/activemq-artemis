@@ -204,6 +204,8 @@
 
       <jackson.version>2.20.1</jackson.version>
 
+      <jolokia.version>2.4.3</jolokia.version>
+
       <activemq.version.versionName>${project.version}</activemq.version.versionName>
       <activemq.version.majorVersion>1</activemq.version.majorVersion>
       <activemq.version.minorVersion>0</activemq.version.minorVersion>
@@ -1030,8 +1032,8 @@
                   <configuration>
                      <rules>
                         <requireMavenVersion>
-                           <version>3.5.0</version>
-                           <message>You must use Maven 3.5.0+ to build</message>
+                           <version>3.9</version>
+                           <message>You must use Maven 3.9.0+ to build</message>
                         </requireMavenVersion>
                      </rules>
                   </configuration>
