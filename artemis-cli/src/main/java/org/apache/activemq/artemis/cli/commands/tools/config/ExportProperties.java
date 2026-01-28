@@ -41,7 +41,7 @@ public class ExportProperties extends Configurable {
       PrintStream out = context.out;
       OutputStream outputStream = null;
 
-      System.out.println("Exporting configuration as broker.properties");
+      System.out.println("Exporting configuration as " + output);
 
       if (output == null) {
          throw new RuntimeException("output is a required property");
