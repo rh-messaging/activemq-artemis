@@ -626,7 +626,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             brokerProperties.setFileChecksum(checkedInputStream.getChecksum().getValue());
          } catch (Exception readOrParseError) {
             logger.debug("Properties config load error on file {}, {}", file.getName(), readOrParseError);
-            updateApplyStatus(file.getName(), Map.of("loadError", readOrParseError.toString()));
+            updateApplyStatus(file.getName(), Map.of("loadError", String.valueOf(readOrParseError)));
             return;
          }
       }
@@ -644,14 +644,14 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       synchronized (properties) {
          String key = null;
          for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            key = entry.getKey().toString();
+            key = String.valueOf(entry.getKey());
             if (prefix != null) {
                if (!key.startsWith(prefix)) {
                   continue;
                }
-               key = entry.getKey().toString().substring(prefix.length());
+               key = String.valueOf(entry.getKey()).substring(prefix.length());
             }
-            String value = entry.getValue().toString();
+            String value = String.valueOf(entry.getValue());
 
             checksum.update(key.getBytes(StandardCharsets.UTF_8));
             checksum.update('=');
@@ -900,7 +900,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       beanUtils.getConvertUtils().register(new Converter() {
          @Override
          public <T> T convert(Class<T> type, Object value) {
-            return (T) SimpleString.of(value.toString());
+            return (T) SimpleString.of(String.valueOf(value));
          }
       }, SimpleString.class);
 
@@ -908,7 +908,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             NamedPropertyConfiguration instance = new NamedPropertyConfiguration();
-            instance.setName(value.toString());
+            instance.setName(String.valueOf(value));
             instance.setProperties(new HashMap<>());
             return (T) instance;
          }
@@ -918,7 +918,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             //we only care about DATABASE type as it is the only one used
-            if (StoreConfiguration.StoreType.DATABASE.toString().equals(value)) {
+            if (String.valueOf(StoreConfiguration.StoreType.DATABASE).equals(value)) {
                return (T) new DatabaseStorageConfiguration();
             }
             throw ActiveMQMessageBundle.BUNDLE.unsupportedStorePropertyType();
@@ -929,7 +929,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             List<String> convertedValue = new ArrayList<>();
-            for (String entry : value.toString().split(",")) {
+            for (String entry : String.valueOf(value).split(",")) {
                convertedValue.add(entry);
             }
             return (T) convertedValue;
@@ -940,7 +940,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             Set convertedValue = new HashSet();
-            for (String entry : value.toString().split(",")) {
+            for (String entry : String.valueOf(value).split(",")) {
                convertedValue.add(entry);
             }
             return (T) convertedValue;
@@ -951,7 +951,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             Map convertedValue = new HashMap();
-            for (String entry : value.toString().split(",")) {
+            for (String entry : String.valueOf(value).split(",")) {
                if (!entry.isBlank()) {
                   String[] kv = entry.split("=");
                   if (2 != kv.length) {
@@ -968,7 +968,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
       beanUtils.getConvertUtils().register(new Converter() {
          @Override
          public <T> T convert(Class<T> type, Object value) {
-            return (T) (Long) ByteUtil.convertTextBytes(value.toString());
+            return (T) (Long) ByteUtil.convertTextBytes(String.valueOf(value));
          }
       }, Long.TYPE);
 
@@ -976,7 +976,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          @Override
          public <T> T convert(Class<T> type, Object value) {
             HAPolicyConfiguration.TYPE haPolicyType =
-               HAPolicyConfiguration.TYPE.valueOf(value.toString());
+               HAPolicyConfiguration.TYPE.valueOf(String.valueOf(value));
 
             return switch (haPolicyType) {
                case PRIMARY_ONLY -> (T) new LiveOnlyPolicyConfiguration();
@@ -1107,7 +1107,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             stream.forEach(entry -> {
                if (entry.getValue() != null) {
                   // nested by name
-                  nested.push(entry.getKey().toString());
+                  nested.push(String.valueOf(entry.getKey()));
                   export(beanUtils, nested, bufferedWriter, entry.getValue());
                   nested.pop();
                }
@@ -1122,12 +1122,12 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             nested.pop();
          } else if (value instanceof AMQPBrokerConnectionElement connectionElement) {
             nested.push("type"); // is in the ignored list so won't get duplicated
-            exportKeyValue(nested, bufferedWriter, connectionElement.getType().toString());
+            exportKeyValue(nested, bufferedWriter, String.valueOf(connectionElement.getType()));
             nested.pop();
          } else if (value instanceof HAPolicyConfiguration haPolicyConfiguration) {
-            exportKeyValue(nested, bufferedWriter, haPolicyConfiguration.getType().toString());
+            exportKeyValue(nested, bufferedWriter, String.valueOf(haPolicyConfiguration.getType()));
          } else if (value instanceof StoreConfiguration storeConfiguration) {
-            exportKeyValue(nested, bufferedWriter, storeConfiguration.getStoreType().toString());
+            exportKeyValue(nested, bufferedWriter, String.valueOf(storeConfiguration.getStoreType()));
          } else if (value instanceof NamedPropertyConfiguration namedPropertyConfiguration) {
             exportKeyValue(nested, bufferedWriter, namedPropertyConfiguration.getName());
          } else if (value instanceof BroadcastEndpointFactory broadcastEndpointFactory) {
@@ -1228,7 +1228,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
             if (nameVal == null) {
                return "name-attribute-must-be-set-for-properties-key-export";
             }
-            return nameVal.toString();
+            return String.valueOf(nameVal);
          }
       } catch (Exception expectedAndWillDefaultToStringForm) {
       }
@@ -1245,7 +1245,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    private void trackError(Map<String, String> errors, Map.Entry<String, ?> entry, Throwable oops) {
       logger.debug("failed to populate property entry({}), reason: {}", entry, oops);
-      errors.put(entry.toString(), oops.toString());
+      errors.put(String.valueOf(entry), String.valueOf(oops));
    }
 
    private synchronized void updateApplyStatus(String propsId, Map<String, String> errors) {
@@ -2472,7 +2472,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    @Override
    public ConfigurationImpl addResourceLimitSettings(ResourceLimitSettings resourceLimitSettings) {
-      this.resourceLimitSettings.put(resourceLimitSettings.getMatch().toString(), resourceLimitSettings);
+      this.resourceLimitSettings.put(String.valueOf(resourceLimitSettings.getMatch()), resourceLimitSettings);
       return this;
    }
 
@@ -3376,7 +3376,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
    @Override
    public synchronized String getStatus() {
-      return getJsonStatus().toString();
+      return String.valueOf(getJsonStatus());
    }
 
    @Override
@@ -3593,7 +3593,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          } else {
             for (Object candidate : collection) {
                Object candidateName = getProperty(candidate, "name");
-               if (candidateName != null && key.equals(candidateName.toString())) {
+               if (candidateName != null && key.equals(String.valueOf(candidateName))) {
                   return candidate;
                }
             }
@@ -3605,7 +3605,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
          // locate on name property, may be a SimpleString
          for (Object candidate : collection) {
             Object candidateName = getProperty(candidate, "name");
-            if (candidateName != null && key.equals(candidateName.toString())) {
+            if (candidateName != null && key.equals(String.valueOf(candidateName))) {
                collection.remove(candidate);
                break;
             }
@@ -3788,7 +3788,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
 
       @Override
       public Object put(Object key, Object value) {
-         return orderedMap.put(key.toString(), value.toString());
+         return orderedMap.put(String.valueOf(key), String.valueOf(value));
       }
 
       @Override
@@ -3832,7 +3832,7 @@ public class ConfigurationImpl extends javax.security.auth.login.Configuration i
                case NUMBER:
                case TRUE:
                case FALSE:
-                  put(propertyKey, jsonValue.toString());
+                  put(propertyKey, String.valueOf(jsonValue));
                   break;
                default:
                   throw new IllegalStateException("JSON value type not supported: " + jsonValueType);
